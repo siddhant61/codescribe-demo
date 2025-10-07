@@ -76,7 +76,7 @@ While demonstrated on Xikolo, **this methodology can be applied to any large cod
 ## 🤝 About
 
 **Author**: Siddhant Gadamsetti  
-**LinkedIn**: [linkedin.com/in/siddhant-gadamsetti](https://www.linkedin.com/in/siddhant-gadamsetti-0a5b52231/)
+**LinkedIn**: [linkedin.com/in/siddhant-gadamsetti](https://www.linkedin.com/in/siddhant-gadamsetti-b05849130/)
 
 This project was developed as a technical demonstration of AI-powered documentation generation methodology. The analysis is based on the publicly available [Xikolo open-source codebase](https://github.com/openHPI/xikolo-core).
 
