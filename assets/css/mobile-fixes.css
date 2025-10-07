@@ -1,0 +1,126 @@
+/* Mobile-specific fixes for navigation and hero section */
+
+/* Improved mobile navigation */
+@media (max-width: 768px) {
+  /* Make header more compact */
+  .page-header {
+    padding: var(--space-md) 0;
+  }
+  
+  .header-container {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+  
+  /* Logo stays in top left, compact size */
+  .header-logo {
+    font-size: var(--font-size-base);
+    gap: var(--space-sm);
+  }
+  
+  .header-logo img {
+    height: 32px;
+    width: 32px;
+  }
+  
+  .header-logo span {
+    font-size: 0.9rem;
+  }
+  
+  /* Hide navigation menu on mobile by default, show collapsed */
+  .header-nav {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    order: 3;
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-md);
+  }
+  
+  /* Theme toggle button stays visible in top right */
+  .header-actions {
+    margin-left: auto;
+    order: 2;
+  }
+  
+  /* Hero section mobile improvements */
+  .hero {
+    padding: var(--space-2xl) var(--space-md);
+    margin-bottom: var(--space-xl);
+    border-radius: var(--radius-lg);
+  }
+  
+  .hero-title {
+    font-size: var(--font-size-3xl);
+    line-height: 1.2;
+    margin-bottom: var(--space-md);
+  }
+  
+  .hero-subtitle {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--space-lg);
+    padding: 0 var(--space-sm);
+  }
+  
+  /* Stack buttons vertically on small screens */
+  .hero .flex {
+    flex-direction: column;
+    gap: var(--space-md);
+    width: 100%;
+    padding: 0 var(--space-md);
+  }
+  
+  .hero .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  /* Fix About section gradient background on mobile */
+  .section[style*="linear-gradient"] {
+    padding: var(--space-lg) var(--space-md) !important;
+    margin: var(--space-lg) 0 !important;
+    border-radius: var(--radius-md) !important;
+  }
+  
+  /* Reduce stat card minimum width */
+  .stats {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-md);
+  }
+  
+  .stat-value {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .stat-label {
+    font-size: var(--font-size-xs);
+  }
+  
+  /* Fix card grid on mobile */
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+  
+  /* Reduce padding on cards for mobile */
+  .card {
+    padding: var(--space-lg);
+  }
+}
+
+/* Extra small screens (< 375px) */
+@media (max-width: 374px) {
+  .hero-title {
+    font-size: var(--font-size-2xl);
+  }
+  
+  .header-logo span {
+    display: none;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
