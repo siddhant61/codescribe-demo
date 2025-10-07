@@ -32,7 +32,7 @@ let visibleLinks = [];
 async function initKnowledgeGraph() {
   try {
     // Load knowledge graph data
-    const response = await fetch('/idp/knowledge-graph-synthesized.json');
+    const response = await fetch('./idp/knowledge-graph-synthesized.json');
     const data = await response.json();
     
     currentGraphData = data;
