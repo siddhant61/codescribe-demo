@@ -37,8 +37,8 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             line-height: 1.6;
-            color: #2c3e50;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--color-text);
+            background: var(--color-bg-alt);
             min-height: 100vh;
         }
 
@@ -50,11 +50,11 @@
 
         /* Header */
         .methodology-header {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--color-surface);
             border-radius: 20px;
             padding: 40px;
             margin-bottom: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px var(--shadow-md);
             text-align: center;
         }
 
@@ -62,7 +62,7 @@
             font-size: 2.8rem;
             font-weight: 700;
             margin-bottom: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -70,7 +70,7 @@
 
         .methodology-subtitle {
             font-size: 1.3rem;
-            color: #7f8c8d;
+            color: var(--color-text-secondary);
             margin-bottom: 30px;
         }
 
@@ -82,72 +82,72 @@
         }
 
         .dora-metric {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--color-surface);
             border-radius: 15px;
             padding: 20px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            border-left: 5px solid #667eea;
+            box-shadow: 0 5px 15px var(--shadow-sm);
+            border-left: 5px solid var(--color-primary);
         }
 
         .metric-value {
             font-size: 2rem;
             font-weight: 700;
-            color: #667eea;
+            color: var(--color-primary);
             margin-bottom: 5px;
         }
 
         .metric-label {
             font-size: 0.9rem;
-            color: #7f8c8d;
+            color: var(--color-text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         /* Navigation */
         .methodology-nav {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--color-surface);
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 20px var(--shadow-md);
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
         }
 
-        .nav-link {
+        .methodology-nav .nav-link {
             padding: 12px 24px;
             border-radius: 10px;
             text-decoration: none;
-            color: #7f8c8d;
+            color: var(--color-text-secondary);
             font-weight: 600;
             transition: all 0.3s ease;
             border: 2px solid transparent;
         }
 
-        .nav-link:hover, .nav-link.active {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-            border-color: #667eea;
+        .methodology-nav .nav-link:hover, .methodology-nav .nav-link.active {
+            color: var(--color-primary);
+            background: var(--color-primary-alpha);
+            border-color: var(--color-primary);
             transform: translateY(-2px);
         }
 
         /* Section Styles */
         .methodology-section {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--color-surface);
             border-radius: 20px;
             padding: 40px;
             margin-bottom: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px var(--shadow-md);
         }
 
         .methodology-section h2 {
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 25px;
-            color: #2c3e50;
+            color: var(--color-text);
             border-bottom: 3px solid #667eea;
             padding-bottom: 10px;
         }
@@ -156,25 +156,25 @@
             font-size: 1.4rem;
             font-weight: 600;
             margin: 25px 0 15px 0;
-            color: #2c3e50;
+            color: var(--color-text);
         }
 
         .methodology-section h4 {
             font-size: 1.2rem;
             font-weight: 600;
             margin: 20px 0 10px 0;
-            color: #34495e;
+            color: var(--color-text);
         }
 
         .methodology-section p {
             margin-bottom: 15px;
-            color: #555;
+            color: var(--color-text-secondary);
             line-height: 1.7;
         }
 
         .methodology-section ul, .methodology-section ol {
             margin: 15px 0 15px 30px;
-            color: #555;
+            color: var(--color-text-secondary);
         }
 
         .methodology-section li {
@@ -191,7 +191,7 @@
         }
 
         .framework-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--color-surface);
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -213,11 +213,11 @@
             font-size: 1.3rem;
             font-weight: 600;
             margin-bottom: 10px;
-            color: #2c3e50;
+            color: var(--color-text);
         }
 
         .framework-description {
-            color: #555;
+            color: var(--color-text-secondary);
             line-height: 1.6;
         }
 
@@ -266,7 +266,7 @@
         }
 
         .metrics-chart {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--color-surface);
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -279,7 +279,7 @@
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 20px;
-            color: #2c3e50;
+            color: var(--color-text);
             text-align: center;
             flex-shrink: 0;
         }
@@ -298,7 +298,7 @@
         }
 
         .capability-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--color-surface);
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -313,18 +313,18 @@
 
         .capability-name {
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--color-text);
         }
 
         .capability-score {
             font-weight: 700;
-            color: #667eea;
+            color: var(--color-primary);
             margin-left: auto;
         }
 
         .capability-bar {
             height: 8px;
-            background: #e0e6ed;
+            background: var(--color-border);
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 10px;
@@ -338,7 +338,7 @@
 
         .capability-description {
             font-size: 0.9rem;
-            color: #7f8c8d;
+            color: var(--color-text-secondary);
             line-height: 1.5;
         }
 
@@ -361,19 +361,19 @@
         .impact-metric {
             font-size: 2rem;
             font-weight: 700;
-            color: #667eea;
+            color: var(--color-primary);
             margin-bottom: 10px;
         }
 
         .impact-label {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--color-text);
             margin-bottom: 10px;
         }
 
         .impact-description {
-            color: #555;
+            color: var(--color-text-secondary);
             line-height: 1.6;
         }
 
@@ -408,16 +408,16 @@
 
         .highlight-box.warning {
             background: linear-gradient(135deg, rgba(243, 156, 18, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
-            border-left-color: #f39c12;
+            border-left-color: var(--color-warning);
         }
 
         .highlight-box.success {
             background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
-            border-left-color: #2ecc71;
+            border-left-color: var(--color-success);
         }
 
         .tool-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--color-surface);
             border-radius: 10px;
             padding: 20px;
             margin: 15px 0;
@@ -427,19 +427,19 @@
 
         .tool-name {
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--color-text);
             margin-bottom: 8px;
         }
 
         .tool-purpose {
             font-size: 0.9rem;
-            color: #7f8c8d;
+            color: var(--color-text-secondary);
             margin-bottom: 10px;
         }
 
         .tool-metrics {
             font-size: 0.85rem;
-            color: #555;
+            color: var(--color-text-secondary);
         }
     </style>
 </head>
@@ -519,7 +519,7 @@
             
             <div class="highlight-box">
                 <h4>🎯 Primary Objective</h4>
-                <p>To demonstrate a comprehensive AI-powered methodology for analyzing large-scale codebases and automatically generating high-quality architectural documentation. Applied to the open-source <a href="https://github.com/openHPI/xikolo-core" target="_blank" rel="noopener" style="color: #667eea;">Xikolo platform (case study)</a> as a case study.</p>
+                <p>To demonstrate a comprehensive AI-powered methodology for analyzing large-scale codebases and automatically generating high-quality architectural documentation. Applied to the open-source <a href="https://github.com/openHPI/xikolo-core" target="_blank" rel="noopener" style="color: var(--color-primary);">Xikolo platform (case study)</a> as a case study.</p>
             </div>
 
             <h2>Background & Context</h3>
@@ -883,7 +883,7 @@
 
             <h3>Open Source & Community</h3>
             <p style="font-size: 1.05rem; line-height: 1.7; margin-top: 20px;">
-                This methodology was demonstrated on the <strong>open-source Xikolo platform</strong> (<a href="https://github.com/openHPI/xikolo-core" target="_blank" style="color: #667eea;">github.com/openHPI/xikolo-core</a>). 
+                This methodology was demonstrated on the <strong>open-source Xikolo platform</strong> (<a href="https://github.com/openHPI/xikolo-core" target="_blank" style="color: var(--color-primary);">github.com/openHPI/xikolo-core</a>). 
                 The analysis techniques and tooling can be adapted for any Ruby on Rails, Node.js, Python, or polyglot codebase. 
                 Consider contributing improvements back to the community to help advance AI-powered documentation practices.
             </p>
@@ -942,7 +942,7 @@
           <p>
             © 2025 Siddhant Gadamsetti. AI-Powered Codebase Analysis & Documentation Platform.
             <br>
-            Analysis of <a href="https://github.com/openHPI/xikolo-core" target="_blank" rel="noopener" style="color: #667eea;">open-source Xikolo platform</a> · Last Updated: <time datetime="2025-10-07">October 7, 2025</time>
+            Analysis of <a href="https://github.com/openHPI/xikolo-core" target="_blank" rel="noopener" style="color: var(--color-primary);">open-source Xikolo platform</a> · Last Updated: <time datetime="2025-10-07">October 7, 2025</time>
           </p>
         </div>
       </div>
