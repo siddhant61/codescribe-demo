@@ -1,0 +1,225 @@
+{
+  "clusterId": "50_SEC_CookieConsent",
+  "featureFocus": "Cookie Consent Management",
+  "documentationReport": "The \"Cookie Consent Management\" feature provides a mechanism for users to accept or decline specific cookie-related consents presented via a banner. This system ensures that user preferences regarding cookies are captured and respected, primarily by storing their choices in a client-side cookie. [Source: app/components/global/cookie_consent_banner.html.slim, app/controllers/cookie_consent_controller.rb, spec/requests/cookie_consent/create_spec.rb]\n\n**Components:**\n\n*   **`Global::CookieConsentBanner` (ViewComponent):** This component is responsible for rendering the cookie consent banner at the bottom of the page. It dynamically determines whether to render based on the presence of an undecided consent. It retrieves the current consent details and its localized text using the `ConsentCookie` and `Translations` utility. The banner includes buttons for accepting or declining the consent, which submit a form to the `CookieConsentController`. [Source: app/components/global/cookie_consent_banner.rb, app/components/global/cookie_consent_banner.html.slim]\n\n*   **`CookieConsentController` (Controller):** This controller handles the submission of consent decisions from the banner. Its `create` action receives the `consent_name` and whether the user chose to `accept` or `decline`. It then delegates the actual cookie management to an instance of `ConsentCookie` and redirects the user back to their previous location. If no `consent_name` is provided, it returns a `no_content` status. [Source: app/controllers/cookie_consent_controller.rb]\n\n*   **`ConsentCookie` (Service Object/Utility):** Although the file `lib/consent_cookie.rb` was not provided, its functionality is clearly inferred from its usage and extensive test suite. This class is responsible for reading, writing, and managing the `cookie_consents` cookie. It identifies the \"current\" (i.e., undecided) consent based on a predefined list of consents from `xi_config`. It stores consent decisions as a JSON array in the `cookie_consents` cookie, using `+` for accepted and `-` for declined, e.g., `[\"+google_analytics\"]`. This cookie is set with a one-year expiry. It also handles scenarios with multiple configured consents, presenting them sequentially until all are decided. It includes logic to handle invalid cookie values gracefully. [Source: app/components/global/cookie_consent_banner.rb, app/controllers/cookie_consent_controller.rb, spec/lib/consent_cookie_spec.rb, spec/requests/cookie_consent/create_spec.rb]\n\n**Workflow: Cookie Consent Decision**\n\n1.  A user visits the application. [Source: integration/features/xikolo/global/cookie_consents.feature]\n2.  The `Global::CookieConsentBanner` component checks if there is an undecided cookie consent. [Source: app/components/global/cookie_consent_banner.rb]\n3.  If an undecided consent exists, the banner is rendered, displaying the consent text and \"Accept\" and \"Decline\" buttons. [Source: app/components/global/cookie_consent_banner.html.slim, integration/features/xikolo/global/cookie_consents.feature]\n4.  The user clicks either \"Accept\" or \"Decline\". [Source: integration/features/xikolo/global/cookie_consents.feature]\n5.  This action submits a POST request to the `CookieConsentController#create` action, including the `consent_name` and the decision. [Source: app/components/global/cookie_consent_banner.html.slim, app/controllers/cookie_consent_controller.rb]\n6.  The `CookieConsentController` uses `ConsentCookie` to update the `cookie_consents` cookie with the user's decision (accepted or declined) for the specified consent. The cookie is set with a one-year expiry. [Source: app/controllers/cookie_consent_controller.rb, spec/requests/cookie_consent/create_spec.rb]\n7.  The controller redirects the user back to their original page. [Source: app/controllers/cookie_consent_controller.rb]\n8.  Upon subsequent page loads, the `Global::CookieConsentBanner` will no longer display the banner if all configured consents have been decided. [Source: spec/lib/consent_cookie_spec.rb, integration/features/xikolo/global/cookie_consents.feature]\n\n**Integration with RAG Context:**\n\nThe RAG documentation describes a broader \"Consents\" system for user data, distinguishing between \"required\" and \"optional\" consents, and mentioning management on a user's profile page, as well as \"external consents\". [Source: docs/app/features/profile/consents.md]\n\nThe \"Cookie Consent Management\" feature implemented here appears to be a specific instance of an \"optional\" consent, as it can be dismissed and is not explicitly stated as blocking further user action. Unlike the general \"Consents\" described in the RAG, the provided code for *this specific cookie consent* does not include a mechanism for users to manage their cookie consent decisions on a profile page after the initial banner interaction. It also does not seem to directly integrate with the \"external consent manager\" concept. This suggests that the cookie consent banner is a self-contained, client-side focused mechanism for a specific type of consent, potentially distinct from or a subset of the broader consent management system. [Source: docs/app/features/profile/consents.md]\n\n**Technical Debt & Observations:**\n\n*   **`Rails/OutputSafety` disablement:** The use of `html_safe` in `app/components/global/cookie_consent_banner.html.slim` is explicitly disabled for Rubocop. While necessary for rendering pre-formatted consent text, this practice generally carries security risks if the `text` variable is not guaranteed to be safe from user input. It implies that the `Translations` utility or the `xi_config` source for consent texts must be carefully controlled. [Source: app/components/global/cookie_consent_banner.html.slim]\n*   **Missing `lib/consent_cookie.rb`:** The core logic for `ConsentCookie` is inferred from its usage and tests, but the actual implementation file was not provided. This makes a full code-level review of its internal workings impossible. [Source: N/A]\n*   **Configuration Dependency:** The system relies on `xi_config` for defining available cookie consents and their texts. This centralizes consent definitions but requires careful management of the configuration. [Source: spec/lib/consent_cookie_spec.rb, spec/requests/cookie_consent/create_spec.rb]\n*   **Limited Management Interface:** As noted in the RAG comparison, this specific cookie consent mechanism does not appear to offer a user interface for managing consent decisions post-banner, unlike the general ",
+  "componentMapPatch": {
+    "components": {
+      "Global::CookieConsentBanner": {
+        "type": "ViewComponent",
+        "description": "Renders the cookie consent banner at the bottom of the page. It dynamically decides whether to display based on the user's current consent status and provides options to accept or decline the consent.",
+        "interactions": {
+          "interaction_0": "Interacts with `ConsentCookie` to determine if a banner should be rendered and to retrieve current consent details. [Source: app/components/global/cookie_consent_banner.rb]",
+          "interaction_1": "Interacts with `Translations` to fetch localized consent text. [Source: app/components/global/cookie_consent_banner.rb]",
+          "interaction_2": "Submits user decisions (accept/decline) to `CookieConsentController` via a form. [Source: app/components/global/cookie_consent_banner.html.slim]"
+        },
+        "techDebt": [
+          "Uses `html_safe` for rendering consent text, which is explicitly disabled for Rubocop. This poses a potential XSS risk if consent texts are not strictly controlled and sanitized. [Source: app/components/global/cookie_consent_banner.html.slim]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/components/global/cookie_consent_banner.rb",
+            "app/components/global/cookie_consent_banner.html.slim"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 17,
+              "code": "# frozen_string_literal: true\n\nmodule Global\n  class CookieConsentBanner < ApplicationComponent\n    private\n\n    def render?\n      consent.present?\n    end\n\n    def consent\n      @consent ||= ConsentCookie.new(helpers.cookies).current\n    end\n\n    def text\n      Translations.new(consent[:texts]).to_s\n    end\n  end\nend",
+              "source": "app/components/global/cookie_consent_banner.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/global/cookie_consent_banner.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/components/global/accordion.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/global/accordion_preview.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "CookieConsentController": {
+        "type": "Controller",
+        "description": "Handles the HTTP POST requests for accepting or declining cookie consents. It processes the user's decision and updates the consent status in the client's cookies.",
+        "interactions": {
+          "interaction_0": "Receives consent decisions from `Global::CookieConsentBanner`. [Source: app/components/global/cookie_consent_banner.html.slim]",
+          "interaction_1": "Instantiates and uses `ConsentCookie` to manage the `cookie_consents` cookie based on user input. [Source: app/controllers/cookie_consent_controller.rb]",
+          "interaction_2": "Redirects the user back to the previous page after processing the consent. [Source: app/controllers/cookie_consent_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/cookie_consent_controller.rb",
+            "spec/requests/cookie_consent/create_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 16,
+              "code": "# frozen_string_literal: true\n\nclass CookieConsentController < ApplicationController\n  def create\n    return head :no_content if params[:consent_name].blank?\n\n    consent_cookie = ConsentCookie.new(cookies)\n    if params[:accept].present?\n      consent_cookie.accept(params[:consent_name])\n    else\n      consent_cookie.decline(params[:consent_name])\n    end\n\n    redirect_back fallback_location: root_url\n  end\nend",
+              "source": "app/controllers/cookie_consent_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/cookie_consent_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "ConsentCookie": {
+        "type": "Service Object",
+        "description": "Manages the state of cookie consents in the client's browser. It reads, writes, and updates a specific cookie (`cookie_consents`) to store user decisions (accepted or declined) for various configured consents. It also determines which consent, if any, is currently undecided and should be presented to the user.",
+        "interactions": {
+          "interaction_0": "Accessed by `Global::CookieConsentBanner` to check for current consent and render the banner. [Source: app/components/global/cookie_consent_banner.rb]",
+          "interaction_1": "Accessed by `CookieConsentController` to record user decisions (accept/decline) into the cookie. [Source: app/controllers/cookie_consent_controller.rb]",
+          "interaction_2": "Relies on `xi_config` for the definition and order of available cookie consents. [Source: spec/lib/consent_cookie_spec.rb, spec/requests/cookie_consent/create_spec.rb]",
+          "interaction_3": "Interacts with `ActionDispatch::Cookies::CookieJar` to manipulate client-side cookies. [Source: spec/lib/consent_cookie_spec.rb]"
+        },
+        "techDebt": [
+          "The source file `lib/consent_cookie.rb` was not provided, making a direct code review of its implementation impossible. Its functionality is inferred from its usage and comprehensive test suite. [Source: N/A]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/components/global/cookie_consent_banner.rb",
+            "app/controllers/cookie_consent_controller.rb",
+            "spec/lib/consent_cookie_spec.rb",
+            "spec/requests/cookie_consent/create_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 6,
+              "code": "  def initialize(cookie_jar)\n    @cookie_jar = cookie_jar\n  end",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 12,
+              "code": "  def accept(consent)\n    return unless known? consent\n\n    add consent, true\n  end",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 18,
+              "code": "  def decline(consent)\n    return unless known? consent\n\n    add consent, false\n  end",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 26,
+              "code": "  def current\n    current_consent = (configured_consents - consent_list.keys).first\n    return unless current_consent\n\n    {\n      name: current_consent,\n      texts: config[current_consent],\n    }",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 28,
+              "endLine": 30,
+              "code": "  def accepted?(name)\n    !!consent_list[name]\n  end",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 38,
+              "code": "  def add(consent, accepted)\n    consent_list[consent] = accepted\n\n    @cookie_jar[:cookie_consents] = {value: JSON.generate(to_a), expires: 1.year}\n  end",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 40,
+              "endLine": 42,
+              "code": "  def consent_list\n    @consent_list ||= parse_cookie(@cookie_jar[:cookie_consents].to_s)\n  end",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 44,
+              "endLine": 46,
+              "code": "  def to_a\n    consent_list.map {|name, accepted| \"#{accepted ? '+' : '-'}#{name}\" }\n  end",
+              "source": "app/lib/consent_cookie.rb"
+            },
+            {
+              "startLine": 48,
+              "endLine": 50,
+              "code": "  def parse_cookie(json_str)\n    parsed = JSON.parse(json_str)\n    parsed.is_a?(Array) ? parsed.f...",
+              "source": "app/lib/consent_cookie.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/consent_cookie.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "Cookie Consent Decision",
+        "description": "A user encounters a cookie consent banner, makes a decision (accept or decline), and their preference is stored, preventing the banner from reappearing for that specific consent.",
+        "involvedComponents": [
+          "Global::CookieConsentBanner",
+          "CookieConsentController",
+          "ConsentCookie"
+        ],
+        "provenance": {
+          "sources": [
+            "app/components/global/cookie_consent_banner.html.slim",
+            "app/components/global/cookie_consent_banner.rb",
+            "app/controllers/cookie_consent_controller.rb",
+            "spec/lib/consent_cookie_spec.rb",
+            "spec/requests/cookie_consent/create_spec.rb",
+            "integration/features/xikolo/global/cookie_consents.feature",
+            "integration/features/steps/global/cookie_consents.rb"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [
+    {
+      "title": "Cookie Consent Management - Architecture Overview",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1400 1000\" width=\"100%\">\n  <title>Cookie Consent Management Architecture and Workflow</title>\n  <desc>\n    An SVG infographic detailing the architecture and the \"Cookie Consent Decision\" workflow for the Cookie Consent Management feature cluster.\n    It includes components like Global::CookieConsentBanner, CookieConsentController, and ConsentCookie, showing their interactions and the step-by-step user decision process.\n  </desc>\n\n  <defs>\n    <!-- Right-pointing Arrowhead markers -->\n    <marker id=\"arrowhead-right\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n    <marker id=\"arrowhead-right-blue\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#007BFF\" />\n    </marker>\n    <marker id=\"arrowhead-right-purple\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#9b59b6\" />\n    </marker>\n    <marker id=\"arrowhead-right-orange\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#FFC107\" />\n    </marker>\n\n    <!-- Left-pointing Arrowhead markers -->\n    <marker id=\"arrowhead-left\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"10 0, 0 3.5, 10 7\" fill=\"#343A40\" />\n    </marker>\n    <marker id=\"arrowhead-left-blue\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"10 0, 0 3.5, 10 7\" fill=\"#007BFF\" />\n    </marker>\n    <marker id=\"arrowhead-left-purple\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"10 0, 0 3.5, 10 7\" fill=\"#9b59b6\" />\n    </marker>\n    <marker id=\"arrowhead-left-orange\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"10 0, 0 3.5, 10 7\" fill=\"#FFC107\" />\n    </marker>\n\n    <!-- Drop Shadow Filter -->\n    <filter id=\"drop-shadow\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3\"/>\n      <feOffset dx=\"2\" dy=\"2\" result=\"offsetblur\"/>\n      <feFlood flood-color=\"#000\" flood-opacity=\"0.2\"/>\n      <feComposite in2=\"offsetblur\" operator=\"in\"/>\n      <feMerge>\n        <feMergeNode/>\n        <feMergeNode in=\"SourceGraphic\"/>\n      </feMerge>\n    </filter>\n  </defs>\n\n  <!-- Global Styles -->\n  <style>\n    .title { font-family: 'Arial, sans-serif'; font-size: 36px; font-weight: bold; fill: #343A40; }\n    .subtitle { font-family: 'Arial, sans-serif'; font-size: 24px; font-weight: bold; fill: #343A40; }\n    .component-name { font-family: 'Arial, sans-serif'; font-size: 20px; font-weight: bold; fill: #343A40; }\n    .component-desc { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; }\n    .workflow-label { font-family: 'Arial, sans-serif'; font-size: 18px; font-weight: bold; fill: #343A40; }\n    .message-label { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; }\n    .lifeline-label { font-family: 'Arial, sans-serif'; font-size: 16px; font-weight: bold; fill: #343A40; }\n    .note-label { font-family: 'Arial, sans-serif'; font-size: 12px; font-style: italic; fill: #6C757D; }\n    .component-box { filter: url(#drop-shadow); }\n  </style>\n\n  <!-- Title -->\n  <text x=\"700\" y=\"50\" text-anchor=\"middle\" class=\"title\">Cookie Consent Management Architecture &amp; Workflow</text>\n\n  <!-- Section: Component Interaction Diagram -->\n  <text x=\"700\" y=\"100\" text-anchor=\"middle\" class=\"subtitle\">Component Interaction Diagram</text>\n\n  <!-- Component Definitions -->\n  <!-- Global::CookieConsentBanner (Frontend) -->\n  <rect x=\"100\" y=\"140\" width=\"300\" height=\"120\" rx=\"10\" ry=\"10\" fill=\"#007BFF\" stroke=\"#0056B3\" stroke-width=\"2\" class=\"component-box\" />\n  <text x=\"250\" y=\"170\" text-anchor=\"middle\" class=\"component-name\" fill=\"#FFFFFF\">Global::CookieConsentBanner</text>\n  <text x=\"250\" y=\"195\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#FFFFFF\">Renders the cookie consent banner</text>\n  <text x=\"250\" y=\"215\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#FFFFFF\">dynamically, provides options.</text>\n  <text x=\"250\" y=\"235\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#FFFFFF\">(Frontend)</text>\n\n  <!-- CookieConsentController (Controller) -->\n  <rect x=\"550\" y=\"140\" width=\"300\" height=\"120\" rx=\"10\" ry=\"10\" fill=\"#9b59b6\" stroke=\"#7D3C98\" stroke-width=\"2\" class=\"component-box\" />\n  <text x=\"700\" y=\"170\" text-anchor=\"middle\" class=\"component-name\" fill=\"#FFFFFF\">CookieConsentController</text>\n  <text x=\"700\" y=\"195\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#FFFFFF\">Handles HTTP POST requests for</text>\n  <text x=\"700\" y=\"215\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#FFFFFF\">consent decisions, updates status.</text>\n  <text x=\"700\" y=\"235\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#FFFFFF\">(Controller)</text>\n\n  <!-- ConsentCookie (Service/Logic) -->\n  <rect x=\"1000\" y=\"140\" width=\"300\" height=\"120\" rx=\"10\" ry=\"10\" fill=\"#FFC107\" stroke=\"#E0A800\" stroke-width=\"2\" class=\"component-box\" />\n  <text x=\"1150\" y=\"170\" text-anchor=\"middle\" class=\"component-name\" fill=\"#343A40\">ConsentCookie</text>\n  <text x=\"1150\" y=\"195\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#343A40\">Manages client-side cookie</text>\n  <text x=\"1150\" y=\"215\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#343A40\">(`cookie_consents`), stores decisions.</text>\n  <text x=\"1150\" y=\"235\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#343A40\">Determines undecided consents.</text>\n  <text x=\"1150\" y=\"255\" text-anchor=\"middle\" class=\"component-desc\" fill=\"#343A40\">(Service/Logic)</text>\n\n  <!-- Component Relationships -->\n  <!-- Banner -> Controller (User decision POST) -->\n  <path d=\"M400 200 H540\" fill=\"none\" stroke=\"#007BFF\" stroke-width=\"2\" marker-end=\"url(#arrowhead-right-blue)\" />\n  <text x=\"470\" y=\"190\" text-anchor=\"middle\" class=\"message-label\" fill=\"#007BFF\">User Decision (POST)</text>\n\n  <!-- Controller -> ConsentCookie (Update consent) -->\n  <path d=\"M850 200 H990\" fill=\"none\" stroke=\"#9b59b6\" stroke-width=\"2\" marker-end=\"url(#arrowhead-right-purple)\" />\n  <text x=\"920\" y=\"190\" text-anchor=\"middle\" class=\"message-label\" fill=\"#9b59b6\">updateConsent()</text>\n\n  <!-- ConsentCookie -> Banner (Initial status read - conceptual, often direct JS) -->\n  <path d=\"M1000 220 H410\" fill=\"none\" stroke=\"#FFC107\" stroke-width=\"2\" marker-end=\"url(#arrowhead-left-orange)\" />\n  <text x=\"700\" y=\"230\" text-anchor=\"middle\" class=\"message-label\" fill=\"#FFC107\">getConsentStatus()</text>\n\n\n  <!-- Section: Workflow - Cookie Consent Decision -->\n  <text x=\"700\" y=\"320\" text-anchor=\"middle\" class=\"subtitle\">Workflow: Cookie Consent Decision</text>\n\n  <!-- Lifelines -->\n  <line x1=\"100\" y1=\"380\" x2=\"100\" y2=\"950\" stroke=\"#6C757D\" stroke-dasharray=\"5,5\" />\n  <text x=\"100\" y=\"370\" text-anchor=\"middle\" class=\"lifeline-label\">User</text>\n\n  <line x1=\"350\" y1=\"380\" x2=\"350\" y2=\"950\" stroke=\"#007BFF\" stroke-dasharray=\"5,5\" />\n  <text x=\"350\" y=\"370\" text-anchor=\"middle\" class=\"lifeline-label\">Global::CookieConsentBanner</text>\n\n  <line x1=\"700\" y1=\"380\" x2=\"700\" y2=\"950\" stroke=\"#9b59b6\" stroke-dasharray=\"5,5\" />\n  <text x=\"700\" y=\"370\" text-anchor=\"middle\" class=\"lifeline-label\">CookieConsentController</text>\n\n  <line x1=\"1100\" y1=\"380\" x2=\"1100\" y2=\"950\" stroke=\"#FFC107\" stroke-dasharray=\"5,5\" />\n  <text x=\"1100\" y=\"370\" text-anchor=\"middle\" class=\"lifeline-label\">ConsentCookie</text>\n\n  <!-- Sequence Diagram Messages -->\n  <!-- 1. User visits page -->\n  <path d=\"M100 420 H330\" fill=\"none\" stroke=\"#343A40\" stroke-width=\"1\" marker-end=\"url(#arrowhead-right)\" />\n  <text x=\"215\" y=\"410\" text-anchor=\"middle\" class=\"message-label\">1. Page Load</text>\n  <rect x=\"345\" y=\"415\" width=\"10\" height=\"275\" fill=\"#007BFF\" /> <!-- Banner Activation -->\n\n  <!-- 2. Banner initializes & checks consent status -->\n  <path d=\"M350 440 H1090\" fill=\"none\" stroke=\"#007BFF\" stroke-width=\"1\" marker-end=\"url(#arrowhead-right-blue)\" />\n  <text x=\"720\" y=\"430\" text-anchor=\"middle\" class=\"message-label\">2. getConsentStatus()</text>\n  <rect x=\"1095\" y=\"435\" width=\"10\" height=\"30\" fill=\"#FFC107\" /> <!-- ConsentCookie Activation -->\n\n  <!-- 3. ConsentCookie returns status -->\n  <path d=\"M1095 460 H360\" fill=\"none\" stroke=\"#FFC107\" stroke-width=\"1\" marker-end=\"url(#arrowhead-left-orange)\" />\n  <text x=\"720\" y=\"470\" text-anchor=\"middle\" class=\"message-label\">3. Return: { status: 'undecided' }</text>\n\n  <!-- 4. Banner renders -->\n  <path d=\"M350 490 H120\" fill=\"none\" stroke=\"#007BFF\" stroke-width=\"1\" marker-end=\"url(#arrowhead-left-blue)\" />\n  <text x=\"235\" y=\"480\" text-anchor=\"middle\" class=\"message-label\">4. Render Cookie Consent Banner</text>\n\n  <!-- 5. User makes decision -->\n  <path d=\"M100 520 H330\" fill=\"none\" stroke=\"#343A40\" stroke-width=\"1\" marker-end=\"url(#arrowhead-right)\" />\n  <text x=\"215\" y=\"510\" text-anchor=\"middle\" class=\"message-label\">5. User Clicks \"Accept\"</text>\n\n  <!-- 6. Banner sends decision to Controller (HTTP POST) -->\n  <path d=\"M350 550 H690\" fill=\"none\" stroke=\"#007BFF\" stroke-width=\"1\" marker-end=\"url(#arrowhead-right-blue)\" />\n  <text x=\"520\" y=\"540\" text-anchor=\"middle\" class=\"message-label\">6. POST /consent/accept</text>\n  <rect x=\"695\" y=\"545\" width=\"10\" height=\"110\" fill=\"#9b59b6\" /> <!-- Controller Activation -->\n\n  <!-- 7. Controller updates consent via ConsentCookie -->\n  <path d=\"M700 580 H1090\" fill=\"none\" stroke=\"#9b59b6\" stroke-width=\"1\" marker-end=\"url(#arrowhead-right-purple)\" />\n  <text x=\"895\" y=\"570\" text-anchor=\"middle\" class=\"message-label\">7. ConsentCookie.updateConsent('accepted')</text>\n  <rect x=\"1095\" y=\"575\" width=\"10\" height=\"50\" fill=\"#FFC107\" /> <!-- ConsentCookie Activation -->\n  <text x=\"1100\" y=\"605\" text-anchor=\"middle\" class=\"note-label\">Updates `cookie_consents`</text>\n\n  <!-- 8. ConsentCookie returns success -->\n  <path d=\"M1095 620 H710\" fill=\"none\" stroke=\"#FFC107\" stroke-width=\"1\" marker-end=\"url(#arrowhead-left-orange)\" />\n  <text x=\"900\" y=\"630\" text-anchor=\"middle\" class=\"message-label\">8. Return: success</text>\n\n  <!-- 9. Controller responds to client -->\n  <path d=\"M695 650 H360\" fill=\"none\" stroke=\"#9b59b6\" stroke-width=\"1\" marker-end=\"url(#arrowhead-left-purple)\" />\n  <text x=\"525\" y=\"660\" text-anchor=\"middle\" class=\"message-label\">9. HTTP 200 OK</text>\n\n  <!-- 10. Banner hides -->\n  <path d=\"M350 680 H120\" fill=\"none\" stroke=\"#007BFF\" stroke-width=\"1\" marker-end=\"url(#arrowhead-left-blue)\" />\n  <text x=\"235\" y=\"670\" text-anchor=\"middle\" class=\"message-label\">10. Hide Cookie Consent Banner</text>\n\n  <!-- Note about persistence -->\n  <rect x=\"100\" y=\"750\" width=\"1200\" height=\"80\" rx=\"10\" ry=\"10\" fill=\"#F8F9FA\" stroke=\"#6C757D\" stroke-width=\"1\" />\n  <text x=\"700\" y=\"780\" text-anchor=\"middle\" class=\"workflow-label\">Outcome:</text>\n  <text x=\"700\" y=\"805\" text-anchor=\"middle\" class=\"component-desc\">User's consent decision is stored in `cookie_consents` on the client.</text>\n  <text x=\"700\" y=\"825\" text-anchor=\"middle\" class=\"component-desc\">The banner will not reappear for this consent on subsequent visits.</text>\n\n</svg>\n```"
+    },
+    {
+      "title": "Cookie Consent Management - Workflow Diagram",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1400 900\" width=\"100%\">\n  <title>Cookie Consent Management: Cookie Consent Decision Workflow</title>\n  <desc>SVG flowchart illustrating the business workflow for a user making a cookie consent decision, storing their preference, and preventing the banner from reappearing.</desc>\n\n  <defs>\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n  </defs>\n\n  <style>\n    .flow-title { font-family: 'Arial, sans-serif'; font-size: 32px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n    .node-text { font-family: 'Arial, sans-serif'; font-size: 16px; fill: #343A40; text-anchor: middle; }\n    .component-label { font-family: 'Arial, sans-serif'; font-size: 12px; fill: #343A40; text-anchor: middle; font-weight: bold; }\n    .start-end { fill: #F8F9FA; stroke: #6C757D; stroke-width: 2; }\n    .process-frontend { fill: #007BFF; stroke: #0056b3; stroke-width: 2; } /* Frontend */\n    .process-controller { fill: #9b59b6; stroke: #7c4794; stroke-width: 2; } /* Controller */\n    .process-model { fill: #6C757D; stroke: #5a6268; stroke-width: 2; } /* Model/DB */\n    .decision { fill: #FFC107; stroke: #d39e00; stroke-width: 2; } /* Service/Logic - used for decision as it's a logic step */\n    .arrow { stroke: #343A40; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }\n    .text-white { fill: white; } /* For text on colored nodes */\n  </style>\n\n  <!-- Title -->\n  <text x=\"700\" y=\"50\" class=\"flow-title\">Cookie Consent Management: Cookie Consent Decision Workflow</text>\n\n  <!-- Start Node -->\n  <rect x=\"600\" y=\"100\" width=\"200\" height=\"50\" rx=\"25\" ry=\"25\" class=\"start-end\" />\n  <text x=\"700\" y=\"130\" class=\"node-text\">Start</text>\n  <path d=\"M700 150 L700 200\" class=\"arrow\" />\n\n  <!-- Process: Display Cookie Consent Banner (Frontend) -->\n  <rect x=\"550\" y=\"200\" width=\"300\" height=\"70\" class=\"process-frontend\" />\n  <text x=\"700\" y=\"225\" class=\"node-text text-white\">Display Cookie Consent Banner</text>\n  <text x=\"700\" y=\"250\" class=\"component-label text-white\">Global::CookieConsentBanner</text>\n  <path d=\"M700 270 L700 300\" class=\"arrow\" />\n\n  <!-- Process: User Interacts & Submits Preference (Frontend) -->\n  <rect x=\"550\" y=\"300\" width=\"300\" height=\"70\" class=\"process-frontend\" />\n  <text x=\"700\" y=\"325\" class=\"node-text text-white\">User Interacts &amp; Submits</text>\n  <text x=\"700\" y=\"350\" class=\"component-label text-white\">Global::CookieConsentBanner</text>\n  <path d=\"M700 370 L700 400\" class=\"arrow\" />\n\n  <!-- Process: CookieConsentController.saveConsentPreference (Controller) -->\n  <rect x=\"550\" y=\"400\" width=\"300\" height=\"70\" class=\"process-controller\" />\n  <text x=\"700\" y=\"425\" class=\"node-text text-white\">CookieConsentController.</text>\n  <text x=\"700\" y=\"445\" class=\"node-text text-white\">saveConsentPreference(preference)</text>\n  <path d=\"M700 470 L700 500\" class=\"arrow\" />\n\n  <!-- Process: ConsentCookie.setPreference (Model/DB) -->\n  <rect x=\"550\" y=\"500\" width=\"300\" height=\"70\" class=\"process-model\" />\n  <text x=\"700\" y=\"525\" class=\"node-text text-white\">ConsentCookie.setPreference(preference)</text>\n  <text x=\"700\" y=\"550\" class=\"component-label text-white\">ConsentCookie</text>\n  <path d=\"M700 570 L700 600\" class=\"arrow\" />\n\n  <!-- Process: Browser Loads Page: Check for Consent Cookie (Frontend) -->\n  <rect x=\"550\" y=\"600\" width=\"300\" height=\"70\" class=\"process-frontend\" />\n  <text x=\"700\" y=\"625\" class=\"node-text text-white\">Browser Loads Page:</text>\n  <text x=\"700\" y=\"645\" class=\"node-text text-white\">Check for Consent Cookie</text>\n  <path d=\"M700 670 L700 700\" class=\"arrow\" />\n\n  <!-- Decision: Is Consent Cookie Present & Valid? (Frontend) -->\n  <polygon points=\"700,700 800,750 700,800 600,750\" class=\"decision\" />\n  <text x=\"700\" y=\"740\" class=\"node-text\">Is Consent Cookie</text>\n  <text x=\"700\" y=\"760\" class=\"node-text\">Present &amp; Valid?</text>\n  <text x=\"700\" y=\"785\" class=\"component-label\">Global::CookieConsentBanner</text>\n\n  <!-- Branching from Decision -->\n  <!-- Yes path: Banner Not Displayed -->\n  <text x=\"850\" y=\"750\" class=\"node-text\">Yes</text>\n  <path d=\"M800 750 L950 750\" class=\"arrow\" />\n  <rect x=\"950\" y=\"720\" width=\"200\" height=\"60\" class=\"process-frontend\" />\n  <text x=\"1050\" y=\"745\" class=\"node-text text-white\">Banner Not Displayed</text>\n  <text x=\"1050\" y=\"765\" class=\"component-label text-white\">Global::CookieConsentBanner</text>\n  <path d=\"M1050 780 L1050 820\" class=\"arrow\" />\n  <!-- End Node for Yes path -->\n  <rect x=\"1000\" y=\"820\" width=\"100\" height=\"50\" rx=\"25\" ry=\"25\" class=\"start-end\" />\n  <text x=\"1050\" y=\"850\" class=\"node-text\">End</text>\n\n  <!-- No path: Display Banner Again -->\n  <text x=\"550\" y=\"750\" class=\"node-text\">No</text>\n  <path d=\"M600 750 L450 750\" class=\"arrow\" />\n  <rect x=\"250\" y=\"720\" width=\"200\" height=\"60\" class=\"process-frontend\" />\n  <text x=\"350\" y=\"745\" class=\"node-text text-white\">Display Banner Again</text>\n  <text x=\"350\" y=\"765\" class=\"component-label text-white\">Global::CookieConsentBanner</text>\n  <path d=\"M350 780 L350 820\" class=\"arrow\" />\n  <!-- End Node for No path (implies new decision workflow instance) -->\n  <rect x=\"300\" y=\"820\" width=\"100\" height=\"50\" rx=\"25\" ry=\"25\" class=\"start-end\" />\n  <text x=\"350\" y=\"850\" class=\"node-text\">End</text>\n\n</svg>\n```"
+    }
+  ],
+  "success": true,
+  "sourceFile": "cluster_C36_CookieConsent_2025-09-12T23-37-21.json",
+  "runId": "run_2",
+  "filePath": "run_2/clusters/cluster_C36_CookieConsent_2025-09-12T23-37-21.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "C36_CookieConsent",
+      "runId": "run_2"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:07:26.609Z"
+  }
+}

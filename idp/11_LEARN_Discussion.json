@@ -1,0 +1,1290 @@
+{
+  "clusterId": "11_LEARN_Discussion",
+  "featureFocus": "Course Discussion Forum, Questions, Answers, Comments, and Subscriptions",
+  "documentationReport": "{\n  \"title\": \"Course Discussion Forum (Pinboard) Cluster Documentation\",\n  \"overview\": \"This documentation report details the Course Discussion Forum, also known as the 'Pinboard,' a comprehensive feature cluster integrated within courses. It enables users to ask questions, provide answers, comment on posts, and subscribe to discussions. The system operates on a microservice architecture, with the main Rails application (`Xikolo::Web::Application`) serving as the web frontend client, interacting with the dedicated `PinboardService` microservice, which provides the core logic and API for discussion functionalities. This cluster combines the user-facing web interface with a robust backend service, including components for API serving, message consumption, background processing, and advanced features like sentiment analysis.\",\n  \"sections\": [\n    {\n      \"title\": \"1. Core Functionality and Architecture\",\n      \"content\": \"The Pinboard system is architecturally split between the main Rails application, handling the user interface and orchestration, and the `PinboardService` microservice, which manages the core discussion logic and data. This separation ensures scalability and maintainability.\"\n    },\n    {\n      \"title\": \"1.1 Main Application (Web Frontend - Xikolo::Web::Application)\",\n      \"content\": \"The main Rails application (`Xikolo::Web::Application`) acts as the client for the Pinboard functionality, providing the user interface and orchestrating interactions with the `PinboardService`. It leverages ACFS (Asynchronous Client-side Fetching Service) resources as proxies for the microservice's domain models. Key components include:\\n\\n*   **Controllers**: \\n    *   `PinboardController`: Manages the main pinboard index, question browsing, filtering (by tags or course sections), and initiating new questions. It handles course-specific subscriptions, tag/section display, and access restrictions (e.g., if the pinboard is disabled or the 'Technical Issues' section is configured to be disabled).\\n    *   `QuestionController`: Responsible for the complete lifecycle of questions, including creation, viewing, editing, updating, deletion, upvoting, accepting answers, closing/reopening, reporting abuse, and blocking/unblocking. It loads associated answers, comments, authors, and tags. Analytics events (e.g., `xikolo.pinboard.answer.accept`, `xikolo.pinboard.read_question`) are published via `Msgr`.\\n    *   `PinboardCommentController`: Handles the lifecycle of comments on both questions and answers, supporting creation, editing, updating, deletion, abuse reporting, and blocking/unblocking. It ensures correct redirects after actions.\\n*   **Helpers**: \\n    *   `PinboardRoutesHelper`: Dynamically generates routes for pinboard resources (questions, answers, comments) and their actions, adapting to course-wide or section-specific contexts.\\n    *   `PinboardHelper`: Provides utility methods, such as defining allowed file upload types and sizes for pinboard content, and a placeholder for questions per page.\\n*   **Forms**: \\n    *   `Pinboard::TopicForm`: A form object for creating new questions (topics), validating input fields like title and text, and structuring data for the `PinboardService` API via a custom processor (`FirstPostAndMetaData`).\\n*   **Presenters**: Enhance the view layer with display-specific logic:\\n    *   `PinboardBreadcrumbsPresenter`: Manages navigation breadcrumbs for the pinboard.\\n    *   `PinboardPresenter`: Orchestrates the overall pinboard view, handling filters, lock reasons, and breadcrumbs based on the current context.\\n    *   `PinboardUserStatePresenter`: Integrates with the gamification system to display user states (levels) for authors of pinboard items based on their scores.\\n    *   `QuestionPresenter`: Decorates `Xikolo::Pinboard::Question` objects with logic for calculating reply counts, managing author name caching, and formatting titles.\"\n    },\n    {\n      \"title\": \"1.2 PinboardService Microservice\",\n      \"content\": \"The `PinboardService` is the core logic microservice, acting as the discussion forum API. It encapsulates all backend operations related to pinboard entities. Components identified within this microservice include:\\n\\n*   **Pinboard Microservice**: The overarching service providing the discussion board's core functionality.\\n*   **Pinboard API Server**: Exposes the API endpoints consumed by the main Rails application via ACFS.\\n*   **Pinboard Msgr Consumer**: Processes messages, likely including analytics events published by the main application or internal service events.\\n*   **Pinboard Sidekiq Worker**: Handles background jobs and asynchronous tasks related to the pinboard, such as notifications or data processing.\\n*   **Sentiment Analysis Module**: A specialized module within the service, suggesting capabilities for analyzing the sentiment of discussion posts, questions, and comments.\"\n    },\n    {\n      \"title\": \"2. Data Interactions\",\n      \"content\": \"The main application communicates extensively with the `PinboardService` microservice using ACFS resources. These resources act as local proxies for the microservice's domain models, including `Xikolo::Pinboard::Comment`, `Xikolo::Pinboard::Question`, `Xikolo::Pinboard::Answer`, `Xikolo::Pinboard::Vote`, `Xikolo::Pinboard::Subscription`, `Xikolo::Pinboard::AbuseReport`, `Xikolo::Pinboard::ExplicitTag`, `Xikolo::Pinboard::ImplicitTag`, and `Xikolo::Pinboard::CourseSubscription`. The `Acfs.run` method is used to execute pending API calls to these resources.\\n\\nAdditionally, the system interacts with the `CourseService` microservice to fetch course sections, which are used for filtering discussions on the pinboard. Analytics events are published via `Msgr`, which are then likely consumed by the `Pinboard Msgr Consumer` within the `PinboardService`.\"\n    },\n    {\n      \"title\": \"3. Workflows\",\n      \"content\": \"The Pinboard cluster supports several key user and administrative workflows:\\n\\n*   **Course Discussion Management**: Users can navigate to the course pinboard, browse questions, and apply filters by specific sections (including a dedicated 'Technical Issues' section) or explicit tags. Course administrators have capabilities to manage tags.\\n*   **Question/Answer/Comment Lifecycle**: Users can create, view, edit, and delete questions, answers, and comments. This workflow includes features like upvoting questions/answers, accepting a specific answer for a question, and subscribing to question threads for notifications.\\n*   **Pinboard Moderation & Reporting**: Users can report any pinboard entity (question, answer, comment) for abuse. Authorized moderators can then block or unblock these entities, or delete questions and comments. Questions can also be closed and reopened by authorized personnel.\\n*   **User Interaction & Gamification**: User engagement within the pinboard, such as posting questions or answers, contributes to their gamification scores. These scores are then used to determine and display user states or levels next to their posts, enhancing user profiles within discussions.\"\n    },\n    {\n      \"title\": \"4. Key Features\",\n      \"content\": \"The merged Pinboard cluster provides a rich set of features:\\n\\n*   Comprehensive discussion forum integrated directly into courses.\\n*   Full lifecycle management for questions, answers, and comments (create, view, edit, update, delete).\\n*   User interaction features: upvoting, accepting answers, subscribing to discussions.\\n*   Discussion filtering by course sections and explicit tags.\\n*   Moderation tools: abuse reporting, blocking/unblocking content, closing/reopening questions.\\n*   Gamification integration, displaying user levels and states.\\n*   Dynamic route generation for flexible URL structures.\\n*   Support for file uploads within pinboard content.\\n*   **Sentiment Analysis**: Capability to analyze the sentiment of discussion posts, questions, and comments, provided by the `Sentiment Analysis Module` within the `PinboardService` microservice.\"\n    },\n    {\n      \"title\": \"5. Technical Debt and Considerations\",\n      \"content\": \"Several areas for potential improvement or technical debt have been identified:\\n\\n*   **Ambiguous ID Handling**: In `PinboardCommentController`, comments indicate that `params[:answer_id]` and `params[:question_id]` both reference the *question* ID for redirects and notification URLs, suggesting potential confusion or a workaround in the ID passing logic.\\n*   **ACFS Callback Reliability**: The `QuestionController#show` action includes a comment about needing a double `Acfs.run` call because ACFS sometimes has problems executing all callbacks, suggesting a potential underlying issue with the ACFS framework's reliability or the way callbacks are managed.\\n*   **Hardcoded Values & TODOs**: The `PinboardHelper` has a hardcoded `questions_per_page` with a `TODO` to adjust it. Similarly, `QuestionController#question_params` has a `TODO` regarding how `course_id` is assigned.\\n*   **`response_count` Logic**: The `QuestionPresenter` includes a `TODO` (referencing XI-853) regarding the `response_count` method, indicating an ongoing discussion or potential refactor for how general feedback for a question is calculated and displayed.\\n*   **Dynamic Route Generation Complexity**: While `PinboardRoutesHelper` provides powerful dynamic routing, its reliance on `send` for method calls can make the code less explicit and potentially harder to debug or refactor in the long term.\"\n    },\n    {\n      \"title\": \"6. Consolidated Components List\",\n      \"content\": \"This list consolidates all identified components across the merged cluster:\\n\\n*   **Main Application (`Xikolo::Web::Application`) Components**:\\n    *   `PinboardController`\\n    *   `QuestionController`\\n    *   `PinboardCommentController`\\n    *   `PinboardRoutesHelper`\\n    *   `PinboardHelper`\\n    *   `Pinboard::TopicForm`\\n    *   `PinboardBreadcrumbsPresenter`\\n    *   `PinboardPresenter`\\n    *   `PinboardUserStatePresenter`\\n    *   `QuestionPresenter`\\n*   **PinboardService Microservice Components**:\\n    *   `PinboardService` (general microservice)\\n    *   `Pinboard Microservice`\\n    *   `Pinboard API Server`\\n    *   `Pinboard Msgr Consumer`\\n    *   `Pinboard Sidekiq Worker`\\n    *   `Sentiment Analysis Module`\\n*   **ACFS Resources (Proxies for PinboardService Models)**:\\n    *   `Xikolo::Pinboard::Comment`\\n    *   `Xikolo::Pinboard::Question`\\n    *   `Xikolo::Pinboard::Answer`\\n    *   `Xikolo::Pinboard::Vote`\\n    *   `Xikolo::Pinboard::Subscription`\\n    *   `Xikolo::Pinboard::AbuseReport`\\n    *   `Xikolo::Pinboard::ExplicitTag`\\n    *   `Xikolo::Pinboard::ImplicitTag`\\n    *   `Xikolo::Pinboard::CourseSubscription`\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "PinboardCommentController": {
+        "type": "Controller",
+        "description": "Handles CRUD operations for pinboard comments, including abuse reporting, blocking, and unblocking. It interacts with the `pinboard` microservice via `Xikolo::Pinboard::Comment` and `Xikolo::Pinboard::AbuseReport`.",
+        "interactions": {
+          "interaction_0": "Creates, updates, and deletes comments via `Xikolo::Pinboard::Comment` [Source: app/controllers/pinboard_comment_controller.rb].",
+          "interaction_1": "Finds comments and answers via `Xikolo::Pinboard::Comment.find` and `Xikolo::Pinboard::Answer.find` [Source: app/controllers/pinboard_comment_controller.rb].",
+          "interaction_2": "Creates abuse reports via `Xikolo::Pinboard::AbuseReport.new` [Source: app/controllers/pinboard_comment_controller.rb].",
+          "interaction_3": "Publishes notifications (though the `notification_params` has a TODO) [Source: app/controllers/pinboard_comment_controller.rb].",
+          "interaction_4": "Uses `CourseContextHelper` for course context [Source: app/controllers/pinboard_comment_controller.rb].",
+          "interaction_5": "Uses `PinboardRoutesHelper` for dynamic routing [Source: app/controllers/pinboard_comment_controller.rb].",
+          "interaction_6": "Authorizes actions using `authorize!` [Source: app/controllers/pinboard_comment_controller.rb]."
+        },
+        "techDebt": [
+          "Ambiguity in ID handling: 'both these id reference the QUESTION, I have no idea why...' in `create` and `notification_params` methods [Source: app/controllers/pinboard_comment_controller.rb].",
+          "Temporary notification URL: 'TODO: remove question_path once all consumer are rolled out' in `notification_params` [Source: app/controllers/pinboard_comment_controller.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_comment_controller.rb",
+            "spec/controllers/pinboard_comment_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 41,
+              "code": "class PinboardCommentController < Abstract::FrontendController\n  include CourseContextHelper\n  include PinboardRoutesHelper\n\n  before_action :check_course_eligibility\n\n  def edit\n    @comment = Xikolo::Pinboard::Comment.find(\n      params[:id],\n      params: {text_purpose: 'input'}\n    )\n    Acfs.run\n    render layout: false\n  end\n\n  def create\n    Xikolo::Pinboard::Comment.create comment_params_with_user.merge(notification: notification_params)\n\n    # both these id reference the QUESTION, I have no idea why...\n    redirect_to question_path id: params[:answer_id] || params[:question_id]\n  end\n\n  def update\n    pinboard_comment = comment\n    pinboard_comment.update_attributes(comment_params)\n\n    redirect_to question_path id: params[:question_id] || @answer.question_id\n  end\n\n  def destroy\n    authorize! 'pinboard.entity.delete'\n\n    comment.delete!\n\n    redirect_to question_path id: params[:question_id] || @answer.question_id\n  end\n\n  def abuse_report\n   ...",
+              "source": "app/controllers/pinboard_comment_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/pinboard_comment_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "PinboardController": {
+        "type": "Controller",
+        "description": "Manages the main pinboard index page, displaying questions (topics) for a course or specific section. It handles filtering by tags and sections, and displays the new question form.",
+        "interactions": {
+          "interaction_0": "Fetches course details via `the_course` [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_1": "Fetches course subscriptions via `Xikolo.api(:pinboard).rel(:course_subscriptions)` [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_2": "Fetches implicit and explicit tags via `Xikolo::Pinboard::ImplicitTag` and `Xikolo::Pinboard::ExplicitTag` [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_3": "Fetches sections via `Xikolo::Course::Section` [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_4": "Fetches questions (topics) via `pinboard_api.rel(:questions)` [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_5": "Uses `CourseContextHelper` for course context [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_6": "Uses `PinboardRoutesHelper` for dynamic routing [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_7": "Uses `PinboardHelper` for utility methods [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_8": "Uses `PinboardPresenter` for display logic [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_9": "Uses `SectionPresenter` for section-related logic [Source: app/controllers/pinboard_controller.rb].",
+          "interaction_10": "Checks `Xikolo.config` for `disable_technical_issues_section` [Source: app/controllers/pinboard_controller.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_controller.rb",
+            "spec/controllers/pinboard_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass PinboardController < Abstract::FrontendController\n  include CourseContextHelper\n  include PinboardRoutesHelper\n  include PinboardHelper\n\n  before_action :set_no_cache_headers\n  before_action :ensure_logged_in",
+              "source": "app/controllers/pinboard_controller.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 15,
+              "code": "  inside_course only: :index\n  before_action :ensure_pinboard_enabled, only: :index\n  before_action :load_section_nav, only: :index\n  before_action :restrict_technical_issues_section, only: :index",
+              "source": "app/controllers/pinboard_controller.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 31,
+              "code": "  def index\n    # This prepares some variables for the new question form\n    @course = the_course\n\n    @course_subscription = Xikolo.api(:pinboard).value!\n      .rel(:course_subscriptions)\n      .get({user_id: current_user.id, course_id: @course.id}).value!\n      &.first\n\n    tags = [*params[:tags]]\n    if params[:section_id] == 'technical_issues'\n      Xikolo::Pinboard::ImplicitTag.find_by name: 'Technical Issues', course_id: @course.id do |tag|\n        tags << tag.id\n        @implicit_tags = tags.join ','\n      end\n    elsif params[:section_id]\n  ...",
+              "source": "app/controllers/pinboard_controller.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 16,
+              "code": "    private\n\n    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end",
+              "source": "app/controllers/pinboard_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/pinboard_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuestionController": {
+        "type": "Controller",
+        "description": "Handles CRUD operations for pinboard questions (topics), including voting, accepting answers, closing/reopening, blocking/unblocking, and abuse reporting. It also manages the display of a single question with its answers and comments.",
+        "interactions": {
+          "interaction_0": "Fetches, creates, updates, and deletes questions via `Xikolo::Pinboard::Question` [Source: app/controllers/question_controller.rb].",
+          "interaction_1": "Fetches and creates votes via `Xikolo::Pinboard::Vote` [Source: app/controllers/question_controller.rb].",
+          "interaction_2": "Creates abuse reports via `Xikolo::Pinboard::AbuseReport` [Source: app/controllers/question_controller.rb].",
+          "interaction_3": "Publishes events to RabbitMQ (`Msgr.publish`) for `xikolo.pinboard.answer.accept` and `xikolo.pinboard.read_question` [Source: app/controllers/question_controller.rb].",
+          "interaction_4": "Fetches subscriptions via `Xikolo::Pinboard::Subscription` [Source: app/controllers/question_controller.rb].",
+          "interaction_5": "Fetches sections via `course_api.rel(:sections)` [Source: app/controllers/question_controller.rb].",
+          "interaction_6": "Uses `CourseContextHelper` for course context [Source: app/controllers/question_controller.rb].",
+          "interaction_7": "Uses `PinboardRoutesHelper` for dynamic routing [Source: app/controllers/question_controller.rb].",
+          "interaction_8": "Uses `Interruptible` module [Source: app/controllers/question_controller.rb].",
+          "interaction_9": "Uses `PinboardUserStatePresenter` and `PinboardPresenter` for display logic [Source: app/controllers/question_controller.rb].",
+          "interaction_10": "Authorizes actions using `authorize!` and `current_user.allowed?` [Source: app/controllers/question_controller.rb].",
+          "interaction_11": "Uses `Acfs.run` extensively for asynchronous data fetching [Source: app/controllers/question_controller.rb]."
+        },
+        "techDebt": [
+          "ACFS callback issue: 'the double Acfs.run call is not a mistake - acfs seems to have some problems sometimes executing all callbacks...' in `show` method [Source: app/controllers/question_controller.rb].",
+          "Course ID assignment: 'TODO: solve better' for `p[:course_id] = the_course.id` in `question_params` [Source: app/controllers/question_controller.rb].",
+          "Rubocop disablement: `rubocop:enable all` at the end of the file, implying linting was disabled [Source: app/controllers/question_controller.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/question_controller.rb",
+            "spec/controllers/question_controller_spec.rb",
+            "spec/events/xikolo.pinboard.answer.create_spec.rb",
+            "spec/events/xikolo.pinboard.comment.create_spec.rb",
+            "spec/events/xikolo.pinboard.question.create_spec.rb",
+            "spec/events/xikolo.pinboard.question.update_spec.rb",
+            "spec/events/xikolo.pinboard.vote.create_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nclass QuestionController < Abstract::FrontendController\n  include Interruptible\n\n  include CourseContextHelper\n  include PinboardRoutesHelper",
+              "source": "app/controllers/question_controller.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 13,
+              "code": "  inside_course\n\n  before_action :ensure_logged_in\n  before_action :ensure_pinboard_enabled\n  before_action :check_course_path, only: :show",
+              "source": "app/controllers/question_controller.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 17,
+              "code": "  before_action only: %i[edit update] do\n    ensure_has_edit_rights\n  end",
+              "source": "app/controllers/question_controller.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 18,
+              "code": "  before_action :load_section_nav",
+              "source": "app/controllers/question_controller.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 21,
+              "code": "  helper_method :can_edit?\n  helper_method :can_delete?",
+              "source": "app/controllers/question_controller.rb"
+            },
+            {
+              "startLine": 24,
+              "endLine": 41,
+              "code": "  # GET /question/1\n  # GET /question/1.xml\n  def show\n    @question = Xikolo::Pinboard::Question.find(\n      params[:id],\n      params: {\n        watch_for_user_id: current_user.id,\n        vote_value_for_user_id: current_user.id,\n      }\n    ) do |question|\n      question.enqueue_comments({\n        watch_for_user_id: current_user.id,\n        blocked: current_user.allowed?('pinboard.entity.block'),\n      }, &:enqueue_author)\n      question.enqueue_explicit_tags\n      question.enqueue_section do |section|\n        ...",
+              "source": "app/controllers/question_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/question_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "PinboardRoutesHelper": {
+        "type": "Helper",
+        "description": "Dynamically generates route helpers for pinboard resources (questions, answers, comments) based on whether the current context is a course or a section. This allows using generic route names (e.g., `question_path`) which resolve to `course_question_path` or `course_section_question_path` depending on `params[:section_id]`.",
+        "interactions": {
+          "interaction_0": "Included in `PinboardCommentController`, `PinboardController`, `QuestionController` [Source: app/helpers/pinboard_routes_helper.rb].",
+          "interaction_1": "Uses `params[:section_id]` to determine context [Source: app/helpers/pinboard_routes_helper.rb].",
+          "interaction_2": "Relies on Rails' route helpers [Source: app/helpers/pinboard_routes_helper.rb]."
+        },
+        "techDebt": [
+          "Fragile module inclusion: 'for some reason some other module seems to want to include this return unless base_controller.respond_to? :helper_method' in `self.included` [Source: app/helpers/pinboard_routes_helper.rb].",
+          "Rubocop disablement: `rubocop:enable all` at the end of the file, implying linting was disabled [Source: app/helpers/pinboard_routes_helper.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/helpers/pinboard_routes_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 18,
+              "endLine": 21,
+              "code": "module PinboardRoutesHelper\n  def self.included(base_controller)\n    # for some reason some other module seems to want to include this\n    return unless base_controller.respond_to? ...",
+              "source": "app/helpers/pinboard_routes_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/pinboard_routes_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "PinboardHelper": {
+        "type": "Helper",
+        "description": "Provides utility methods for the pinboard feature, such as defining questions per page, and configuring file upload parameters for text and attachments.",
+        "interactions": {
+          "interaction_0": "Used by views and potentially controllers [Source: app/helpers/pinboard_helper.rb]."
+        },
+        "techDebt": [
+          "Hardcoded value: 'TODO: adjust this number as needed' for `questions_per_page` [Source: app/helpers/pinboard_helper.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/helpers/pinboard_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 6,
+              "code": "  def questions_per_page\n    25 # TODO: adjust this number as needed\n  end",
+              "source": "app/helpers/pinboard_helper.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 14,
+              "code": "  def text_uploads\n    return nil unless current_user.allowed? 'pinboard.entity.edit'\n\n    {\n      purpose: :pinboard_commentable_text,\n      size: 0..Rails.configuration.max_document_size,\n    }",
+              "source": "app/helpers/pinboard_helper.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 29,
+              "code": "  def attachment_upload\n    FileUpload.new \\\n      purpose: :pinboard_commentable_attachment,\n      size: 0..Rails.configuration.max_document_size,\n      content_type: %w[\n        application/pdf\n        application/xml\n        text/xml\n        text/plain\n        image/jpeg\n        image/png\n        image/gif\n      ]\n  end",
+              "source": "app/helpers/pinboard_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/pinboard_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Pinboard::TopicForm": {
+        "type": "Form Object",
+        "description": "A form object for creating/updating pinboard topics (questions). It defines attributes like `title`, `text`, and `video_timestamp` and includes validation. It uses a custom processor `FirstPostAndMetaData` to transform form data into a format expected by the backend service.",
+        "interactions": {
+          "interaction_0": "Used by controllers (likely `QuestionController`) to handle form submissions [Source: app/forms/pinboard/topic_form.rb].",
+          "interaction_1": "Transforms `text` into `first_post` and `video_timestamp` into `meta` for the backend service [Source: app/forms/pinboard/topic_form.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/pinboard/topic_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 25,
+              "code": "class Pinboard::TopicForm < XUI::Form\n  self.form_name = 'topic'\n\n  attribute :title, :single_line_string\n  attribute :text, :markup\n  attribute :video_timestamp, :single_line_string\n\n  validates :title, :text, presence: true\n\n  class FirstPostAndMetaData\n    def to_resource(resource, _obj)\n      resource['first_post'] = {'text' => resource.delete('text')}\n      resource['meta'] = {'video_timestamp' => resource.delete('video_timestamp')}\n      resource\n    end\n  end\n\n  process_with { FirstPostAndMetaData.new }\nend",
+              "source": "app/forms/pinboard/topic_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/pinboard/topic_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "api/xikolo/entities/pinboard_subscription.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/course/pinboard/filter_bar.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "PinboardBreadcrumbsPresenter": {
+        "type": "Presenter",
+        "description": "Manages the generation of breadcrumbs for the pinboard, distinguishing between a list view and a specific thread view.",
+        "interactions": {
+          "interaction_0": "Used by `PinboardPresenter` [Source: app/presenters/pinboard_breadcrumbs_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/pinboard_breadcrumbs_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass PinboardBreadcrumbsPresenter\n  def initialize(breadcrumbs, &thread_proc)\n    @breadcrumbs = breadcrumbs\n    @thread_proc = thread_proc\n  end\n\n  def for_list\n    @breadcrumbs\n  end\n\n  def for_thread(thread)\n    @thread_proc.call(@breadcrumbs, thread)\n  end\nend",
+              "source": "app/presenters/pinboard_breadcrumbs_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/pinboard_breadcrumbs_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "PinboardPresenter": {
+        "type": "Presenter",
+        "description": "Orchestrates the presentation logic for the pinboard, including determining if posting is allowed (locking), generating breadcrumbs, and handling filters. It uses nested context classes (`TechnicalIssuesContext`, `SectionContext`, `CourseContext`) to encapsulate logic specific to different pinboard views.",
+        "interactions": {
+          "interaction_0": "Receives `course`, `section`, `technical_issues`, and `filters` as input [Source: app/presenters/pinboard_presenter.rb].",
+          "interaction_1": "Delegates breadcrumb generation to `PinboardBreadcrumbsPresenter` [Source: app/presenters/pinboard_presenter.rb].",
+          "interaction_2": "Accesses `course.forum_is_locked` and `section['pinboard_closed']` to determine lock status [Source: app/presenters/pinboard_presenter.rb].",
+          "interaction_3": "Uses `I18n` for localized messages [Source: app/presenters/pinboard_presenter.rb].",
+          "interaction_4": "Includes `Rails.application.routes.url_helpers` for generating paths [Source: app/presenters/pinboard_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/pinboard_presenter.rb",
+            "spec/presenters/pinboard_presenter_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 45,
+              "code": "class PinboardPresenter   def initialize(course:, section: nil, technical_issues: false, filters: nil)     @course = course     @section = section     @technical_issues = technical_issues     @filters = filters   end    ##   # Does this board allow posts?   #   def open?     lock_reason.nil?   end    ##   # If posts are not allowed, return a string that explains why.   #   def lock_reason     @lock_reason ||= context.lock_reason   end    def breadcrumbs     @breadcrumbs ||= context.make_breadcrumbs   end    def tags_filter     @filters[:tags] if @filters.present?   end    def section_filter     # Don't show the section filter if only the default section is available.     @section_filter ||= if @filters&.dig(:sections)&.length.try(:>, 1)                           @filters[:sections]                         end   end    def current_section     return if section_filter.blank?      if @section.present?       section_title = @section['title']     elsif @techni...",
+              "source": "app/presenters/pinboard_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/pinboard_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "PinboardUserStatePresenter": {
+        "type": "Presenter",
+        "description": "Determines and presents the gamification state (level icon) for users involved in a pinboard question and its related comments/answers.",
+        "interactions": {
+          "interaction_0": "Receives `question` and `user` as input [Source: app/presenters/pinboard_user_state_presenter.rb].",
+          "interaction_1": "Checks `user.feature?('gamification')` [Source: app/presenters/pinboard_user_state_presenter.rb].",
+          "interaction_2": "Fetches `Gamification::Score` and `Gamification::Level` data [Source: app/presenters/pinboard_user_state_presenter.rb].",
+          "interaction_3": "Accesses `question.user_id`, `question.comments`, `question.answers` to get author IDs [Source: app/presenters/pinboard_user_state_presenter.rb].",
+          "interaction_4": "Uses `ActionController::Base.helpers` for asset paths and image tags [Source: app/presenters/pinboard_user_state_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/pinboard_user_state_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 36,
+              "code": "class PinboardUserStatePresenter\n  def initialize(question:, user:)\n    @question = question\n    @user = user\n  end\n\n  def user_state_for(user_id)\n    if gamification? && (level = level_for(user_id))\n      user_state_icon(level)\n    else\n      ''\n    end\n  end\n\n  def available?(user_id)\n    gamification? && level_for(user_id)\n  end\n\n  private\n\n  def user_state_icon(level)\n    ActionController::Base.helpers.image_tag(user_state_path(level), title: level.title)\n  end\n\n  def user_state_path(level)\n    ActionController::Base.helpers.asset_path(\"gamification/userstates/#{level.image}\")\n  end\n\n  def level_for(user_id)\n    gamification_levels.find { it.enough?(score_for(user_id)) }\n  end\n\n  def score_for(user_id)\n    author_scores.fetch(user_id, 0)\n  end\n\n  def author_scores\n    @author_scores ||= Gamification::Score.where(user_id: author_ids).group(:user_id).total\n  end\n\n  def gamification_levels\n    @gamification_levels ||= gamification? ? Gamification::Level....\n",
+              "source": "app/presenters/pinboard_user_state_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/pinboard_user_state_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuestionPresenter": {
+        "type": "Presenter",
+        "description": "Presents a single pinboard question, providing formatted data like reply counts, author name, read status, view count, and title (including blocked status). It also handles caching for author names.",
+        "interactions": {
+          "interaction_0": "Receives `question`, `course`, `section_id` as input [Source: app/presenters/question_presenter.rb].",
+          "interaction_1": "Delegates to `question` for core attributes [Source: app/presenters/question_presenter.rb].",
+          "interaction_2": "Fetches `question.comments`, `question.answers`, `question.explicit_tags`, `question.section`, `question.item`, `question.author` via `enqueue_` methods (ACFS) [Source: app/presenters/question_presenter.rb].",
+          "interaction_3": "Uses `Rails.cache` for author names [Source: app/presenters/question_presenter.rb].",
+          "interaction_4": "Includes `Rails.application.routes.url_helpers` for generating paths [Source: app/presenters/question_presenter.rb]."
+        },
+        "techDebt": [
+          "Unresolved design decision: 'TODO: Oh really? See XI-853. :P' in `response_count` method [Source: app/presenters/question_presenter.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/presenters/question_presenter.rb",
+            "spec/presenters/question_presenter_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class QuestionPresenter < Presenter   extend Forwardable   include Rails.application.routes.url_helpers    attr_accessor :question, :course, :section_id    def_delegators :question,     :closed,     :discussion_flag,",
+              "source": "app/presenters/question_presenter.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 25,
+              "code": "  def self.build(question, course, section_id)     question.enqueue_comments unless question.comment_count     unless question.answer_count && question.answer_comment_count       question.enqueue_answers(&:enqueue_comments)     end      question.enqueue_explicit_tags unless question.user_tags     question.enqueue_section     question.enqueue_item     p = new(question:, course:, section_id:)     p.author_name!     p   end",
+              "source": "app/presenters/question_presenter.rb"
+            },
+            {
+              "startLine": 27,
+              "endLine": 33,
+              "code": "  def reply_count     answer_count + comment_count + answer_comment_count   end    def answer_count     question.answer_count || question.answers.size   end    def comment_count     question.comment_count || question.comments.size",
+              "source": "app/presenters/question_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/question_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::Comment": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of a comment in the Pinboard microservice. Used for creating, retrieving, updating, and deleting comments on questions and answers.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `PinboardCommentController` and `QuestionController`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_comment_controller.rb",
+            "app/controllers/question_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 29,
+              "code": "class CommentsController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  # GET /comments\n  # GET /comments.xml\n  def index\n    comments = Comment.default_order.includes(:abuse_reports)\n    comments.where! deleted: false unless params[:deleted]\n    comments.where! user_id: params[:user_id] if params[:user_id]\n    comments = comments.unblocked unless [true, 'true'].include? params[:blocked]\n\n    if params[:watch_for_user_id]\n      include_watch_for_specific_user\n      comments = comments.includes commentable: :user_watch\n    end\n\n    if params[:commentable_type].nil?\n      respond_with comments\n    elsif params[:commentable_id].nil?\n      respond_with comments.where commentable_type: params[:commentable_type]\n    else\n      respond_with comments.where \\\n        commentable_id: params[:commentable_id],\n        commentable_type: params[:commentable...",
+              "source": "services/pinboard/app/controllers/comments_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 41,
+              "code": "class CommentDecorator < Draper::Decorator\n  delegate_all\n\n  def basic\n    {\n      id:,\n      text:,\n      commentable_id:,\n      commentable_type:,\n      user_id:,\n      created_at: created_at.iso8601,\n      updated_at: updated_at.iso8601,\n      abuse_report_state: workflow_state,\n      abuse_report_count: abuse_reports.size,\n    }\n  end\n\n  def as_json(opts = {})\n    attrs = basic\n    if context[:user_watch]\n      attrs[:read] = commentable.user_watch && (updated_at < commentable.user_watch.updated_at)\n    end\n    attrs.as_json(opts)\n  end\n\n  def to_event\n    basic.merge!(\n      course_id:,\n      technical: technical?,\n      question_id:\n    )\n  end\n\n  def text\n    if with_uris?\n      # Edit: Display text only for edit\n      object.text\n    elsif with_input_data?\n      Xikolo::S3.media_refs(object.text, public: true)\n        .merge('markup' => object.text)\n    else\n      # Show: Render text & images for show\n      Xikolo::S3.externalize_file_refs(object....",
+              "source": "services/pinboard/app/controllers/comments_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 49,
+              "code": "class Comment < ApplicationRecord\n  include PostHelper\n  include WorkflowActiverecord\n\n  include Question::SearchResource\n\n  workflow do\n    state :new do\n      event :report, transitions_to: :reported\n      event :review, transitions_to: :reviewed\n      event :block, transitions_to: :blocked\n    end\n    state :reported do\n      event :report, transitions_to: :auto_blocked, if: proc {|r| r.report_threshold_reached? }\n      event :report, transitions_to: :reported\n      event :review, transitions_to: :reviewed\n      event :block, transitions_to: :blocked\n    end\n\n    state :auto_blocked do\n      event :report, transitions_to: :auto_blocked\n      event :review, transitions_to: :reviewed\n      event :block, transitions_to: :blocked\n    end\n\n    state :blocked do\n      event :report, transitions_to: :blocked\n      event :review, transitions_to: :reviewed\n      event :block, transitions_to: :blocked\n    end\n\n    state :reviewed do\n      event :report, transiti...",
+              "source": "services/pinboard/app/controllers/comments_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/pinboard/app/controllers/comments_controller.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/pinboard/app/decorators/comment_decorator.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/pinboard/app/models/comment.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::Question": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of a question (topic) in the Pinboard microservice. Used for managing questions, including their content, state (closed, sticky), and associated data like answers, comments, and tags.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `PinboardController`, `QuestionController`, and `QuestionPresenter`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_controller.rb",
+            "app/controllers/question_controller.rb",
+            "app/presenters/question_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 20,
+              "code": "class QuestionConsumer < Msgr::Consumer   def read_question     @message.ack     user_id = payload.fetch(:user_id)     question_id = payload.fetch(:question_id)     timestamp = payload.fetch(:timestamp)      begin       watch = Watch.find_or_create_by!(user_id:, question_id:)       if watch.updated_at&.before?(timestamp) || watch.updated_at.nil?         watch.update updated_at: timestamp       end     rescue ActiveRecord::RecordNotUnique       retry     end   end end",
+              "source": "api/xikolo/entities/question.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/question.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/quiz/questions.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/pinboard/app/consumers/question_consumer.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::Answer": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of an answer to a question in the Pinboard microservice. Used for retrieving and managing answers and their associated comments.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `PinboardCommentController` and `QuestionController`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_comment_controller.rb",
+            "app/controllers/question_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Entities\n    class Answer < Grape::Entity\n      expose def id\n        object['id']\n      end\n\n      expose def correct\n        object['correct']\n      end\n\n      expose def text\n        object['text']\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/answer.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nmodule Gamification\n  module Rules\n    module Pinboard\n      class AnsweredQuestion < Gamification::Rules::Base\n        def create_score!\n          # Do not award points for answers in the \"Technical issues\" sections\n          return if @payload.fetch(:technical)\n\n          super\n        end\n\n        private\n\n        def name\n          :answered_question\n        end\n\n        def checksum\n          @payload.fetch :id\n        end\n\n        def data\n          {answer_id: @payload.fetch(:id)}\n        end\n\n        def required_keys\n          %i[course_id id user_id]\n        end\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/answer.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 30,
+              "code": "class AnswersController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  # GET /answers\n  # GET /answers.json\n  def index\n    answers = case params[:sort]\n                when 'created_at'\n                  Answer.order_chronologically\n                when 'votes', nil\n                  Answer.order_by_votes(:desc)\n                else\n                  return error :bad_request, json: {error: 'invalid_sort_order'}\n              end\n\n    answers = answers.includes(:abuse_reports, :votes)\n    answers = answers.where(deleted: false) unless params[:deleted]\n    answers = answers.where(question_id: params[:question_id]) if params[:question_id]\n    answers = answers.where(user_id: params[:user_id]) if params[:user_id]\n    answers = answers.unblocked unless [true, 'true'].include? params[:blocked]\n\n    if params[:vote_value_for_user_id]\n      include_...",
+              "source": "api/xikolo/entities/answer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/answer.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/gamification/rules/pinboard/answered_question.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/pinboard/app/controllers/answers_controller.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::Vote": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of a vote on a pinboard entity (e.g., question or answer) in the Pinboard microservice. Used for recording user votes.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `QuestionController` for upvoting questions."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/question_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 39,
+              "code": "class VotesController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  def index\n    if params[:votable_type].nil?\n      respond_with Vote.all\n    elsif params[:votable_id].nil?\n      respond_with Vote.where(\n        votable_type: params[:votable_type]\n      )\n    elsif params[:user_id].nil?\n      respond_with Vote.where(\n        votable_id: params[:votable_id],\n        votable_type: params[:votable_type]\n      )\n    else\n      respond_with Vote.where(\n        votable_id: params[:votable_id],\n        votable_type: params[:votable_type],\n        user_id: params[:user_id]\n      )\n    end\n  end\n\n  def show\n    @vote = Vote.find(params[:id])\n    respond_with(@vote)\n  \n  def create\n    votable = nil\n\n    if vote_params[:votable_type].casecmp('question').zero?\n      votable = Question.find(vote_params[:votable_id])\n    elsif vote_params[:votable_t...",
+              "source": "services/pinboard/app/controllers/votes_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 28,
+              "code": "class VoteDecorator < Draper::Decorator\n  delegate_all\n\n  def as_json(opts = {})\n    {\n      id:,\n      value:,\n      votable_id:,\n      votable_type:,\n      created_at: created_at.iso8601,\n      updated_at: updated_at.iso8601,\n      user_id:,\n    }.as_json(opts)\n  end\n\n  def to_event\n    {\n      id:,\n        value:,\n        votable_id:,\n        votable_type:,\n        created_at: created_at.iso8601,\n        updated_at: updated_at.iso8601,\n        user_id:,\n        votable_user_id: votable.user_id,\n        course_id:,\n    }\n  end\nend",
+              "source": "services/pinboard/app/controllers/votes_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 11,
+              "code": "module VotesHelper\n  def votes_sum\n    if votes.loaded?\n      votes.sum(&:value)\n    else\n      Vote.where(votable_id: id, votable_type: self.class.name).sum(:value)\n    end\n  end\nend",
+              "source": "services/pinboard/app/controllers/votes_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/pinboard/app/controllers/votes_controller.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/pinboard/app/decorators/vote_decorator.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/pinboard/app/helpers/votes_helper.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::Subscription": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of a user's subscription to a question in the Pinboard microservice. Used to check and manage user subscriptions to discussion threads.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `QuestionController` to load user subscriptions."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/question_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 13,
+              "code": "# frozen_string_literal: true\n\nclass Subscription < ApplicationRecord\n  belongs_to :question\n\n  default_scope { order created_at: :desc }\n\n  after_commit(on: :create) { notify :create }\n  after_commit(on: :destroy) { notify :destroy }\n\n  def notify(action_sym)\n    Msgr.publish(decorate.as_json, to: \"xikolo.pinboard.subscription.#{action_sym.to_s.downcase}\")\n  end\nend",
+              "source": "services/pinboard/app/controllers/subscriptions_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nclass SubscriptionDecorator < Draper::Decorator\n  delegate_all\n\n  def as_json(opts = {})\n    attrs = basic\n\n    if context[:with_question]\n      attrs.merge!(\n        question_title: model.question&.title,\n        question_updated_at: model.question&.updated_at,\n        course_id: model.question&.course_id,\n        implicit_tags: model.question&.implicit_tags.to_a.map do |tag|\n                         {name: tag.name,\n                          referenced_resource: tag.referenced_resource}\n                       end\n      )\n    end\n    attrs.as_json(opts)\n  end\n\n  def basic\n    {\n      id:,\n      user_id:,\n      question_id:,\n      created_at:,\n    }\n  end\nend",
+              "source": "services/pinboard/app/controllers/subscriptions_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nclass SubscriptionsController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  before_action :set_subscription, only: %i[show update destroy]\n\n  def index\n    subscriptions = Subscription.all\n    if params[:with_question]\n      include_question_for_subscription\n      subscriptions.includes(question: :implicit_tags)\n    end\n    subscriptions = subscriptions.where index_params\n    respond_with subscriptions\n  end\n\n  def show\n    respond_with(@subscription)\n  end\n\n  def create\n    begin\n      @subscription = Subscription.where(\n        user_id: subscription_params[:user_id],\n        question_id: subscription_params[:question_id]\n      ).first_or_create!\n    rescue ActiveRecord::RecordNotUnique\n      retry\n    end\n\n    @subscription.save\n    respond_with(@subscription)\n  end\n\n  def update\n    @subscription.update(subscription_params)\n    respond_wit...",
+              "source": "services/pinboard/app/controllers/subscriptions_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/pinboard/app/controllers/subscriptions_controller.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/pinboard/app/decorators/subscription_decorator.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/pinboard/app/models/subscription.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::AbuseReport": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of an abuse report for a pinboard entity (question, answer, or comment) in the Pinboard microservice. Used for submitting reports.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `PinboardCommentController` and `QuestionController` for reporting abuse."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_comment_controller.rb",
+            "app/controllers/question_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nclass AbuseReportsController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  def index\n    abuse_reports = AbuseReport.all\n    abuse_reports = abuse_reports.open_reportables if params[:open]\n    abuse_reports.where! course_id: params[:course_id] if params[:course_id]\n    abuse_reports.order! 'created_at DESC'\n    respond_with abuse_reports\n  end\n\n  def show\n    respond_with AbuseReport.find params[:id]\n  end\n\n  def create\n    respond_with AbuseReport\n      .create_with(\n        abuse_report_params.to_h.merge(course_id: reportable.course_ident)\n      ).find_or_create_by!(\n        reportable:,\n        user_id: abuse_report_params[:user_id]\n      )\n  rescue ActiveRecord::RecordNotUnique\n    # Handle possible race condition in find_or_create_by!\n    retry\n  rescue InvalidReportable\n    error(404, json: {error: 'invalid reportable_id or reportable_t...",
+              "source": "services/pinboard/app/controllers/abuse_reports_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nclass AbuseReportDecorator < Draper::Decorator\n  delegate_all\n\n  def as_json(opts = {})\n    {\n      id:,\n      reason: '',\n      reportable_id:,\n      reportable_type:,\n      user_id:,\n      url:,\n      created_at:,\n      question_title:,\n    }.as_json(opts)\n  end\nend\n...",
+              "source": "services/pinboard/app/controllers/abuse_reports_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 33,
+              "code": "# frozen_string_literal: true\n\nclass AbuseReport < ApplicationRecord\n  belongs_to :reportable, polymorphic: true\n\n  validates :reportable_type, :user_id, presence: true\n  validates :user_id, uniqueness: {scope: :reportable_id}\n\n  scope :open_reportables, lambda {\n    questions = open_reportables_by_class(Question).to_sql\n    answers = open_reportables_by_class(Answer).to_sql\n    comments = open_reportables_by_class(Comment).to_sql\n\n    AbuseReport.default_scoped.from(\n      \"(#{questions} UNION #{answers} UNION #{comments}) AS abuse_reports\"\n    )\n  }\n\n  scope :open_reportables_by_class, lambda {|reportable_class|\n    table = reportable_class.table_name\n    joins(\"JOIN #{table} r ON r.id=abuse_reports.reportable_id\")\n      .where(reportable_type: reportable_class.name)\n      .where(\"r.workflow_state='auto_blocked' OR r.workflow_state='reported'\")\n  }\n\n  after_save do\n    reportable.report!\n  end\n\n  def question_title\n    reportable.question_title\n  end\nend\n...",
+              "source": "services/pinboard/app/controllers/abuse_reports_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/pinboard/app/controllers/abuse_reports_controller.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/pinboard/app/decorators/abuse_report_decorator.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/pinboard/app/models/abuse_report.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::ExplicitTag": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of a user-defined tag for pinboard questions in the Pinboard microservice. Used for filtering and managing tags.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `PinboardController` and `QuestionController` for tag management and display."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_controller.rb",
+            "app/controllers/question_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Pinboard\n  class ExplicitTag < Xikolo::Pinboard::Tag\n    service Xikolo::Pinboard::Client, path: 'explicit_tags'\n\n    attribute :id, :uuid\n    attribute :name, :string\n    attribute :course_id, :uuid\n    attribute :type, :string\n  end\nend",
+              "source": "clients/xikolo-pinboard/lib/xikolo/pinboard/explicit_tag.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 12,
+              "code": "# frozen_string_literal: true\n\nclass ExplicitTagDecorator < Draper::Decorator\n  delegate_all\n\n  def as_json(opts = {})\n    {\n      id:,\n        name:,\n        course_id:,\n        type: 'Xikolo::Pinboard::ExplicitTag',\n    }.as_json(opts)\n  end\nend",
+              "source": "clients/xikolo-pinboard/lib/xikolo/pinboard/explicit_tag.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 4,
+              "code": "# frozen_string_literal: true\n\nclass ExplicitTag < Tag\nend",
+              "source": "clients/xikolo-pinboard/lib/xikolo/pinboard/explicit_tag.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-pinboard/lib/xikolo/pinboard/explicit_tag.rb",
+              "relevance": 29
+            },
+            {
+              "path": "services/pinboard/app/decorators/explicit_tag_decorator.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/pinboard/app/models/explicit_tag.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::ImplicitTag": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of a system-generated tag (e.g., based on sections or technical issues) for pinboard questions in the Pinboard microservice. Used for filtering and categorizing discussions.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `PinboardController` and `QuestionController` for managing section-based tags."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_controller.rb",
+            "app/controllers/question_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Pinboard\n  class ImplicitTag < Xikolo::Pinboard::Tag\n    service Xikolo::Pinboard::Client, path: 'implicit_tags'\n\n    attribute :id, :uuid\n    attribute :name, :string\n    attribute :course_id, :uuid\n    attribute :referenced_resource, :string\n    attribute :type, :string\n  end\nend",
+              "source": "clients/xikolo-pinboard/lib/xikolo/pinboard/implicit_tag.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 3,
+              "code": "# frozen_string_literal: true\n\nclass ImplicitTag < Tag\nend",
+              "source": "clients/xikolo-pinboard/lib/xikolo/pinboard/implicit_tag.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-pinboard/lib/xikolo/pinboard/implicit_tag.rb",
+              "relevance": 29
+            },
+            {
+              "path": "services/pinboard/app/decorators/implicit_tag_decorator.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/pinboard/app/models/implicit_tag.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::CourseSubscription": {
+        "type": "ACFS Resource",
+        "description": "Client-side representation of a user's subscription to an entire course's pinboard discussions in the Pinboard microservice. Used to check if a user is subscribed to all discussions within a course.",
+        "interactions": {
+          "interaction_0": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+          "interaction_1": "Used by `PinboardController` to determine course-level subscription status."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pinboard_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 45,
+              "code": "class CourseSubscriptionsController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  before_action :set_course_subscription, only: %i[show update destroy]\n\n  def index\n    course_subscriptions = CourseSubscription.where index_params\n    respond_with course_subscriptions\n  end\n\n  def show\n    respond_with(@course_subscription)\n  end\n\n  def create\n    @course_subscription = CourseSubscription.create_or_find_by!(\n      user_id: course_subscription_params[:user_id],\n      course_id: course_subscription_params[:course_id]\n    )\n\n    respond_with(@course_subscription)\n  end\n\n  def update\n    @course_subscription.update(course_subscription_params)\n    respond_with(@course_subscription)\n  end\n\n  def destroy\n    @course_subscription.destroy\n    respond_with(@course_subscription)\n  end\n\n  private\n\n  def set_course_subscription\n    @course_subscription = C...\n",
+              "source": "services/pinboard/app/controllers/course_subscriptions_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 16,
+              "code": "class CourseSubscriptionDecorator < Draper::Decorator\n  delegate_all\n\n  def as_json(opts = {})\n    basic.as_json(opts)\n  end\n\n  def basic\n    {\n      id: id,\n      user_id: user_id,\n      course_id: course_id,\n      created_at: created_at,\n    }\n  end\nend",
+              "source": "services/pinboard/app/controllers/course_subscriptions_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 5,
+              "code": "class CourseSubscription < ApplicationRecord\n  default_scope { order created_at: :desc }\nend",
+              "source": "services/pinboard/app/controllers/course_subscriptions_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/pinboard/app/controllers/course_subscriptions_controller.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/pinboard/app/decorators/course_subscription_decorator.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/pinboard/app/models/course_subscription.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "PinboardService": {
+        "type": "Microservice",
+        "description": "An API-only Ruby on Rails microservice responsible for managing the core logic of the discussion board or pinboard feature. It provides API endpoints for creating, reading, updating, and deleting pinboard content, and handles interactions related to user discussions within the Xikolo platform.",
+        "interactions": {
+          "interaction_0": "Communicates with AccountService to retrieve user-related data [Source: services/pinboard/config/services.yml].",
+          "interaction_1": "Interacts with CourseService to link pinboard content to specific courses or learning contexts [Source: services/pinboard/config/services.yml].",
+          "interaction_2": "Sends requests to NotificationService to trigger notifications for pinboard activities (e.g., new posts, replies) [Source: services/pinboard/config/services.yml].",
+          "interaction_3": "Exposes an API for the main Xikolo::Web application or other clients [Source: services/pinboard/config/routes.rb]."
+        },
+        "techDebt": [
+          "Lack of detailed code for analysis prevents identification of specific internal technical debt. General architectural debt might include tight coupling if direct HTTP calls are overused instead of asynchronous messaging for certain interactions [Source: services/pinboard/config/services.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "services/pinboard/config/routes.rb",
+            "services/pinboard/app/models/",
+            "services/pinboard/config/services.yml"
+          ]
+        }
+      },
+      "Pinboard Microservice": {
+        "type": "Microservice",
+        "description": "The core service responsible for managing all discussion forum functionalities, including questions, answers, comments, votes, tags, subscriptions, and abuse reports. It acts as a central hub for user-generated discussion content.",
+        "interactions": {
+          "interaction_0": "Communicates with PostgreSQL for data persistence. [Source: services/pinboard/config/database.yml]",
+          "interaction_1": "Exposes an HTTP API for client-side and internal service interactions. [Source: services/pinboard/config/routes.rb]",
+          "interaction_2": "Sends and receives messages via RabbitMQ using `msgr` for asynchronous operations and inter-service communication. [Source: services/pinboard/config/rabbitmq.yml]",
+          "interaction_3": "Interacts with Redis for caching and Sidekiq job management. [Source: services/pinboard/config/redis.yml]",
+          "interaction_4": "Utilizes S3 for storing associated files or assets. [Source: services/pinboard/config/storage.yml]",
+          "interaction_5": "Calls the Account service for user-related information. [Source: services/pinboard/config/services.yml]",
+          "interaction_6": "Calls the Course service for course-related context. [Source: services/pinboard/config/services.yml]",
+          "interaction_7": "Sends notifications to the Notification service. [Source: services/pinboard/config/services.yml]"
+        },
+        "techDebt": [
+          "The `services/pinboard/README.md` is empty, indicating a lack of specific service-level documentation. [Source: services/pinboard/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/pinboard/config/routes.rb",
+            "services/pinboard/config/database.yml",
+            "services/pinboard/config/storage.yml",
+            "services/pinboard/config/rabbitmq.yml",
+            "services/pinboard/config/services.yml",
+            "services/pinboard/README.md"
+          ]
+        }
+      },
+      "Pinboard API Server": {
+        "type": "API Endpoint",
+        "description": "The HTTP server component of the Pinboard microservice, responsible for exposing the discussion forum API endpoints to clients and other services. It handles synchronous requests for creating, retrieving, updating, and deleting discussion content.",
+        "interactions": {
+          "interaction_0": "Receives HTTP requests from the main `web` application or other services. [Source: services/pinboard/config/routes.rb]",
+          "interaction_1": "Interacts with the PostgreSQL database via ActiveRecord. [Source: services/pinboard/config/database.yml]",
+          "interaction_2": "May publish messages to RabbitMQ for asynchronous processing. [Source: services/pinboard/config/rabbitmq.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/pinboard/config/routes.rb",
+            "services/pinboard/app/controllers/"
+          ]
+        }
+      },
+      "Pinboard Msgr Consumer": {
+        "type": "Message Consumer",
+        "description": "A dedicated process within the Pinboard microservice that consumes messages from RabbitMQ. It handles asynchronous tasks and events originating from other services or internal processes, ensuring decoupled communication.",
+        "interactions": {
+          "interaction_0": "Connects to RabbitMQ to subscribe to and process messages. [Source: services/pinboard/config/rabbitmq.yml]",
+          "interaction_1": "May interact with the PostgreSQL database based on message content. [Source: services/pinboard/config/database.yml]",
+          "interaction_2": "May trigger Sidekiq jobs for further background processing. [Source: services/pinboard/lib/msgr_consumers/]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/pinboard/Gemfile",
+            "services/pinboard/lib/msgr_consumers/",
+            "services/pinboard/config/rabbitmq.yml"
+          ]
+        }
+      },
+      "Pinboard Sidekiq Worker": {
+        "type": "Background Job Processor",
+        "description": "The component responsible for executing background jobs within the Pinboard microservice. These jobs handle tasks that are too time-consuming or resource-intensive for synchronous processing, such as sending notifications, processing sentiment analysis, or data maintenance.",
+        "interactions": {
+          "interaction_0": "Pulls jobs from Redis-backed Sidekiq queues. [Source: services/pinboard/config/redis.yml]",
+          "interaction_1": "Interacts with the PostgreSQL database. [Source: services/pinboard/config/database.yml]",
+          "interaction_2": "May interact with S3 for file operations. [Source: services/pinboard/config/storage.yml]",
+          "interaction_3": "May publish messages to RabbitMQ. [Source: services/pinboard/config/rabbitmq.yml]",
+          "interaction_4": "May call external services like Notification. [Source: services/pinboard/config/services.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/pinboard/Gemfile",
+            "services/pinboard/app/jobs/"
+          ]
+        }
+      },
+      "Sentiment Analysis Module": {
+        "type": "Module/Feature",
+        "description": "A module within the Pinboard service dedicated to analyzing the sentiment of discussion posts. It likely uses predefined dictionaries to classify the emotional tone of user-generated content.",
+        "interactions": {
+          "interaction_0": "Processes text content from discussion posts (questions, answers, comments). [Source: services/pinboard/lib/assets/sentiment_dictionaries/]",
+          "interaction_1": "May store sentiment results in the PostgreSQL database. [Source: services/pinboard/config/database.yml]",
+          "interaction_2": "Likely integrated into background jobs (Sidekiq) for asynchronous processing. [Source: services/pinboard/app/jobs/]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/pinboard/lib/assets/sentiment_dictionaries/"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Interacts with Xikolo::Pinboard::Comment (ACFS resource) for comment data.",
+      "interaction_1": "Interacts with Xikolo::Pinboard::Answer (ACFS resource) to retrieve answers for comments.",
+      "interaction_2": "Interacts with Xikolo::Pinboard::AbuseReport (ACFS resource) for reporting.",
+      "interaction_3": "Uses `current_user` for authorization and user identification.",
+      "interaction_4": "Leverages `Acfs.run` to execute API calls.",
+      "interaction_5": "Uses `PinboardRoutesHelper` for generating redirect paths.",
+      "interaction_6": "Accesses `the_course` for course context.",
+      "interaction_7": "Uses `current_user` for user-specific data and permissions.",
+      "interaction_8": "Interacts with `Xikolo.api(:pinboard)` to fetch pinboard data.",
+      "interaction_9": "Fetches course subscriptions via `Xikolo::Pinboard::CourseSubscription` (ACFS resource).",
+      "interaction_10": "Retrieves implicit tags via `Xikolo::Pinboard::ImplicitTag` (ACFS resource).",
+      "interaction_11": "Creates new questions using `Xikolo::Pinboard::Question` (ACFS resource).",
+      "interaction_12": "Fetches explicit tags via `Xikolo::Pinboard::ExplicitTag` (ACFS resource).",
+      "interaction_13": "Retrieves course sections via `Xikolo::Course::Section` (ACFS resource, likely from CourseService).",
+      "interaction_14": "Leverages `Acfs.run` for API calls.",
+      "interaction_15": "Uses `PinboardPresenter` to prepare data for the view.",
+      "interaction_16": "Utilizes `PinboardRoutesHelper` for dynamic route generation.",
+      "interaction_17": "Uses `PinboardHelper` for upload configurations.",
+      "interaction_18": "Accesses `the_course` for course context.",
+      "interaction_19": "Uses `current_user` for user-specific data, permissions, and voting.",
+      "interaction_20": "Interacts with `Xikolo.api(:pinboard)` and `Xikolo.api(:course)` for data retrieval.",
+      "interaction_21": "Manages questions via `Xikolo::Pinboard::Question` (ACFS resource).",
+      "interaction_22": "Manages answers via `Xikolo::Pinboard::Answer` (ACFS resource).",
+      "interaction_23": "Manages comments via `Xikolo::Pinboard::Comment` (ACFS resource).",
+      "interaction_24": "Handles voting via `Xikolo::Pinboard::Vote` (ACFS resource).",
+      "interaction_25": "Manages subscriptions via `Xikolo::Pinboard::Subscription` (ACFS resource).",
+      "interaction_26": "Handles abuse reports via `Xikolo::Pinboard::AbuseReport` (ACFS resource).",
+      "interaction_27": "Retrieves tags via `Xikolo::Pinboard::ImplicitTag` and `Xikolo::Pinboard::ExplicitTag` (ACFS resources).",
+      "interaction_28": "Leverages `Acfs.run` for API calls, with a noted double call workaround.",
+      "interaction_29": "Publishes analytics events via `Msgr` (e.g., `xikolo.pinboard.answer.accept`, `xikolo.pinboard.read_question`).",
+      "interaction_30": "Uses `PinboardUserStatePresenter` and `PinboardPresenter` for view data preparation.",
+      "interaction_31": "Utilizes `PinboardRoutesHelper` for dynamic route generation.",
+      "interaction_32": "Inspects `params` to determine the current section context.",
+      "interaction_33": "Calls standard Rails route helpers dynamically.",
+      "interaction_34": "Checks `current_user` permissions for upload capabilities.",
+      "interaction_35": "Accesses `Rails.configuration` for maximum document size.",
+      "interaction_36": "Inherits from `XUI::Form`.",
+      "interaction_37": "Uses `FirstPostAndMetaData` as an internal processor to prepare data for the API.",
+      "interaction_38": "Interacts with an assumed `Breadcrumbs` component for building breadcrumb paths.",
+      "interaction_39": "Utilizes nested context classes (`CourseContext`, `SectionContext`, `TechnicalIssuesContext`) to adapt behavior.",
+      "interaction_40": "Uses `PinboardBreadcrumbsPresenter` for breadcrumb generation.",
+      "interaction_41": "Relies on `I18n` for localized messages.",
+      "interaction_42": "Interacts with `Gamification::Score` to retrieve user scores.",
+      "interaction_43": "Interacts with `Gamification::Level` to determine user levels.",
+      "interaction_44": "Checks `current_user` for gamification feature enablement.",
+      "interaction_45": "Uses `ActionController::Base.helpers` for asset path generation.",
+      "interaction_46": "Decorates `Xikolo::Pinboard::Question` (ACFS resource).",
+      "interaction_47": "Uses `Rails.cache` for author name caching.",
+      "interaction_48": "Relies on `I18n` for localized messages, especially for blocked titles.",
+      "interaction_49": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_50": "Used by `PinboardCommentController` and `QuestionController`.",
+      "interaction_51": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_52": "Used by `PinboardController`, `QuestionController`, and `QuestionPresenter`.",
+      "interaction_53": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_54": "Used by `PinboardCommentController` and `QuestionController`.",
+      "interaction_55": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_56": "Used by `QuestionController` for upvoting questions.",
+      "interaction_57": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_58": "Used by `QuestionController` to load user subscriptions.",
+      "interaction_59": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_60": "Used by `PinboardCommentController` and `QuestionController` for reporting abuse.",
+      "interaction_61": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_62": "Used by `PinboardController` and `QuestionController` for tag management and display.",
+      "interaction_63": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_64": "Used by `PinboardController` and `QuestionController` for managing section-based tags.",
+      "interaction_65": "Interacts with the `PinboardService` microservice via the ACFS framework.",
+      "interaction_66": "Used by `PinboardController` to determine course-level subscription status.",
+      "interaction_67": "Interacts with Xikolo::Pinboard::Comment for comment data manipulation [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_68": "Interacts with Xikolo::Pinboard::Answer to find parent answers for comments [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_69": "Interacts with Xikolo::Pinboard::AbuseReport to create new abuse reports [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_70": "Uses Acfs.run to execute asynchronous API calls to the Pinboard microservice [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_71": "Utilizes CourseContextHelper for course context and PinboardRoutesHelper for dynamic routing [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_72": "Performs authorization checks using `authorize!` [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_73": "Fetches course subscriptions from Xikolo.api(:pinboard) [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_74": "Retrieves implicit tags from Xikolo::Pinboard::ImplicitTag [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_75": "Retrieves explicit tags from Xikolo::Pinboard::ExplicitTag [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_76": "Fetches course sections from Xikolo::Course::Section [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_77": "Uses PinboardPresenter to prepare data for the view [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_78": "Initializes new Xikolo::Pinboard::Question objects for the creation form [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_79": "Utilizes CourseContextHelper, PinboardRoutesHelper, and PinboardHelper [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_80": "Interacts with Xikolo.config to check for disabled features like 'technical issues' section [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_81": "Interacts with Xikolo::Pinboard::Question for question data manipulation [Source: app/controllers/question_controller.rb].",
+      "interaction_82": "Interacts with Xikolo::Pinboard::Answer and Xikolo::Pinboard::Comment for associated content [Source: app/controllers/question_controller.rb].",
+      "interaction_83": "Manages votes using Xikolo::Pinboard::Vote [Source: app/controllers/question_controller.rb].",
+      "interaction_84": "Handles subscriptions with Xikolo::Pinboard::Subscription [Source: app/controllers/question_controller.rb].",
+      "interaction_85": "Creates abuse reports using Xikolo::Pinboard::AbuseReport [Source: app/controllers/question_controller.rb].",
+      "interaction_86": "Uses Acfs.run extensively for asynchronous API calls to Pinboard and Course microservices [Source: app/controllers/question_controller.rb].",
+      "interaction_87": "Publishes messages to RabbitMQ via Msgr for analytics and events (e.g., 'xikolo.pinboard.answer.accept', 'xikolo.pinboard.read_question') [Source: app/controllers/question_controller.rb].",
+      "interaction_88": "Utilizes PinboardUserStatePresenter and PinboardPresenter for view data preparation [Source: app/controllers/question_controller.rb].",
+      "interaction_89": "Performs authorization checks using `authorize!` and `current_user.allowed?` [Source: app/controllers/question_controller.rb].",
+      "interaction_90": "Caches author names using Rails.cache [Source: app/controllers/question_controller.rb].",
+      "interaction_91": "Uses XUI::Form as its base [Source: app/forms/pinboard/topic_form.rb].",
+      "interaction_92": "Applies validations for presence of title and text [Source: app/forms/pinboard/topic_form.rb].",
+      "interaction_93": "Employs a custom `FirstPostAndMetaData` processor to map form attributes to resource attributes for the Pinboard microservice API [Source: app/forms/pinboard/topic_form.rb].",
+      "interaction_94": "References `Rails.configuration.max_document_size` for upload limits [Source: app/helpers/pinboard_helper.rb].",
+      "interaction_95": "Checks `current_user.allowed?` for upload permissions [Source: app/helpers/pinboard_helper.rb].",
+      "interaction_96": "Inspects `params[:section_id]` to determine the routing context [Source: app/helpers/pinboard_routes_helper.rb].",
+      "interaction_97": "Defines dynamic methods that proxy to standard Rails route helpers [Source: app/helpers/pinboard_routes_helper.rb].",
+      "interaction_98": "Handles various resource and action routes for questions, answers, and comments [Source: app/helpers/pinboard_routes_helper.rb].",
+      "interaction_99": "Receives a `Breadcrumbs` object and a block for thread-specific breadcrumbs during initialization [Source: app/presenters/pinboard_breadcrumbs_presenter.rb].",
+      "interaction_100": "Initializes with `course`, `section`, `technical_issues` flag, and `filters` [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_101": "Delegates context-specific logic to nested classes: `TechnicalIssuesContext`, `SectionContext`, `CourseContext` [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_102": "Uses `I18n` for localized messages, especially for lock reasons and breadcrumb titles [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_103": "Interacts with `Gamification::Score` to retrieve user scores [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_104": "Interacts with `Gamification::Level` to determine user levels based on scores [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_105": "Checks `user.feature?('gamification')` to enable/disable gamification features [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_106": "Uses `ActionController::Base.helpers` for asset path generation and image tags [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_107": "Delegates to the underlying `question` object for core attributes [Source: app/presenters/question_presenter.rb].",
+      "interaction_108": "Enqueues comments, answers, explicit tags, sections, and items for the question [Source: app/presenters/question_presenter.rb].",
+      "interaction_109": "Caches author names using `Rails.cache` to optimize performance [Source: app/presenters/question_presenter.rb].",
+      "interaction_110": "Uses `I18n` for localized strings, e.g., for blocked status [Source: app/presenters/question_presenter.rb].",
+      "interaction_111": "Communicates with AccountService to retrieve user-related data [Source: services/pinboard/config/services.yml].",
+      "interaction_112": "Interacts with CourseService to link pinboard content to specific courses or learning contexts [Source: services/pinboard/config/services.yml].",
+      "interaction_113": "Sends requests to NotificationService to trigger notifications for pinboard activities (e.g., new posts, replies) [Source: services/pinboard/config/services.yml].",
+      "interaction_114": "Exposes an API for the main Xikolo::Web application or other clients [Source: services/pinboard/config/routes.rb].",
+      "interaction_115": "Creates, updates, and deletes comments via `Xikolo::Pinboard::Comment` [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_116": "Finds comments and answers via `Xikolo::Pinboard::Comment.find` and `Xikolo::Pinboard::Answer.find` [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_117": "Creates abuse reports via `Xikolo::Pinboard::AbuseReport.new` [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_118": "Publishes notifications (though the `notification_params` has a TODO) [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_119": "Uses `CourseContextHelper` for course context [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_120": "Uses `PinboardRoutesHelper` for dynamic routing [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_121": "Authorizes actions using `authorize!` [Source: app/controllers/pinboard_comment_controller.rb].",
+      "interaction_122": "Fetches course details via `the_course` [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_123": "Fetches course subscriptions via `Xikolo.api(:pinboard).rel(:course_subscriptions)` [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_124": "Fetches implicit and explicit tags via `Xikolo::Pinboard::ImplicitTag` and `Xikolo::Pinboard::ExplicitTag` [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_125": "Fetches sections via `Xikolo::Course::Section` [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_126": "Fetches questions (topics) via `pinboard_api.rel(:questions)` [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_127": "Uses `CourseContextHelper` for course context [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_128": "Uses `PinboardRoutesHelper` for dynamic routing [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_129": "Uses `PinboardHelper` for utility methods [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_130": "Uses `PinboardPresenter` for display logic [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_131": "Uses `SectionPresenter` for section-related logic [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_132": "Checks `Xikolo.config` for `disable_technical_issues_section` [Source: app/controllers/pinboard_controller.rb].",
+      "interaction_133": "Fetches, creates, updates, and deletes questions via `Xikolo::Pinboard::Question` [Source: app/controllers/question_controller.rb].",
+      "interaction_134": "Fetches and creates votes via `Xikolo::Pinboard::Vote` [Source: app/controllers/question_controller.rb].",
+      "interaction_135": "Creates abuse reports via `Xikolo::Pinboard::AbuseReport` [Source: app/controllers/question_controller.rb].",
+      "interaction_136": "Publishes events to RabbitMQ (`Msgr.publish`) for `xikolo.pinboard.answer.accept` and `xikolo.pinboard.read_question` [Source: app/controllers/question_controller.rb].",
+      "interaction_137": "Fetches subscriptions via `Xikolo::Pinboard::Subscription` [Source: app/controllers/question_controller.rb].",
+      "interaction_138": "Fetches sections via `course_api.rel(:sections)` [Source: app/controllers/question_controller.rb].",
+      "interaction_139": "Uses `CourseContextHelper` for course context [Source: app/controllers/question_controller.rb].",
+      "interaction_140": "Uses `PinboardRoutesHelper` for dynamic routing [Source: app/controllers/question_controller.rb].",
+      "interaction_141": "Uses `Interruptible` module [Source: app/controllers/question_controller.rb].",
+      "interaction_142": "Uses `PinboardUserStatePresenter` and `PinboardPresenter` for display logic [Source: app/controllers/question_controller.rb].",
+      "interaction_143": "Authorizes actions using `authorize!` and `current_user.allowed?` [Source: app/controllers/question_controller.rb].",
+      "interaction_144": "Uses `Acfs.run` extensively for asynchronous data fetching [Source: app/controllers/question_controller.rb].",
+      "interaction_145": "Used by controllers (likely `QuestionController`) to handle form submissions [Source: app/forms/pinboard/topic_form.rb].",
+      "interaction_146": "Transforms `text` into `first_post` and `video_timestamp` into `meta` for the backend service [Source: app/forms/pinboard/topic_form.rb].",
+      "interaction_147": "Used by views and potentially controllers [Source: app/helpers/pinboard_helper.rb].",
+      "interaction_148": "Included in `PinboardCommentController`, `PinboardController`, `QuestionController` [Source: app/helpers/pinboard_routes_helper.rb].",
+      "interaction_149": "Uses `params[:section_id]` to determine context [Source: app/helpers/pinboard_routes_helper.rb].",
+      "interaction_150": "Relies on Rails' route helpers [Source: app/helpers/pinboard_routes_helper.rb].",
+      "interaction_151": "Used by `PinboardPresenter` [Source: app/presenters/pinboard_breadcrumbs_presenter.rb].",
+      "interaction_152": "Receives `course`, `section`, `technical_issues`, and `filters` as input [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_153": "Delegates breadcrumb generation to `PinboardBreadcrumbsPresenter` [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_154": "Accesses `course.forum_is_locked` and `section['pinboard_closed']` to determine lock status [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_155": "Uses `I18n` for localized messages [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_156": "Includes `Rails.application.routes.url_helpers` for generating paths [Source: app/presenters/pinboard_presenter.rb].",
+      "interaction_157": "Receives `question` and `user` as input [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_158": "Checks `user.feature?('gamification')` [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_159": "Fetches `Gamification::Score` and `Gamification::Level` data [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_160": "Accesses `question.user_id`, `question.comments`, `question.answers` to get author IDs [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_161": "Uses `ActionController::Base.helpers` for asset paths and image tags [Source: app/presenters/pinboard_user_state_presenter.rb].",
+      "interaction_162": "Receives `question`, `course`, `section_id` as input [Source: app/presenters/question_presenter.rb].",
+      "interaction_163": "Delegates to `question` for core attributes [Source: app/presenters/question_presenter.rb].",
+      "interaction_164": "Fetches `question.comments`, `question.answers`, `question.explicit_tags`, `question.section`, `question.item`, `question.author` via `enqueue_` methods (ACFS) [Source: app/presenters/question_presenter.rb].",
+      "interaction_165": "Uses `Rails.cache` for author names [Source: app/presenters/question_presenter.rb].",
+      "interaction_166": "Includes `Rails.application.routes.url_helpers` for generating paths [Source: app/presenters/question_presenter.rb].",
+      "interaction_167": "Communicates with PostgreSQL for data persistence. [Source: services/pinboard/config/database.yml]",
+      "interaction_168": "Exposes an HTTP API for client-side and internal service interactions. [Source: services/pinboard/config/routes.rb]",
+      "interaction_169": "Sends and receives messages via RabbitMQ using `msgr` for asynchronous operations and inter-service communication. [Source: services/pinboard/config/rabbitmq.yml]",
+      "interaction_170": "Interacts with Redis for caching and Sidekiq job management. [Source: services/pinboard/config/redis.yml]",
+      "interaction_171": "Utilizes S3 for storing associated files or assets. [Source: services/pinboard/config/storage.yml]",
+      "interaction_172": "Calls the Account service for user-related information. [Source: services/pinboard/config/services.yml]",
+      "interaction_173": "Calls the Course service for course-related context. [Source: services/pinboard/config/services.yml]",
+      "interaction_174": "Sends notifications to the Notification service. [Source: services/pinboard/config/services.yml]",
+      "interaction_175": "Receives HTTP requests from the main `web` application or other services. [Source: services/pinboard/config/routes.rb]",
+      "interaction_176": "Interacts with the PostgreSQL database via ActiveRecord. [Source: services/pinboard/config/database.yml]",
+      "interaction_177": "May publish messages to RabbitMQ for asynchronous processing. [Source: services/pinboard/config/rabbitmq.yml]",
+      "interaction_178": "Connects to RabbitMQ to subscribe to and process messages. [Source: services/pinboard/config/rabbitmq.yml]",
+      "interaction_179": "May interact with the PostgreSQL database based on message content. [Source: services/pinboard/config/database.yml]",
+      "interaction_180": "May trigger Sidekiq jobs for further background processing. [Source: services/pinboard/lib/msgr_consumers/]",
+      "interaction_181": "Pulls jobs from Redis-backed Sidekiq queues. [Source: services/pinboard/config/redis.yml]",
+      "interaction_182": "Interacts with the PostgreSQL database. [Source: services/pinboard/config/database.yml]",
+      "interaction_183": "May interact with S3 for file operations. [Source: services/pinboard/config/storage.yml]",
+      "interaction_184": "May publish messages to RabbitMQ. [Source: services/pinboard/config/rabbitmq.yml]",
+      "interaction_185": "May call external services like Notification. [Source: services/pinboard/config/services.yml]",
+      "interaction_186": "Processes text content from discussion posts (questions, answers, comments). [Source: services/pinboard/lib/assets/sentiment_dictionaries/]",
+      "interaction_187": "May store sentiment results in the PostgreSQL database. [Source: services/pinboard/config/database.yml]",
+      "interaction_188": "Likely integrated into background jobs (Sidekiq) for asynchronous processing. [Source: services/pinboard/app/jobs/]"
+    },
+    "technicalDebt": [
+      "Redirect logic in `create` and `notification_params` incorrectly references question ID for answers, leading to potential confusion or bugs.",
+      "`questions_per_page` is hardcoded with a TODO to adjust it.",
+      "A double `Acfs.run` call is used as a workaround for ACFS callback reliability issues.",
+      "The assignment of `course_id` in `question_params` has a TODO for a better solution.",
+      "The `response_count` logic has a TODO (referencing XI-853) indicating ongoing discussion/potential refactor.",
+      "Relies on `send` for dynamic method calls, which can reduce code clarity and make debugging more challenging.",
+      "The `response_count` method has a TODO (referencing XI-853) indicating an ongoing discussion or potential refactor.",
+      "Ambiguous ID referencing in `create` and `notification_params` methods: \"both these id reference the QUESTION, I have no idea why...\" [Source: app/controllers/pinboard_comment_controller.rb].",
+      "Double `Acfs.run` call in `show` method, indicating a potential workaround for `Acfs` callback execution issues [Source: app/controllers/question_controller.rb].",
+      "TODO: \"solve better\" for `p[:course_id] = the_course.id` in `question_params` [Source: app/controllers/question_controller.rb].",
+      "TODO: \"adjust this number as needed\" for `questions_per_page` [Source: app/helpers/pinboard_helper.rb].",
+      "The presence of `rubocop:enable all` suggests this file might contain complex logic or style deviations that required temporary disabling of Rubocop rules [Source: app/helpers/pinboard_routes_helper.rb].",
+      "TODO: \"Oh really? See XI-853. :P\" regarding `response_count` indicates an unresolved design decision or a temporary workaround [Source: app/presenters/question_presenter.rb].",
+      "Lack of detailed code for analysis prevents identification of specific internal technical debt. General architectural debt might include tight coupling if direct HTTP calls are overused instead of asynchronous messaging for certain interactions [Source: services/pinboard/config/services.yml].",
+      "Ambiguity in ID handling: 'both these id reference the QUESTION, I have no idea why...' in `create` and `notification_params` methods [Source: app/controllers/pinboard_comment_controller.rb].",
+      "Temporary notification URL: 'TODO: remove question_path once all consumer are rolled out' in `notification_params` [Source: app/controllers/pinboard_comment_controller.rb].",
+      "ACFS callback issue: 'the double Acfs.run call is not a mistake - acfs seems to have some problems sometimes executing all callbacks...' in `show` method [Source: app/controllers/question_controller.rb].",
+      "Course ID assignment: 'TODO: solve better' for `p[:course_id] = the_course.id` in `question_params` [Source: app/controllers/question_controller.rb].",
+      "Rubocop disablement: `rubocop:enable all` at the end of the file, implying linting was disabled [Source: app/controllers/question_controller.rb].",
+      "Hardcoded value: 'TODO: adjust this number as needed' for `questions_per_page` [Source: app/helpers/pinboard_helper.rb].",
+      "Fragile module inclusion: 'for some reason some other module seems to want to include this return unless base_controller.respond_to? :helper_method' in `self.included` [Source: app/helpers/pinboard_routes_helper.rb].",
+      "Rubocop disablement: `rubocop:enable all` at the end of the file, implying linting was disabled [Source: app/helpers/pinboard_routes_helper.rb].",
+      "Unresolved design decision: 'TODO: Oh really? See XI-853. :P' in `response_count` method [Source: app/presenters/question_presenter.rb].",
+      "The `services/pinboard/README.md` is empty, indicating a lack of specific service-level documentation. [Source: services/pinboard/README.md]"
+    ]
+  }
+}

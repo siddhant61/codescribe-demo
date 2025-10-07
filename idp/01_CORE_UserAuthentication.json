@@ -1,0 +1,1069 @@
+{
+  "clusterId": "01_CORE_UserAuthentication",
+  "featureFocus": "User Account Management, Authentication, Authorization, and Profiles",
+  "documentationReport": "{\n  \"title\": \"User Account Management, Authentication, Authorization, and Profiles Cluster Documentation\",\n  \"functional_domain\": \"User Account Management, Authentication, Authorization, and User Data Management\",\n  \"description\": \"This comprehensive documentation report details the 'User Account Management, Authentication, Authorization, and Profiles' feature cluster, central to the Xikolo platform. It encompasses how users register, log in, manage their personal data, and interact with the system based on their permissions. The cluster relies on a combination of the main Rails application and the dedicated `Xikolo Account Service` microservice, integrating insights from multiple analysis sources to provide a unified view of its functionality and components.\",\n  \"sections\": [\n    {\n      \"title\": \"1. Authentication\",\n      \"content\": \"The platform employs a robust authentication system primarily driven by `OmniAuth` for external identity providers (IdPs) and `OAuth 2.0` for API access. The web frontend authentication is managed through components like `Account::Session` and `Account::Email` (likely for password resets and account verification).\\n\\n*   **OmniAuth Configuration**: The `config/initializers/omniauth.rb` initializer dynamically configures OmniAuth providers based on settings in `config/omniauth.yml`. It supports various strategies, including `SAML` (e.g., `saml_test_id`, generic `saml`), `OpenID Connect` (e.g., `hpi`, `openid_connect`), `HPI SAML`, and `Mein Bildungsraum`. Custom strategies like `XikoloSAML`, `HPI`, and `MeinBildungsraum` are required for specific integrations.\\n    *   **Technical Debt**: Currently, OmniAuth is configured to allow both `GET` and `POST` requests for callbacks to ease migration from OmniAuth 1.x to 2.x, but a security recommendation suggests disallowing `GET` requests for production.\\n*   **API Authentication**: The Portal API endpoints are protected using `OAuth 2.0 Bearer Tokens`. Clients must include an `Authorization` header with a valid Bearer Token to access these endpoints. Token exchange endpoints are not yet available, requiring shared secrets to be requested.\"\n    },\n    {\n      \"title\": \"2. User Profiles and Data Management\",\n      \"content\": \"User profiles are enriched with features for collecting and managing personal data, consents, and preferences. The core user entity is represented by `Account::User`.\\n\\n*   **Custom Fields**: The platform allows for the definition of custom profile fields, enabling platforms to collect specific user data for reporting and analytics. This functionality is managed by the `Custom Profile Fields Manager`.\\n    *   Supported types include `Text`, `Select` (single choice dropdown), and `Multi-select` (multiple choice dropdown).\\n    *   Fields can be marked as `required`, preventing users from accessing content until they are filled.\\n    *   Configuration and updates of these fields are performed via the `xi-account` Rails console.\\n*   **Consents**: A consent management system, utilizing the `Account::Consent` component, tracks user permissions for data usage (e.g., research, marketing).\\n    *   Consents are linked to `treatment` types and can be `required` or `optional`. Required consents block user actions until given.\\n    *   External consents are supported, where a third-party consent manager handles the permission, and an external link directs the user to manage it.\\n    *   Each external `type` requires a custom integration to fetch and update consent status.\\n    *   All consents can be managed on the user's profile page.\\n*   **User Preferences and Settings**: The system provides capabilities for users to manage their preferences and account settings. This includes components such as `preferences.ts` for frontend logic, `Account::PreferencesController` for handling requests, and `Account::PreferencesPresenter`, `Account::PreferencesPresenter::PreferencePresenter`, and `Account::PreferencesPresenter::NotificationPresenter` for data presentation.\"\n    },\n    {\n      \"title\": \"3. Authorization\",\n      \"content\": \"The `Xikolo Account Service` defines a granular authorization system based on groups, roles, and grants, managed by the `Permissions Manager` and represented by `Account::Authorization`.\\n\\n*   **Groups**: Examples include `xikolo.helpdesk` for user support and `xikolo.gdpr_admins` for GDPR-related tasks. These are conceptualized as `Group (Concept)`.\\n*   **Roles**: Roles like `account.admin`, `account.permissions.admin`, `account.support`, and `account.tracer` define specific sets of permissions (e.g., `account.user.index`, `account.user.masquerade`). These are conceptualized as `Role (Concept)`.\\n*   **Grants**: Roles are granted to groups within a specific `context` (e.g., `root`), linking permissions to user groups. The underlying permissions are conceptualized as `Permission (Concept)`.\\n*   **Management**: Permissions, roles, and groups are managed and loaded via a `permissions:load Rake Task` within the `Xikolo Account Service`.\"\n    },\n    {\n      \"title\": \"4. Xikolo Account Service\",\n      \"content\": \"The `Xikolo Account Service` (`Xikolo::Account Service`) is a dedicated microservice for managing user accounts and related functionalities. While its `README.md` is a placeholder, the presence of permission definitions within its directory structure confirms its central role in authorization and user management. It provides a `User Management API` for user-related operations and interacts with the main application for profile and authentication features. Key responsibilities include managing user accounts, authorization, and custom profile fields.\"\n    },\n    {\n      \"title\": \"5. Key Components Overview\",\n      \"content\": \"The merged cluster encompasses a wide array of components across the main Rails application and the `Xikolo Account Service`:\\n\\n*   `Xikolo Account Service` (Microservice)\\n*   `Account::User` (User Model)\\n*   `Account::Authorization` (Authorization Logic)\\n*   `Account::Session` (Session Management)\\n*   `Account::Email` (Email-related functionalities)\\n*   `Account::Consent` (Consent Management)\\n*   `Account::PreferencesController` (User Preferences Controller)\\n*   `Account::PreferencesPresenter` (User Preferences Presenter)\\n*   `Account::PreferencesPresenter::PreferencePresenter` (Specific Preference Presenter)\\n*   `Account::PreferencesPresenter::NotificationPresenter` (Notification Preference Presenter)\\n*   `preferences.ts` (Frontend Preferences Script)\\n*   `Permissions Manager` (Authorization Management)\\n*   `Custom Profile Fields Manager` (Custom Profile Field Management)\\n*   `User Management API` (API for User Operations)\\n*   `Permission (Concept)` (Abstract Permission Entity)\\n*   `Role (Concept)` (Abstract Role Entity)\\n*   `Group (Concept)` (Abstract Group Entity)\\n*   `permissions:load Rake Task` (Authorization Data Loading)\"\n    },\n    {\n      \"title\": \"6. Limitations\",\n      \"content\": \"Due to the absence of specific code files for `app/controllers/account/`, `app/models/account/`, and other related directories, the analysis of the direct implementation details for user models, controllers, and forms is limited. This report relies heavily on configuration files and documentation for understanding the feature cluster's architecture and functionality.\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "OmniAuth Configuration": {
+        "type": "Configuration",
+        "description": "Manages external authentication providers and their settings, dynamically loaded from `omniauth.yml`. [Source: config/initializers/omniauth.rb, config/omniauth.yml]",
+        "interactions": {
+          "interaction_0": "Integrates with various external Identity Providers (IdPs) like SAML and OpenID Connect. [Source: config/initializers/omniauth.rb]",
+          "interaction_1": "Provides authentication callbacks to the main application. [Source: config/initializers/omniauth.rb]"
+        },
+        "techDebt": [
+          "Allowing `GET` requests for OmniAuth callbacks is a security concern and should be restricted to `POST` requests. [Source: config/initializers/omniauth.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/initializers/omniauth.rb",
+            "config/omniauth.yml"
+          ]
+        }
+      },
+      "Custom Fields Management": {
+        "type": "Feature",
+        "description": "Allows administrators to define and collect custom user data (Text, Select, Multi-select) which users can edit on their profile pages. Fields can be mandatory. [Source: services/account/app/models/custom_field.rb]",
+        "interactions": {
+          "interaction_0": "Users interact with their profile page to input data. [Source: app/controllers/account/profile_controller.rb]",
+          "interaction_1": "Administrators configure fields via Rails console. [Source: services/account/app/models/custom_field.rb]"
+        },
+        "techDebt": [
+          "Configuration is currently console-only, which might not be scalable for non-technical administrators. [Source: services/account/app/models/custom_field.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/account/app/models/custom_field.rb"
+          ]
+        }
+      },
+      "Consent Management": {
+        "type": "Feature",
+        "description": "Manages user permissions for data usage and communication, supporting required, optional, and external consents. [Source: services/account/app/models/consent.rb]",
+        "interactions": {
+          "interaction_0": "Users manage consents on their profile page. [Source: app/controllers/account/profile_controller.rb]",
+          "interaction_1": "The system enforces required consents. [Source: services/account/app/models/consent.rb]",
+          "interaction_2": "Custom integrations handle external consent managers. [Source: services/account/app/models/consent.rb]"
+        },
+        "techDebt": [
+          "Custom integration required for each external consent manager type. [Source: services/account/app/models/consent.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/account/app/models/consent.rb"
+          ]
+        }
+      },
+      "Xikolo Account Service": {
+        "type": "Microservice",
+        "description": "A dedicated API-only Rails microservice responsible for core user account management, profile data, and authorization logic. [Source: services/account/app/models/user.rb:15-30, services/account/lib/tasks/permissions/account.yml]",
+        "interactions": {
+          "interaction_0": "Exposes API endpoints for user operations. [Source: services/account/app/controllers/]",
+          "interaction_1": "Interacts with the main application for authentication flows and profile data display. [Source: services/account/app/models/user.rb]",
+          "interaction_2": "Manages permissions based on defined roles and grants. [Source: services/account/lib/tasks/permissions/account.yml]"
+        },
+        "techDebt": [
+          "`README.md` is a placeholder, indicating a lack of comprehensive service documentation. [Source: services/account/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/account/app/models/user.rb",
+            "services/account/lib/tasks/permissions/account.yml"
+          ]
+        }
+      },
+      "Authorization System": {
+        "type": "Configuration/System",
+        "description": "Defines a role-based access control (RBAC) system using groups, roles, and grants to manage permissions within the `Xikolo Account Service`. [Source: services/account/lib/tasks/permissions/account.yml]",
+        "interactions": {
+          "interaction_0": "Roles are assigned to groups. [Source: services/account/lib/tasks/permissions/account.yml]",
+          "interaction_1": "Groups are granted specific permissions within a context. [Source: services/account/lib/tasks/permissions/account.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/lib/tasks/permissions/account.yml"
+          ]
+        }
+      },
+      "Portal API Authentication": {
+        "type": "API Authentication",
+        "description": "Secures API endpoints by requiring a valid OAuth 2.0 Bearer Token in the `Authorization` header for all requests. [Source: app/controllers/portal_api/, config/routes.rb]",
+        "interactions": {
+          "interaction_0": "Clients send requests with Bearer Tokens. [Source: app/controllers/portal_api/base_controller.rb]",
+          "interaction_1": "The API validates tokens. [Source: app/controllers/portal_api/base_controller.rb]"
+        },
+        "techDebt": [
+          "Token exchange endpoints do not yet exist, requiring manual shared secret distribution. [Source: app/controllers/portal_api/]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Xikolo::Account Service": {
+        "type": "Microservice",
+        "description": "An API-only Ruby on Rails microservice dedicated to managing user accounts and the platform's comprehensive permissions system. It defines and manages global roles, groups, and grants, and provides API endpoints for user administration.",
+        "interactions": {
+          "interaction_0": "Interacts with the Xikolo::Web application for user authentication and authorization requests [Source: services/account/app/models/user.rb, services/account/lib/tasks/permissions/account.yml].",
+          "interaction_1": "Manages persistence of permissions, roles, groups, and grants in a PostgreSQL database [Source: services/account/app/models/].",
+          "interaction_2": "Consumes configuration from Xikolo::Web's `app/xikolo.yml` for course-specific permissions and `global_permission_groups` [Source: services/account/lib/tasks/permissions/account.yml, config/xikolo.yml]."
+        },
+        "techDebt": [
+          "The `README.md` for the service is marked as a 'TODO: Write a better README', indicating a lack of comprehensive internal documentation [Source: services/account/README.md]."
+        ],
+        "provenance": {
+          "sources": [
+            "services/account/config/services.yml",
+            "services/account/README.md",
+            "services/account/lib/tasks/permissions/account.yml",
+            "services/account/app/models/user.rb",
+            "config/xikolo.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 35,
+              "code": "module Xikolo   module Auth     module Helpers       def current_user         @current_user ||= _create_user       end        # Sets a global context for permissions       def in_context(context_name)         @context = context_name          # Just in case it has been requested before, we throw away the         # current user object, so that it will be regenerated when         # it is requested again.         @current_user = nil       end        def authenticate!         error!('401 Unauthorized', 401) if current_user.anonymous?       end        def authenticate_as!(user_id)         authenticate!         error!('403 Forbidden', 403) unless current_user.id.eql? user_id       end        def permission!(permission)         error!('401 Unauthorized', 401) unless current_user.allowed?(permission)       end        def _session_id         if env['XIKOLO_SESSION']           env['XIKOLO_SESSION']         elsif env['XIKOLO_LEGACY_TOKEN']           \"token=#{env['XIK...\"",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 18,
+              "code": "module Xikolo   module Auth     module Middleware       class LegacyToken < Rack::Auth::AbstractHandler         TOKEN_AUTH_REGEX = /^(?:Legacy-)?Token token=(?<token>[0-9a-f]+)$/          def call(env)           if (match = TOKEN_AUTH_REGEX.match(env['HTTP_AUTHORIZATION']))             env['XIKOLO_LEGACY_TOKEN'] = match[:token]           end            @app.call(env)         end       end     end   end end ...",
+              "source": "api/xikolo/api.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/api.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/helpers.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Permission (Concept)": {
+        "type": "Domain Concept",
+        "description": "A granular authorization unit within the Xikolo system, defining specific actions a user can perform (e.g., `account.user.index`, `account.user.create`). Permissions are bundled into Roles.",
+        "interactions": {
+          "interaction_0": "Bundled into Roles [Source: services/account/lib/tasks/permissions/account.yml].",
+          "interaction_1": "Defined in YAML files within the Xikolo::Account service [Source: services/account/lib/tasks/permissions/account.yml]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/lib/tasks/permissions/account.yml"
+          ]
+        }
+      },
+      "Role (Concept)": {
+        "type": "Domain Concept",
+        "description": "A collection of Permissions that can be assigned to Groups. Examples include `account.admin`, `account.permissions.admin`, and `account.support`.",
+        "interactions": {
+          "interaction_0": "Comprises multiple Permissions [Source: services/account/lib/tasks/permissions/account.yml].",
+          "interaction_1": "Granted to Groups within a specific context [Source: services/account/lib/tasks/permissions/account.yml]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/lib/tasks/permissions/account.yml"
+          ]
+        }
+      },
+      "Group (Concept)": {
+        "type": "Domain Concept",
+        "description": "An entity to which Roles are granted, defining a set of capabilities for its members. Global groups like `xikolo.gdpr_admins`, `xikolo.helpdesk`, `xikolo.reviewers`, and `xikolo.stakeholders` are defined.",
+        "interactions": {
+          "interaction_0": "Receives Grants of Roles [Source: services/account/lib/tasks/permissions/account.yml].",
+          "interaction_1": "Global groups are defined in `lib/tasks/permissions/*.yml` in `xi-account` and `global_permission_groups` in `xi-web` [Source: services/account/lib/tasks/permissions/account.yml, config/xikolo.yml]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/lib/tasks/permissions/account.yml",
+            "config/xikolo.yml"
+          ]
+        }
+      },
+      "permissions:load Rake Task": {
+        "type": "Rake Task",
+        "description": "A Rake task within the Xikolo::Account service responsible for loading and applying permission, role, and group definitions from YAML files (`lib/tasks/permissions/*.yml`) into the database. It is executed automatically in CI/CD pipelines.",
+        "interactions": {
+          "interaction_0": "Reads permission definitions from YAML files [Source: services/account/lib/tasks/permissions/account.yml].",
+          "interaction_1": "Updates the database with new or modified permissions, roles, and grants [Source: services/account/lib/tasks/permissions/].",
+          "interaction_2": "Does not delete existing entries, requiring manual or script-based regranting for removals [Source: services/account/lib/tasks/permissions/]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/lib/tasks/permissions/account.yml"
+          ]
+        }
+      },
+      "Account::User": {
+        "type": "Model",
+        "description": "The central ActiveRecord model representing a user in the system. It aggregates various user-related data and associations for authentication, profile information, gamification, course progress, and certificates.",
+        "interactions": {
+          "interaction_0": "Has many Account::Authorization records for external authentication details.",
+          "interaction_1": "Has many Account::Email records, including a primary email.",
+          "interaction_2": "Has many Account::Consent records for data treatment permissions.",
+          "interaction_3": "Has many Account::Membership records, linking users to groups based on consents.",
+          "interaction_4": "Has many Gamification::Score and Gamification::Badge records.",
+          "interaction_5": "Has many Course::Result and Course::Visit records for learning progress.",
+          "interaction_6": "Has many Certificate::Record records."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/account/user.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 37,
+              "code": "class User < ::ApplicationRecord     has_many :authorizations, dependent: :destroy      has_many :gamification_scores, class_name: 'Gamification::Score', dependent: :delete_all     has_many :gamification_badges, class_name: 'Gamification::Badge', dependent: :delete_all      has_many :memberships,       class_name: 'Account::Membership',       dependent: :destroy     has_many :emails, class_name: 'Account::Email', dependent: :destroy     has_one :primary_email, -> { primary }, class_name: 'Account::Email', inverse_of: false # rubocop:disable Rails/HasManyOrHasOneDependent      has_many :item_results,       class_name: '::Course::Result',       dependent: :delete_all     has_many :item_visits,       class_name: '::Course::Visit',       dependent: :delete_all      has_many :certificate_records,       class_name: '::Certificate::Record',       dependent: :destroy      def self.with_authorization(uid)       joins(:authorizations).where(authori...",
+              "source": "app/models/account/user.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 74,
+              "code": "class UserDecorator < ApplicationDecorator   delegate_all    DEFAULT = %i[     id     password_digest      name     full_name     display_name      admin     archived     affiliated     affiliation     confirmed     anonymous      email     born_at     avatar_url     accepted_policy_version     policy_accepted     timezone      language     preferred_language      created_at     updated_at   ].freeze    LINKS = %i[     self_url     email_url     emails_url     features_url     flippers_url     groups_url     permissions_url     preferences_url     profile_url     consents_url   ].freeze    def as_json(opts = {})     export DEFAULT, LINKS, **opts   end    def as_event(**)     export(DEFAULT, **)   end    def preferred_language     object.language   end    def admin     false   end    def self_url     h.user_url to_param   end    def email_url     h.user_email_rfc6570.partial_expand user_id: to_param   end    def emails_url     h.user_emails_url to_param   ...",
+              "source": "app/models/account/user.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/account/user.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/presenters/user_account_navigation.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/account/app/decorators/user_decorator.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Account::Authorization": {
+        "type": "Model",
+        "description": "Stores details about external authentication providers (e.g., SAML, OpenID Connect) linked to a user account.",
+        "interactions": {
+          "interaction_0": "Belongs to Account::User."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/account/authorization.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nmodule Account\n  class Authorization < ::ApplicationRecord\n    belongs_to :user, optional: true\n  end\nend",
+              "source": "app/models/account/authorization.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Account\n  # = Xikolo::Account::Authorization\n  #\n  # An authorization is a specific authorization for an\n  # external service the user has connected to.\n  # Authorization are used to log in as well as store a\n  # authorization token to use the service API on behalf of\n  # the user.\n  #\n  # @example Get a user's authorizations\n  #   authorizations = Xikolo::Account::Authorizations.where user: user.id\n  #\n  # @example Get all company SSO authorizations\n  #   authorizations = Xikolo::Account::Authorizations.where \\\n  #     provider: 'corp'\n  #\n  # @example Get first company SSO authorization for given user\n  #   authorization = Xikolo::Account::Authorizations.find_by \\\n  #     provider: 'corp', user: user.id\n  #\n  class Authorization < Acfs::Resource\n    service Xikolo::Account::Client, path: 'authorizations'\n\n    # Define resource attributes.\n    attribute :id, :string\n    attribute :user_id, :string\n    attribute :provider, :string\n    attri...",
+              "source": "app/models/account/authorization.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 17,
+              "code": "# frozen_string_literal: true\n\nclass AuthorizationDecorator < Draper::Decorator\n  delegate_all\n\n  def as_json(opts = {})\n    {\n      id:,\n      user_id:,\n      provider:,\n      uid:,\n      token:,\n      secret:,\n      expires_at: expires_at.try(:iso8601),\n      info:,\n    }.as_json(opts)\n  end\nend",
+              "source": "app/models/account/authorization.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/account/authorization.rb",
+              "relevance": 37
+            },
+            {
+              "path": "clients/xikolo-account/lib/xikolo/account/authorization.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/account/app/decorators/authorization_decorator.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Account::Session": {
+        "type": "Model",
+        "description": "Manages user login sessions within the application.",
+        "interactions": {
+          "interaction_0": "Belongs to Account::User."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/account/session.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nmodule Account\n  class Session < ::ApplicationRecord\n    belongs_to :user\n  end\nend",
+              "source": "app/models/account/session.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 52,
+              "code": "# frozen_string_literal: true\n\nclass SessionDecorator < ApplicationDecorator\n  delegate_all\n\n  DEFAULT = %i[\n    id\n    user_id\n    user_agent\n    masqueraded\n  ].freeze\n\n  LINKS = %i[\n    self_url\n    user_url\n  ].freeze\n\n  def as_json(opts = {})\n    @opts = opts\n\n    json = {\n      'id' => id,\n      'self_url' => self_url,\n    }\n\n    if user\n      json.merge! \\\n        'user_id' => user_id,\n        'user_url' => user_url,\n        'user_agent' => user_agent,\n        'masqueraded' => masqueraded?,\n        'interrupt' => interrupt?,\n        'interrupts' => interrupts\n\n      json['tokens_url'] = tokens_url unless anonymous?\n      json['masquerade_url'] = masquerade_url if !anonymous? && !token?\n    end\n\n    json['user']        = user        if embed?(:user)\n    json['features']    = features    if embed?(:features)\n    json['permissions'] = permissions if embed?(:permissions)\n\n    json.as_json(opts)\n  end\n\n  def as_event(**opts)\n    @opts = opts\n\n    {\n      'id' => id,\n      'user_id' =...",
+              "source": "app/models/account/session.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/account/session.rb",
+              "relevance": 37
+            },
+            {
+              "path": "clients/xikolo-account/lib/xikolo/account/session.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/account/app/decorators/session_decorator.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Account::Email": {
+        "type": "Model",
+        "description": "Manages user email addresses, distinguishing between primary and secondary emails.",
+        "interactions": {
+          "interaction_0": "Belongs to Account::User."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/account/email.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 12,
+              "code": "# frozen_string_literal: true\n\nmodule Account\n  class Email < ::ApplicationRecord\n    belongs_to :user, class_name: 'Account::User'\n\n    class << self\n      def primary\n        where(primary: true)\n      end\n    end\n  end\nend",
+              "source": "app/models/account/email.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 13,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Account\n  class Email < Acfs::Resource\n    service Xikolo::Account::Client, path: '/users/:user_id/emails'\n\n    attribute :id, :uuid\n    attribute :address, :string\n    attribute :primary, :boolean\n    attribute :confirmed, :boolean\n    attribute :confirmed_at, :date_time\n    attribute :created_at, :date_time\n  end\nend",
+              "source": "app/models/account/email.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 19,
+              "code": "# frozen_string_literal: true\n\nclass EmailDecorator < ApplicationDecorator\n  delegate_all\n  def as_json(opts = {})\n    {\n      id: model.uuid,\n      user_id: model.user_id,\n      address: model.address,\n      primary: model.primary,\n      confirmed: model.confirmed,\n      confirmed_at: model.confirmed_at.try(:iso8601),\n      created_at: model.created_at.iso8601,\n      user_url: h.user_url(model.user_id),\n      suspension_url: h.user_email_suspension_url(model.user_id, model.uuid),\n      self_url: h.user_email_url(model.user_id, model.uuid),\n    }.as_json(opts)\n  end\nend",
+              "source": "app/models/account/email.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/account/email.rb",
+              "relevance": 37
+            },
+            {
+              "path": "clients/xikolo-account/lib/xikolo/account/email.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/account/app/decorators/email_decorator.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Account::Consent": {
+        "type": "Model",
+        "description": "Records a user's explicit permission (or refusal) for a specific data 'treatment'. It automatically manages user group memberships based on consent status.",
+        "interactions": {
+          "interaction_0": "Belongs to Account::User.",
+          "interaction_1": "Belongs to Account::Treatment.",
+          "interaction_2": "Manages Account::Membership records (creation/destruction) based on consent value."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/account/consent.rb",
+            "services/account/app/models/consent.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 41,
+              "code": "\bclass\b \bConsent\b < ::\bApplicationRecord\b     \bbelongs_to\b :\buser\b, \bclass_name\b: '\bAccount\b::\bUser\b'     \bbelongs_to\b :\btreatment\b, \bclass_name\b: '\bAccount\b::\bTreatment\b'      \bvalidates\b :\bvalue\b, \binclusion\b: [\btrue\b, \bfalse\b]      \bafter_save_commit\b \bdo\b       \bif\b \bconsented\b?         \bbegin\b           \bAccount\b::\bMembership\b             .\bwhere\b(\buser\b:, \bgroup\b: \btreatment\b.\bgroup\b)             .\bfirst_or_create\b!         \brescue\b \bActiveRecord\b::\bRecordNotUnique\b           # \bdo\b \bnothing\b         \bend\b       \belse\b         \bAccount\b::\bMembership\b           .\bwhere\b(\buser\b:, \bgroup\b: \btreatment\b.\bgroup\b)           .\bdestroy_all\b       \bend\b     \bend\b      \bafter_destroy\b \bdo\b       \bAccount\b::\bMembership\b         .\bwhere\b(\buser\b:, \bgroup\b: \btreatment\b.\bgroup\b)         .\bdestroy_all\b     \bend\b      \bdef\b \bconsented\b?       \bvalue\b     \bend\b      \balias\b \bconsented\b \bconsented\b?      \bdef\b \bconsented_at\b       \bcreated_at\b     \bend\b      \bdef\b \brefused\b?       \bvalue\b.\bequal\b? \bfalse\b     \bend\b   \bend\b",
+              "source": "app/models/account/consent.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 44,
+              "code": "\bclass\b \bConsent\b < \bApplicationRecord\b   \bbelongs_to\b :\buser\b   \bbelongs_to\b :\btreatment\b    \bafter_save_commit\b \bdo\b     \bif\b \bconsented\b?       \bbegin\b         \bMembership\b           .\bwhere\b(\buser\b:, \bgroup\b: \btreatment\b.\bgroup\b)           .\bfirst_or_create\b!       \brescue\b \bActiveRecord\b::\bRecordNotUnique\b         # \bdo\b \bnothing\b       \bend\b     \belse\b       \bMembership\b         .\bwhere\b(\buser\b:, \bgroup\b: \btreatment\b.\bgroup\b)         .\bdestroy_all\b     \bend\b   \bend\b    \bafter_destroy\b \bdo\b     \bMembership\b       .\bwhere\b(\buser\b:, \bgroup\b: \btreatment\b.\bgroup\b)       .\bdestroy_all\b   \bend\b    \bclass\b << \bself\b     \bdef\b \blist\b       \btreatments\b = \bTreatment\b.\border\b(\brequired\b: :\bdesc\b, \bcreated_at\b: :\basc\b)       \bconsents\b = \bwhere\b(\btreatment\b: \btreatments\b).\bgroup_by\b(&:\btreatment_id\b)        \btreatments\b.\bmap\b \bdo\b |\bt\b|         \bif\b \bconsents\b.\bkey\b?(\bt\b.\bid\b)           \bconsents\b[\bt\b.\bid\b].\bfirst\b         \belse\b           \bnew\b(\btreatment\b: \bt\b, \bvalue\b: \bnil\b)         \bend\b       \bend\b     \bend\b   \bend\b    \bdef\b \bconsented\b?     \bvalue\b   \bend\b    \balias\b \bconsented\b \bconsented\b?    \bdef\b \bconsented_at\b     \bupdated_at\b   \bend\b",
+              "source": "app/models/account/consent.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 40,
+              "code": "\bclass\b \bConsentDecorator\b < \bApplicationDecorator\b   \bdelegate_all\b    \bDEFAULT\b = %\bi\b[     \bname\b     \brequired\b     \bconsented\b   ].\bfreeze\b    \bLINKS\b = %\bi\b[     \bself_url\b   ].\bfreeze\b    \bdef\b \bas_json\b(\bopts\b = {})     \bexport\b(\bDEFAULT\b, \boptional_fields\b, \bLINKS\b, **\bopts\b)   \bend\b    \bdelegate\b :\bid\b, :\bname\b, :\brequired\b, \bto\b: :'\bmodel\b.\btreatment\b'    \bdef\b \boptional_fields\b     [].\btap\b \bdo\b |\bfields\b|       \bfields\b << :\bconsented_at\b \bunless\b \bconsented\b.\bnil\b?       \bfields\b << :\bexternal_consent_url\b \bif\b \bexternal_consent_url\b     \bend\b   \bend\b    \bdef\b \bexternal_consent_url\b     \btreatment\b.\bconsent_manager\b['\bconsent_url\b']   \bend\b    \bdef\b \bself_url\b     \bh\b.\buser_consent_rfc6570\b.\bpartial_expand\b \\       \buser_id\b: \buser\b.\bto_param\b,       \bid\b: \btreatment\b.\bto_param\b   \bend\b    \bdef\b \buser_url\b     \bh\b.\buser_rfc6570\b.\bpartial_expand\b \\       \bid\b: \buser\b.\bto_param\b   \bend\b    \bdef\b \btreatment_url\b     \bh\b.\btreatment_rfc6570\b.\bpartial_expand\b \\       \bid\b: \btreatment\b.\bto_param\b   \bend\b \bend\b",
+              "source": "app/models/account/consent.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/account/consent.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/account/app/decorators/consent_decorator.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/account/app/models/consent.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Account::Treatment": {
+        "type": "Model",
+        "description": "Defines different categories or types of user data treatments (e.g., for research, marketing). Each treatment can be associated with a specific user group.",
+        "interactions": {
+          "interaction_0": "Has many Account::Consent records.",
+          "interaction_1": "Finds associated Account::Group records based on its name."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/account/treatment.rb",
+            "services/account/app/models/treatment.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nmodule Account\n  class Treatment < ::ApplicationRecord\n    has_many :consents, class_name: 'Account::Consent', dependent: :destroy\n\n    class << self\n      def lookup!(id: nil, name: nil)\n        scope = self\n        scope = scope.where(id:) if id.present?\n        scope = scope.where(name:) if name.present?\n        scope.take!\n      end\n    end\n\n    def group\n      return @group if defined?(@group)\n\n      @group = Account::Group.find_by(name: \"treatment.#{name}\")\n    end\n  end\nend",
+              "source": "app/models/account/treatment.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 15,
+              "code": "  after_create do\n    group = Group.create!(\n      name: \"treatment.#{name}\",\n      description: \"Users consenting to #{name}\"\n    )\n\n    Feature.create!(\n      name: \"treatment.#{name}\",\n      value: true,\n      owner: group,\n      context: Context.root\n    )\n  end",
+              "source": "app/models/account/treatment.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 20,
+              "code": "  validates :name,\n    uniqueness: {message: 'exists'},\n    format: {with: /\\A[\\w\\d]+\\z/, message: 'invalid'}",
+              "source": "app/models/account/treatment.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 31,
+              "code": "  CONSENT_MANAGER_KEYS = %w[type consent_url].sort.freeze\n  validate do\n    next if consent_manager.blank?\n\n    unless (consent_manager.keys.sort == CONSENT_MANAGER_KEYS) &&\n           consent_manager['type'].present?\n      errors.add :consent_manager, :invalid\n    end\n  end",
+              "source": "app/models/account/treatment.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 24,
+              "code": "# frozen_string_literal: true\n\nclass TreatmentDecorator < ApplicationDecorator\n  delegate_all\n\n  DEFAULT = %i[\n    name\n    required\n    consent_manager\n  ].freeze\n\n  LINKS = %i[\n    self_url\n  ].freeze\n\n  def as_json(opts = {})\n    export DEFAULT, LINKS, **opts\n  end\n\n  protected\n\n  def self_url\n    h.treatment_url(model)\n  end\nend",
+              "source": "app/models/account/treatment.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/account/treatment.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/account/app/decorators/treatment_decorator.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/account/app/models/treatment.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "OmniAuth::Builder": {
+        "type": "Configuration/Middleware",
+        "description": "The Rack middleware responsible for configuring and integrating various third-party authentication strategies (e.g., SAML, OpenID Connect) into the Rails application.",
+        "interactions": {
+          "interaction_0": "Reads authentication provider configurations from `config/omniauth.yml`.",
+          "interaction_1": "Interacts with external Identity Providers (IdPs).",
+          "interaction_2": "Facilitates the creation or lookup of Account::User and Account::Authorization records upon successful authentication."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/omniauth.rb",
+            "config/omniauth.yml"
+          ]
+        }
+      },
+      "account-profile.js": {
+        "type": "Frontend Script",
+        "description": "A legacy JavaScript file responsible for handling dynamic user profile editing on the frontend, including inline updates, password changes, and avatar uploads.",
+        "interactions": {
+          "interaction_0": "Utilizes the `bootstrap-editable` jQuery plugin for inline editing UI.",
+          "interaction_1": "Interacts with `I18n` for internationalization of messages and date formats.",
+          "interaction_2": "Sends AJAX `POST` requests to the backend API (implied by `ajaxurl`) to update user data.",
+          "interaction_3": "Manipulates DOM elements to show/hide forms and update displayed user information.",
+          "interaction_4": "Uses `showLoading` and `hideLoading` utilities for UI feedback."
+        },
+        "techDebt": [
+          "Uses `eslint-disable no-undef` and relies on a global `$` (jQuery), indicating a legacy frontend architecture.",
+          "The `doAjaxRequest` function uses `async: false` for AJAX calls, which blocks the main thread and can lead to a poor user experience. This should be refactored to use asynchronous patterns."
+        ],
+        "provenance": {
+          "sources": [
+            "app/assets/legacy/account-profile.js"
+          ]
+        }
+      },
+      "bootstrap-editable": {
+        "type": "Frontend Library",
+        "description": "A jQuery plugin used to provide inline editing functionality for various HTML elements on the user profile page.",
+        "interactions": {
+          "interaction_0": "Integrated and configured by `account-profile.js`.",
+          "interaction_1": "Renders editable UI components and triggers update events."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/legacy/account-profile.js"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 18,
+              "code": "import moment from 'moment/min/moment-with-locales';\nwindow.moment = moment;\nmoment.locale(document.documentElement.lang);\n\nimport '../../../vendor/assets/javascripts/bootstrap-editable';\n\n$.fn.editableform.buttons =\n  '<button type=\"submit\" class=\"btn btn-primary btn-sm editable-submit\">' +\n  '<i class=\"fa-solid fa-fw fa-check\"></i>' +\n  '</button>' +\n  '<button type=\"button\" class=\"btn btn-default btn-sm editable-cancel\">' +\n  '<i class=\"fa-solid fa-fw fa-times\"></i>' +\n  '</button>';\n\n$.fn.editable.defaults.mode = 'inline';",
+              "source": "app/assets/legacy/bootstrap-editable.js"
+            },
+            {
+              "startLine": 10,
+              "endLine": 23,
+              "code": "(function ($) {\n    \"use strict\";\n    \n    var EditableForm = function (div, options) {\n        this.options = $.extend({}, $.fn.editableform.defaults, options);\n        this.$div = $(div); //div, containing form. Not form tag. Not editable-element.\n        if(!this.options.scope) {\n            this.options.scope = this;\n        }\n        //nothing shown after init\n    };\n\n    EditableForm.prototype = {\n        constructor: EditableForm,\n        initInput: function() {  //called on...",
+              "source": "app/assets/legacy/bootstrap-editable.js"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/assets/legacy/bootstrap-editable.js",
+              "relevance": 11
+            },
+            {
+              "path": "vendor/assets/javascripts/bootstrap-editable.js",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "I18n (JS)": {
+        "type": "Frontend Library",
+        "description": "A JavaScript module providing internationalization capabilities for frontend messages, labels, and date formats.",
+        "interactions": {
+          "interaction_0": "Used by `account-profile.js` to retrieve localized strings for error messages, placeholders, and date formatting."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/legacy/account-profile.js"
+          ]
+        }
+      },
+      "Account Service": {
+        "type": "Microservice",
+        "description": "The dedicated microservice responsible for managing all user-related data, authentication, authorization, and profile information. It exposes an API for these functionalities and handles background jobs related to user management.",
+        "interactions": {
+          "interaction_0": "Interacts with PostgreSQL for data persistence. [Source: services/account/config/database.yml]",
+          "interaction_1": "Communicates with other services (e.g., Course Service) via RabbitMQ. [Source: services/account/config/rabbitmq.yml, services/account/config/services.yml]",
+          "interaction_2": "Utilizes Redis for caching and Sidekiq background job processing. [Source: docker/compose.account.yml]",
+          "interaction_3": "Exposes API endpoints consumed by the main `web` application and other internal services. [Source: services/account/app/controllers/]",
+          "interaction_4": "Integrates with S3 for avatar and upload storage. [Source: docker/config/xikolo/account.yml]"
+        },
+        "techDebt": [
+          "The service's README is marked as a 'TODO' for improvement. [Source: services/account/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "docker/compose.account.yml",
+            "docker/config/xikolo/account.yml",
+            "services/account/config/database.yml",
+            "services/account/config/rabbitmq.yml",
+            "services/account/config/services.yml",
+            "services/account/README.md",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Permissions Manager": {
+        "type": "Service Component",
+        "description": "Manages the definition, loading, and granting of permissions and roles within the Xikolo platform. It ensures that user access is controlled based on assigned roles and groups, adhering to a privacy-by-design principle.",
+        "interactions": {
+          "interaction_0": "Stores permission, role, and group definitions and assignments in the database. [Source: services/account/app/models/]",
+          "interaction_1": "Provides mechanisms (Rake tasks) to load and update permission configurations. [Source: services/account/lib/tasks/permissions/]",
+          "interaction_2": "Enforces access control for user actions and resource access across the platform, consumed by other services. [Source: services/account/lib/tasks/permissions/account.yml]"
+        },
+        "techDebt": [
+          "Changes to grant mappings for new courses are not automatically applied to existing courses, requiring a separate 'regranting permissions' process. [Source: services/account/lib/tasks/permissions/]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/account/lib/tasks/permissions/account.yml",
+            "services/account/app/models/"
+          ]
+        }
+      },
+      "Custom Profile Fields Manager": {
+        "type": "Service Component",
+        "description": "Provides functionality to define and manage custom profile fields for users, allowing platforms to collect specific demographic or organizational data. It supports various field types and mandatory field enforcement.",
+        "interactions": {
+          "interaction_0": "Stores custom field definitions and user-provided values in the database. [Source: services/account/app/models/custom_field.rb]",
+          "interaction_1": "Affects user profile pages and potentially reporting/analytics features by collecting structured user data. [Source: app/controllers/account/profile_controller.rb]",
+          "interaction_2": "Triggers 'interrupt' pages for existing users when new mandatory fields are introduced. [Source: services/account/app/models/custom_field.rb]"
+        },
+        "techDebt": [
+          "Configuring and updating custom fields is currently only possible from the `xi-account` Rails console, lacking a UI for management. [Source: services/account/app/models/custom_field.rb]",
+          "Updates to existing select/multi-select fields, especially renaming or removing values, require careful consideration due to potential data integrity issues. [Source: services/account/app/models/custom_field.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/account/app/models/custom_field.rb"
+          ]
+        }
+      },
+      "User Management API": {
+        "type": "API Endpoint/Service",
+        "description": "Provides a set of API endpoints exposed by the Account Service for comprehensive management of user accounts. This includes operations like user creation, retrieval, deletion, password changes, masquerading, and manual account confirmation.",
+        "interactions": {
+          "interaction_0": "Exposed by the Account Service for consumption by the main `web` application and other authorized internal services. [Source: services/account/app/controllers/]",
+          "interaction_1": "Interacts directly with the underlying database to perform CRUD operations on user data. [Source: services/account/app/models/user.rb]",
+          "interaction_2": "Leverages the Permissions Manager to enforce administrative access controls for sensitive user operations. [Source: services/account/lib/tasks/permissions/account.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/lib/tasks/permissions/account.yml",
+            "services/account/app/controllers/",
+            "services/account/app/models/user.rb"
+          ]
+        }
+      },
+      "preferences.ts": {
+        "type": "Frontend Script",
+        "description": "Client-side JavaScript/TypeScript module responsible for handling user interactions with preference switches, sending updates to the backend, and dynamically adjusting UI elements based on preference states.",
+        "interactions": {
+          "interaction_0": "Sends PUT requests to `/preferences` endpoint on the `web` application.",
+          "interaction_1": "Reads and updates DOM elements related to preference switches and notification preference visibility."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/user/settings/preferences.ts"
+          ]
+        }
+      },
+      "Account::PreferencesController": {
+        "type": "Rails Controller",
+        "description": "Handles HTTP requests for displaying and updating user preferences in the `web` application. It acts as an intermediary, fetching data from and sending updates to the `account` microservice.",
+        "interactions": {
+          "interaction_0": "Fetches user preferences via `Xikolo::Account::Preferences` (ACFS client).",
+          "interaction_1": "Uses `Account::PreferencesPresenter` to prepare data for views.",
+          "interaction_2": "Validates incoming preference names and values.",
+          "interaction_3": "Updates preferences via `Xikolo::Account::Preferences`."
+        },
+        "techDebt": [
+          "The controller currently fetches the entire preferences object, modifies a single key, and saves it. A `PATCH` update mechanism at the service level is suggested for optimization. [Source: app/controllers/account/preferences_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/account/preferences_controller.rb"
+          ]
+        }
+      },
+      "Account::PreferencesPresenter": {
+        "type": "Rails Presenter",
+        "description": "Formats and structures user preference data for display in the `web` application's views. It defines helper classes for individual preference and notification items.",
+        "interactions": {
+          "interaction_0": "Receives `Xikolo::Account::Preferences` object during initialization.",
+          "interaction_1": "Provides methods to check global notification status and retrieve specific preference values.",
+          "interaction_2": "Delegates rendering of individual preferences to `PreferencePresenter` and `NotificationPresenter`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/account/preferences_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 12,
+              "code": "class Account::PreferencesPresenter\n  class << self\n    def notification(name, opts = {})\n      notifications[name] = opts\n    end\n\n    def notifications\n      @notifications ||= {}\n    end\n  end",
+              "source": "app/presenters/account/policy_presenter.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 17,
+              "code": "  notification 'news.announcement'\n  notification 'course.announcement'\n  notification 'pinboard.new_answer'\n\n  notification 'stats', platform: false, teacher: true",
+              "source": "app/presenters/account/policy_presenter.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 29,
+              "code": "  def initialize(preferences)\n    @preferences = preferences\n  end\n\n  def notifications_enabled?\n    @preferences.get_bool 'notification.email.global', default: true\n  end\n\n  def hide_notification_preferences?\n    !notifications_enabled?\n  end",
+              "source": "app/presenters/account/policy_presenter.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 33,
+              "code": "  def get(key)\n    PreferencePresenter.new @preferences, key\n  end",
+              "source": "app/presenters/account/policy_presenter.rb"
+            },
+            {
+              "startLine": 35,
+              "endLine": 41,
+              "code": "  def notifications\n    self.class.notifications.reject do |_, opts|\n      opts[:teacher]\n    end.map do |name, opts|\n      NotificationPresenter.new @preferences, name, opts\n    end\n  end",
+              "source": "app/presenters/account/policy_presenter.rb"
+            },
+            {
+              "startLine": 43,
+              "endLine": 47,
+              "code": "  def teacher_notifications\n    self.class.notifications.select do |_, opts|\n      opts[:teacher]\n    end",
+              "source": "app/presenters/account/policy_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/account/preferences_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/account/profile_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Account::PreferencesPresenter::PreferencePresenter": {
+        "type": "Rails Presenter Helper",
+        "description": "A nested class within `Account::PreferencesPresenter` responsible for rendering a single user preference, including its label and a toggle switch.",
+        "interactions": {
+          "interaction_0": "Receives a preference key and options, and the `Xikolo::Account::Preferences` object.",
+          "interaction_1": "Uses `ActionView::Base` helpers to generate HTML for labels and checkboxes."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/account/preferences_presenter.rb"
+          ]
+        }
+      },
+      "Account::PreferencesPresenter::NotificationPresenter": {
+        "type": "Rails Presenter Helper",
+        "description": "A specialized nested class for rendering notification preferences, extending `PreferencePresenter` to handle platform-specific notification settings.",
+        "interactions": {
+          "interaction_0": "Receives a notification name and options, and the `Xikolo::Account::Preferences` object.",
+          "interaction_1": "Overrides `value` and `render_switch` to support platform-specific notification keys."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/account/preferences_presenter.rb"
+          ]
+        }
+      },
+      "Xikolo::Account::Preferences": {
+        "type": "ACFS Client Resource",
+        "description": "An ActiveResource-like client for the `web` application to interact with the `account` microservice's preferences API. It provides a convenient interface for fetching and updating user preferences.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` service at `/users/:user_id/preferences` via HTTP (REST).",
+          "interaction_1": "Provides `get`, `get_bool`, `get_int`, `set`, and `update` methods to manipulate preference properties."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "clients/xikolo-account/lib/xikolo/account/preferences.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 44,
+              "code": "module Xikolo::Account   class Preferences < Acfs::SingletonResource     service Xikolo::Account::Client, path: '/users/:user_id/preferences'      attribute :user_id, :string     attribute :properties, :dict, default: {}      # Get a specific user preference property.     #     # @example     #   user.preferences.get 'social.social.allow_detection_via_name'     #   => true     def get(key, default = nil)       if properties         properties.fetch(key, default)       else         default       end     end     alias [] get      def get_bool(key, default: false)       val = get(key)       val.nil? ? default : val == 'true'     end      def get_int(key, default = 0)       Integer get(key, default)     end      def set(key, value)       if properties         properties[key] = value       else         self.properties = {key => value}       end     end     alias []= set      def update(hash = {})       self.properties = if properties                           ...",
+              "source": "clients/xikolo-account/lib/xikolo/account/preferences.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-account/lib/xikolo/account/preferences.rb",
+              "relevance": 40
+            },
+            {
+              "path": "services/account/app/decorators/preferences_decorator.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/notification/app/models/resources/preferences.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "API::PreferencesController": {
+        "type": "Account Service API Controller",
+        "description": "The API controller within the `account` microservice responsible for handling requests related to user preferences. It exposes endpoints for retrieving and updating preferences.",
+        "interactions": {
+          "interaction_0": "Retrieves `User` objects from the database.",
+          "interaction_1": "Updates the `preferences` attribute of the `User` model.",
+          "interaction_2": "Uses `PreferencesDecorator` to format API responses.",
+          "interaction_3": "Publishes `xikolo.account.user.preferences.updated` messages to RabbitMQ via `Msgr` after updates."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/app/controllers/api/preferences_controller.rb"
+          ]
+        }
+      },
+      "PreferencesDecorator": {
+        "type": "Draper Decorator",
+        "description": "A decorator used in the `account` service to format the `User` model's preferences attribute into a standardized JSON structure for API responses.",
+        "interactions": {
+          "interaction_0": "Decorates `User` model instances to expose `user_id` and `properties` (the preferences hash)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/app/decorators/preferences_decorator.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 1,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class PreferencesDecorator < Draper::Decorator\n  def as_json(opts = {})\n    {\n      user_id: model.id,\n      properties: model.preferences,\n    }.as_json(opts)\n  end\nend",
+              "source": "services/account/app/decorators/preferences_decorator.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/account/app/decorators/preferences_decorator.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "User": {
+        "type": "Account Service Model",
+        "description": "The core model in the `account` service representing a user. It stores various user attributes, including a `preferences` attribute (likely a `hstore` or `jsonb` column) that holds key-value pairs for user settings.",
+        "interactions": {
+          "interaction_0": "Stores and retrieves user preferences in its `preferences` attribute.",
+          "interaction_1": "Interacted with by `API::PreferencesController` for preference updates."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/app/models/user.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2::User\n    class Users < Xikolo::Endpoint::CollectionEndpoint\n      entity do\n        type 'users'\n\n        attribute('name') {\n          description 'The user\\'s display name'\n          type :string\n        }\n\n        attribute('avatar_url') {\n          type :string\n          reading {|user|\n            Xikolo::V2::URL.avatar_url user['id'], width: 1000, height: 1000\n          }\n        }\n\n        includable has_one('profile', Xikolo::V2::User::Profile) {\n          foreign_key 'id'\n        }\n\n        link('self') {|user| \"/api/v2/users/#{user['id']}\" }\n      end\n\n      member do\n        get 'Load information about a user (use \"me\" as ID if the current user\\'s ID is not available)' do\n          authenticate!\n\n          Xikolo.api(:account).value!.rel(:user).get({\n            id: id == 'me' ? current_user.id : id,\n          }).value!\n        end\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/v2/user/users.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 37,
+              "code": "# frozen_string_literal: true\n\nmodule Global\n  class UserAvatar < ApplicationComponent\n    def initialize(user_id, size:, type: nil)\n      raise ArgumentError.new('Unknown size') unless SIZE_MAPPING.key? size\n\n      @user_id = user_id\n      @size = size\n      @type = type\n    end\n\n    # Mapping of modifier to px\n    # When changing these values, please also adapt\n    # the respective _profile.scss classes.\n    SIZE_MAPPING = {\n      tiny: 20,\n      small: 30,\n      medium: 40,\n      large: 60,\n      'x-large': 100,\n    }.stringify_keys.freeze\n\n    private\n\n    def css_classes\n      classes = %w[user-avatar]\n      classes << type_class.presence\n      classes << size_class.presence\n      classes.compact.join(' ')\n    end\n\n    def type_class\n      # Predefined CSS classes for types: rounded\n      @type ? \"user-avatar--#{@type}\" : ''\n    end\n\n    def size_class\n      @size ? \"user-avatar--#{@size}\" : ''\n    end\n\n    def user_avatar_path\n      avatar_path(@user_id, width: size, height: size",
+              "source": "api/xikolo/v2/user/users.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 18,
+              "code": "      def index\n        users = account_api.rel(:users).get({\n          query: params[:q],\n        }).value!\n\n        render json: users.map {|u| {id: u['id'], text: \"#{u['name']} (#{u['email']})\"} }\n      end",
+              "source": "api/xikolo/v2/user/users.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/user/users.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/components/global/user_avatar.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/admin/ajax/users_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Integrates with various external Identity Providers (IdPs) like SAML and OpenID Connect. [Source: config/initializers/omniauth.rb]",
+      "interaction_1": "Provides authentication callbacks to the main application. [Source: config/initializers/omniauth.rb]",
+      "interaction_2": "Users interact with their profile page to input data. [Source: app/controllers/account/profile_controller.rb]",
+      "interaction_3": "Administrators configure fields via Rails console. [Source: services/account/app/models/custom_field.rb]",
+      "interaction_4": "Users manage consents on their profile page. [Source: app/controllers/account/profile_controller.rb]",
+      "interaction_5": "The system enforces required consents. [Source: services/account/app/models/consent.rb]",
+      "interaction_6": "Custom integrations handle external consent managers. [Source: services/account/app/models/consent.rb]",
+      "interaction_7": "Likely exposes API endpoints for user operations.",
+      "interaction_8": "Interacts with the main application for authentication flows and profile data display.",
+      "interaction_9": "Manages permissions based on defined roles and grants. [Source: services/account/lib/tasks/permissions/account.yml]",
+      "interaction_10": "Roles are assigned to groups. [Source: services/account/lib/tasks/permissions/account.yml]",
+      "interaction_11": "Groups are granted specific permissions within a context. [Source: services/account/lib/tasks/permissions/account.yml]",
+      "interaction_12": "Clients send requests with Bearer Tokens.",
+      "interaction_13": "The API validates tokens.",
+      "interaction_14": "Interacts with the Xikolo::Web application for user authentication and authorization requests [Source: services/account/app/models/user.rb].",
+      "interaction_15": "Manages persistence of permissions, roles, groups, and grants in a PostgreSQL database [Source: services/account/app/models/].",
+      "interaction_16": "Consumes configuration from Xikolo::Web's `app/xikolo.yml` for course-specific permissions and `global_permission_groups` [Source: services/account/lib/tasks/permissions/account.yml, config/xikolo.yml].",
+      "interaction_17": "Bundled into Roles [Source: services/account/lib/tasks/permissions/account.yml].",
+      "interaction_18": "Defined in YAML files within the Xikolo::Account service [Source: services/account/lib/tasks/permissions/account.yml].",
+      "interaction_19": "Comprises multiple Permissions [Source: services/account/lib/tasks/permissions/account.yml].",
+      "interaction_20": "Granted to Groups within a specific context [Source: services/account/lib/tasks/permissions/account.yml].",
+      "interaction_21": "Receives Grants of Roles [Source: services/account/lib/tasks/permissions/account.yml].",
+      "interaction_22": "Global groups are defined in `lib/tasks/permissions/*.yml` in `xi-account` and `global_permission_groups` in `xi-web` [Source: services/account/lib/tasks/permissions/account.yml, config/xikolo.yml].",
+      "interaction_23": "Reads permission definitions from YAML files [Source: services/account/lib/tasks/permissions/account.yml].",
+      "interaction_24": "Updates the database with new or modified permissions, roles, and grants [Source: services/account/lib/tasks/permissions/].",
+      "interaction_25": "Does not delete existing entries, requiring manual or script-based regranting for removals [Source: services/account/lib/tasks/permissions/].",
+      "interaction_26": "Has many Account::Authorization records for external authentication details.",
+      "interaction_27": "Has many Account::Email records, including a primary email.",
+      "interaction_28": "Has many Account::Consent records for data treatment permissions.",
+      "interaction_29": "Has many Account::Membership records, linking users to groups based on consents.",
+      "interaction_30": "Has many Gamification::Score and Gamification::Badge records.",
+      "interaction_31": "Has many Course::Result and Course::Visit records for learning progress.",
+      "interaction_32": "Has many Certificate::Record records.",
+      "interaction_33": "Belongs to Account::User.",
+      "interaction_34": "Belongs to Account::User.",
+      "interaction_35": "Belongs to Account::User.",
+      "interaction_36": "Belongs to Account::User.",
+      "interaction_37": "Belongs to Account::Treatment.",
+      "interaction_38": "Manages Account::Membership records (creation/destruction) based on consent value.",
+      "interaction_39": "Has many Account::Consent records.",
+      "interaction_40": "Finds associated Account::Group records based on its name.",
+      "interaction_41": "Reads authentication provider configurations from `config/omniauth.yml`.",
+      "interaction_42": "Interacts with external Identity Providers (IdPs).",
+      "interaction_43": "Facilitates the creation or lookup of Account::User and Account::Authorization records upon successful authentication.",
+      "interaction_44": "Utilizes the `bootstrap-editable` jQuery plugin for inline editing UI.",
+      "interaction_45": "Interacts with `I18n` for internationalization of messages and date formats.",
+      "interaction_46": "Sends AJAX `POST` requests to the backend API (implied by `ajaxurl`) to update user data.",
+      "interaction_47": "Manipulates DOM elements to show/hide forms and update displayed user information.",
+      "interaction_48": "Uses `showLoading` and `hideLoading` utilities for UI feedback.",
+      "interaction_49": "Integrated and configured by `account-profile.js`.",
+      "interaction_50": "Renders editable UI components and triggers update events.",
+      "interaction_51": "Used by `account-profile.js` to retrieve localized strings for error messages, placeholders, and date formatting.",
+      "interaction_52": "Interacts with PostgreSQL for data persistence. [Source: services/account/config/database.yml]",
+      "interaction_53": "Communicates with other services (e.g., Course Service) via RabbitMQ. [Source: services/account/config/rabbitmq.yml, services/account/config/services.yml]",
+      "interaction_54": "Utilizes Redis for caching and Sidekiq background job processing. [Source: docker/compose.account.yml]",
+      "interaction_55": "Exposes API endpoints consumed by the main `web` application and other internal services. [Source: services/account/app/controllers/]",
+      "interaction_56": "Integrates with S3 for avatar and upload storage. [Source: docker/config/xikolo/account.yml]",
+      "interaction_57": "Stores permission, role, and group definitions and assignments in the database. [Source: services/account/app/models/]",
+      "interaction_58": "Provides mechanisms (Rake tasks) to load and update permission configurations. [Source: services/account/lib/tasks/permissions/]",
+      "interaction_59": "Enforces access control for user actions and resource access across the platform, consumed by other services. [Source: services/account/lib/tasks/permissions/account.yml]",
+      "interaction_60": "Stores custom field definitions and user-provided values in the database. [Source: services/account/app/models/custom_field.rb]",
+      "interaction_61": "Affects user profile pages and potentially reporting/analytics features by collecting structured user data. [Source: app/controllers/account/profile_controller.rb]",
+      "interaction_62": "Triggers 'interrupt' pages for existing users when new mandatory fields are introduced. [Source: services/account/app/models/custom_field.rb]",
+      "interaction_63": "Exposed by the Account Service for consumption by the main `web` application and other authorized internal services. [Source: services/account/app/controllers/]",
+      "interaction_64": "Interacts directly with the underlying database to perform CRUD operations on user data. [Source: services/account/app/models/user.rb]",
+      "interaction_65": "Leverages the Permissions Manager to enforce administrative access controls for sensitive user operations. [Source: services/account/lib/tasks/permissions/account.yml]",
+      "interaction_66": "Sends PUT requests to `/preferences` endpoint on the `web` application.",
+      "interaction_67": "Reads and updates DOM elements related to preference switches and notification preference visibility.",
+      "interaction_68": "Fetches user preferences via `Xikolo::Account::Preferences` (ACFS client).",
+      "interaction_69": "Uses `Account::PreferencesPresenter` to prepare data for views.",
+      "interaction_70": "Validates incoming preference names and values.",
+      "interaction_71": "Updates preferences via `Xikolo::Account::Preferences`.",
+      "interaction_72": "Receives `Xikolo::Account::Preferences` object during initialization.",
+      "interaction_73": "Provides methods to check global notification status and retrieve specific preference values.",
+      "interaction_74": "Delegates rendering of individual preferences to `PreferencePresenter` and `NotificationPresenter`.",
+      "interaction_75": "Receives a preference key and options, and the `Xikolo::Account::Preferences` object.",
+      "interaction_76": "Uses `ActionView::Base` helpers to generate HTML for labels and checkboxes.",
+      "interaction_77": "Receives a notification name and options, and the `Xikolo::Account::Preferences` object.",
+      "interaction_78": "Overrides `value` and `render_switch` to support platform-specific notification keys.",
+      "interaction_79": "Communicates with the `account` service at `/users/:user_id/preferences` via HTTP (REST).",
+      "interaction_80": "Provides `get`, `get_bool`, `get_int`, `set`, and `update` methods to manipulate preference properties.",
+      "interaction_81": "Retrieves `User` objects from the database.",
+      "interaction_82": "Updates the `preferences` attribute of the `User` model.",
+      "interaction_83": "Uses `PreferencesDecorator` to format API responses.",
+      "interaction_84": "Publishes `xikolo.account.user.preferences.updated` messages to RabbitMQ via `Msgr` after updates.",
+      "interaction_85": "Decorates `User` model instances to expose `user_id` and `properties` (the preferences hash).",
+      "interaction_86": "Stores and retrieves user preferences in its `preferences` attribute.",
+      "interaction_87": "Interacted with by `API::PreferencesController` for preference updates."
+    },
+    "technicalDebt": [
+      "Allowing `GET` requests for OmniAuth callbacks is a security concern and should be restricted to `POST` requests. [Source: config/initializers/omniauth.rb]",
+      "Configuration is currently console-only, which might not be scalable for non-technical administrators. [Source: services/account/app/models/custom_field.rb]",
+      "Custom integration required for each external consent manager type. [Source: services/account/app/models/consent.rb]",
+      "`README.md` is a placeholder, indicating a lack of comprehensive service documentation. [Source: services/account/README.md]",
+      "Token exchange endpoints do not yet exist, requiring manual shared secret distribution. [Source: app/controllers/portal_api/]",
+      "The `README.md` for the service is marked as a 'TODO: Write a better README', indicating a lack of comprehensive internal documentation [Source: services/account/README.md].",
+      "Uses `eslint-disable no-undef` and relies on a global `$` (jQuery), indicating a legacy frontend architecture.",
+      "The `doAjaxRequest` function uses `async: false` for AJAX calls, which blocks the main thread and can lead to a poor user experience. This should be refactored to use asynchronous patterns.",
+      "The service's README is marked as a 'TODO' for improvement. [Source: services/account/README.md]",
+      "Changes to grant mappings for new courses are not automatically applied to existing courses, requiring a separate 'regranting permissions' process. [Source: services/account/lib/tasks/permissions/]",
+      "Configuring and updating custom fields is currently only possible from the `xi-account` Rails console, lacking a UI for management. [Source: services/account/app/models/custom_field.rb]",
+      "Updates to existing select/multi-select fields, especially renaming or removing values, require careful consideration due to potential data integrity issues. [Source: services/account/app/models/custom_field.rb]",
+      "The controller currently fetches the entire preferences object, modifies a single key, and saves it. A `PATCH` update mechanism at the service level is suggested for optimization. [Source: app/controllers/account/preferences_controller.rb]"
+    ]
+  }
+}

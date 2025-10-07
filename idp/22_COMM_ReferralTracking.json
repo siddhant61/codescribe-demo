@@ -1,0 +1,317 @@
+{
+  "clusterId": "22_COMM_ReferralTracking",
+  "featureFocus": "User Referral & Redirect Tracking",
+  "documentationReport": "The feature cluster \"User Referral & Redirect Tracking\" encompasses functionalities for recording how users arrive at the platform and managing various redirection scenarios, both internal and external. This is primarily handled by the `TracksReferrers` concern and the `Home::GoController`.\n\n### Referrer Tracking\nThe `TracksReferrers` concern is designed to capture and log information about external websites that link to the platform. [Source: app/controllers/concerns/tracks_referrers.rb] This concern is intended for inclusion in public-facing HTML controllers. [Source: app/controllers/concerns/tracks_referrers.rb] After an action, it executes `track_referrer` to process the HTTP Referer header. [Source: app/controllers/concerns/tracks_referrers.rb]\n\nKey aspects of referrer tracking:\n*   **Exclusions:** Requests containing a `logo: 'true'` parameter (typically from email tracking) are ignored to prevent false positives. [Source: app/controllers/concerns/tracks_referrers.rb] Invalid or internal referrers (those originating from the platform's own domain, as defined by `Xikolo.base_url`) are also disregarded. [Source: app/controllers/concerns/tracks_referrers.rb]\n*   **Payload Generation:** A `tracking_payload` is constructed from request parameters such as `referrer`, `tracking_external_link`, `tracking_campaign`, `tracking_id`, `tracking_course_id`, `tracking_type`, and `tracking_user`. [Source: app/controllers/concerns/tracks_referrers.rb] This payload is then enriched with server-side metadata, including `user_id` (from `current_user` if logged in, or `tracking_user` if anonymous and valid), `course_id` (if available from `promises[:course]`), `referrer_page` (the original URL), and `created_at`. [Source: app/controllers/concerns/tracks_referrers.rb]\n*   **Asynchronous Processing:** The enriched payload is published as a JSON message to the `xikolo.web.referrer` topic using `Msgr`, indicating it's sent to the `lanalytics` service for aggregation. [Source: app/controllers/concerns/tracks_referrers.rb] This aligns with the foundational context's mention of `Msgr` for inter-service communication. [Source: Gemfile]\n\n### Redirection Management\nThe `Home::GoController` is responsible for handling various redirection scenarios, ensuring safety and proper routing. [Source: app/controllers/home/go_controller.rb]\n\nKey redirection functionalities:\n*   **Safe External Redirects (`#redirect`):** This action allows redirecting to external URLs. It first validates the link using `Xikolo::Common::Tracking::ExternalLink` and a checksum. [Source: app/controllers/home/go_controller.rb] If `redirect_now` (based on `show_notice` param or `skip_redirect_notice` cookie) is true, an immediate external redirect occurs. Otherwise, it displays a notice page before redirecting after 5 seconds using an HTTP `Refresh` header. [Source: app/controllers/home/go_controller.rb]\n*   **Course Deep Linking (`#course`):** This endpoint facilitates linking directly to a course launch page using a `course_id` parameter. [Source: app/controllers/home/go_controller.rb]\n*   **Pinboard Deep Linking (`#pinboard`):** It allows deep linking to a course's pinboard, specifically to a tag associated with an item. It fetches item and course details from `Xikolo.api(:course)` and tag information from `Xikolo.api(:pinboard)`. [Source: app/controllers/home/go_controller.rb] This demonstrates interaction with microservices as described in the foundational context. [Source: config/routes.rb]\n*   **Item Deep Linking (`#item`):** Redirects to a specific course item, fetching course and item details from `Xikolo.api(:course)`. [Source: app/controllers/home/go_controller.rb]\n*   **LimeSurvey Integration (`#survey`):** This action redirects users to an external LimeSurvey instance. It forwards arbitrary query parameters but explicitly removes sensitive tracking and user-related parameters (e.g., `tracking`, `referrer`, `user_id`). [Source: app/controllers/home/go_controller.rb] It also adds required LimeSurvey parameters (`r`, `sid`, `newtest`) and a platform identifier (`xi_platform`). [Source: app/controllers/home/go_controller.rb] For authenticated users, a SHA256 hashed `current_user.id` is added as `xi_pseudo_id`. [Source: app/controllers/home/go_controller.rb] The target URL is constructed using `Addressable::URI` and the `Xikolo.config.limesurvey_url`. [Source: app/controllers/home/go_controller.rb] Tests confirm the sanitization and parameter handling. [Source: spec/requests/go/survey_spec.rb]\n\n### URL Safety\nThe `RedirectURL` utility class (`lib/redirect_url.rb`) is crucial for preventing open redirect vulnerabilities. [Source: lib/redirect_url.rb] It parses a given URL string using `Addressable::URI` and provides methods to check if a URL is `internal?` (either relative or sharing the same origin as a provided base URL). [Source: lib/redirect_url.rb] This class is implicitly used by `Home::GoController` through `Xikolo::Common::Tracking::ExternalLink` for validating external redirects. [Source: app/controllers/home/go_controller.rb]",
+  "componentMapPatch": {
+    "components": {
+      "TracksReferrers": {
+        "type": "Concern",
+        "description": "An `ActiveSupport::Concern` responsible for tracking external referrers and associated tracking parameters when users access public-facing pages. It filters out internal referrers, invalid URLs, and specific 'logo' requests, then enriches the data with server-side metadata before publishing it for asynchronous processing.",
+        "interactions": {
+          "interaction_0": "Includes `ActiveSupport::Concern` for mixin functionality. [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_1": "Hooks into the controller lifecycle via `after_action :track_referrer`. [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_2": "Interacts with `request.referer` and `request.original_url` to get URL information. [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_3": "Accesses `params` for tracking-related query parameters (e.g., `tracking_campaign`, `tracking_id`, `logo`). [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_4": "Uses `URI.parse` and `URI::InvalidURIError` for referrer URL parsing and validation. [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_5": "Compares referrer host with `Xikolo.base_url.host` to identify internal referrers. [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_6": "Accesses `current_user` to determine the user ID for logged-in users. [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_7": "Uses `UUID4.try_convert` to validate and convert `tracking_user` parameter to a UUID. [Source: app/controllers/concerns/tracks_referrers.rb]",
+          "interaction_8": "Publishes an enriched JSON payload to the `xikolo.web.referrer` topic via `Msgr` for asynchronous processing by the `lanalytics` service. [Source: app/controllers/concerns/tracks_referrers.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/concerns/tracks_referrers.rb",
+            "spec/requests/tracking/referrer_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 11,
+              "endLine": 13,
+              "code": "module TracksReferrers\n  extend ActiveSupport::Concern\n",
+              "source": "app/controllers/concerns/tracks_referrers.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 17,
+              "code": "  included do\n    after_action :track_referrer\n  end\n",
+              "source": "app/controllers/concerns/tracks_referrers.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 20,
+              "code": "  private\n\n  def track_referrer",
+              "source": "app/controllers/concerns/tracks_referrers.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 32,
+              "code": "    # Logo requests (from emails) should not be considered as real clicks, so\n    # we ignore these.\n    return if params[:logo] == 'true'\n\n    # If there are no parameters worth tracking (such as campaign or user ID),\n    # we are already done.\n    return if tracking_payload.empty?\n\n    # Now, if we have data to store, enrich the payload with server-side\n    # metadata, such as date, URL and context information.\n    # Finally, send it off to la...\n",
+              "source": "app/controllers/concerns/tracks_referrers.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/concerns/tracks_referrers.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Home::GoController": {
+        "type": "Controller",
+        "description": "A frontend controller responsible for managing various redirection flows within the application, including safe external redirects, deep linking to internal resources (courses, items, pinboards), and integration with external survey platforms like LimeSurvey.",
+        "interactions": {
+          "interaction_0": "Includes the `TracksReferrers` concern for referrer tracking. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_1": "Inherits from `Abstract::FrontendController`. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_2": "Performs safe external redirects using `Xikolo::Common::Tracking::ExternalLink` and `params[:checksum]` for validation. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_3": "Manages delayed redirects using HTTP `Refresh` headers and `cookies[:skip_redirect_notice]`. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_4": "Interacts with `Xikolo.api(:course)` to fetch course and item details for deep linking. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_5": "Interacts with `Xikolo.api(:pinboard)` to fetch pinboard tag information for deep linking. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_6": "Redirects to external LimeSurvey URLs, sanitizing query parameters and adding platform-specific data. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_7": "Uses `Xikolo.config.limesurvey_url` and `Xikolo.config.brand` for LimeSurvey configuration. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_8": "Accesses `current_user` to determine if a user is anonymous and to hash their ID for LimeSurvey. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_9": "Uses `Digest::SHA256.hexdigest` for user ID hashing. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_10": "Utilizes `Addressable::URI` for constructing and manipulating LimeSurvey URLs. [Source: app/controllers/home/go_controller.rb]",
+          "interaction_11": "Converts UUIDs using `UUID4` for item and course IDs. [Source: app/controllers/home/go_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/go_controller.rb",
+            "spec/requests/go/survey_spec.rb"
+          ]
+        }
+      },
+      "RedirectURL": {
+        "type": "Utility Class",
+        "description": "A helper class designed to validate URLs for safe redirection, primarily to prevent open redirect vulnerabilities. It determines if a given URL is internal (relative or same-origin) compared to a base URL.",
+        "interactions": {
+          "interaction_0": "Initializes with a URL string, parsing it using `Addressable::URI`. [Source: lib/redirect_url.rb]",
+          "interaction_1": "Provides `internal?(base)` method to check if the URL is relative or shares the same origin as the `base` URL. [Source: lib/redirect_url.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "lib/redirect_url.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 38,
+              "code": "# frozen_string_literal: true\n\nrequire 'addressable/uri'\n\n##\n# A helper class for safe redirects\n#\n# To avoid open redirect vulnerabilities, redirects should usually only be\n# allowed to our own URLs, e.g. absolute URLs with a known host, or relative\n# ones without host.\n#\nclass RedirectURL\n  def initialize(str)\n    @uri = Addressable::URI.parse(str)\n  rescue\n    @uri = nil\n  end\n\n  def internal?(base)\n    return false unless @uri\n\n    relative? || same_origin?(base)\n  end\n\n  def to_s\n    @uri.to_s\n  end\n\n  private\n\n  def relative?\n    @uri.host.blank?\n  end\n\n  def same_origin?(base)\n    begin\n      base_uri = Addressable::URI.parse(base)\n    rescue\n      return false\n    end\n\n    base_uri.normalized_authority == @uri.normalized_authority\n  end\nend",
+              "source": "lib/redirect_url.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/redirect_url.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "External Service Client",
+        "description": "A client for the RabbitMQ message broker, used for asynchronous inter-service communication. In this context, it's used to publish referrer tracking data to a dedicated topic for the `lanalytics` service.",
+        "interactions": {
+          "interaction_0": "Receives JSON payloads from `TracksReferrers` and publishes them to the `xikolo.web.referrer` topic. [Source: app/controllers/concerns/tracks_referrers.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/concerns/tracks_referrers.rb",
+            "Gemfile"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 18,
+              "code": "module MsgrSentryIntegration\n  def dispatch(*)\n    Sentry.with_scope do\n      super\n    rescue Sentry::Error\n      raise # Don't capture Sentry errors\n    rescue Exception => e # rubocop:disable Lint/RescueException\n      Sentry.capture_exception(e)\n      raise\n    end\n  end\nend\n\nMsgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Xikolo.api(:course)": {
+        "type": "API Client",
+        "description": "An internal API client for the `Xikolo::CourseService` microservice, used to retrieve course and item-related data.",
+        "interactions": {
+          "interaction_0": "Used by `Home::GoController` to fetch item details (e.g., `course_id`) and course details (e.g., `course_code`) for deep linking. [Source: app/controllers/home/go_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/go_controller.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Xikolo.api(:pinboard)": {
+        "type": "API Client",
+        "description": "An internal API client for the `Xikolo::PinboardService` microservice, used to retrieve pinboard-related data.",
+        "interactions": {
+          "interaction_0": "Used by `Home::GoController` to fetch implicit tags associated with items for pinboard deep linking. [Source: app/controllers/home/go_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/go_controller.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Xikolo::Common::Tracking::ExternalLink": {
+        "type": "Utility Class",
+        "description": "A utility class, likely from the `xikolo-common` gem, responsible for validating external links, potentially including a checksum for integrity and security.",
+        "interactions": {
+          "interaction_0": "Used by `Home::GoController#redirect` to validate the target URL and its `checksum` before performing an external redirect. [Source: app/controllers/home/go_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/go_controller.rb",
+            "gems/xikolo-common/Gemfile"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 42,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Common::Tracking\n  require 'addressable/uri'\n  require 'digest'\n\n  class ExternalLink\n    # used to track external links via redirect\n    # /go/link?url=https://some.external.link/ewfewfewf&checksum=123&tracking...\n\n    def initialize(url, domain = '', params = {})\n      @url = url\n      @domain = domain\n      @params = params\n    end\n\n    def to_s\n      if @domain.is_a? String\n        \"https://#{@domain}/go/link?#{query}\"\n      else\n        @domain.join(\"go/link?#{query}\").to_s\n      end\n    end\n\n    def valid?(other_checksum)\n      checksum == other_checksum\n    end\n\n    def checksum\n      @checksum ||= Digest::SHA256.hexdigest(\"xikolo#{@url}\")[2..8]\n    end\n\n    private\n\n    def query\n      # Convert to array to preserve the order from the hash\n      params = @params.to_a\n      params.unshift ['checksum', checksum]\n      params.unshift ['url', @url]\n\n      uri = Addressable::URI.new\n      uri.query_values = params\n      uri.query\n    end",
+              "source": "gems/xikolo-common/lib/xikolo/common/tracking/external_link.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/tracking/external_link.rb",
+              "relevance": 32
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common.rb",
+              "relevance": 18
+            },
+            {
+              "path": "api/xikolo/v2/tracking/tracking_events.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "External Referrer Tracking",
+        "description": "Captures information about external websites that refer users to the platform. This data is enriched with user and context information, then asynchronously sent to an analytics service for aggregation and reporting.",
+        "involvedComponents": [
+          "TracksReferrers",
+          "Msgr",
+          "current_user",
+          "Xikolo.base_url"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/concerns/tracks_referrers.rb",
+            "spec/requests/tracking/referrer_spec.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Safe External Redirect",
+        "description": "Manages redirects to external URLs, ensuring the target link is valid and providing an optional interstitial notice page to inform users before redirection, mitigating open redirect vulnerabilities.",
+        "involvedComponents": [
+          "Home::GoController",
+          "RedirectURL",
+          "Xikolo::Common::Tracking::ExternalLink"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/go_controller.rb",
+            "lib/redirect_url.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Course/Item/Pinboard Deep Linking",
+        "description": "Provides dedicated endpoints for direct navigation to specific courses, items, or pinboard entries within the platform. It involves fetching necessary resource details from respective microservices.",
+        "involvedComponents": [
+          "Home::GoController",
+          "Xikolo.api(:course)",
+          "Xikolo.api(:pinboard)"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/go_controller.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "LimeSurvey Integration",
+        "description": "Facilitates redirecting users to an external LimeSurvey instance for surveys. It carefully manages query parameters, sanitizing sensitive tracking data, adding required survey parameters, and including a hashed user identifier for authenticated users.",
+        "involvedComponents": [
+          "Home::GoController",
+          "Xikolo.config.limesurvey_url",
+          "Xikolo.config.brand",
+          "current_user",
+          "Digest::SHA256",
+          "Addressable::URI"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/go_controller.rb",
+            "spec/requests/go/survey_spec.rb"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [
+    {
+      "title": "User Referral & Redirect Tracking - Architecture Overview",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1400 900\" width=\"100%\">\n  <title>User Referral &amp; Redirect Tracking Architecture</title>\n  <desc>\n    An SVG infographic showing the architecture and component relationships for the User Referral &amp; Redirect Tracking feature cluster.\n    It details how external referrers are tracked, how safe redirects are managed, and how deep linking and external survey integrations work.\n  </desc>\n\n  <defs>\n    <!-- Default arrowhead -->\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n    <!-- Workflow specific arrowheads -->\n    <marker id=\"arrowhead-workflow1\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#28A745\" />\n    </marker>\n    <marker id=\"arrowhead-workflow2\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#007BFF\" />\n    </marker>\n    <marker id=\"arrowhead-workflow3\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#FFC107\" />\n    </marker>\n    <marker id=\"arrowhead-workflow4\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#9b59b6\" />\n    </marker>\n  </defs>\n\n  <style>\n    .component-box {\n      stroke: #343A40;\n      stroke-width: 1;\n      fill: #F8F9FA;\n      rx: 8;\n      ry: 8;\n    }\n    .component-title {\n      font-family: 'Arial, sans-serif';\n      font-weight: bold;\n      font-size: 18px;\n      fill: #343A40;\n    }\n    .component-desc {\n      font-family: 'Arial, sans-serif';\n      font-size: 12px;\n      fill: #343A40;\n    }\n    .workflow-label {\n      font-family: 'Arial, sans-serif';\n      font-size: 12px;\n      fill: #343A40;\n      text-anchor: middle;\n    }\n    .arrow {\n      stroke: #343A40;\n      stroke-width: 1.5;\n      fill: none;\n      marker-end: url(#arrowhead);\n    }\n    /* Workflow specific arrow styles */\n    .arrow-workflow1 { /* External Referrer Tracking */\n      stroke: #28A745;\n      stroke-width: 2;\n      fill: none;\n      marker-end: url(#arrowhead-workflow1);\n    }\n    .arrow-workflow2 { /* Safe External Redirect */\n      stroke: #007BFF;\n      stroke-width: 2;\n      fill: none;\n      marker-end: url(#arrowhead-workflow2);\n    }\n    .arrow-workflow3 { /* Course/Item/Pinboard Deep Linking */\n      stroke: #FFC107;\n      stroke-width: 2;\n      fill: none;\n      marker-end: url(#arrowhead-workflow3);\n    }\n    .arrow-workflow4 { /* LimeSurvey Integration */\n      stroke: #9b59b6;\n      stroke-width: 2;\n      fill: none;\n      marker-end: url(#arrowhead-workflow4);\n    }\n    /* Component type colors */\n    .color-controller { fill: #9b59b6; }\n    .color-logic { fill: #FFC107; }\n    .color-infra { fill: #28A745; }\n    .color-external { fill: #6C757D; }\n    .legend-text {\n      font-family: 'Arial, sans-serif';\n      font-size: 14px;\n      fill: #343A40;\n    }\n    .title {\n      font-family: 'Arial, sans-serif';\n      font-size: 28px;\n      font-weight: bold;\n      fill: #343A40;\n      text-anchor: middle;\n    }\n  </style>\n\n  <g transform=\"translate(50, 50)\">\n    <text x=\"650\" y=\"-20\" class=\"title\">User Referral &amp; Redirect Tracking Architecture</text>\n\n    <!-- Legend -->\n    <g transform=\"translate(1100, 0)\">\n      <rect x=\"0\" y=\"0\" width=\"250\" height=\"250\" fill=\"#F0F0F0\" stroke=\"#CCC\" rx=\"5\" ry=\"5\"/>\n      <text x=\"10\" y=\"20\" class=\"legend-text\" font-weight=\"bold\">Component Types:</text>\n      <rect x=\"10\" y=\"30\" width=\"15\" height=\"15\" class=\"color-controller\"/>\n      <text x=\"30\" y=\"42\" class=\"legend-text\">Controller</text>\n      <rect x=\"10\" y=\"50\" width=\"15\" height=\"15\" class=\"color-logic\"/>\n      <text x=\"30\" y=\"62\" class=\"legend-text\">Logic/Helper/API Client</text>\n      <rect x=\"10\" y=\"70\" width=\"15\" height=\"15\" class=\"color-infra\"/>\n      <text x=\"30\" y=\"82\" class=\"legend-text\">Infrastructure Client</text>\n      <rect x=\"10\" y=\"90\" width=\"15\" height=\"15\" class=\"color-external\"/>\n      <text x=\"30\" y=\"102\" class=\"legend-text\">External Service</text>\n\n      <text x=\"10\" y=\"130\" class=\"legend-text\" font-weight=\"bold\">Workflows:</text>\n      <line x1=\"10\" y1=\"140\" x2=\"25\" y2=\"140\" class=\"arrow-workflow1\"/>\n      <text x=\"30\" y=\"143\" class=\"legend-text\">1. External Referrer Tracking</text>\n      <line x1=\"10\" y1=\"160\" x2=\"25\" y2=\"160\" class=\"arrow-workflow2\"/>\n      <text x=\"30\" y=\"163\" class=\"legend-text\">2. Safe External Redirect</text>\n      <line x1=\"10\" y1=\"180\" x2=\"25\" y2=\"180\" class=\"arrow-workflow3\"/>\n      <text x=\"30\" y=\"183\" class=\"legend-text\">3. Course/Item/Pinboard Deep Linking</text>\n      <line x1=\"10\" y1=\"200\" x2=\"25\" y2=\"200\" class=\"arrow-workflow4\"/>\n      <text x=\"30\" y=\"203\" class=\"legend-text\">4. LimeSurvey Integration</text>\n    </g>\n\n\n    <!-- Components -->\n\n    <!-- TracksReferrers -->\n    <g transform=\"translate(100, 100)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"120\" class=\"component-box color-logic\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">TracksReferrers</text>\n      <text x=\"110\" y=\"50\" class=\"component-desc\" text-anchor=\"middle\">\n        <tspan x=\"110\" dy=\"0\">ActiveSupport::Concern</tspan>\n        <tspan x=\"110\" dy=\"15\">Tracks external referrers,</tspan>\n        <tspan x=\"110\" dy=\"15\">filters, enriches data,</tspan>\n        <tspan x=\"110\" dy=\"15\">publishes for async processing.</tspan>\n      </text>\n    </g>\n\n    <!-- Msgr -->\n    <g transform=\"translate(100, 300)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"100\" class=\"component-box color-infra\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Msgr</text>\n      <text x=\"110\" y=\"50\" class=\"component-desc\" text-anchor=\"middle\">\n        <tspan x=\"110\" dy=\"0\">RabbitMQ Client</tspan>\n        <tspan x=\"110\" dy=\"15\">Publishes referrer tracking</tspan>\n        <tspan x=\"110\" dy=\"15\">data to 'lanalytics' topic.</tspan>\n      </text>\n    </g>\n\n    <!-- RabbitMQ (External) -->\n    <g transform=\"translate(100, 480)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"60\" class=\"component-box color-external\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">RabbitMQ</text>\n      <text x=\"110\" y=\"45\" class=\"component-desc\" text-anchor=\"middle\">Message Broker</text>\n    </g>\n\n    <!-- Home::GoController -->\n    <g transform=\"translate(450, 250)\">\n      <rect x=\"0\" y=\"0\" width=\"280\" height=\"150\" class=\"component-box color-controller\"/>\n      <text x=\"140\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Home::GoController</text>\n      <text x=\"140\" y=\"50\" class=\"component-desc\" text-anchor=\"middle\">\n        <tspan x=\"140\" dy=\"0\">Frontend Controller</tspan>\n        <tspan x=\"140\" dy=\"15\">Manages various redirection flows:</tspan>\n        <tspan x=\"140\" dy=\"15\">safe external, deep linking,</tspan>\n        <tspan x=\"140\" dy=\"15\">LimeSurvey integration.</tspan>\n      </text>\n    </g>\n\n    <!-- RedirectURL -->\n    <g transform=\"translate(800, 100)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"100\" class=\"component-box color-logic\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">RedirectURL</text>\n      <text x=\"110\" y=\"50\" class=\"component-desc\" text-anchor=\"middle\">\n        <tspan x=\"110\" dy=\"0\">Helper Class</tspan>\n        <tspan x=\"110\" dy=\"15\">Validates URLs for safe</tspan>\n        <tspan x=\"110\" dy=\"15\">redirection (internal/same-origin).</tspan>\n      </text>\n    </g>\n\n    <!-- Xikolo.api(:course) -->\n    <g transform=\"translate(800, 300)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"100\" class=\"component-box color-logic\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Xikolo.api(:course)</text>\n      <text x=\"110\" y=\"50\" class=\"component-desc\" text-anchor=\"middle\">\n        <tspan x=\"110\" dy=\"0\">Internal API Client</tspan>\n        <tspan x=\"110\" dy=\"15\">Retrieves course/item data</tspan>\n        <tspan x=\"110\" dy=\"15\">from Xikolo::CourseService.</tspan>\n      </text>\n    </g>\n\n    <!-- Xikolo.api(:pinboard) -->\n    <g transform=\"translate(800, 450)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"100\" class=\"component-box color-logic\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Xikolo.api(:pinboard)</text>\n      <text x=\"110\" y=\"50\" class=\"component-desc\" text-anchor=\"middle\">\n        <tspan x=\"110\" dy=\"0\">Internal API Client</tspan>\n        <tspan x=\"110\" dy=\"15\">Retrieves pinboard data</tspan>\n        <tspan x=\"110\" dy=\"15\">from Xikolo::PinboardService.</tspan>\n      </text>\n    </g>\n\n    <!-- Xikolo::Common::Tracking::ExternalLink -->\n    <g transform=\"translate(450, 480)\">\n      <rect x=\"0\" y=\"0\" width=\"280\" height=\"100\" class=\"component-box color-logic\"/>\n      <text x=\"140\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Xikolo::Common::Tracking::ExternalLink</text>\n      <text x=\"140\" y=\"50\" class=\"component-desc\" text-anchor=\"middle\">\n        <tspan x=\"140\" dy=\"0\">Utility Class</tspan>\n        <tspan x=\"140\" dy=\"15\">Validates external links</tspan>\n        <tspan x=\"140\" dy=\"15\">(checksum, security).</tspan>\n      </text>\n    </g>\n\n    <!-- External Services -->\n    <g transform=\"translate(800, 600)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"60\" class=\"component-box color-external\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Xikolo::CourseService</text>\n      <text x=\"110\" y=\"45\" class=\"component-desc\" text-anchor=\"middle\">Microservice</text>\n    </g>\n\n    <g transform=\"translate(800, 700)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"60\" class=\"component-box color-external\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Xikolo::PinboardService</text>\n      <text x=\"110\" y=\"45\" class=\"component-desc\" text-anchor=\"middle\">Microservice</tspan>\n      </text>\n    </g>\n\n    <g transform=\"translate(450, 650)\">\n      <rect x=\"0\" y=\"0\" width=\"280\" height=\"60\" class=\"component-box color-external\"/>\n      <text x=\"140\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">LimeSurvey</text>\n      <text x=\"140\" y=\"45\" class=\"component-desc\" text-anchor=\"middle\">External Survey Platform</text>\n    </g>\n\n    <g transform=\"translate(100, 600)\">\n      <rect x=\"0\" y=\"0\" width=\"220\" height=\"60\" class=\"component-box color-external\"/>\n      <text x=\"110\" y=\"25\" class=\"component-title\" text-anchor=\"middle\">Lanalytics Service</text>\n      <text x=\"110\" y=\"45\" class=\"component-desc\" text-anchor=\"middle\">Analytics Consumer</text>\n    </g>\n\n\n    <!-- Arrows / Interactions -->\n\n    <!-- TracksReferrers is included in controllers like Home::GoController (conceptual inclusion) -->\n    <line x1=\"320\" y1=\"160\" x2=\"450\" y2=\"280\" stroke=\"#343A40\" stroke-dasharray=\"5,5\" stroke-width=\"1.5\" marker-end=\"url(#arrowhead)\"/>\n    <text x=\"385\" y=\"210\" class=\"workflow-label\" transform=\"rotate(25 385 210)\">Included in Controller</text>\n\n    <!-- Workflow 1: External Referrer Tracking -->\n    <!-- TracksReferrers -> Msgr -->\n    <path d=\"M210 220 L210 300\" class=\"arrow-workflow1\"/>\n    <text x=\"210\" y=\"260\" class=\"workflow-label\" transform=\"rotate(270 210 260)\">1. TracksReferrers.publish_data()</text>\n    <!-- Msgr -> RabbitMQ -->\n    <path d=\"M210 400 L210 480\" class=\"arrow-workflow1\"/>\n    <text x=\"210\" y=\"440\" class=\"workflow-label\" transform=\"rotate(270 210 440)\">1. Msgr.send_message()</text>\n    <!-- RabbitMQ -> Lanalytics Service -->\n    <path d=\"M210 540 L210 600\" class=\"arrow-workflow1\"/>\n    <text x=\"210\" y=\"570\" class=\"workflow-label\" transform=\"rotate(270 210 570)\">1. Message Delivery</text>\n\n    <!-- Workflow 2: Safe External Redirect -->\n    <!-- Home::GoController -> RedirectURL -->\n    <path d=\"M730 290 L800 150\" class=\"arrow-workflow2\"/>\n    <text x=\"765\" y=\"220\" class=\"workflow-label\" transform=\"rotate(-35 765 220)\">2. RedirectURL.is_internal?(url)</text>\n    <!-- Home::GoController -> Xikolo::Common::Tracking::ExternalLink -->\n    <path d=\"M590 400 L590 480\" class=\"arrow-workflow2\"/>\n    <text x=\"590\" y=\"440\" class=\"workflow-label\" transform=\"rotate(270 590 440)\">2. ExternalLink.valid?(url)</text>\n    <!-- Home::GoController -> External Redirect (conceptual, no specific component for \"external\") -->\n    <line x1=\"730\" y1=\"325\" x2=\"1050\" y2=\"325\" stroke=\"#007BFF\" stroke-width=\"2\" stroke-dasharray=\"5,5\" marker-end=\"url(#arrowhead-workflow2)\"/>\n    <text x=\"890\" y=\"320\" class=\"workflow-label\">2. Perform External Redirect</text>\n\n\n    <!-- Workflow 3: Course/Item/Pinboard Deep Linking -->\n    <!-- Home::GoController -> Xikolo.api(:course) -->\n    <path d=\"M730 325 L800 350\" class=\"arrow-workflow3\"/>\n    <text x=\"765\" y=\"330\" class=\"workflow-label\">3. api(:course).get_details()</text>\n    <!-- Xikolo.api(:course) -> Xikolo::CourseService -->\n    <path d=\"M910 400 L910 600\" class=\"arrow-workflow3\"/>\n    <text x=\"910\" y=\"500\" class=\"workflow-label\" transform=\"rotate(270 910 500)\">3. RPC Call</text>\n\n    <!-- Home::GoController -> Xikolo.api(:pinboard) -->\n    <path d=\"M730 350 L800 480\" class=\"arrow-workflow3\"/>\n    <text x=\"765\" y=\"415\" class=\"workflow-label\">3. api(:pinboard).get_details()</text>\n    <!-- Xikolo.api(:pinboard) -> Xikolo::PinboardService -->\n    <path d=\"M910 550 L910 700\" class=\"arrow-workflow3\"/>\n    <text x=\"910\" y=\"625\" class=\"workflow-label\" transform=\"rotate(270 910 625)\">3. RPC Call</text>\n\n    <!-- Workflow 4: LimeSurvey Integration -->\n    <!-- Home::GoController -> LimeSurvey (direct redirect) -->\n    <path d=\"M590 400 L590 650\" class=\"arrow-workflow4\"/>\n    <text x=\"590\" y=\"525\" class=\"workflow-label\" transform=\"rotate(270 590 525)\">4. Redirect to LimeSurvey (with params)</text>\n\n  </g>\n</svg>\n```"
+    },
+    {
+      "title": "User Referral & Redirect Tracking - Workflow Diagram",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 1000\" width=\"100%\">\n  <title>User Referral &amp; Redirect Tracking Workflows</title>\n  <desc>SVG flowchart illustrating the business workflows for User Referral &amp; Redirect Tracking, including External Referrer Tracking, Safe External Redirect, Course/Item/Pinboard Deep Linking, and LimeSurvey Integration.</desc>\n\n  <defs>\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n    <style>\n      .title { font-family: 'Arial, sans-serif'; font-size: 32px; font-weight: bold; fill: #343A40; }\n      .workflow-title { font-family: 'Arial, sans-serif'; font-size: 22px; font-weight: bold; fill: #343A40; }\n      .node-text { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; text-anchor: middle; }\n      .node-text-white { font-family: 'Arial, sans-serif'; font-size: 14px; fill: white; text-anchor: middle; }\n      .start-end { fill: #E0E0E0; stroke: #6C757D; stroke-width: 1; }\n      .process { fill: #FFC107; stroke: #DAA500; stroke-width: 1; }\n      .controller { fill: #9b59b6; stroke: #7B3F9B; stroke-width: 1; }\n      .external-api { fill: #28A745; stroke: #1E7E34; stroke-width: 1; }\n      .data-utility { fill: #6C757D; stroke: #5A6268; stroke-width: 1; }\n      .arrow { stroke: #343A40; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }\n      .component-label { font-family: 'Arial, sans-serif'; font-size: 12px; fill: #6C757D; text-anchor: middle; }\n    </style>\n  </defs>\n\n  <!-- Main Title -->\n  <text x=\"800\" y=\"50\" class=\"title\" text-anchor=\"middle\">User Referral &amp; Redirect Tracking Workflows</text>\n\n  <!-- Workflow 1: External Referrer Tracking -->\n  <g transform=\"translate(50, 100)\">\n    <text x=\"175\" y=\"30\" class=\"workflow-title\">External Referrer Tracking</text>\n\n    <!-- Nodes -->\n    <rect x=\"75\" y=\"70\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"95\" class=\"node-text\">User Arrives via Referrer</text>\n\n    <rect x=\"75\" y=\"140\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"165\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">TracksReferrers.capture()</tspan><tspan x=\"175\" dy=\"20\">Referrer Info</tspan></text>\n\n    <rect x=\"75\" y=\"230\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"255\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">Enrich Data with</tspan><tspan x=\"175\" dy=\"20\">User &amp; Context Info</tspan></text>\n    <text x=\"175\" y=\"225\" class=\"component-label\">current_user, Xikolo.base_url</text>\n\n    <rect x=\"75\" y=\"320\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"345\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">Msgr.send_async()</tspan><tspan x=\"175\" dy=\"20\">to Analytics Service</tspan></text>\n    <text x=\"175\" y=\"315\" class=\"component-label\">Msgr</text>\n\n    <rect x=\"75\" y=\"410\" width=\"200\" height=\"40\" class=\"external-api\" />\n    <text x=\"175\" y=\"435\" class=\"node-text-white\">Analytics Service</text>\n\n    <rect x=\"75\" y=\"480\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"505\" class=\"node-text\">Data Aggregated/Reported</text>\n\n    <!-- Arrows -->\n    <path d=\"M175,110 V140\" class=\"arrow\" />\n    <path d=\"M175,200 V230\" class=\"arrow\" />\n    <path d=\"M175,290 V320\" class=\"arrow\" />\n    <path d=\"M175,380 V410\" class=\"arrow\" />\n    <path d=\"M175,450 V480\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 2: Safe External Redirect -->\n  <g transform=\"translate(450, 100)\">\n    <text x=\"175\" y=\"30\" class=\"workflow-title\">Safe External Redirect</text>\n\n    <!-- Nodes -->\n    <rect x=\"75\" y=\"70\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"95\" class=\"node-text\">User Clicks External Link</text>\n\n    <rect x=\"75\" y=\"140\" width=\"200\" height=\"40\" class=\"controller\" />\n    <text x=\"175\" y=\"165\" class=\"node-text-white\">Home::GoController</text>\n\n    <rect x=\"75\" y=\"210\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"235\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">RedirectURL.validate()</tspan><tspan x=\"175\" dy=\"20\">Target Link Validity</tspan></text>\n    <text x=\"175\" y=\"205\" class=\"component-label\">RedirectURL</text>\n\n    <rect x=\"75\" y=\"300\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"325\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">Optional Interstitial</tspan><tspan x=\"175\" dy=\"20\">Notice Page</tspan></text>\n    <text x=\"175\" y=\"295\" class=\"component-label\">Xikolo::Common::Tracking::ExternalLink</text>\n\n    <rect x=\"75\" y=\"390\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"415\" class=\"node-text\">Redirect to External URL</text>\n\n    <!-- Arrows -->\n    <path d=\"M175,110 V140\" class=\"arrow\" />\n    <path d=\"M175,180 V210\" class=\"arrow\" />\n    <path d=\"M175,270 V300\" class=\"arrow\" />\n    <path d=\"M175,360 V390\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 3: Course/Item/Pinboard Deep Linking -->\n  <g transform=\"translate(850, 100)\">\n    <text x=\"175\" y=\"30\" class=\"workflow-title\">Course/Item/Pinboard Deep Linking</text>\n\n    <!-- Nodes -->\n    <rect x=\"75\" y=\"70\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"95\" class=\"node-text\">User Accesses Deep Link</text>\n\n    <rect x=\"75\" y=\"140\" width=\"200\" height=\"40\" class=\"controller\" />\n    <text x=\"175\" y=\"165\" class=\"node-text-white\">Home::GoController</text>\n\n    <rect x=\"75\" y=\"210\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"235\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">Identify Resource Type</tspan><tspan x=\"175\" dy=\"20\">(Course, Item, Pinboard)</tspan></text>\n\n    <rect x=\"75\" y=\"300\" width=\"200\" height=\"60\" class=\"external-api\" />\n    <text x=\"175\" y=\"325\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">Fetch Resource Details</tspan><tspan x=\"175\" dy=\"20\">from Microservices</tspan></text>\n    <text x=\"175\" y=\"295\" class=\"component-label\">Xikolo.api(:course), Xikolo.api(:pinboard)</text>\n\n    <rect x=\"75\" y=\"390\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"415\" class=\"node-text\">Render Specific Resource Page</text>\n\n    <!-- Arrows -->\n    <path d=\"M175,110 V140\" class=\"arrow\" />\n    <path d=\"M175,180 V210\" class=\"arrow\" />\n    <path d=\"M175,270 V300\" class=\"arrow\" />\n    <path d=\"M175,360 V390\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 4: LimeSurvey Integration -->\n  <g transform=\"translate(1250, 100)\">\n    <text x=\"175\" y=\"30\" class=\"workflow-title\">LimeSurvey Integration</text>\n\n    <!-- Nodes -->\n    <rect x=\"75\" y=\"70\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"95\" class=\"node-text\">User Initiates LimeSurvey Redirect</text>\n\n    <rect x=\"75\" y=\"140\" width=\"200\" height=\"40\" class=\"controller\" />\n    <text x=\"175\" y=\"165\" class=\"node-text-white\">Home::GoController</text>\n\n    <rect x=\"75\" y=\"210\" width=\"200\" height=\"40\" class=\"process\" />\n    <text x=\"175\" y=\"235\" class=\"node-text-white\">Sanitize Query Parameters</text>\n\n    <rect x=\"75\" y=\"280\" width=\"200\" height=\"40\" class=\"process\" />\n    <text x=\"175\" y=\"305\" class=\"node-text-white\">Add Xikolo.config.brand</text>\n    <text x=\"175\" y=\"275\" class=\"component-label\">Xikolo.config.brand</text>\n\n    <rect x=\"75\" y=\"350\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"375\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">If current_user:</tspan><tspan x=\"175\" dy=\"20\">Hash ID &amp; Add Param</tspan></text>\n    <text x=\"175\" y=\"345\" class=\"component-label\">current_user, Digest::SHA256</text>\n\n    <rect x=\"75\" y=\"440\" width=\"200\" height=\"60\" class=\"process\" />\n    <text x=\"175\" y=\"465\" class=\"node-text-white\"><tspan x=\"175\" dy=\"-5\">Construct Final URL</tspan><tspan x=\"175\" dy=\"20\">with LimeSurvey URL</tspan></text>\n    <text x=\"175\" y=\"435\" class=\"component-label\">Xikolo.config.limesurvey_url, Addressable::URI</text>\n\n    <rect x=\"75\" y=\"530\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"175\" y=\"555\" class=\"node-text\">Redirect to LimeSurvey</text>\n\n    <!-- Arrows -->\n    <path d=\"M175,110 V140\" class=\"arrow\" />\n    <path d=\"M175,180 V210\" class=\"arrow\" />\n    <path d=\"M175,250 V280\" class=\"arrow\" />\n    <path d=\"M175,320 V350\" class=\"arrow\" />\n    <path d=\"M175,410 V440\" class=\"arrow\" />\n    <path d=\"M175,500 V530\" class=\"arrow\" />\n  </g>\n</svg>\n```"
+    }
+  ],
+  "success": true,
+  "sourceFile": "cluster_C38_ReferralTracking_2025-09-12T23-37-21.json",
+  "runId": "run_2",
+  "filePath": "run_2/clusters/cluster_C38_ReferralTracking_2025-09-12T23-37-21.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "C38_ReferralTracking",
+      "runId": "run_2"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:08:48.205Z"
+  }
+}

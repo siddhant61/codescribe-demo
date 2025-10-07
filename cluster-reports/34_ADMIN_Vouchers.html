@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vouchers standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Vouchers standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#admin" class="breadcrumb-link">ADMIN</a></li>
+            <li class="breadcrumb-item active">Vouchers standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#executive-summary" class="sidebar-nav-link">Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#detailed-documentation" class="sidebar-nav-link">Detailed Documentation</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#component-analysis" class="sidebar-nav-link">Component Analysis</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#key-components" class="sidebar-nav-link">Key Components</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#technical-debt" class="sidebar-nav-link">Technical Debt</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#recommendations" class="sidebar-nav-link">Recommendations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#metadata" class="sidebar-nav-link">Metadata</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-admin">ADMIN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="cluster-analysis-report%3A-admin_vouchers" tabindex="-1"><a class="header-anchor" href="#cluster-analysis-report%3A-admin_vouchers"><span>Cluster Analysis Report: ADMIN_Vouchers</span></a></h1>
+<p><strong>Cluster ID:</strong> 34_ADMIN_Vouchers<br>
+<strong>Category:</strong> Administration Panel<br>
+<strong>Feature Focus:</strong> Voucher Management and Redemption<br>
+<strong>Analysis Date:</strong> September 18, 2025</p>
+<hr>
+<h2 id="executive-summary" tabindex="-1"><a class="header-anchor" href="#executive-summary"><span>Executive Summary</span></a></h2>
+<p>The ADMIN_Vouchers cluster implements a comprehensive voucher management and redemption system for the Xikolo platform. This system enables users to activate paid features for courses without direct payment handling within the application, supporting both administrative creation of vouchers and programmatic creation via a dedicated API for external shops.</p>
+<hr>
+<h2 id="detailed-documentation" tabindex="-1"><a class="header-anchor" href="#detailed-documentation"><span>Detailed Documentation</span></a></h2>
+<p>$(jq -r ‘.documentationReport’ src/idp/knowledge-graphs/34_ADMIN_Vouchers.json)</p>
+<hr>
+<h2 id="component-analysis" tabindex="-1"><a class="header-anchor" href="#component-analysis"><span>Component Analysis</span></a></h2>
+<h3 id="key-components" tabindex="-1"><a class="header-anchor" href="#key-components"><span>Key Components</span></a></h3>
+<p>$(jq -r ‘.componentMapPatch.components | to_entries | map(&quot;#### &quot; + .key + “\n\n<strong>Type:</strong> &quot; + .value.type + “\n\n<strong>Description:</strong> &quot; + .value.description + “\n”) | join(”\n”)’ src/idp/knowledge-graphs/34_ADMIN_Vouchers.json | head -100)</p>
+<hr>
+<h2 id="technical-debt" tabindex="-1"><a class="header-anchor" href="#technical-debt"><span>Technical Debt</span></a></h2>
+<p>$(jq -r ‘.componentMapPatch.technicalDebt[]? // “No technical debt items identified.”’ src/idp/knowledge-graphs/34_ADMIN_Vouchers.json)</p>
+<hr>
+<h2 id="recommendations" tabindex="-1"><a class="header-anchor" href="#recommendations"><span>Recommendations</span></a></h2>
+<ol>
+<li><strong>Feature Flag Management</strong>: Ensure the voucher feature flag (<code>voucher['enabled']</code>) is properly documented and monitored</li>
+<li><strong>Privacy Compliance</strong>: The automatic IP deletion job demonstrates good privacy practices - ensure this remains active</li>
+<li><strong>API Integration</strong>: The Shop Bridge API provides good external integration capabilities</li>
+<li><strong>Security</strong>: Review voucher code generation and validation mechanisms for security best practices</li>
+</ol>
+<hr>
+<h2 id="metadata" tabindex="-1"><a class="header-anchor" href="#metadata"><span>Metadata</span></a></h2>
+<ul>
+<li><strong>Total Components:</strong> $(jq ‘.componentMapPatch.components | length’ src/idp/knowledge-graphs/34_ADMIN_Vouchers.json)</li>
+<li><strong>Microservices:</strong> $(jq ‘.componentMapPatch.microservices | length’ src/idp/knowledge-graphs/34_ADMIN_Vouchers.json)</li>
+<li><strong>Interactions:</strong> $(jq ‘.componentMapPatch.interactions | length’ src/idp/knowledge-graphs/34_ADMIN_Vouchers.json)</li>
+<li><strong>Technical Debt Items:</strong> $(jq ‘.componentMapPatch.technicalDebt | length’ src/idp/knowledge-graphs/34_ADMIN_Vouchers.json)</li>
+</ul>
+<hr>
+<p><em>This report was generated from cluster analysis data as of September 18, 2025.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295165"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

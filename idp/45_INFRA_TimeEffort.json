@@ -1,0 +1,385 @@
+{
+  "clusterId": "45_INFRA_TimeEffort",
+  "featureFocus": "Time Effort Microservice: Learning Item Duration Calculation",
+  "documentationReport": "{\n  \"documentation_report\": \"## Xikolo Time Effort Microservice: Comprehensive Documentation Report\\n\\n### Overview\\nThe Xikolo Time Effort Microservice is a critical backend service within the Xikolo platform, dedicated to the estimation, calculation, and management of time effort required for various learning items, specifically course items. It operates within a microservice architecture, integrating with other core services to provide dynamic time estimations. Its functionality can be controlled via a feature flag, allowing for flexible deployment and activation.\\n\\n### Core Functionality\\nThe primary function of the Time Effort Microservice is to process, calculate, and store estimated time efforts for learning content. This includes:\\n*   **Estimation and Calculation:** Determining the time required for course items, likely involving complex algorithms that consider content type, length, and structure. The functional domain is clearly defined as \\\"Estimation and Calculation of Time Effort for Course Items.\\\"\\n*   **Management and Storage:** Persisting these estimations for retrieval by other services.\\n*   **Feature Toggling:** The `timeeffort.enabled` configuration allows for the dynamic activation or deactivation of this core functionality, providing a robust feature flag mechanism.\\n\\n### Architecture and Deployment\\nThe `timeeffort` service is deployed as a Docker container (`xikolo-timeeffort:latest`) and is designed for a microservice environment. It supports three distinct operational modes:\\n*   **`timeeffort-msgr`**: Functions as a RabbitMQ consumer, processing messages and reacting to events or requests from other services.\\n*   **`timeeffort-server`**: Exposes an HTTP API, listening on port 80 (mapped to 6300 for debugging), allowing other services to make direct requests for time effort data or calculations.\\n*   **`timeeffort-sidekiq`**: Processes background jobs, likely for asynchronous calculations, data synchronization, or long-running tasks that do not require immediate responses.\\n\\nThe service relies on a robust set of foundational infrastructure components:\\n*   **PostgreSQL**: For persistent data storage.\\n*   **RabbitMQ**: For asynchronous message queuing and inter-service communication.\\n*   **Redis**: Utilized for caching purposes and as a backend for Sidekiq job management.\\n\\n### Inter-service Communication\\nThe Time Effort Microservice engages in communication with other services through both message queuing and direct HTTP calls:\\n*   **RabbitMQ (`msgr`)**: The service consumes messages via its `msgr` mode, indicating its role in reacting to events or processing requests originating from other parts of the Xikolo platform. The `rabbitmq.yml` configuration confirms its message consumer/producer capabilities, including a `Msgr::TestPool` for testing.\\n*   **HTTP Calls**: The service makes outbound HTTP requests to other microservices, specifically the `course` and `quiz` services. This interaction is crucial for retrieving detailed information about learning items (from `course`) or quiz structures (from `quiz`) that are necessary inputs for its time effort calculations. The `Xikolo::TimeEffort Microservice (Client Proxy)` and `Xikolo::CourseService Microservice (Client Proxy)` components highlight the explicit client-side mechanisms for these interactions.\\n\\n### Key Components\\nThe merged cluster reveals a comprehensive set of components involved in the Time Effort functionality:\\n*   **Xikolo::TimeEffort Microservice (TimeEffortService)**: The core backend service responsible for calculations and data management.\\n*   **CourseService**: An external microservice that the Time Effort service interacts with, likely to retrieve course item details. Represented by `Xikolo::CourseService Microservice (Client Proxy)` when TimeEffort acts as a client.\\n*   **QuizService**: Another external microservice, likely providing quiz structure details for time effort calculations.\\n*   **Course::Admin::ItemTimeEffortController**: An administrative controller, suggesting a user interface or API endpoint for managing or triggering time effort calculations for course items.\\n*   **_time_effort.html.slim**: A UI component, likely a view partial associated with the `ItemTimeEffortController`, indicating a user-facing or administrative interface for time effort management.\\n*   **Xikolo::TimeEffort Microservice (Client Proxy)**: A client-side component used by other services to interact with the Time Effort Microservice, abstracting the underlying communication.\\n*   **Errors (TimeEffort Service)**: A component indicating defined error handling mechanisms within or related to the Time Effort service, though specific error types are not detailed.\\n\\n### Configuration Details\\nThe service's behavior and connectivity are managed through several environment variables and configuration files:\\n*   **Database:** Configured via `DATABASE_URL` and `CONCURRENCY` environment variables, connecting to PostgreSQL.\\n*   **RabbitMQ:** Connects using the `XIKOLO_RABBITMQ_URL` environment variable.\\n*   **External Services:** Relies on `XIKOLO_SERVICE_COURSE` and `XIKOLO_SERVICE_QUIZ` environment variables to locate and communicate with the Course and Quiz microservices, respectively.\\n*   **Feature Flag:** The `timeeffort.enabled` flag in `app/xikolo.yml` provides dynamic control over the service's core functionality.\\n\\n### Technical Debt and Missing Information\\nDespite the comprehensive architectural and configuration details, specific implementation aspects remain undocumented:\\n*   The precise algorithms and logic used for time effort calculation are not available.\\n*   Details of the API endpoints exposed by the `server` mode are missing.\\n*   Specific `msgr` message handlers and the types of messages they process are not defined.\\n*   The nature and functionality of the Sidekiq jobs are not detailed.\\n*   The `README.rdoc` is a generic placeholder, indicating a lack of service-specific documentation.\\n*   While `Errors (TimeEffort Service)` is identified as a component, the specific error types, their causes, and handling mechanisms are not documented.\\nThis lack of granular implementation details makes it challenging to fully assess the complexity, data models, and specific operational flows of the service.\"\n}",
+  "componentMapPatch": {
+    "components": {
+      "TimeEffortService": {
+        "type": "Microservice",
+        "description": "A dedicated microservice responsible for calculating and managing the estimated time effort associated with various course items. It aggregates data from other services to perform its core function.",
+        "interactions": {
+          "interaction_0": "Interacts with CourseService to retrieve course item details and structure. [Source: services/timeeffort/config/services.yml]",
+          "interaction_1": "Interacts with QuizService to retrieve quiz-specific data relevant to time effort calculation. [Source: services/timeeffort/config/services.yml]"
+        },
+        "techDebt": [
+          "The internal implementation details (e.g., specific API endpoints, data models, calculation logic) are not available for analysis, limiting a deeper understanding of its operational specifics. [Source: services/timeeffort/app/, services/timeeffort/config/]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/timeeffort/config/services.yml",
+            "services/timeeffort/README.rdoc",
+            "services/timeeffort/app/",
+            "services/timeeffort/config/"
+          ]
+        }
+      },
+      "MsgrConsumer": {
+        "type": "Message Consumer",
+        "description": "The component within the TimeEffortService responsible for listening to and processing messages from RabbitMQ. These messages likely trigger time effort calculations or updates. [Source: docker/compose.timeeffort.yml, services/timeeffort/config/rabbitmq.yml]",
+        "interactions": {
+          "interaction_0": "Receives messages from RabbitMQ. [Source: docker/compose.timeeffort.yml, services/timeeffort/config/rabbitmq.yml]",
+          "interaction_1": "Triggers TimeEffortService logic (e.g., calculations, data updates). "
+        },
+        "techDebt": [
+          "Specific message formats and handling logic are unknown."
+        ],
+        "provenance": {
+          "sources": [
+            "docker/compose.timeeffort.yml",
+            "services/timeeffort/config/rabbitmq.yml"
+          ]
+        }
+      },
+      "TimeEffortAPI": {
+        "type": "API Endpoint",
+        "description": "The HTTP API component of the TimeEffortService, exposed for other services or the frontend to query or update time effort data. It runs in `server` mode. [Source: docker/compose.timeeffort.yml]",
+        "interactions": {
+          "interaction_0": "Receives HTTP requests (e.g., GET for effort, POST for updates). [Source: docker/compose.timeeffort.yml]",
+          "interaction_1": "Interacts with TimeEffortService core logic and database. "
+        },
+        "techDebt": [
+          "Specific API routes, request/response schemas, and authentication/authorization mechanisms are not detailed."
+        ],
+        "provenance": {
+          "sources": [
+            "docker/compose.timeeffort.yml"
+          ]
+        }
+      },
+      "TimeEffortWorker": {
+        "type": "Background Job Processor",
+        "description": "The Sidekiq worker component of the TimeEffortService, responsible for executing long-running or asynchronous tasks, such as recalculating time efforts for a large set of items, or performing periodic maintenance. [Source: docker/compose.timeeffort.yml]",
+        "interactions": {
+          "interaction_0": "Pulls jobs from Redis-backed Sidekiq queue. [Source: docker/compose.timeeffort.yml]",
+          "interaction_1": "Executes TimeEffortService logic. ",
+          "interaction_2": "Interacts with PostgreSQL. "
+        },
+        "techDebt": [
+          "Specific job types, scheduling, and error handling for background tasks are not visible."
+        ],
+        "provenance": {
+          "sources": [
+            "docker/compose.timeeffort.yml"
+          ]
+        }
+      },
+      "Course::Admin::ItemTimeEffortController": {
+        "type": "Controller",
+        "description": "A Rails controller in the main application responsible for handling administrative requests related to course item time effort. It acts as an intermediary, processing frontend AJAX requests, performing authorization, and communicating with the `Xikolo::TimeEffort` and `Xikolo::CourseService` microservices.",
+        "interactions": {
+          "interaction_0": "Receives AJAX GET, PUT, and DELETE requests from the `_time_effort.html.slim` frontend component. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+          "interaction_1": "Communicates with the `Xikolo::TimeEffort` microservice (via `Xikolo.api(:timeeffort)` and `Restify`) to fetch, update, or delete time effort data for course items. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+          "interaction_2": "Communicates with the `Xikolo::CourseService` microservice (via `Xikolo.api(:course)` and `Restify`) to retrieve course context for authorization. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+          "interaction_3": "Performs authorization checks using `authorize! 'course.content.edit'`. [Source: app/controllers/course/admin/item_time_effort_controller.rb]"
+        },
+        "techDebt": [
+          "Error handling for `Restify::ClientError` is generic, returning simple messages like 'show_time_effort_failed'. It does not appear to parse or utilize the more specific error types defined within the `Xikolo::TimeEffort` microservice, leading to less informative user feedback. [Source: app/controllers/course/admin/item_time_effort_controller.rb, services/timeeffort/lib/errors.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/item_time_effort_controller.rb",
+            ""
+          ]
+        }
+      },
+      "_time_effort.html.slim": {
+        "type": "View / Frontend Component",
+        "description": "A Slim template partial that renders the user interface for displaying and managing the time effort of a course item. It includes embedded JavaScript to handle interactive elements and AJAX communication with the backend.",
+        "interactions": {
+          "interaction_0": "Renders HTML for the time effort display and editable input field. [Source: app/views/items/_time_effort.html.slim]",
+          "interaction_1": "Uses `bootstrap-editable` for in-place editing of the time effort value. [Source: app/views/items/_time_effort.html.slim]",
+          "interaction_2": "Initiates AJAX GET requests to `Course::Admin::ItemTimeEffortController#show` to fetch initial time effort data. [Source: app/views/items/_time_effort.html.slim]",
+          "interaction_3": "Sends AJAX PUT requests to `Course::Admin::ItemTimeEffortController#update` to overwrite time effort. [Source: app/views/items/_time_effort.html.slim]",
+          "interaction_4": "Sends AJAX DELETE requests to `Course::Admin::ItemTimeEffortController#destroy` to reset overwritten time effort. [Source: app/views/items/_time_effort.html.slim]",
+          "interaction_5": "Updates the UI dynamically based on AJAX responses, showing calculated time effort, overwritten status, and error messages. [Source: app/views/items/_time_effort.html.slim]"
+        },
+        "techDebt": [
+          "Contains a significant amount of inline JavaScript logic, which could be extracted into a separate JavaScript file or a dedicated ViewComponent for better organization, maintainability, and testability. [Source: app/views/items/_time_effort.html.slim]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/views/items/_time_effort.html.slim"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 1,
+              "code": "= javascript_include_tag 'bootstrap-editable', crossorigin: 'anonymous', integrity: true, debug: false",
+              "source": "app/views/items/_time_effort.html.slim"
+            },
+            {
+              "startLine": 4,
+              "endLine": 15,
+              "code": "#time_effort.form-group\n  label.col-lg-3.col-md-3\n    = t(:'admin.courses.items.form.label.time_effort')\n  .col-lg-9.col-md-9\n    #time_effort_edit.mb10\n      a#time_effort_editable href=\"#\" data-name=\"time_effort\"\n      span.has-spinner.ml5\n        span.spinner.mr5.ml5\n          = render Global::FaIcon.new('arrows-rotate', style: :solid)\n        span.alert-danger.small.ml5#error_msg\n    .mt10\n      = \"#{t(:'admin.courses.items.form.time_effort.calculated_time_effort')}: \"\n      span\n        em#calculated_time_effort = t(:'admin.courses.items.form.time_effort.not_available')\n    .mt10\n      span.small = t(:'admin.courses.items.form.time_effort.calculated_time_effort_hint')",
+              "source": "app/views/items/_time_effort.html.slim"
+            },
+            {
+              "startLine": 17,
+              "endLine": 21,
+              "code": "javascript:\n  $(\"#time_effort\").hide();\n  var timeEffortOverwritten;\n  var calculatedTimeEffort;\n  var currentTimeEffort;\n\n  $(function () {\n    $(\"#time_effort_editable\").editable({\n      emptytext: \"#{t(:'admin....\"",
+              "source": "app/views/items/_time_effort.html.slim"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/views/items/_time_effort.html.slim",
+              "relevance": 15
+            }
+          ]
+        }
+      },
+      "Xikolo::TimeEffort Microservice (Client Proxy)": {
+        "type": "External Service Client / Proxy",
+        "description": "Represents the client-side interface within the main application for interacting with the `Xikolo::TimeEffort` microservice. It abstracts the HTTP communication, allowing the main application to request time effort data.",
+        "interactions": {
+          "interaction_0": "Receives calls from `Course::Admin::ItemTimeEffortController` to perform GET, PUT, and DELETE operations on item time effort. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+          "interaction_1": "Sends HTTP requests to the actual `Xikolo::TimeEffort` microservice, likely using `Restify` for inter-service communication. [Source: app/controllers/course/admin/item_time_effort_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/item_time_effort_controller.rb",
+            "",
+            "services/timeeffort/README.rdoc"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.9,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  class API < Grape::API::Instance\n    # This is the place to list supported API versions, from old to new,\n    # and (optionally) their expiry dates.\n    #\n    # When introducing backwards-incompatible changes, a new major version\n    # should be added to this array. For backwards-compatible changes,\n    # please increase the minor version number of each affected version.\n    #\n    # Once an expiry date has passed, the corresponding version can be\n    # safely removed.\n    def self.supported_versions\n      [\n        Versioning::Version.new('4.10'),\n      ]\n    end\n\n    def self.latest_version\n      supported_versions.last\n    end\n\n    content_type :xml, 'application/xml'\n    content_type :json, 'application/json'\n    content_type :json_api, 'application/vnd.api+json'\n\n    formatter :json, Format::PrettyJSON\n    formatter :json_api, ->(str, _env) { JSON.pretty_generate JSON.parse(str) }\n    parser :json_api, Grape::Parser::Json\n\n    default_...",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Auth\n    module Helpers\n      def current_user\n        @current_user ||= _create_user\n      end\n\n      # Sets a global context for permissions\n      def in_context(context_name)\n        @context = context_name\n\n        # Just in case it has been requested before, we throw away the\n        # current user object, so that it will be regenerated when\n        # it is requested again.\n        @current_user = nil\n      end\n\n      def authenticate!\n        error!('401 Unauthorized', 401) if current_user.anonymous?\n      end\n\n      def authenticate_as!(user_id)\n        authenticate!\n        error!('403 Forbidden', 403) unless current_user.id.eql? user_id\n      end\n\n      def permission!(permission)\n        error!('401 Unauthorized', 401) unless current_user.allowed?(permission)\n      end\n\n      def _session_id\n        if env['XIKOLO_SESSION']\n          env['XIK...",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\nrequire 'rack/auth/abstract/handler'\n\nmodule Xikolo\n  module Auth\n    module Middleware\n      class LegacyToken < Rack::Auth::AbstractHandler\n        TOKEN_AUTH_REGEX = /^(?:Legacy-)?Token token=(?<token>[0-9a-f]+)$/\n\n        def call(env)\n          if (match = TOKEN_AUTH_REGEX.match(env['HTTP_AUTHORIZATION']))\n            env['XIKOLO_LEGACY_TOKEN'] = match[:token]\n          end\n\n          @app.call(env)\n        end\n      end\n    end\n  end\nend\n...",
+              "source": "api/xikolo/api.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/api.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/helpers.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Xikolo::CourseService Microservice (Client Proxy)": {
+        "type": "External Service Client / Proxy",
+        "description": "Represents the client-side interface within the main application for interacting with the `Xikolo::CourseService` microservice. Used specifically by the `ItemTimeEffortController` to retrieve course context for authorization purposes.",
+        "interactions": {
+          "interaction_0": "Receives calls from `Course::Admin::ItemTimeEffortController` to fetch course details. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+          "interaction_1": "Sends HTTP requests to the actual `Xikolo::CourseService` microservice, likely using `Restify`. [Source: app/controllers/course/admin/item_time_effort_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/item_time_effort_controller.rb",
+            ""
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.1,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "module Xikolo\n  class API < Grape::API::Instance\n    # This is the place to list supported API versions, from old to new,\n    # and (optionally) their expiry dates.\n    #\n    # When introducing backwards-incompatible changes, a new major version\n    # should be added to this array. For backwards-compatible changes,\n    # please increase the minor version number of each affected version.",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 16,
+              "code": "    def self.supported_versions\n      [\n        Versioning::Version.new('4.10'),\n      ]\n    end",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 21,
+              "code": "    def self.latest_version\n      supported_versions.last\n    end\n\n    content_type :xml, 'application/xml'",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 6,
+              "code": "module Xikolo\n  module Auth\n    module Helpers\n      def current_user",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 18,
+              "code": "      def authenticate!\n        error!('401 Unauthorized', 401) if current_user.anonymous?\n      end",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 22,
+              "code": "      def authenticate_as!(user_id)\n        authenticate!\n        error!('403 Forbidden', 403) unless current_user.id.eql? user_id",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 24,
+              "endLine": 26,
+              "code": "      def permission!(permission)\n        error!('401 Unauthorized', 401) unless current_user.allowed?(permission)\n      end",
+              "source": "api/xikolo/api.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 14,
+              "code": "      class LegacyToken < Rack::Auth::AbstractHandler\n        TOKEN_AUTH_REGEX = /^(?:Legacy-)?Token token=(?<token>[0-9a-f]+)$/\n\n        def call(env)\n          if (match = TOKEN_AUTH_REGEX.match(env['HTTP_AUTHORIZATION']))\n            env['XIKOLO_LEGACY_TOKEN'] = match[:token]\n          end\n\n          @app.call(env)\n        end",
+              "source": "api/xikolo/api.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/api.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/helpers.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Errors (TimeEffort Service)": {
+        "type": "Utility / Error Handling Module",
+        "description": "A module within the `Xikolo::TimeEffort` microservice that defines custom error classes. These classes inherit from `StandardError` and provide structured error reasons, including an `as_json` method for consistent API error responses.",
+        "interactions": {
+          "interaction_0": "Error classes within this module are intended to be raised by the `Xikolo::TimeEffort` microservice's business logic when specific validation or operational failures occur. [Source: services/timeeffort/lib/errors.rb]",
+          "interaction_1": "Provides a standardized format for error messages that can be serialized into JSON for API responses. [Source: services/timeeffort/lib/errors.rb]"
+        },
+        "techDebt": [
+          "The `Course::Admin::ItemTimeEffortController` in the main application does not currently parse or specifically handle these detailed error types from the microservice, potentially leading to generic error messages for the user. [Source: app/controllers/course/admin/item_time_effort_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/timeeffort/lib/errors.rb"
+          ]
+        }
+      },
+      "Operation (TimeEffort Service)": {
+        "type": "Utility / Business Logic Wrapper",
+        "description": "A generic class within the `Xikolo::TimeEffort` microservice designed to encapsulate the outcome of a business operation, including success/failure status and associated `ActiveModel::Errors`. It provides a consistent way to return results from service methods.",
+        "interactions": {
+          "interaction_0": "Used internally within the `Xikolo::TimeEffort` microservice to wrap the results of business logic executions. [Source: services/timeeffort/lib/operation.rb]",
+          "interaction_1": "Provides methods (`error!`, `success?`) to manage and query the operation's status and errors. [Source: services/timeeffort/lib/operation.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/timeeffort/lib/operation.rb"
+          ]
+        }
+      },
+      "CourseService": {
+        "type": "External Microservice",
+        "description": "An external microservice that provides course-related data, such as course structure, items, and their attributes, which are consumed by the TimeEffortService.",
+        "interactions": {
+          "interaction_0": "Provides course item data to TimeEffortService for effort calculation. [Source: services/timeeffort/config/services.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/timeeffort/config/services.yml"
+          ]
+        }
+      },
+      "QuizService": {
+        "type": "External Microservice",
+        "description": "An external microservice that provides quiz-related data, such as quiz details or estimated completion times, which are consumed by the TimeEffortService.",
+        "interactions": {
+          "interaction_0": "Provides quiz data to TimeEffortService for effort calculation. [Source: services/timeeffort/config/services.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/timeeffort/config/services.yml"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Receives messages from RabbitMQ (via MsgrConsumer). [Source: docker/compose.timeeffort.yml, services/timeeffort/config/rabbitmq.yml]",
+      "interaction_1": "Sends messages to RabbitMQ (implied by msgr usage). ",
+      "interaction_2": "Makes HTTP requests to CourseService to retrieve learning item details. [Source: services/timeeffort/config/services.yml]",
+      "interaction_3": "Makes HTTP requests to QuizService to retrieve quiz details. [Source: services/timeeffort/config/services.yml]",
+      "interaction_4": "Stores data in PostgreSQL. [Source: services/timeeffort/config/database.yml]",
+      "interaction_5": "Processes background jobs via Sidekiq (via TimeEffortWorker). [Source: docker/compose.timeeffort.yml]",
+      "interaction_6": "Receives messages from RabbitMQ. [Source: docker/compose.timeeffort.yml, services/timeeffort/config/rabbitmq.yml]",
+      "interaction_7": "Triggers TimeEffortService logic (e.g., calculations, data updates). ",
+      "interaction_8": "Receives HTTP requests (e.g., GET for effort, POST for updates). [Source: docker/compose.timeeffort.yml]",
+      "interaction_9": "Interacts with TimeEffortService core logic and database. ",
+      "interaction_10": "Pulls jobs from Redis-backed Sidekiq queue. [Source: docker/compose.timeeffort.yml]",
+      "interaction_11": "Executes TimeEffortService logic. ",
+      "interaction_12": "Interacts with PostgreSQL. ",
+      "interaction_13": "Receives AJAX GET, PUT, and DELETE requests from the `_time_effort.html.slim` frontend component. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_14": "Communicates with the `Xikolo::TimeEffort` microservice (via `Xikolo.api(:timeeffort)` and `Restify`) to fetch, update, or delete time effort data for course items. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_15": "Communicates with the `Xikolo::CourseService` microservice (via `Xikolo.api(:course)` and `Restify`) to retrieve course context for authorization. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_16": "Performs authorization checks using `authorize! 'course.content.edit'`. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_17": "Renders HTML for the time effort display and editable input field. [Source: app/views/items/_time_effort.html.slim]",
+      "interaction_18": "Uses `bootstrap-editable` for in-place editing of the time effort value. [Source: app/views/items/_time_effort.html.slim]",
+      "interaction_19": "Initiates AJAX GET requests to `Course::Admin::ItemTimeEffortController#show` to fetch initial time effort data. [Source: app/views/items/_time_effort.html.slim]",
+      "interaction_20": "Sends AJAX PUT requests to `Course::Admin::ItemTimeEffortController#update` to overwrite time effort. [Source: app/views/items/_time_effort.html.slim]",
+      "interaction_21": "Sends AJAX DELETE requests to `Course::Admin::ItemTimeEffortController#destroy` to reset overwritten time effort. [Source: app/views/items/_time_effort.html.slim]",
+      "interaction_22": "Updates the UI dynamically based on AJAX responses, showing calculated time effort, overwritten status, and error messages. [Source: app/views/items/_time_effort.html.slim]",
+      "interaction_23": "Receives calls from `Course::Admin::ItemTimeEffortController` to perform GET, PUT, and DELETE operations on item time effort. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_24": "Sends HTTP requests to the actual `Xikolo::TimeEffort` microservice, likely using `Restify` for inter-service communication. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_25": "Receives calls from `Course::Admin::ItemTimeEffortController` to fetch course details. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_26": "Sends HTTP requests to the actual `Xikolo::CourseService` microservice, likely using `Restify`. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "interaction_27": "Error classes within this module are intended to be raised by the `Xikolo::TimeEffort` microservice's business logic when specific validation or operational failures occur. [Source: services/timeeffort/lib/errors.rb]",
+      "interaction_28": "Provides a standardized format for error messages that can be serialized into JSON for API responses. [Source: services/timeeffort/lib/errors.rb]",
+      "interaction_29": "Used internally within the `Xikolo::TimeEffort` microservice to wrap the results of business logic executions. [Source: services/timeeffort/lib/operation.rb]",
+      "interaction_30": "Provides methods (`error!`, `success?`) to manage and query the operation's status and errors. [Source: services/timeeffort/lib/operation.rb]",
+      "interaction_31": "Interacts with CourseService to retrieve course item details and structure. [Source: services/timeeffort/config/services.yml]",
+      "interaction_32": "Interacts with QuizService to retrieve quiz-specific data relevant to time effort calculation. [Source: services/timeeffort/config/services.yml]",
+      "interaction_33": "Provides course item data to TimeEffortService for effort calculation. [Source: services/timeeffort/config/services.yml]",
+      "interaction_34": "Provides quiz data to TimeEffortService for effort calculation. [Source: services/timeeffort/config/services.yml]"
+    },
+    "technicalDebt": [
+      "Specific calculation algorithms and data models are not visible, making it hard to assess efficiency or potential for improvement.",
+      "Specific message formats and handling logic are unknown.",
+      "Specific API routes, request/response schemas, and authentication/authorization mechanisms are not detailed.",
+      "Specific job types, scheduling, and error handling for background tasks are not visible.",
+      "Error handling for `Restify::ClientError` is generic, returning simple messages like 'show_time_effort_failed'. It does not appear to parse or utilize the more specific error types defined within the `Xikolo::TimeEffort` microservice, leading to less informative user feedback. [Source: app/controllers/course/admin/item_time_effort_controller.rb, services/timeeffort/lib/errors.rb]",
+      "Contains a significant amount of inline JavaScript logic, which could be extracted into a separate JavaScript file or a dedicated ViewComponent for better organization, maintainability, and testability. [Source: app/views/items/_time_effort.html.slim]",
+      "The `Course::Admin::ItemTimeEffortController` in the main application does not currently parse or specifically handle these detailed error types from the microservice, potentially leading to generic error messages for the user. [Source: app/controllers/course/admin/item_time_effort_controller.rb]",
+      "The internal implementation details (e.g., specific API endpoints, data models, calculation logic) are not available for analysis, limiting a deeper understanding of its operational specifics. [Source: services/timeeffort/app/, services/timeeffort/config/]"
+    ]
+  }
+}

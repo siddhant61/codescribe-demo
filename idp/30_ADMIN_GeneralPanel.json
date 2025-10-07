@@ -1,0 +1,1100 @@
+{
+  "clusterId": "30_ADMIN_GeneralPanel",
+  "featureFocus": "General Administration Panel Functionality",
+  "documentationReport": "The \"General Administration Panel Functionality\" feature cluster provides a comprehensive suite of tools for administrators to manage various aspects of the platform, including users, courses, content, and system-wide statistics. This functionality is primarily implemented within the `Admin` namespace of the main `web` application, leveraging a microservice architecture for data retrieval and manipulation. Controllers within this cluster extensively interact with backend services like `account`, `course`, `quiz`, `pinboard`, and `quizimporter` via the `Xikolo.api` and `Restify` clients. [Source: app/controllers/admin/ajax/courses_controller.rb, app/controllers/admin/ajax/detail_statistics_controller.rb, app/controllers/admin/ajax/platform_statistics_controller.rb, app/controllers/admin/ajax/users_controller.rb, app/controllers/admin/bans_controller.rb, app/controllers/admin/channels_controller.rb, app/controllers/admin/course_management_controller.rb, app/controllers/admin/courses_controller.rb, app/controllers/admin/manual_confirmations_controller.rb, app/controllers/admin/masquerades_controller.rb, app/controllers/admin/permissions_controller.rb, app/controllers/admin/teachers_controller.rb, app/controllers/admin/users_controller.rb]\n\n**Core Principles and Patterns:**\n\n*   **Microservice Interaction:** Most data operations are delegated to specialized microservices. Controllers use `Xikolo.api(:service_name).value!` to obtain a `Restify` client for the respective service, then perform `get`, `post`, `patch`, or `delete` requests. [Source: app/controllers/admin/ajax/courses_controller.rb, app/controllers/admin/channels_controller.rb]\n*   **Authorization:** Access to administrative functions is strictly controlled using `authorize!` and `require_permission` methods, checking against a user's permissions, often with a `context: :root` for global permissions or `the_course.context_id` for course-specific actions. [Source: app/controllers/admin/ajax/courses_controller.rb, app/controllers/admin/bans_controller.rb, app/controllers/admin/channels_controller.rb, app/controllers/admin/courses_controller.rb, app/controllers/admin/dashboard_controller.rb, app/controllers/admin/permissions_controller.rb, app/controllers/admin/users_controller.rb]\n*   **Presenters:** The application heavily utilizes presenter objects (e.g., `Admin::CourseEditPresenter`, `Admin::ClusterPresenter`) to encapsulate view-specific logic, data formatting, and complex data aggregation from multiple sources, keeping controllers lean. [Source: app/presenters/admin/channel_edit_presenter.rb, app/presenters/admin/channel_order_presenter.rb, app/presenters/admin/classifier/courses_order_presenter.rb, app/presenters/admin/cluster_presenter.rb, app/presenters/admin/course_edit_presenter.rb, app/presenters/admin/course_list_presenter.rb]\n*   **Forms:** Dedicated form objects (e.g., `Admin::ChannelForm`, `Admin::CourseForm`, `Admin::TeacherForm`, `Admin::UserForm`) are used to handle parameter sanitization, validations, and mapping to microservice resource formats. They also manage `remote_errors` returned by the backend services. [Source: app/controllers/admin/channels_controller.rb, app/controllers/admin/courses_controller.rb, app/controllers/admin/teachers_controller.rb, app/controllers/admin/users_controller.rb]\n*   **AJAX Endpoints:** A dedicated `Admin::Ajax` namespace handles dynamic data loading for select/autocomplete fields and dashboard statistics, returning JSON responses. [Source: app/controllers/admin/ajax/classifiers_controller.rb, app/controllers/admin/ajax/courses_controller.rb, app/controllers/admin/ajax/detail_statistics_controller.rb, app/controllers/admin/ajax/platform_statistics_controller.rb, app/controllers/admin/ajax/streams_controller.rb, app/controllers/admin/ajax/users_controller.rb]\n*   **Caching:** `Rails.cache` is employed for performance optimization, particularly in statistics-related controllers, to reduce redundant API calls and speed up dashboard loading. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb, app/controllers/admin/ajax/platform_statistics_controller.rb]\n*   **Asynchronous Operations:** `Restify::Promise` is used for concurrent API calls to aggregate data from multiple services efficiently. Course cloning is handled via `Msgr.publish`, indicating an asynchronous background process. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb, app/controllers/admin/channels_order_controller.rb, app/controllers/admin/courses_controller.rb]\n*   **Feature Flags:** Certain functionalities, such as document management, admin announcements, proctoring, and course reactivation, are gated by `Xikolo.config.beta_features` or user-specific feature flags (`user.feature?`). [Source: app/controllers/admin/ajax/detail_statistics_controller.rb, app/controllers/admin/document_localizations_controller.rb, app/controllers/admin/documents_controller.rb, app/presenters/admin/course_edit_presenter.rb, app/presenters/admin_navigation.rb]\n\n**Key Components and Workflows:**\n\n**1. User and Permissions Management:**\n\n*   **`Admin::UsersController`**: Provides an interface to list, create, and search users. It interacts with the `account` microservice to fetch user data and create new user accounts. [Source: app/controllers/admin/users_controller.rb, spec/controllers/admin/users_controller_spec.rb, spec/requests/admin/ajax/find_users_spec.rb]\n*   **`Admin::BansController`**: Allows administrators to ban users by making a `POST` request to the `account` service's user ban endpoint. It includes checks to prevent a user from banning themselves. [Source: app/controllers/admin/bans_controller.rb, spec/requests/admin/bans/create_spec.rb]\n*   **`Admin::ManualConfirmationsController`**: Enables manual confirmation of user emails, interacting with the `account` service to update email status. [Source: app/controllers/admin/manual_confirmations_controller.rb]\n*   **`Admin::MasqueradesController`**: Facilitates the ability for administrators to temporarily log in as another user (masquerade). This involves updating the session in the `account` service and managing CSRF tokens to prevent security issues. [Source: app/controllers/admin/masquerades_controller.rb]\n*   **`Admin::PermissionsController`**: Manages user group memberships, which translate to permissions. It interacts with the `account` service to add or remove users from groups. The `lanalytics.report.admin` role, for instance, is managed via this mechanism, though its assignment is manual via console for sensitive data access. [Source: app/controllers/admin/permissions_controller.rb, docs/app/features/permissions/reporting.md, services/account/lib/tasks/permissions/web.yml]\n*   **`Admin::Ajax::UsersController`**: Provides an AJAX endpoint for searching users, typically used for autocomplete fields in other admin forms. [Source: app/controllers/admin/ajax/users_controller.rb, spec/requests/admin/ajax/find_users_spec.rb]\n\n**2. Course and Content Management:**\n\n*   **`Admin::CoursesController`**: Manages the lifecycle of courses, including listing, creating, editing, cloning, and deleting. It heavily relies on the `course` microservice for all course-related data and operations. Course cloning is an asynchronous operation initiated via `Msgr.publish`. [Source: app/controllers/admin/courses_controller.rb, spec/controllers/admin/courses_controller_spec.rb, spec/requests/admin/courses/list_spec.rb]\n*   **`Admin::CourseManagementController`**: A somewhat monolithic controller (`TODO: refactor`) that handles various course-specific administrative tasks such as viewing course statistics, managing quiz submissions, previewing/importing quizzes (including from spreadsheets via `quizimporter` service), and generating course rankings. It interacts with `course`, `quiz`, and `quizimporter` services. [Source: app/controllers/admin/course_management_controller.rb, spec/controllers/admin/course_management_controller_spec.rb]\n*   **`Admin::ChannelsController`**: Provides CRUD functionality for course channels, interacting with the `course` microservice. [Source: app/controllers/admin/channels_controller.rb]\n*   **`Admin::ChannelsOrderController`**: Manages the display order of channels by sending `PATCH` requests to the `course` service. [Source: app/controllers/admin/channels_order_controller.rb, spec/requests/admin/channels_order/update_spec.rb]\n*   **`Admin::ClustersController`**: Manages course clusters, including listing, showing details, and updating visibility and translations. It interacts with the local `Course::Cluster` model. [Source: app/controllers/admin/clusters_controller.rb]\n*   **`Admin::ClassifiersController`**: Manages course classifiers within clusters, providing CRUD operations for titles, translations, and descriptions. It interacts with local `Course::Classifier` and `Course::Cluster` models. [Source: app/controllers/admin/classifiers_controller.rb]\n*   **`Admin::Cluster::ClassifiersOrderController`**: Allows reordering of classifiers within a specific cluster, updating their positions in the local database. [Source: app/controllers/admin/cluster/classifiers_order_controller.rb]\n*   **`Admin::Classifier::CoursesOrderController`**: Manages the ordering of courses assigned to a specific classifier, involving `Course::Classifier` and `Course::ClassifierAssignment` models. [Source: app/controllers/admin/classifier/courses_order_controller.rb]\n*   **`Admin::DocumentsController`** (beta feature): Provides CRUD for documents, interacting with the `course` microservice. It includes functionality for managing document tags and associated courses. [Source: app/controllers/admin/documents_controller.rb]\n*   **`Admin::DocumentLocalizationsController`** (beta feature): Manages localized versions of documents, interacting with the `course` microservice. [Source: app/controllers/admin/document_localizations_controller.rb]\n*   **`Admin::TeachersController`**: Manages teacher profiles, allowing creation, editing, and viewing. It interacts with both `course` (for teacher data) and `account` (for associating users) microservices. [Source: app/controllers/admin/teachers_controller.rb]\n*   **`Admin::PollsController`**: Manages polls, including creation, editing, and deletion. It interacts with the local `Poll::Poll` model. [Source: app/controllers/admin/polls_controller.rb]\n*   **`Admin::PollOptionsController`**: An AJAX controller for adding and deleting options for a specific poll. [Source: app/controllers/admin/poll_options_controller.rb]\n*   **`Admin::Ajax::ClassifiersController`**: Provides an AJAX endpoint for searching and filtering classifiers. [Source: app/controllers/admin/ajax/classifiers_controller.rb]\n*   **`Admin::Ajax::CoursesController`**: Provides an AJAX endpoint for searching courses, typically used for autocomplete fields. [Source: app/controllers/admin/ajax/courses_controller.rb, spec/requests/admin/ajax/find_courses_spec.rb]\n*   **`Admin::Ajax::StreamsController`**: Provides an AJAX endpoint for searching video streams. [Source: app/controllers/admin/ajax/streams_controller.rb]\n\n**3. Platform Statistics and Dashboard:**\n\n*   **`Admin::DashboardController`**: The entry point for the admin panel, displaying a navigation menu based on user permissions. [Source: app/controllers/admin/dashboard_controller.rb]\n*   **`Admin::Ajax::DetailStatisticsController`**: Fetches and aggregates course-specific statistics (e.g., top countries, cities, item types, video statistics, most active users) from the `course` and `pinboard` microservices. It utilizes `Rails.cache` for performance. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]\n*   **`Admin::Ajax::PlatformStatisticsController`**: Gathers and presents platform-wide statistics, such as total learners, enrollments, daily/weekly activity, and certificate counts. It uses `Restify::Promise` for concurrent API calls to `account` and `course` services and `Rails.cache`. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]\n\n**Technical Debt and Areas for Improvement:**\n\n*   **`Admin::CourseManagementController`**: Explicitly marked as `TODO: refactor` due to its broad scope and multiple responsibilities. It should be extracted into proper resource-based controllers. [Source: app/controllers/admin/course_management_controller.rb]\n*   **Pagination:** Several controllers have `TODO` comments regarding implementing pagination (e.g., `Admin::Ajax::StreamsController`, `Admin::PollsController`, `Admin::UsersController`). This is crucial for performance and usability with large datasets. [Source: app/controllers/admin/ajax/streams_controller.rb, app/controllers/admin/polls_controller.rb, app/controllers/admin/users_controller.rb]\n*   **Error Handling:** While `Restify::ClientError` and `Restify::UnprocessableEntity` are caught, some error messages are generic (`t(:'flash.error.channel_not_created')`). More specific error handling and user feedback could be beneficial. [Source: app/controllers/admin/channels_controller.rb, app/controllers/admin/courses_controller.rb]\n*   **ACFS Run Calls:** The `Acfs.run` calls are sometimes placed in a way that suggests potential for refactoring with callbacks or more integrated patterns. [Source: app/controllers/admin/course_management_controller.rb]\n\nOverall, the admin panel demonstrates a robust, permission-driven, and microservice-oriented approach to platform administration, with clear separation of concerns between controllers, presenters, and form objects. Performance is addressed through caching and concurrent API calls, and feature flags allow for controlled rollout of new functionalities.",
+  "componentMapPatch": {
+    "components": {
+      "Admin::Ajax::ClassifiersController": {
+        "type": "Controller",
+        "description": "Handles AJAX requests for listing and filtering course classifiers. Used for dynamic selection in admin forms.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Classifier` model to fetch and query data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/classifiers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "module Admin   module Ajax     class ClassifiersController < Abstract::AjaxController       before_action :ensure_logged_in       require_permission 'course.course.edit'       respond_to? :json",
+              "source": "app/controllers/admin/ajax/classifiers_controller.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 23,
+              "code": "      def index         classifiers = ::Course::Classifier.all          if params[:cluster].present?           classifiers = classifiers.where(cluster_id: params[:cluster])         end          if params[:q].present?           classifiers = classifiers.query(params[:q])         end          render json: serialize_classifiers(classifiers)       end",
+              "source": "app/controllers/admin/ajax/classifiers_controller.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 34,
+              "code": "      private        def serialize_classifiers(classifiers)         classifiers.map do |classifier|           {             id: classifier.id,             title: classifier.title,             cluster_id: classifier.cluster_id,             translations: classifier.translations,           }.compact         end       end",
+              "source": "app/controllers/admin/ajax/classifiers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "services/course/app/controllers/classifiers_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::CoursesController": {
+        "type": "Controller",
+        "description": "Handles AJAX requests for listing courses, typically for autocomplete functionality in admin forms.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` to fetch course data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/courses_controller.rb",
+            "spec/requests/admin/ajax/find_courses_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 21,
+              "code": "module Admin   module Ajax     class CoursesController < Abstract::AjaxController       respond_to :json        before_action :ensure_logged_in        def index         authorize_any! 'course.course.index', 'course.document.manage'          courses = course_api.rel(:courses).get({           autocomplete: params[:q],           offset: params[:offset],           limit: 50,         }).value!          render json: courses.map {|c| {id: c['id'], text: \"#{c['title']} (#{c['course_code']})\"} }       end     end   end end",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/courses_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::DetailStatisticsController": {
+        "type": "Controller",
+        "description": "Provides various course-specific statistics (e.g., countries, cities, item types, videos, most active users) for the admin dashboard. Utilizes caching for performance.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` to fetch metric data.",
+          "interaction_1": "Communicates with the `pinboard` microservice via `Xikolo.api(:pinboard)` for most active user statistics.",
+          "interaction_2": "Uses `Rails.cache` for data caching."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/detail_statistics_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 6,
+              "code": "module Admin\n  module Ajax\n    class DetailStatisticsController < Abstract::AjaxController\n      require_permission 'global.dashboard.show'",
+              "source": "app/controllers/admin/ajax/detail_statistics_controller.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 19,
+              "code": "      def countries\n        data = Rails.cache.fetch(\"statistics/geo/countries?#{query}\", expires_in: 6.hours,\n          race_condition_ttl: 10.seconds) do\n          fetch_metric(**{\n            name: 'top_countries',\n            course_id: params[:course_id],\n            start_date: params[:start_date].presence || 1.month.ago,\n            end_date: params[:end_date].presence || Time.zone.now,\n          }.compact).value!\n        end\n\n        render json: data\n      end",
+              "source": "app/controllers/admin/ajax/detail_statistics_controller.rb"
+            },
+            {
+              "startLine": 21,
+              "endLine": 28,
+              "code": "      def cities\n        data = Rails.cache.fetch(\"statistics/geo/cities#{query}\", expires_in: 6.hours,\n          race_condition_ttl: 10.seconds) do\n          fetch_metric(**{\n            name: 'top_cities',\n            course_id: params[:course_id],\n            start_date: params[:start_date].presence || 1.month.ago,\n            end_date: params[:end...",
+              "source": "app/controllers/admin/ajax/detail_statistics_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/detail_statistics_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::PlatformStatisticsController": {
+        "type": "Controller",
+        "description": "Provides platform-wide statistics (e.g., learners, enrollments, activity, certificates) for the admin dashboard. Uses concurrent API calls and caching.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` microservice via `Xikolo.api(:account)` for user statistics.",
+          "interaction_1": "Communicates with the `course` microservice via `Xikolo.api(:course)` for enrollment and certificate statistics.",
+          "interaction_2": "Uses `Restify::Promise` for concurrent API requests.",
+          "interaction_3": "Uses `Rails.cache` for data caching."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/platform_statistics_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 25,
+              "code": "    class PlatformStatisticsController < Abstract::AjaxController\n      require_permission 'global.dashboard.show'\n\n      def learners_and_enrollments\n        data = Rails.cache.fetch('platform_statistics/learners_and_enrollments/', expires_in: 1.hour,\n          race_condition_ttl: 1.minute) do\n          Restify::Promise.new([\n            account_api.rel(:statistics).get,\n            course_api.rel(:stats).get({key: 'global'}),\n          ]) do |account_stats, course_stats|\n            total_enrollments = course_stats['platform_enrollments'] +\n                                course_stats['platform_enrollment_delta_sum'] +\n                                Xikolo.config.global_enrollment_delta\n            confirmed_users = account_stats['confirmed_users'] + Xikolo.config.global_users_delta\n\n            {\n              confirmed_users:,\n              confirmed_users_last_day: account_stats['confirmed_users_last_day'],\n              d...\n",
+              "source": "app/controllers/admin/ajax/platform_statistics_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/platform_statistics_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::StreamsController": {
+        "type": "Controller",
+        "description": "Handles AJAX requests for listing video streams, typically for selection in admin forms.",
+        "interactions": {
+          "interaction_0": "Interacts with `Video::Stream` model to query and limit streams."
+        },
+        "techDebt": [
+          "TODO: (XI-6286) add pagination (tomSelect supports this pretty easily, see https://tom-select.js.org/plugins/virtual_scroll/)"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/streams_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class StreamsController < Abstract::AjaxController\n      # TODO: (XI-6286) add pagination (tomSelect supports this pretty easily, see https://tom-select.js.org/plugins/virtual_scroll/)\n\n      def index\n        authorize! 'video.video.index'\n\n        streams = Video::Stream.includes(:provider).query(params[:q]).limit(250)\n\n        render(\n          json: streams.map do |stream|\n            {\n              id: stream.id,\n              text: \"#{stream.title} (#{stream.provider_name})\",\n            }\n          end\n        )\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/streams_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::UsersController": {
+        "type": "Controller",
+        "description": "Handles AJAX requests for listing users, typically for autocomplete functionality in admin forms.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` microservice via `Xikolo.api(:account)` to fetch user data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/users_controller.rb",
+            "spec/requests/admin/ajax/find_users_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class UsersController < Abstract::AjaxController\n      respond_to :json\n\n      before_action :ensure_logged_in\n      require_permission 'account.user.find'\n\n      def index\n        users = account_api.rel(:users).get({\n          query: params[:q],\n        }).value!\n\n        render json: users.map {|u| {id: u['id'], text: \"#{u['name']} (#{u['email']})\"} }\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/users_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/users_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/users_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/portal_api/users_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "Admin::BansController": {
+        "type": "Controller",
+        "description": "Manages user banning functionality. Prevents a user from banning themselves.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` microservice via `Xikolo.api(:account)` to post user ban requests."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/bans_controller.rb",
+            "spec/requests/admin/bans/create_spec.rb"
+          ]
+        }
+      },
+      "Admin::BaseController": {
+        "type": "Controller",
+        "description": "Base controller for all administrative frontend controllers, inheriting from `Abstract::FrontendController`.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/base_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 1,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 6,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  class BaseController < Abstract::FrontendController\n  end\nend",
+              "source": "app/controllers/admin/base_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/base_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/base_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/bridges/lanalytics/base_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "Admin::ChannelsController": {
+        "type": "Controller",
+        "description": "Provides CRUD operations for course channels. Uses `Admin::ChannelEditPresenter` for data presentation and `Admin::ChannelForm` for form handling.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` for channel data management.",
+          "interaction_1": "Uses `Admin::ChannelEditPresenter` to prepare channel data for views.",
+          "interaction_2": "Uses `Admin::ChannelForm` for form validation and resource conversion."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/channels_controller.rb",
+            "app/presenters/admin/channel_edit_presenter.rb"
+          ]
+        }
+      },
+      "Admin::ChannelsOrderController": {
+        "type": "Controller",
+        "description": "Manages the display order of course channels. Uses `Admin::ChannelOrderPresenter` to prepare data for ordering view.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` to update channel positions.",
+          "interaction_1": "Uses `Admin::ChannelOrderPresenter` to prepare channel data for ordering."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/channels_order_controller.rb",
+            "app/presenters/admin/channel_order_presenter.rb",
+            "spec/requests/admin/channels_order/update_spec.rb"
+          ]
+        }
+      },
+      "Admin::Classifier::CoursesOrderController": {
+        "type": "Controller",
+        "description": "Manages the ordering of courses within a specific classifier. It performs a destructive update by deleting all existing assignments and recreating them with new positions.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Classifier` and `Course::ClassifierAssignment` models to manage course ordering.",
+          "interaction_1": "Interacts with `Course::Course` to validate course IDs.",
+          "interaction_2": "Uses `Admin::Classifier::CoursesOrderPresenter` for view data."
+        },
+        "techDebt": [
+          "The destruction and recreation of `classifier_assignments` is a workaround for `acts_as_list` limitations on join tables."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/classifier/courses_order_controller.rb",
+            "app/presenters/admin/classifier/courses_order_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nclass Admin::Classifier::CoursesOrderController < Abstract::FrontendController\n  require_permission 'course.cluster.manage'\n\n  def index\n    @classifier = Admin::Classifier::CoursesOrderPresenter.new(Course::Classifier.find(params[:classifier_id]))\n\n    render template: 'admin/classifiers/courses_order'\n  end\n\n  def update\n    @classifier = Course::Classifier.find(params[:classifier_id])\n\n    if params[:courses].blank?\n      # Destroy existing course assignments if all are removed.\n      @classifier.classifier_assignments.delete_all\n    else\n      begin\n        @classifier.transaction do\n          # 1. Destroy all course assignments.\n          # Destroying all resources is a workaround, since acts as list cannot\n          # handle partial updates on join tables.\n          @classifier.classifier_assignments.delete_all\n\n          # 2. Create course assignments and thus update positions accordingly.\n          course_ids = Course::Course.not_deleted.where(id:...",
+              "source": "app/controllers/admin/ajax/classifiers_controller.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 9,
+              "code": "    render template: 'admin/classifiers/courses_order'",
+              "source": "app/controllers/admin/ajax/classifiers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/classifier/courses_order_controller.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/controllers/admin/classifiers_controller.rb",
+              "relevance": 15
+            }
+          ]
+        }
+      },
+      "Admin::ClassifiersController": {
+        "type": "Controller",
+        "description": "Provides CRUD operations for course classifiers, which are associated with clusters. Manages classifier titles, translations, and descriptions.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Classifier` and `Course::Cluster` models for data persistence."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/classifiers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class ClassifiersController < Abstract::AjaxController\n      before_action :ensure_logged_in\n      require_permission 'course.course.edit'\n      respond_to? :json\n\n      def index\n        classifiers = ::Course::Classifier.all\n\n        if params[:cluster].present?\n          classifiers = classifiers.where(cluster_id: params[:cluster])\n        end\n\n        if params[:q].present?\n          classifiers = classifiers.query(params[:q])\n        end\n\n        render json: serialize_classifiers(classifiers)\n      end\n\n      private\n\n      def serialize_classifiers(classifiers)\n        classifiers.map do |classifier|\n          {\n            id: classifier.id,\n            title: classifier.title,\n            cluster_id: classifier.cluster_id,\n            translations: classifier.translations,\n          }.compact\n        end\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/classifiers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "services/course/app/controllers/classifiers_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::Cluster::ClassifiersOrderController": {
+        "type": "Controller",
+        "description": "Manages the display order of classifiers within a specific cluster. Updates positions and sets the cluster's sort mode to 'manual'.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Cluster` and `Course::Classifier` models to update ordering."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/cluster/classifiers_order_controller.rb",
+            "app/presenters/admin/cluster_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nclass Admin::Cluster::ClassifiersOrderController < Abstract::FrontendController\n  require_permission 'course.cluster.manage'\n\n  def index\n    @cluster = Admin::ClusterPresenter.new(Course::Cluster.find(params[:cluster_id]))\n\n    render template: 'admin/classifiers/order'\n  end\n\n  def update\n    cluster = Course::Cluster.find(params[:cluster_id])\n    if params[:classifiers].present?\n      begin\n        cluster.transaction do\n          cluster.classifiers.each do |classifier|\n            classifier.set_list_position(params[:classifiers].index(classifier.id) + 1, true)\n          end\n\n          cluster.update!(sort_mode: 'manual')\n        end\n\n        add_flash_message(:success, t(:'flash.success.classifiers_order_updated'))\n        redirect_to admin_cluster_url(cluster)\n      rescue ActiveRecord::RecordInvalid\n        add_flash_message(:error, t(:'flash.error.classifiers_order_failed'))\n        redirect_to admin_cluster_classifiers_order_url(cluster)\n      e...",
+              "source": "app/controllers/admin/cluster/classifiers_order_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/cluster/classifiers_order_controller.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/controllers/admin/clusters_controller.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::ClustersController": {
+        "type": "Controller",
+        "description": "Manages course clusters, including listing, showing details, editing, and updating visibility and translations. Uses `Admin::ClusterPresenter` for view data.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Cluster` model for data persistence.",
+          "interaction_1": "Uses `Admin::ClusterPresenter` to prepare cluster data for views."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/clusters_controller.rb",
+            "app/presenters/admin/cluster_presenter.rb"
+          ]
+        }
+      },
+      "Admin::CourseManagementController": {
+        "type": "Controller",
+        "description": "A controller handling various course-related administrative tasks such as statistics, quiz submissions, quiz import/preview, and ranking generation. It's identified as a candidate for refactoring.",
+        "interactions": {
+          "interaction_0": "Communicates with `course` microservice via `Xikolo.api(:course)` for course, section, item, and statistics data.",
+          "interaction_1": "Communicates with `quiz` microservice via `Xikolo.api(:quiz)` for quiz, submission, and statistics data.",
+          "interaction_2": "Communicates with `quizimporter` service via `Restify` for spreadsheet-based quiz imports.",
+          "interaction_3": "Interacts with `Xikolo::Course::Stat`, `Xikolo::Account::User`, `Quiz::Submission`, `Course::Item`, `Xikolo::Quiz::Quiz`, `Xikolo::Course::Section` models/wrappers.",
+          "interaction_4": "Uses `Acfs.run` for asynchronous data fetching."
+        },
+        "techDebt": [
+          "\"TODO: refactor with callback\" - `Acfs.run` usage.",
+          "\"TODO: decide how to handle deleted items\" - in `submissions` action.",
+          "\"this is totally ruff, but is a blueprint for our analytics master thesis (jr)\" - general comment on `submission_statistics` action.",
+          "\"A controller that holds actions loosely related to a course Should be extracted to proper resource-based controllers\" - general comment on the controller itself."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/course_management_controller.rb",
+            "spec/controllers/admin/course_management_controller_spec.rb"
+          ]
+        }
+      },
+      "Admin::CoursesController": {
+        "type": "Controller",
+        "description": "Manages the lifecycle of courses (listing, creating, editing, cloning, deleting). Uses `Admin::CourseEditPresenter` and `Admin::CourseListPresenter` for views and `Admin::CourseForm` for form handling. Course cloning is an asynchronous operation.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` for all course data and operations.",
+          "interaction_1": "Initiates course cloning via `Msgr.publish` to the `xikolo.course.clone` topic.",
+          "interaction_2": "Uses `Admin::CourseEditPresenter` for course creation/editing forms.",
+          "interaction_3": "Uses `Admin::CourseListPresenter` for course index listing.",
+          "interaction_4": "Uses `Admin::CourseForm` for form validation and resource conversion."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/courses_controller.rb",
+            "app/presenters/admin/course_edit_presenter.rb",
+            "app/presenters/admin/course_list_presenter.rb",
+            "spec/controllers/admin/courses_controller_spec.rb",
+            "spec/requests/admin/courses/list_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 19,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class CoursesController < Abstract::AjaxController\n      respond_to :json\n\n      before_action :ensure_logged_in\n\n      def index\n        authorize_any! 'course.course.index', 'course.document.manage'\n\n        courses = course_api.rel(:courses).get({\n          autocomplete: params[:q],\n          offset: params[:offset],\n          limit: 50,\n        }).value!\n\n        render json: courses.map {|c| {id: c['id'], text: \"#{c['title']} (#{c['course_code']})\"} }\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/courses_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "Admin::DashboardController": {
+        "type": "Controller",
+        "description": "Displays the main administrative dashboard, presenting a navigation menu tailored to the current user's permissions.",
+        "interactions": {
+          "interaction_0": "Uses `PlatformDashboardNav` to determine navigation items based on user permissions."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/dashboard_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  module Admin\n    class DashboardController < Abstract::FrontendController\n      include CourseContextHelper\n\n      before_action :set_no_cache_headers\n\n      inside_course\n\n      def show\n        authorize! 'course.dashboard.view'\n\n        @course = the_course\n        Acfs.run # wait for course context promises\n      end\n\n      def hide_course_nav?\n        true\n      end\n\n      private\n\n      def auth_context\n        the_course.context_id\n      end\n\n      # fix course receiving\n      def request_course\n        Xikolo::Course::Course.find(params[:id])\n      end\n    end\n  end\nend",
+              "source": "app/controllers/course/admin/dashboard_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/course/admin/dashboard_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/dashboard_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::DocumentLocalizationsController": {
+        "type": "Controller",
+        "description": "Provides CRUD operations for localized versions of documents. This feature is gated by a beta feature flag.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` for document localization data.",
+          "interaction_1": "Requires `Xikolo.config.beta_features['documents']` to be enabled."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/document_localizations_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 27,
+              "code": "class DocumentLocalizationsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n  respond_to :json\n\n  rfc6570_params index: [:document_id]\n\n  def index\n    document_localization = DocumentLocalization.all.not_deleted\n\n    # Filter by document\n    if params[:document_id]\n      document_localization.where! document_id: params[:document_id]\n    end\n    respond_with document_localization\n  end\n\n  def create\n    document_localization = DocumentLocalization.create \\\n      document_localization_params\n    respond_with document_localization\n  end\n\n  def show\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    respond_with document_localization\n  end\n\n  def update\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    document_localization.update(document_localization_params)\n    resp...",
+              "source": "services/course/app/controllers/document_localizations_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/document_localizations_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::DocumentsController": {
+        "type": "Controller",
+        "description": "Provides CRUD operations for documents. This feature is gated by a beta feature flag. Uses `DocumentsListPresenter` for index view.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` for document, course, and tag data.",
+          "interaction_1": "Uses `DocumentsListPresenter` to build the document list view.",
+          "interaction_2": "Requires `Xikolo.config.beta_features['documents']` to be enabled."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/documents_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nclass DocumentsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n  respond_to :json\n\n  rfc6570_params index: %i[course_id item_id language tag]\n  def index\n    documents = Document.all.not_deleted\n\n    # Filter by course\n    if params[:course_id].present?\n      documents = documents.joins(:courses_documents)\n        .where(courses_documents: {course_id: params[:course_id]})\n    end\n\n    # Filter by items\n    if params[:item_id].present?\n      documents = documents.joins(:documents_items)\n        .where(documents_items: {item_id: params[:item_id]})\n    end\n\n    # Filter by language\n    if params[:language].present?\n      documents = documents.joins(:localizations)\n        .where(document_localizations: {language: params[:language]})\n    end\n\n    # Filter by tag\n    documents = documents.tagged_with(params[:tag]) if params[:tag].p...",
+              "source": "services/course/app/controllers/documents_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/documents_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::ManualConfirmationsController": {
+        "type": "Controller",
+        "description": "Allows administrators to manually confirm a user's email address.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` microservice via `Xikolo.api(:account)` to fetch user and email data, then patch the email confirmation status."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/manual_confirmations_controller.rb"
+          ]
+        }
+      },
+      "Admin::MasqueradesController": {
+        "type": "Controller",
+        "description": "Enables administrators to masquerade as other users for debugging or support purposes. Manages session and CSRF tokens during masquerading.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` microservice via `Xikolo.api(:account)` to manage user sessions and masquerade status."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/masquerades_controller.rb"
+          ]
+        }
+      },
+      "Admin::PermissionsController": {
+        "type": "Controller",
+        "description": "Manages user permissions by adding or removing users from specific groups. The group names are prefixed with 'xikolo.'.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` microservice via `Xikolo.api(:account)` to manage user group memberships."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/permissions_controller.rb",
+            "docs/app/features/permissions/reporting.md"
+          ]
+        }
+      },
+      "Admin::PollOptionsController": {
+        "type": "Controller",
+        "description": "Handles AJAX requests for creating and destroying options for a specific poll. Actions are restricted if poll editing is not allowed.",
+        "interactions": {
+          "interaction_0": "Interacts with the local `Poll::Poll` model to add/remove options."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/poll_options_controller.rb"
+          ]
+        }
+      },
+      "Admin::PollsController": {
+        "type": "Controller",
+        "description": "Provides CRUD operations for polls. Uses `Poll::Poll` model for data persistence.",
+        "interactions": {
+          "interaction_0": "Interacts with the local `Poll::Poll` model for data persistence."
+        },
+        "techDebt": [
+          "TODO: Implement pagination - in `index` action."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/polls_controller.rb"
+          ]
+        }
+      },
+      "Admin::TeachersController": {
+        "type": "Controller",
+        "description": "Manages teacher profiles, including listing, showing details, creating, and editing. Uses `Admin::TeacherForm` for form handling and `Course::TeacherListPresenter` for listing.",
+        "interactions": {
+          "interaction_0": "Communicates with the `course` microservice via `Xikolo.api(:course)` for teacher data.",
+          "interaction_1": "Communicates with the `account` microservice via `Xikolo.api(:account)` to fetch user details for new teacher creation.",
+          "interaction_2": "Uses `Admin::TeacherForm` for form validation and resource conversion.",
+          "interaction_3": "Uses `Course::TeacherListPresenter` to present teacher lists."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/teachers_controller.rb"
+          ]
+        }
+      },
+      "Admin::UsersController": {
+        "type": "Controller",
+        "description": "Manages user accounts, including listing, searching by UID, and creating new users. Uses `UserListPresenter` for listing and `Admin::UserForm` for creation.",
+        "interactions": {
+          "interaction_0": "Communicates with the `account` microservice via `Xikolo.api(:account)` to fetch and create user data.",
+          "interaction_1": "Uses `UserListPresenter` to present user lists.",
+          "interaction_2": "Uses `Admin::UserForm` for form validation and resource conversion."
+        },
+        "techDebt": [
+          "\"TODO: Do this global for all paging support controllers?\" - in `index` action regarding pagination."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/users_controller.rb",
+            "spec/controllers/admin/users_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.9,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 18,
+              "code": "module Admin\n  module Ajax\n    class UsersController < Abstract::AjaxController\n      respond_to :json\n\n      before_action :ensure_logged_in\n      require_permission 'account.user.find'\n\n      def index\n        users = account_api.rel(:users).get({\n          query: params[:q],\n        }).value!\n\n        render json: users.map {|u| {id: u['id'], text: \"#{u['name']} (#{u['email']})\"} }\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/users_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/users_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/users_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/portal_api/users_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "Admin::ChannelEditPresenter": {
+        "type": "Presenter",
+        "description": "Prepares data for the channel creation and edit forms, encapsulating logic for displaying channel attributes and associated form object.",
+        "interactions": {
+          "interaction_0": "Wraps `Admin::ChannelForm` and channel data (hash)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/channel_edit_presenter.rb"
+          ]
+        }
+      },
+      "Admin::ChannelOrderPresenter": {
+        "type": "Presenter",
+        "description": "Prepares channel data for the channel ordering interface, specifically for select/drag-and-drop components.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/channel_order_presenter.rb"
+          ]
+        }
+      },
+      "Admin::Classifier::CoursesOrderPresenter": {
+        "type": "Presenter",
+        "description": "Prepares data for the course ordering interface within a specific classifier, providing classifier details and a list of associated courses.",
+        "interactions": {
+          "interaction_0": "Delegates to `Course::Classifier` for title, courses, and cluster information."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/classifier/courses_order_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 16,
+              "code": "class Admin::Classifier::CoursesOrderPresenter\n  extend Forwardable\n\n  def_delegators :@classifier, :title, :courses, :cluster\n\n  def initialize(classifier)\n    @classifier = classifier\n  end\n\n  def courses_order_select\n    @classifier.courses.map {|course| [\"#{course.title} (#{course.course_code})\", course.id] }\n  end\nend",
+              "source": "app/presenters/admin/classifier/courses_order_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/admin/classifier/courses_order_presenter.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 14
+            },
+            {
+              "path": "app/presenters/admin/announcement_email_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::ClusterPresenter": {
+        "type": "Presenter",
+        "description": "Prepares data for cluster display and ordering, including cluster details, localized titles, and associated classifiers.",
+        "interactions": {
+          "interaction_0": "Delegates to `Course::Cluster` for id, title, translations, and classifiers.",
+          "interaction_1": "Uses `I18n` for localized sort mode display."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/cluster_presenter.rb"
+          ]
+        }
+      },
+      "Admin::CourseEditPresenter": {
+        "type": "Presenter",
+        "description": "Prepares data for course creation and edit forms. Aggregates information from various sources including channels, teachers, and statistics, and handles feature flag checks.",
+        "interactions": {
+          "interaction_0": "Delegates to `Admin::CourseForm` for form-related attributes.",
+          "interaction_1": "Delegates to `BasicCoursePresenter` for core course attributes.",
+          "interaction_2": "Communicates with the `course` microservice via `Xikolo.api(:course)` to fetch channels, teacher details, and course statistics.",
+          "interaction_3": "Interacts with `Course::Visual` and `Video::Stream` for course visual information.",
+          "interaction_4": "Checks `Xikolo.config.course_languages`, `Xikolo.config.access_groups`, and feature flags (`user.feature?`, `Proctoring.enabled?`, `CourseReactivation.enabled?`)."
+        },
+        "techDebt": [
+          "Rubocop disables Naming/MemoizedInstanceVariableName for `with_teachers!` and `with_statistic_dates!` methods."
+        ],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/course_edit_presenter.rb"
+          ]
+        }
+      },
+      "Admin::CourseListPresenter": {
+        "type": "Presenter",
+        "description": "Prepares course data for the administrative course index page, including categorization and pagination.",
+        "interactions": {
+          "interaction_0": "Wraps a collection of courses.",
+          "interaction_1": "Uses `RestifyPaginationCollection` for pagination.",
+          "interaction_2": "Uses `Rails.application.routes.url_helpers` for URL generation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/course_list_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.9,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Home\n  class CourseListPresenter\n    def initialize(courses)\n      @courses = courses\n    end\n\n    def courses_count\n      @courses.length\n    end\n  end\nend",
+              "source": "app/presenters/home/course_list_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/home/course_list_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/admin/announcement_email_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/admin/announcement_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::SubscriptionListPresenter": {
+        "type": "Presenter",
+        "description": "A generic presenter for paginated lists of subscriptions. Not directly used in the provided cluster but part of the Admin namespace.",
+        "interactions": {
+          "interaction_0": "Uses `RestifyPaginationCollection` for pagination."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/subscription_list_presenter.rb"
+          ]
+        }
+      },
+      "AdminNavigation": {
+        "type": "Presenter",
+        "description": "Defines the navigation menu items for the administrative panel, with each item's visibility controlled by user permissions and feature flags.",
+        "interactions": {
+          "interaction_0": "Checks user permissions using `user.allowed?`.",
+          "interaction_1": "Checks feature flags using `user.feature?` and `Xikolo.config.beta_features`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin_navigation.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 21,
+              "code": "class AdminNavigation < MenuWithPermissions\n  item 'header.navigation.admin.dashboard', 'chart-mixed',\n    if: ->(user, _course) { user.allowed?('global.dashboard.show', context: :root) },\n    route: :admin_dashboard\n\n  item 'header.navigation.admin.courses', 'book',\n    if: ->(user, _course) { user.allowed?('course.course.index', context: :root) },\n    route: :admin_courses\n\n  item 'header.navigation.admin.categories', 'boxes-stacked',\n    if: ->(user, _course) { user.allowed?('course.cluster.index', context: :root) },\n    route: :admin_clusters\n\n  item 'header.navigation.admin.users', 'user',\n    if: ->(user, _course) { user.allowed?('account.user.index', context: :root) },\n    route: :users\n\n  item 'header.navigation.admin.teachers', 'glasses',\n    if: ->(user, _course) { user.allowed?('course.teacher.view', context: :root) },\n    route: :teachers\n\n  item 'header.navigation.admin.permissions', 'key',\n    if: ->(user, _course) { user.allowed?('account.p...",
+              "source": "app/presenters/admin_navigation.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/admin_navigation.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "User Account Administration",
+        "description": "Administrators can list, create, search, ban, and manually confirm user accounts. They can also masquerade as other users and manage user permissions by assigning or revoking group memberships.",
+        "involvedComponents": [
+          "Admin::UsersController",
+          "Admin::BansController",
+          "Admin::ManualConfirmationsController",
+          "Admin::MasqueradesController",
+          "Admin::PermissionsController",
+          "Admin::Ajax::UsersController"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/users_controller.rb",
+            "app/controllers/admin/bans_controller.rb",
+            "app/controllers/admin/manual_confirmations_controller.rb",
+            "app/controllers/admin/masquerades_controller.rb",
+            "app/controllers/admin/permissions_controller.rb",
+            "app/controllers/admin/ajax/users_controller.rb",
+            "spec/controllers/admin/users_controller_spec.rb",
+            "spec/requests/admin/bans/create_spec.rb",
+            "spec/requests/admin/ajax/find_users_spec.rb",
+            "docs/app/features/permissions/reporting.md"
+          ]
+        }
+      },
+      {
+        "workflowName": "Course and Content Management",
+        "description": "Administrators can create, edit, clone, and delete courses. They can manage course channels, classify courses into clusters, and order both channels and classifiers. Document management (a beta feature) and teacher profiles are also administered here. Quiz content can be previewed and imported.",
+        "involvedComponents": [
+          "Admin::CoursesController",
+          "Admin::CourseManagementController",
+          "Admin::ChannelsController",
+          "Admin::ChannelsOrderController",
+          "Admin::ClustersController",
+          "Admin::ClassifiersController",
+          "Admin::Cluster::ClassifiersOrderController",
+          "Admin::Classifier::CoursesOrderController",
+          "Admin::DocumentsController",
+          "Admin::DocumentLocalizationsController",
+          "Admin::TeachersController",
+          "Admin::PollsController",
+          "Admin::PollOptionsController",
+          "Admin::Ajax::ClassifiersController",
+          "Admin::Ajax::CoursesController",
+          "Admin::Ajax::StreamsController"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/courses_controller.rb",
+            "app/controllers/admin/course_management_controller.rb",
+            "app/controllers/admin/channels_controller.rb",
+            "app/controllers/admin/channels_order_controller.rb",
+            "app/controllers/admin/clusters_controller.rb",
+            "app/controllers/admin/classifiers_controller.rb",
+            "app/controllers/admin/cluster/classifiers_order_controller.rb",
+            "app/controllers/admin/classifier/courses_order_controller.rb",
+            "app/controllers/admin/documents_controller.rb",
+            "app/controllers/admin/document_localizations_controller.rb",
+            "app/controllers/admin/teachers_controller.rb",
+            "app/controllers/admin/polls_controller.rb",
+            "app/controllers/admin/poll_options_controller.rb",
+            "app/controllers/admin/ajax/classifiers_controller.rb",
+            "app/controllers/admin/ajax/courses_controller.rb",
+            "app/controllers/admin/ajax/streams_controller.rb",
+            "spec/controllers/admin/course_management_controller_spec.rb",
+            "spec/controllers/admin/courses_controller_spec.rb",
+            "spec/requests/admin/channels_order/update_spec.rb",
+            "spec/requests/admin/courses/list_spec.rb",
+            "spec/requests/admin/ajax/find_courses_spec.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Platform Statistics and Dashboard Viewing",
+        "description": "Administrators can view a dashboard with platform-wide and course-specific statistics, including user activity, enrollments, certificate counts, and geographical distribution of learners. This data is often cached for performance.",
+        "involvedComponents": [
+          "Admin::DashboardController",
+          "Admin::Ajax::DetailStatisticsController",
+          "Admin::Ajax::PlatformStatisticsController"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/dashboard_controller.rb",
+            "app/controllers/admin/ajax/detail_statistics_controller.rb",
+            "app/controllers/admin/ajax/platform_statistics_controller.rb"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [
+    {
+      "title": "General Administration Panel Functionality - Architecture Overview",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 1200\" width=\"100%\">\n  <title>General Administration Panel Functionality Architecture</title>\n  <desc>\n    An SVG infographic detailing the architecture and component relationships for the General Administration Panel Functionality.\n    It shows various Admin controllers, AJAX controllers, and presenters, along with their interactions and involvement in key workflows.\n  </desc>\n\n  <defs>\n    <!-- Arrowhead marker -->\n    <marker id=\"arrow\" markerWidth=\"10\" markerHeight=\"10\" refX=\"8\" refY=\"5\" orient=\"auto\" markerUnits=\"strokeWidth\">\n      <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#343A40\" />\n    </marker>\n    <marker id=\"arrow-workflow-user\" markerWidth=\"10\" markerHeight=\"10\" refX=\"8\" refY=\"5\" orient=\"auto\" markerUnits=\"strokeWidth\">\n      <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#28A745\" />\n    </marker>\n    <marker id=\"arrow-workflow-content\" markerWidth=\"10\" markerHeight=\"10\" refX=\"8\" refY=\"5\" orient=\"auto\" markerUnits=\"strokeWidth\">\n      <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#007BFF\" />\n    </marker>\n    <marker id=\"arrow-workflow-stats\" markerWidth=\"10\" markerHeight=\"10\" refX=\"8\" refY=\"5\" orient=\"auto\" markerUnits=\"strokeWidth\">\n      <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#17A2B8\" />\n    </marker>\n\n    <!-- Component Styles -->\n    <style>\n      .controller { fill: #9b59b6; stroke: #7d4893; stroke-width: 2; }\n      .presenter { fill: #FFC107; stroke: #cc9a00; stroke-width: 2; }\n      .model { fill: #6C757D; stroke: #565e64; stroke-width: 2; }\n      .logic { fill: #FFC107; stroke: #cc9a00; stroke-width: 2; } /* Same as presenter, as they are logic */\n      .text-label { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; text-anchor: middle; }\n      .text-component { font-family: 'Arial, sans-serif'; font-size: 16px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n      .text-desc { font-family: 'Arial, sans-serif'; font-size: 12px; fill: #343A40; text-anchor: middle; }\n      .title { font-family: 'Arial, sans-serif'; font-size: 28px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n      .subtitle { font-family: 'Arial, sans-serif'; font-size: 18px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n      .workflow-legend-text { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; }\n      .arrow { stroke: #343A40; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }\n\n      /* Workflow specific styles */\n      .workflow-user-admin { stroke: #28A745; stroke-width: 2; fill: none; marker-end: url(#arrow-workflow-user); stroke-dasharray: 4 2; }\n      .workflow-content-mgmt { stroke: #007BFF; stroke-width: 2; fill: none; marker-end: url(#arrow-workflow-content); stroke-dasharray: 4 2; }\n      .workflow-stats-dashboard { stroke: #17A2B8; stroke-width: 2; fill: none; marker-end: url(#arrow-workflow-stats); stroke-dasharray: 4 2; }\n      .workflow-highlight-user { fill: #28A745; opacity: 0.1; }\n      .workflow-highlight-content { fill: #007BFF; opacity: 0.1; }\n      .workflow-highlight-stats { fill: #17A2B8; opacity: 0.1; }\n    </style>\n  </defs>\n\n  <!-- Title -->\n  <text x=\"800\" y=\"40\" class=\"title\">General Administration Panel Functionality Architecture</text>\n\n  <!-- Legend for Workflows -->\n  <g transform=\"translate(1300, 70)\">\n    <text x=\"0\" y=\"0\" class=\"subtitle\">Workflows:</text>\n    <rect x=\"0\" y=\"15\" width=\"20\" height=\"15\" fill=\"#28A745\" opacity=\"0.1\" stroke=\"#28A745\" stroke-width=\"1\"/>\n    <text x=\"25\" y=\"28\" class=\"workflow-legend-text\">User Account Administration</text>\n    <rect x=\"0\" y=\"40\" width=\"20\" height=\"15\" fill=\"#007BFF\" opacity=\"0.1\" stroke=\"#007BFF\" stroke-width=\"1\"/>\n    <text x=\"25\" y=\"53\" class=\"workflow-legend-text\">Course &amp; Content Management</text>\n    <rect x=\"0\" y=\"65\" width=\"20\" height=\"15\" fill=\"#17A2B8\" opacity=\"0.1\" stroke=\"#17A2B8\" stroke-width=\"1\"/>\n    <text x=\"25\" y=\"78\" class=\"workflow-legend-text\">Platform Statistics &amp; Dashboard</text>\n  </g>\n\n  <!-- Admin::BaseController (top-level) -->\n  <rect x=\"700\" y=\"80\" width=\"200\" height=\"60\" rx=\"10\" ry=\"10\" class=\"controller\"/>\n  <text x=\"800\" y=\"105\" class=\"text-component\">Admin::BaseController</text>\n  <text x=\"800\" y=\"125\" class=\"text-desc\">Base for all Admin controllers</text>\n\n  <!-- Abstract::FrontendController (inherited by Base) -->\n  <rect x=\"700\" y=\"10\" width=\"200\" height=\"40\" rx=\"10\" ry=\"10\" class=\"model\"/>\n  <text x=\"800\" y=\"35\" class=\"text-component\">Abstract::FrontendController</text>\n  <path d=\"M800,50 L800,75\" class=\"arrow\"/>\n  <text x=\"800\" y=\"65\" class=\"text-label\" style=\"font-size:10px;\">inherits</text>\n\n  <!-- AdminNavigation -->\n  <rect x=\"50\" y=\"150\" width=\"180\" height=\"60\" rx=\"10\" ry=\"10\" class=\"logic\"/>\n  <text x=\"140\" y=\"175\" class=\"text-component\">AdminNavigation</text>\n  <text x=\"140\" y=\"195\" class=\"text-desc\">Defines menu items &amp; permissions</text>\n\n  <!-- Group AJAX Controllers -->\n  <g transform=\"translate(50, 250)\">\n    <text x=\"150\" y=\"-20\" class=\"subtitle\">AJAX Controllers</text>\n    <rect x=\"0\" y=\"0\" width=\"300\" height=\"500\" rx=\"15\" ry=\"15\" fill=\"#ECF0F1\" stroke=\"#BDC3C7\" stroke-width=\"2\"/>\n\n    <rect id=\"ajax_classifiers_controller\" x=\"50\" y=\"30\" width=\"200\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"150\" y=\"50\" class=\"text-component\">Admin::Ajax::ClassifiersController</text>\n    <text x=\"150\" y=\"65\" class=\"text-desc\">Lists/filters classifiers</text>\n\n    <rect id=\"ajax_courses_controller\" x=\"50\" y=\"90\" width=\"200\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"150\" y=\"110\" class=\"text-component\">Admin::Ajax::CoursesController</text>\n    <text x=\"150\" y=\"125\" class=\"text-desc\">Lists courses for autocomplete</text>\n\n    <rect id=\"ajax_detail_statistics_controller\" x=\"50\" y=\"150\" width=\"200\" height=\"60\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"150\" y=\"170\" class=\"text-component\">Admin::Ajax::DetailStatisticsController</text>\n    <text x=\"150\" y=\"185\" class=\"text-desc\">Course-specific stats (cached)</text>\n\n    <rect id=\"ajax_platform_statistics_controller\" x=\"50\" y=\"220\" width=\"200\" height=\"60\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"150\" y=\"240\" class=\"text-component\">Admin::Ajax::PlatformStatisticsController</text>\n    <text x=\"150\" y=\"255\" class=\"text-desc\">Platform-wide stats (cached, concurrent)</text>\n\n    <rect id=\"ajax_streams_controller\" x=\"50\" y=\"290\" width=\"200\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"150\" y=\"310\" class=\"text-component\">Admin::Ajax::StreamsController</text>\n    <text x=\"150\" y=\"325\" class=\"text-desc\">Lists video streams</text>\n\n    <rect id=\"ajax_users_controller\" x=\"50\" y=\"350\" width=\"200\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"150\" y=\"370\" class=\"text-component\">Admin::Ajax::UsersController</text>\n    <text x=\"150\" y=\"385\" class=\"text-desc\">Lists users for autocomplete</text>\n  </g>\n\n  <!-- Group Core Admin Controllers -->\n  <g transform=\"translate(380, 180)\">\n    <text x=\"250\" y=\"-20\" class=\"subtitle\">Core Admin Controllers</text>\n    <rect x=\"0\" y=\"0\" width=\"500\" height=\"700\" rx=\"15\" ry=\"15\" fill=\"#ECF0F1\" stroke=\"#BDC3C7\" stroke-width=\"2\"/>\n\n    <!-- Dashboard -->\n    <rect id=\"dashboard_controller\" x=\"150\" y=\"30\" width=\"200\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"250\" y=\"50\" class=\"text-component\">Admin::DashboardController</text>\n    <text x=\"250\" y=\"65\" class=\"text-desc\">Main admin dashboard</text>\n\n    <!-- User Management -->\n    <rect id=\"users_controller\" x=\"20\" y=\"140\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"95\" y=\"160\" class=\"text-component\">Admin::UsersController</text>\n    <text x=\"95\" y=\"175\" class=\"text-desc\">Manages user accounts</text>\n\n    <rect id=\"bans_controller\" x=\"180\" y=\"140\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"255\" y=\"160\" class=\"text-component\">Admin::BansController</text>\n    <text x=\"255\" y=\"175\" class=\"text-desc\">Manages user banning</text>\n\n    <rect id=\"masquerades_controller\" x=\"340\" y=\"140\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"415\" y=\"160\" class=\"text-component\">Admin::MasqueradesController</text>\n    <text x=\"415\" y=\"175\" class=\"text-desc\">Masquerade as user</text>\n\n    <rect id=\"manual_confirmations_controller\" x=\"20\" y=\"200\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"95\" y=\"220\" class=\"text-component\">Admin::ManualConfirmationsController</text>\n    <text x=\"95\" y=\"235\" class=\"text-desc\">Manual email confirmation</text>\n\n    <rect id=\"permissions_controller\" x=\"180\" y=\"200\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"255\" y=\"220\" class=\"text-component\">Admin::PermissionsController</text>\n    <text x=\"255\" y=\"235\" class=\"text-desc\">Manages user group permissions</text>\n\n    <!-- Course Management Controllers -->\n    <rect id=\"courses_controller\" x=\"20\" y=\"280\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"95\" y=\"300\" class=\"text-component\">Admin::CoursesController</text>\n    <text x=\"95\" y=\"315\" class=\"text-desc\">CRUD for courses</text>\n\n    <rect id=\"channels_controller\" x=\"180\" y=\"280\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"255\" y=\"300\" class=\"text-component\">Admin::ChannelsController</text>\n    <text x=\"255\" y=\"315\" class=\"text-desc\">CRUD for channels</text>\n\n    <rect id=\"channels_order_controller\" x=\"340\" y=\"280\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"415\" y=\"300\" class=\"text-component\">Admin::ChannelsOrderController</text>\n    <text x=\"415\" y=\"315\" class=\"text-desc\">Orders channels</text>\n\n    <rect id=\"classifiers_controller\" x=\"20\" y=\"340\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"95\" y=\"360\" class=\"text-component\">Admin::ClassifiersController</text>\n    <text x=\"95\" y=\"375\" class=\"text-desc\">CRUD for classifiers</text>\n\n    <rect id=\"classifier_courses_order_controller\" x=\"180\" y=\"340\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"255\" y=\"360\" class=\"text-component\">Admin::Classifier::CoursesOrderController</text>\n    <text x=\"255\" y=\"375\" class=\"text-desc\">Orders courses within classifier</text>\n\n    <rect id=\"clusters_controller\" x=\"340\" y=\"340\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"415\" y=\"360\" class=\"text-component\">Admin::ClustersController</text>\n    <text x=\"415\" y=\"375\" class=\"text-desc\">Manages clusters</text>\n\n    <rect id=\"cluster_classifiers_order_controller\" x=\"20\" y=\"400\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"95\" y=\"420\" class=\"text-component\">Admin::Cluster::ClassifiersOrderController</text>\n    <text x=\"95\" y=\"435\" class=\"text-desc\">Orders classifiers within cluster</text>\n\n    <rect id=\"course_management_controller\" x=\"180\" y=\"400\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"255\" y=\"420\" class=\"text-component\">Admin::CourseManagementController</text>\n    <text x=\"255\" y=\"435\" class=\"text-desc\">Course tasks, refactor candidate</text>\n\n    <rect id=\"teachers_controller\" x=\"340\" y=\"400\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"415\" y=\"420\" class=\"text-component\">Admin::TeachersController</text>\n    <text x=\"415\" y=\"435\" class=\"text-desc\">Manages teacher profiles</text>\n\n    <rect id=\"documents_controller\" x=\"20\" y=\"460\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"95\" y=\"480\" class=\"text-component\">Admin::DocumentsController</text>\n    <text x=\"95\" y=\"495\" class=\"text-desc\">CRUD for documents (beta)</text>\n\n    <rect id=\"document_localizations_controller\" x=\"180\" y=\"460\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"255\" y=\"480\" class=\"text-component\">Admin::DocumentLocalizationsController</text>\n    <text x=\"255\" y=\"495\" class=\"text-desc\">CRUD for document localizations (beta)</text>\n\n    <rect id=\"polls_controller\" x=\"340\" y=\"460\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"415\" y=\"480\" class=\"text-component\">Admin::PollsController</text>\n    <text x=\"415\" y=\"495\" class=\"text-desc\">CRUD for polls</text>\n\n    <rect id=\"poll_options_controller\" x=\"20\" y=\"520\" width=\"150\" height=\"50\" rx=\"5\" ry=\"5\" class=\"controller\"/>\n    <text x=\"95\" y=\"540\" class=\"text-component\">Admin::PollOptionsController</text>\n    <text x=\"95\" y=\"555\" class=\"text-desc\">AJAX for poll options</text>\n  </g>\n\n  <!-- Presenters -->\n  <g transform=\"translate(950, 180)\">\n    <text x=\"250\" y=\"-20\" class=\"subtitle\">Presenters</text>\n    <rect x=\"0\" y=\"0\" width=\"500\" height=\"700\" rx=\"15\" ry=\"15\" fill=\"#ECF0F1\" stroke=\"#BDC3C7\" stroke-width=\"2\"/>\n\n    <rect id=\"channel_edit_presenter\" x=\"20\" y=\"30\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"130\" y=\"50\" class=\"text-component\">Admin::ChannelEditPresenter</text>\n    <text x=\"130\" y=\"65\" class=\"text-desc\">Prepares channel edit data</text>\n\n    <rect id=\"channel_order_presenter\" x=\"260\" y=\"30\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"370\" y=\"50\" class=\"text-component\">Admin::ChannelOrderPresenter</text>\n    <text x=\"370\" y=\"65\" class=\"text-desc\">Prepares channel order data</text>\n\n    <rect id=\"classifier_courses_order_presenter\" x=\"20\" y=\"90\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"130\" y=\"110\" class=\"text-component\">Admin::Classifier::CoursesOrderPresenter</text>\n    <text x=\"130\" y=\"125\" class=\"text-desc\">Prepares classifier course order data</text>\n\n    <rect id=\"cluster_presenter\" x=\"260\" y=\"90\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"370\" y=\"110\" class=\"text-component\">Admin::ClusterPresenter</text>\n    <text x=\"370\" y=\"125\" class=\"text-desc\">Prepares cluster display/order data</text>\n\n    <rect id=\"course_edit_presenter\" x=\"20\" y=\"150\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"130\" y=\"170\" class=\"text-component\">Admin::CourseEditPresenter</text>\n    <text x=\"130\" y=\"185\" class=\"text-desc\">Prepares course edit data</text>\n\n    <rect id=\"course_list_presenter\" x=\"260\" y=\"150\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"370\" y=\"170\" class=\"text-component\">Admin::CourseListPresenter</text>\n    <text x=\"370\" y=\"185\" class=\"text-desc\">Prepares course index list data</text>\n\n    <rect id=\"subscription_list_presenter\" x=\"20\" y=\"210\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"130\" y=\"230\" class=\"text-component\">Admin::SubscriptionListPresenter</text>\n    <text x=\"130\" y=\"245\" class=\"text-desc\">Generic subscription list data</text>\n\n    <!-- Other Presenters (implicitly used by controllers) -->\n    <rect id=\"documents_list_presenter\" x=\"260\" y=\"210\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"370\" y=\"230\" class=\"text-component\">DocumentsListPresenter</text>\n    <text x=\"370\" y=\"245\" class=\"text-desc\">Prepares document list data</text>\n\n    <rect id=\"user_list_presenter\" x=\"20\" y=\"270\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"130\" y=\"290\" class=\"text-component\">UserListPresenter</text>\n    <text x=\"130\" y=\"305\" class=\"text-desc\">Prepares user list data</text>\n\n    <rect id=\"course_teacher_list_presenter\" x=\"260\" y=\"270\" width=\"220\" height=\"50\" rx=\"5\" ry=\"5\" class=\"presenter\"/>\n    <text x=\"370\" y=\"290\" class=\"text-component\">Course::TeacherListPresenter</text>\n    <text x=\"370\" y=\"305\" class=\"text-desc\">Prepares teacher list data</text>\n  </g>\n\n  <!-- External Models/Forms -->\n  <g transform=\"translate(950, 900)\">\n    <text x=\"250\" y=\"-20\" class=\"subtitle\">Models &amp; Forms</text>\n    <rect x=\"0\" y=\"0\" width=\"500\" height=\"200\" rx=\"15\" ry=\"15\" fill=\"#ECF0F1\" stroke=\"#BDC3C7\" stroke-width=\"2\"/>\n\n    <rect id=\"poll_model\" x=\"20\" y=\"30\" width=\"150\" height=\"40\" rx=\"5\" ry=\"5\" class=\"model\"/>\n    <text x=\"95\" y=\"55\" class=\"text-component\">Poll::Poll</text>\n    <text x=\"95\" y=\"70\" class=\"text-desc\">Poll data model</text>\n\n    <rect id=\"channel_form\" x=\"180\" y=\"30\" width=\"150\" height=\"40\" rx=\"5\" ry=\"5\" class=\"model\"/>\n    <text x=\"255\" y=\"55\" class=\"text-component\">Admin::ChannelForm</text>\n    <text x=\"255\" y=\"70\" class=\"text-desc\">Channel form handling</text>\n\n    <rect id=\"course_form\" x=\"340\" y=\"30\" width=\"150\" height=\"40\" rx=\"5\" ry=\"5\" class=\"model\"/>\n    <text x=\"415\" y=\"55\" class=\"text-component\">Admin::CourseForm</text>\n    <text x=\"415\" y=\"70\" class=\"text-desc\">Course form handling</text>\n\n    <rect id=\"teacher_form\" x=\"20\" y=\"80\" width=\"150\" height=\"40\" rx=\"5\" ry=\"5\" class=\"model\"/>\n    <text x=\"95\" y=\"105\" class=\"text-component\">Admin::TeacherForm</text>\n    <text x=\"95\" y=\"120\" class=\"text-desc\">Teacher form handling</text>\n\n    <rect id=\"user_form\" x=\"180\" y=\"80\" width=\"150\" height=\"40\" rx=\"5\" ry=\"5\" class=\"model\"/>\n    <text x=\"255\" y=\"105\" class=\"text-component\">Admin::UserForm</text>\n    <text x=\"255\" y=\"120\" class=\"text-desc\">User creation form</text>\n  </g>\n\n  <!-- General Interactions (non-workflow specific) -->\n  <!-- Admin::BaseController to all other Admin controllers (inheritance) -->\n  <path d=\"M800,140 L480,175 L480,270\" class=\"arrow\"/> <!-- To Core Admin Controllers group -->\n  <path d=\"M800,140 L190,245 L190,270\" class=\"arrow\"/> <!-- To AJAX Controllers group -->\n\n  <!-- AdminNavigation to Admin::DashboardController -->\n  <path d=\"M230,180 L490,55\" class=\"arrow\"/>\n\n  <!-- Admin::DashboardController to AJAX statistics controllers -->\n  <path d=\"M490,80 L150,170\" class=\"arrow\"/> <!-- To Admin::Ajax::DetailStatisticsController -->\n  <path d=\"M490,80 L150,240\" class=\"arrow\"/> <!-- To Admin::Ajax::PlatformStatisticsController -->\n\n  <!-- Controllers to Presenters -->\n  <path d=\"M255,305 L1080,55\" class=\"arrow\"/> <!-- Admin::ChannelsController -> Admin::ChannelEditPresenter -->\n  <path d=\"M415,305 L1320,55\" class=\"arrow\"/> <!-- Admin::ChannelsOrderController -> Admin::ChannelOrderPresenter -->\n  <path d=\"M255,360 L1080,115\" class=\"arrow\"/> <!-- Admin::Classifier::CoursesOrderController -> Admin::Classifier::CoursesOrderPresenter -->\n  <path d=\"M415,360 L1320,115\" class=\"arrow\"/> <!-- Admin::ClustersController -> Admin::ClusterPresenter -->\n  <path d=\"M95,305 L1080,175\" class=\"arrow\"/> <!-- Admin::CoursesController -> Admin::CourseEditPresenter -->\n  <path d=\"M95,305 L1320,175\" class=\"arrow\"/> <!-- Admin::CoursesController -> Admin::CourseListPresenter -->\n  <path d=\"M95,490 L1320,235\" class=\"arrow\"/> <!-- Admin::DocumentsController -> DocumentsListPresenter -->\n  <path d=\"M95,175 L1080,295\" class=\"arrow\"/> <!-- Admin::UsersController -> UserListPresenter -->\n  <path d=\"M415,425 L1320,295\" class=\"arrow\"/> <!-- Admin::TeachersController -> Course::TeacherListPresenter -->\n\n  <!-- Controllers to Forms/Models -->\n  <path d=\"M255,305 L1255,55\" class=\"arrow\"/> <!-- Admin::ChannelsController -> Admin::ChannelForm -->\n  <path d=\"M95,305 L1415,55\" class=\"arrow\"/> <!-- Admin::CoursesController -> Admin::CourseForm -->\n  <path d=\"M415,425 L1080,105\" class=\"arrow\"/> <!-- Admin::TeachersController -> Admin::TeacherForm -->\n  <path d=\"M95,175 L1255,105\" class=\"arrow\"/> <!-- Admin::UsersController -> Admin::UserForm -->\n  <path d=\"M415,490 L1080,55\" class=\"arrow\"/> <!-- Admin::PollsController -> Poll::Poll -->\n  <path d=\"M95,540 L1080,55\" class=\"arrow\"/> <!-- Admin::PollOptionsController -> Poll::Poll -->\n\n\n  <!-- Workflow Overlays and Paths -->\n\n  <!-- Workflow 1: User Account Administration -->\n  <rect x=\"380\" y=\"120\" width=\"500\" height=\"150\" class=\"workflow-highlight-user\"/>\n  <rect x=\"50\" y=\"330\" width=\"300\" height=\"80\" class=\"workflow-highlight-user\"/>\n  <rect x=\"950\" y=\"250\" width=\"500\" height=\"80\" class=\"workflow-highlight-user\"/>\n  <rect x=\"950\" y=\"60\" width=\"500\" height=\"80\" class=\"workflow-highlight-user\"/>\n\n  <path d=\"M95,175 L150,370\" class=\"workflow-user-admin\"/> <!-- Admin::UsersController -> Admin::Ajax::UsersController -->\n  <path d=\"M95,175 L1080,295\" class=\"workflow-user-admin\"/> <!-- Admin::UsersController -> UserListPresenter -->\n  <path d=\"M95,175 L1255,105\" class=\"workflow-user-admin\"/> <!-- Admin::UsersController -> Admin::UserForm -->\n  <path d=\"M255,175 L255,175\" class=\"workflow-user-admin\"/> <!-- Admin::BansController -->\n  <path d=\"M415,175 L415,175\" class=\"workflow-user-admin\"/> <!-- Admin::MasqueradesController -->\n  <path d=\"M95,235 L95,235\" class=\"workflow-user-admin\"/> <!-- Admin::ManualConfirmationsController -->\n  <path d=\"M255,235 L255,235\" class=\"workflow-user-admin\"/> <!-- Admin::PermissionsController -->\n\n\n  <!-- Workflow 2: Course and Content Management -->\n  <rect x=\"380\" y=\"260\" width=\"500\" height=\"320\" class=\"workflow-highlight-content\"/>\n  <rect x=\"50\" y=\"10\" width=\"300\" height=\"150\" class=\"workflow-highlight-content\"/>\n  <rect x=\"50\" y=\"270\" width=\"300\" height=\"80\" class=\"workflow-highlight-content\"/>\n  <rect x=\"950\" y=\"10\" width=\"500\" height=\"260\" class=\"workflow-highlight-content\"/>\n  <rect x=\"950\" y=\"60\" width=\"500\" height=\"150\" class=\"workflow-highlight-content\"/>\n\n  <path d=\"M95,305 L150,110\" class=\"workflow-content-mgmt\"/> <!-- Admin::CoursesController -> Admin::Ajax::CoursesController -->\n  <path d=\"M255,305 L150,310\" class=\"workflow-content-mgmt\"/> <!-- Admin::ChannelsController -> Admin::Ajax::StreamsController (indirect, but related) -->\n  <path d=\"M95,360 L150,50\" class=\"workflow-content-mgmt\"/> <!-- Admin::ClassifiersController -> Admin::Ajax::ClassifiersController -->\n\n  <path d=\"M95,305 L1080,175\" class=\"workflow-content-mgmt\"/> <!-- Admin::CoursesController -> Admin::CourseEditPresenter, Admin::CourseListPresenter -->\n  <path d=\"M255,305 L1080,55\" class=\"workflow-content-mgmt\"/> <!-- Admin::ChannelsController -> Admin::ChannelEditPresenter -->\n  <path d=\"M415,305 L1320,55\" class=\"workflow-content-mgmt\"/> <!-- Admin::ChannelsOrderController -> Admin::ChannelOrderPresenter -->\n  <path d=\"M255,360 L1080,115\" class=\"workflow-content-mgmt\"/> <!-- Admin::Classifier::CoursesOrderController -> Admin::Classifier::CoursesOrderPresenter -->\n  <path d=\"M415,360 L1320,115\" class=\"workflow-content-mgmt\"/> <!-- Admin::ClustersController -> Admin::ClusterPresenter -->\n  <path d=\"M415,425 L1320,295\" class=\"workflow-content-mgmt\"/> <!-- Admin::TeachersController -> Course::TeacherListPresenter -->\n  <path d=\"M95,490 L1320,235\" class=\"workflow-content-mgmt\"/> <!-- Admin::DocumentsController -> DocumentsListPresenter -->\n  <path d=\"M415,490 L1080,55\" class=\"workflow-content-mgmt\"/> <!-- Admin::PollsController -> Poll::Poll -->\n  <path d=\"M95,540 L1080,55\" class=\"workflow-content-mgmt\"/> <!-- Admin::PollOptionsController -> Poll::Poll -->\n\n  <path d=\"M95,305 L1415,55\" class=\"workflow-content-mgmt\"/> <!-- Admin::CoursesController -> Admin::CourseForm -->\n  <path d=\"M255,305 L1255,55\" class=\"workflow-content-mgmt\"/> <!-- Admin::ChannelsController -> Admin::ChannelForm -->\n  <path d=\"M415,425 L1080,105\" class=\"workflow-content-mgmt\"/> <!-- Admin::TeachersController -> Admin::TeacherForm -->\n\n\n  <!-- Workflow 3: Platform Statistics and Dashboard Viewing -->\n  <rect x=\"380\" y=\"10\" width=\"500\" height=\"100\" class=\"workflow-highlight-stats\"/>\n  <rect x=\"50\" y=\"130\" width=\"300\" height=\"200\" class=\"workflow-highlight-stats\"/>\n\n  <path d=\"M250,80 L150,170\" class=\"workflow-stats-dashboard\"/> <!-- Admin::DashboardController -> Admin::Ajax::DetailStatisticsController -->\n  <path d=\"M250,80 L150,240\" class=\"workflow-stats-dashboard\"/> <!-- Admin::DashboardController -> Admin::Ajax::PlatformStatisticsController -->\n  <path d=\"M140,180 L250,55\" class=\"workflow-stats-dashboard\"/> <!-- AdminNavigation -> Admin::DashboardController -->\n\n</svg>\n```"
+    },
+    {
+      "title": "General Administration Panel Functionality - Workflow Diagram",
+      "svgContent": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 1200\" width=\"100%\">\n  <title>General Administration Panel Functionality Workflows</title>\n  <desc>SVG flowchart illustrating the business workflows for User Account Administration, Course and Content Management, and Platform Statistics and Dashboard Viewing within the General Administration Panel. Each workflow details process steps and involved controllers.</desc>\n\n  <defs>\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n  </defs>\n\n  <style>\n    /* Typography */\n    .font-arial { font-family: 'Arial, sans-serif'; }\n\n    /* Text Styles */\n    .title { font-size: 36px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n    .workflow-title { font-size: 24px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n    .text-main { font-size: 16px; fill: #343A40; text-anchor: middle; }\n    .text-controller { font-size: 12px; fill: #FFFFFF; text-anchor: middle; }\n    .text-note { font-size: 14px; fill: #E0B400; text-anchor: middle; }\n\n    /* Node Styles */\n    .node-start-end { fill: #E0E0E0; stroke: #6C757D; stroke-width: 2; rx: 15; ry: 15; } /* Grey */\n    .node-process { fill: #F8F9FA; stroke: #6C757D; stroke-width: 2; } /* Very Light Grey */\n    .node-controller { fill: #9b59b6; stroke: #7d3f96; stroke-width: 1; } /* Purple */\n    .node-note { fill: #FFFBE6; stroke: #E0B400; stroke-width: 1; rx: 5; ry: 5; } /* Light Yellow for notes */\n\n    /* Line Styles */\n    .arrow { stroke: #343A40; stroke-width: 2; fill: none; marker-end: url(#arrowhead); } /* Dark Grey */\n    .connector { stroke: #6C757D; stroke-width: 1; stroke-dasharray: 3 3; fill: none; } /* Grey dashed */\n  </style>\n\n  <text x=\"800\" y=\"50\" class=\"title font-arial\">General Administration Panel Functionality Workflows</text>\n\n  <!-- Workflow 1: User Account Administration -->\n  <g transform=\"translate(100, 120)\" class=\"font-arial\">\n    <text x=\"200\" y=\"0\" class=\"workflow-title\">User Account Administration</text>\n\n    <!-- Start Node -->\n    <rect x=\"100\" y=\"50\" width=\"200\" height=\"50\" class=\"node-start-end\" />\n    <text x=\"200\" y=\"80\" class=\"text-main\">Start</text>\n\n    <!-- Step 1: Manage User Accounts -->\n    <rect x=\"50\" y=\"150\" width=\"300\" height=\"80\" class=\"node-process\" />\n    <text x=\"200\" y=\"175\" class=\"text-main\">Manage User Accounts</text>\n    <text x=\"200\" y=\"195\" class=\"text-main\"><tspan x=\"200\" dy=\"0\">List, Create, Search, Ban,</tspan><tspan x=\"200\" dy=\"18\">Confirm Accounts</tspan></text>\n    <line x1=\"200\" y1=\"100\" x2=\"200\" y2=\"150\" class=\"arrow\" />\n\n    <!-- Controllers for Step 1 -->\n    <rect x=\"50\" y=\"240\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"120\" y=\"260\" class=\"text-controller\">Admin::UsersController</text>\n    <rect x=\"210\" y=\"240\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"280\" y=\"260\" class=\"text-controller\">Admin::BansController</text>\n    <rect x=\"50\" y=\"280\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"120\" y=\"300\" class=\"text-controller\">Admin::ManualConfirmationsController</text>\n    <rect x=\"210\" y=\"280\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"280\" y=\"300\" class=\"text-controller\">Admin::Ajax::UsersController</text>\n    <line x1=\"200\" y1=\"230\" x2=\"200\" y2=\"240\" class=\"connector\" />\n\n    <!-- Step 2: Masquerade as Other Users -->\n    <rect x=\"50\" y=\"350\" width=\"300\" height=\"60\" class=\"node-process\" />\n    <text x=\"200\" y=\"380\" class=\"text-main\">Masquerade as Other Users</text>\n    <line x1=\"200\" y1=\"310\" x2=\"200\" y2=\"350\" class=\"arrow\" /> <!-- Connects from controllers area to next step -->\n\n    <!-- Controllers for Step 2 -->\n    <rect x=\"130\" y=\"420\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"440\" class=\"text-controller\">Admin::MasqueradesController</text>\n    <line x1=\"200\" y1=\"410\" x2=\"200\" y2=\"420\" class=\"connector\" />\n\n    <!-- Step 3: Manage User Permissions -->\n    <rect x=\"50\" y=\"490\" width=\"300\" height=\"60\" class=\"node-process\" />\n    <text x=\"200\" y=\"520\" class=\"text-main\">Manage User Permissions<tspan x=\"200\" dy=\"18\">(Group Memberships)</tspan></text>\n    <line x1=\"200\" y1=\"450\" x2=\"200\" y2=\"490\" class=\"arrow\" />\n\n    <!-- Controllers for Step 3 -->\n    <rect x=\"130\" y=\"560\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"580\" class=\"text-controller\">Admin::PermissionsController</text>\n    <line x1=\"200\" y1=\"550\" x2=\"200\" y2=\"560\" class=\"connector\" />\n\n    <!-- End Node -->\n    <rect x=\"100\" y=\"630\" width=\"200\" height=\"50\" class=\"node-start-end\" />\n    <text x=\"200\" y=\"660\" class=\"text-main\">End</text>\n    <line x1=\"200\" y1=\"590\" x2=\"200\" y2=\"630\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 2: Course and Content Management -->\n  <g transform=\"translate(550, 120)\" class=\"font-arial\">\n    <text x=\"200\" y=\"0\" class=\"workflow-title\">Course and Content Management</text>\n\n    <!-- Start Node -->\n    <rect x=\"100\" y=\"50\" width=\"200\" height=\"50\" class=\"node-start-end\" />\n    <text x=\"200\" y=\"80\" class=\"text-main\">Start</text>\n\n    <!-- Step 1: Manage Courses -->\n    <rect x=\"50\" y=\"150\" width=\"300\" height=\"80\" class=\"node-process\" />\n    <text x=\"200\" y=\"175\" class=\"text-main\">Manage Courses</text>\n    <text x=\"200\" y=\"195\" class=\"text-main\"><tspan x=\"200\" dy=\"0\">Create, Edit, Clone, Delete</tspan><tspan x=\"200\" dy=\"18\">Courses &amp; Channels</tspan></text>\n    <line x1=\"200\" y1=\"100\" x2=\"200\" y2=\"150\" class=\"arrow\" />\n\n    <!-- Controllers for Step 1 -->\n    <rect x=\"50\" y=\"240\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"120\" y=\"260\" class=\"text-controller\">Admin::CoursesController</text>\n    <rect x=\"210\" y=\"240\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"280\" y=\"260\" class=\"text-controller\">Admin::CourseManagementController</text>\n    <rect x=\"50\" y=\"280\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"120\" y=\"300\" class=\"text-controller\">Admin::ChannelsController</text>\n    <rect x=\"210\" y=\"280\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"280\" y=\"300\" class=\"text-controller\">Admin::ChannelsOrderController</text>\n    <line x1=\"200\" y1=\"230\" x2=\"200\" y2=\"240\" class=\"connector\" />\n\n    <!-- Step 2: Classify & Order Courses -->\n    <rect x=\"50\" y=\"350\" width=\"300\" height=\"60\" class=\"node-process\" />\n    <text x=\"200\" y=\"380\" class=\"text-main\">Classify &amp; Order Courses</text>\n    <text x=\"200\" y=\"400\" class=\"text-main\"><tspan x=\"200\" dy=\"0\">(Clusters, Classifiers)</tspan></text>\n    <line x1=\"200\" y1=\"310\" x2=\"200\" y2=\"350\" class=\"arrow\" />\n\n    <!-- Controllers for Step 2 -->\n    <rect x=\"50\" y=\"420\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"120\" y=\"440\" class=\"text-controller\">Admin::ClustersController</text>\n    <rect x=\"210\" y=\"420\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"280\" y=\"440\" class=\"text-controller\">Admin::ClassifiersController</text>\n    <rect x=\"50\" y=\"460\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"120\" y=\"480\" class=\"text-controller\">Admin::Cluster::ClassifiersOrderController</text>\n    <rect x=\"210\" y=\"460\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"280\" y=\"480\" class=\"text-controller\">Admin::Classifier::CoursesOrderController</text>\n    <rect x=\"130\" y=\"500\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"520\" class=\"text-controller\">Admin::Ajax::ClassifiersController</text>\n    <rect x=\"130\" y=\"540\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"560\" class=\"text-controller\">Admin::Ajax::CoursesController</text>\n    <rect x=\"130\" y=\"580\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"600\" class=\"text-controller\">Admin::Ajax::StreamsController</text>\n    <line x1=\"200\" y1=\"410\" x2=\"200\" y2=\"420\" class=\"connector\" />\n\n    <!-- Step 3: Manage Documents & Teachers -->\n    <rect x=\"50\" y=\"650\" width=\"300\" height=\"60\" class=\"node-process\" />\n    <text x=\"200\" y=\"680\" class=\"text-main\">Manage Documents &amp; Teachers</text>\n    <line x1=\"200\" y1=\"610\" x2=\"200\" y2=\"650\" class=\"arrow\" />\n\n    <!-- Controllers for Step 3 -->\n    <rect x=\"50\" y=\"720\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"120\" y=\"740\" class=\"text-controller\">Admin::DocumentsController</text>\n    <rect x=\"210\" y=\"720\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"280\" y=\"740\" class=\"text-controller\">Admin::DocumentLocalizationsController</text>\n    <rect x=\"130\" y=\"760\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"780\" class=\"text-controller\">Admin::TeachersController</text>\n    <line x1=\"200\" y1=\"710\" x2=\"200\" y2=\"720\" class=\"connector\" />\n\n    <!-- Step 4: Preview & Import Quiz Content -->\n    <rect x=\"50\" y=\"830\" width=\"300\" height=\"60\" class=\"node-process\" />\n    <text x=\"200\" y=\"860\" class=\"text-main\">Preview &amp; Import Quiz Content</text>\n    <line x1=\"200\" y1=\"790\" x2=\"200\" y2=\"830\" class=\"arrow\" />\n\n    <!-- Controllers for Step 4 -->\n    <rect x=\"130\" y=\"900\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"920\" class=\"text-controller\">Admin::PollsController</text>\n    <rect x=\"130\" y=\"940\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"960\" class=\"text-controller\">Admin::PollOptionsController</text>\n    <line x1=\"200\" y1=\"890\" x2=\"200\" y2=\"900\" class=\"connector\" />\n\n    <!-- End Node -->\n    <rect x=\"100\" y=\"1000\" width=\"200\" height=\"50\" class=\"node-start-end\" />\n    <text x=\"200\" y=\"1030\" class=\"text-main\">End</text>\n    <line x1=\"200\" y1=\"970\" x2=\"200\" y2=\"1000\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 3: Platform Statistics and Dashboard Viewing -->\n  <g transform=\"translate(1000, 120)\" class=\"font-arial\">\n    <text x=\"200\" y=\"0\" class=\"workflow-title\">Platform Statistics &amp; Dashboard</text>\n\n    <!-- Start Node -->\n    <rect x=\"100\" y=\"50\" width=\"200\" height=\"50\" class=\"node-start-end\" />\n    <text x=\"200\" y=\"80\" class=\"text-main\">Start</text>\n\n    <!-- Step 1: View Dashboard & Platform Statistics -->\n    <rect x=\"50\" y=\"150\" width=\"300\" height=\"80\" class=\"node-process\" />\n    <text x=\"200\" y=\"175\" class=\"text-main\">View Dashboard &amp; Statistics</text>\n    <text x=\"200\" y=\"195\" class=\"text-main\"><tspan x=\"200\" dy=\"0\">User Activity, Enrollments,</tspan><tspan x=\"200\" dy=\"18\">Certificates, Geo-Distribution</tspan></text>\n    <line x1=\"200\" y1=\"100\" x2=\"200\" y2=\"150\" class=\"arrow\" />\n\n    <!-- Controllers for Step 1 -->\n    <rect x=\"130\" y=\"240\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"260\" class=\"text-controller\">Admin::DashboardController</text>\n    <rect x=\"130\" y=\"280\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"300\" class=\"text-controller\">Admin::Ajax::PlatformStatisticsController</text>\n    <rect x=\"130\" y=\"320\" width=\"140\" height=\"30\" class=\"node-controller\" />\n    <text x=\"200\" y=\"340\" class=\"text-controller\">Admin::Ajax::DetailStatisticsController</text>\n    <line x1=\"200\" y1=\"230\" x2=\"200\" y2=\"240\" class=\"connector\" />\n\n    <!-- Step 2: Access Cached Data (Implicit Performance) -->\n    <rect x=\"50\" y=\"390\" width=\"300\" height=\"60\" class=\"node-process\" />\n    <text x=\"200\" y=\"420\" class=\"text-main\">Access Cached Data<tspan x=\"200\" dy=\"18\">(For Performance)</tspan></text>\n    <line x1=\"200\" y1=\"350\" x2=\"200\" y2=\"390\" class=\"arrow\" />\n\n    <!-- Note about caching -->\n    <rect x=\"100\" y=\"460\" width=\"200\" height=\"50\" class=\"node-note\" />\n    <text x=\"200\" y=\"485\" class=\"text-note\"><tspan x=\"200\" dy=\"0\">Caching is an internal</tspan><tspan x=\"200\" dy=\"18\">optimization for controllers</tspan></text>\n    <line x1=\"200\" y1=\"450\" x2=\"200\" y2=\"460\" class=\"connector\" />\n\n    <!-- End Node -->\n    <rect x=\"100\" y=\"540\" width=\"200\" height=\"50\" class=\"node-start-end\" />\n    <text x=\"200\" y=\"570\" class=\"text-main\">End</text>\n    <line x1=\"200\" y1=\"510\" x2=\"200\" y2=\"540\" class=\"arrow\" />\n  </g>\n</svg>\n```"
+    }
+  ],
+  "success": true,
+  "sourceFile": "cluster_C21_Admin_Panel_General_2025-09-16T13-34-02.json",
+  "runId": "run_5",
+  "filePath": "run_5/clusters/cluster_C21_Admin_Panel_General_2025-09-16T13-34-02.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "C21_Admin_Panel_General",
+      "runId": "run_5"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:15:01.857Z"
+  }
+}

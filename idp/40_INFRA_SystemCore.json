@@ -1,0 +1,2115 @@
+{
+  "clusterId": "40_INFRA_SystemCore",
+  "featureFocus": "Core Application Infrastructure & Shared Configuration",
+  "documentationReport": "{\n  \"documentation_report\": {\n    \"title\": \"Xikolo Platform: Core Application (xikolo-core) Documentation Report\",\n    \"introduction\": \"The `xikolo-core` application, represented by `Xikolo::Web::Application`, forms the heart of the Xikolo platform's infrastructure. It is a Ruby on Rails 7.2.0 application built on Ruby 3.4.4, operating within a microservice architecture. The main `web` application functions as both a frontend and an API gateway, orchestrating interactions with various backend services. This report synthesizes insights from multiple analysis sources to provide a comprehensive overview of its configuration, deployment, and functional components.\",\n    \"sections\": [\n      {\n        \"title\": \"Runtime Environment\",\n        \"content\": \"The application's runtime environment is precisely defined, specifying Ruby 3.4.4 via `.ruby-version` and Node.js 22.14.0 through `.node-version` and `.nvmrc`. Performance is enhanced by conditionally loading `bootsnap` in development and automatically enabling Ruby's YJIT compiler for Ruby 3.3+ versions.\"\n      },\n      {\n        \"title\": \"Core Application Frameworks & Libraries\",\n        \"sub_sections\": [\n          {\n            \"title\": \"Rails & Core Gems\",\n            \"content\": \"The application leverages standard Rails components including `ActiveRecord`, `ActiveJob`, `ActionController`, `ActionMailer`, and `ActionView`. Key gems and their functionalities are detailed below.\"\n          },\n          {\n            \"title\": \"Database\",\n            \"content\": \"`pg` is used for PostgreSQL, complemented by `activerecord-postgres_enum`, `fx`, and `scenic` for advanced database features. `paper_trail` provides auditing capabilities. Database connection pooling is configured via `config/database.yml`, dynamically adjusting pool size using `ENV['CONCURRENCY']` or `ENV['RAILS_MAX_THREADS']`.\"\n          },\n          {\n            \"title\": \"Caching\",\n            \"content\": \"`redis` serves as the primary cache storage mechanism.\"\n          },\n          {\n            \"title\": \"Application Servers\",\n            \"content\": \"`puma` is the primary application server, wrapped by `thruster`. `unicorn` configuration is also present, indicating potential legacy or alternative deployment options.\"\n          },\n          {\n            \"title\": \"API & Messaging\",\n            \"content\": \"`grape` is utilized for API development. `msgr` facilitates communication with RabbitMQ, and `restify` is the preferred client for internal service communication, actively replacing the older `acfs` gem. `rack-attack` provides throttling and blocking, while `rack-cors` manages Cross-Origin Resource Sharing.\"\n          },\n          {\n            \"title\": \"UI/Frontend\",\n            \"content\": \"`slim` is used for templating, `view_component` for component-based UI, `jbuilder` for JSON views, and `gon` for passing Ruby variables to JavaScript. `lookbook` is integrated for ViewComponent documentation and previews.\"\n          },\n          {\n            \"title\": \"Authentication\",\n            \"content\": \"Robust authentication and authorization, including SSO capabilities, are handled by `bcrypt`, `oauth2`, `omniauth_openid_connect`, `omniauth-saml`, and `paseto`.\"\n          },\n          {\n            \"title\": \"Background Jobs\",\n            \"content\": \"`delayed` (Delayed Job) and `sidekiq-cron` are employed for asynchronous processing and scheduled tasks.\"\n          },\n          {\n            \"title\": \"Monitoring & Observability\",\n            \"content\": \"`sentry-rails`, `sentry-ruby`, and `sentry-sidekiq` are integrated for comprehensive error tracking. `mnemosyne-ruby` provides Application Performance Monitoring (APM), `telegraf` collects metrics, and `Xikolo.metrics` provides additional system-wide metric capabilities.\"\n          },\n          {\n            \"title\": \"Internal Gems and Shared Utilities\",\n            \"content\": \"The project leverages several custom internal gems for shared functionalities: `xikolo-common`, `xikolo-config`, `xikolo-s3`, `xikolo-sidekiq`, and `xikolo-ui-form`. These gems, along with `Xikolo::Common`, `Xikolo::Config`, `Xikolo::S3`, and `Xikolo::Sidekiq`, centralize common logic and utilities across the platform.\"\n          }\n        ]\n      },\n      {\n        \"title\": \"Application Structure & Base Classes\",\n        \"content\": \"The application defines several foundational base classes:\\n*   **`ApplicationRecord`**: The abstract base class for all ActiveRecord models, ensuring common configurations.\\n*   **`ApplicationJob`**: The base class for ActiveJob, defining a default queue (`'default'`), a `max_run_time` of 20 minutes, and `ExpectedRetry` for explicit job retries.\\n*   **`ApplicationController`**: The foundational controller, integrating modules like `FeatureTogglesHelper`, `Login`, `Locale`, and `Status`. It manages authentication (`auth_middleware`, `remember_user`, `current_user`), authorization (`ensure_logged_in`, `authorize!`, `require_permission`), session management (`store_location`, `forget_location`), and flash messages. It also provides class methods like `require_brand` and `require_feature` for declarative access control.\\n*   **`ApplicationOperation`**: Implements an operation pattern with a `ResultNegotiation` class for structured handling of outcomes.\\n*   **`ApplicationHelper`**: Provides global view helpers such as `browser_support`, `imagecrop` (for `imgproxy`), and `sentry_meta_tags`.\"\n      },\n      {\n        \"title\": \"Configuration Management\",\n        \"content\": \"Configuration is managed through a layered approach:\\n*   **`config/application.rb`**: Sets up core Rails configurations, including autoload paths for `api`, `lib`, and brand-specific code, log tags, ActiveJob queue adapter (`:delayed`), ActionMailer default URL options, i18n settings (`de`, `en` locales), custom exception mappings, and various middlewares (`Rack::Attack`, `Middleware::NewsTracker`, `Rack::Cors`).\\n*   **Initializers**: `config/initializers` contains configurations for YJIT, `ActiveSupport::Inflector` (acronyms, uncountable words), session store (`cookie_store`), and `ActionController::ParamsWrapper` for JSON parameter wrapping.\\n*   **`xikolo.yml`**: This central configuration file, loaded via `Xikolo::Common::Secrets` and `Xikolo::Common::Nomad` (and accessible through `Xikolo.config`), defines application-wide settings such as `site_name`, `base_url`, `mailsender`, email SMTP settings, CSP policies, S3 bucket configurations (leveraging `Xikolo::S3`), locales, course details, rich text icons, helpdesk email, certificate fonts, and various integration settings (e.g., `imgproxy_url`, `chatbot`, `moochub_api`, `open_badges`, `portal_api`, `transpipe`).\\n*   **Environment Variables**: Critical settings like `DATABASE_URL`, `CACHE_REDIS_URL`, `SIDEKIQ_REDIS_URL`, `XIKOLO_RABBITMQ_URL`, and `XIKOLO_SERVICE_*` endpoints for microservices are managed through environment variables, often with local defaults specified in `EnvFile` (e.g., `docker/.env`).\\n*   **`config/secrets.yml`**: This file, managed as `Secrets`, stores sensitive credentials such as `secret_key_base`, `imgproxy_key/salt`, Smowl credentials, various bridge API shared secrets, Open Badge private keys, JWT secrets, and reCAPTCHA keys.\\n*   **`config/services.yml`**: Defines service endpoints for microservice interactions.\\n*   **Redis Configuration**: Specific Redis configurations for caching and Sidekiq are managed, often via environment variables like `CACHE_REDIS_URL` and `SIDEKIQ_REDIS_URL`.\"\n      },\n      {\n        \"title\": \"Build & Deployment\",\n        \"content\": \"The build and deployment process is robust and containerized:\\n*   **`Makefile`**: Orchestrates asset compilation (`webpack`, `sprockets`) and internationalization export (`i18n`) for different brands.\\n*   **`Procfile` / `Procfile.web`**: Used with `overmind` for managing local development processes, including starting the `web` server, asset compilation, and background jobs (`msgr`, `sidekiq`, `delayed`). It also defines processes for all microservices.\\n*   **`bin/entrypoint`**: The Docker container entrypoint script, handling various commands like `server`, `migrate`, `delayed`, `msgr`, and `sidekiq`, and setting appropriate environment variables for concurrency.\\n*   **Dockerfiles**: The project uses multi-stage Docker builds defined in `docker/files/*.Dockerfile`. `web.Dockerfile` includes `assets` and `build` stages for compiling frontend assets and installing gems, followed by a `runtime` stage for the final application image. Base images for Ruby, Node.js, and Chrome are defined in `base.Dockerfile`. The `.dockerignore` file ensures only necessary files are included in the build context.\\n*   **`docker-bake.hcl`**: Configures Docker BuildX for building various application and base images, supporting different architectures and branding.\\n*   **`bin/setup`**: A Ruby script for setting up the development environment, including gem installation, database preparation, and clearing temporary files.\\n*   **Application Server Configurations**: `PumaConfiguration` (config/puma.rb) and `UnicornConfiguration` (config/unicorn.rb) define the settings for the respective application servers.\"\n      },\n      {\n        \"title\": \"Internationalization (I18n) & Branding\",\n        \"content\": \"Internationalization is managed via `I18n` with `de` and `en` as available locales. The `i18n-js` gem exports translation keys for frontend consumption. Branding is a core concept, with `ENV['BRAND']` dynamically configuring the application, loading brand-specific initializers and library paths. The `Makefile` and Docker builds also support brand-specific asset compilation.\"\n      },\n      {\n        \"title\": \"Microservice Interaction\",\n        \"content\": \"The application interacts with microservices using `Acfs` (legacy) and `Restify` (preferred) clients. The `Xikolo` global namespace provides access to service clients (e.g., `Xikolo.api(:account)`). `ApplicationController` integrates `Acfs` for queue clearing and `Restify` for fetching `current_user` data.\"\n      },\n      {\n        \"title\": \"Technical Debt\",\n        \"content\": \"Identified areas of technical debt include:\\n*   **Acfs to Restify Migration**: An ongoing effort to replace `Acfs` resources with `Restify` to streamline inter-service communication.\\n*   **YAML Serialization**: The `paper_trail` gem's use of YAML serialization for ActiveRecord changes requires explicit whitelisting of classes in `config/application.rb`. Migration to JSON with `jsonb` columns is recommended by `paper_trail` for newer Rails versions.\\n*   **Unicorn Configuration**: The presence of `config/unicorn.rb` alongside `config/puma.rb` suggests a potential legacy server configuration if Puma is the primary application server.\"\n      }\n    ]\n  }\n}",
+  "componentMapPatch": {
+    "components": {
+      "Xikolo::Web::Application": {
+        "type": "Rails Application",
+        "description": "The main Rails application class, responsible for loading frameworks, configuring middleware, setting up autoload paths, and defining global application behaviors. It integrates common modules for secrets and Nomad-specific configurations.",
+        "interactions": {
+          "interaction_0": "Loads Rails frameworks (ActiveRecord, ActionController, etc.). [Source: config/application.rb]",
+          "interaction_1": "Configures `Xikolo.brand` based on `ENV['BRAND']`. [Source: config/application.rb]",
+          "interaction_2": "Includes `Xikolo::Common::Secrets` and `Xikolo::Common::Nomad`. [Source: config/application.rb]",
+          "interaction_3": "Configures `ActiveJob` to use `:delayed` adapter. [Source: config/application.rb]",
+          "interaction_4": "Sets `ActionMailer` default URL options and queue. [Source: config/application.rb]",
+          "interaction_5": "Configures `I18n` available locales, default locale, and fallbacks. [Source: config/application.rb]",
+          "interaction_6": "Registers `ErrorsController` for exception handling. [Source: config/application.rb]",
+          "interaction_7": "Applies `Rack::Attack` and `Middleware::NewsTracker` middleware. [Source: config/application.rb]",
+          "interaction_8": "Configures `Rack::Cors` for cross-origin resource sharing. [Source: config/application.rb]",
+          "interaction_9": "Configures `Telegraf` for event collection. [Source: config/application.rb]",
+          "interaction_10": "Whitelists classes for `ActiveRecord` YAML serialization for `paper_trail` compatibility. [Source: config/application.rb]",
+          "interaction_11": "Configures `ViewComponent` instrumentation and previews. [Source: config/application.rb]",
+          "interaction_12": "Sets `ActionController::Base.asset_host` dynamically after initialization. [Source: config/application.rb]",
+          "interaction_13": "Loads brand-specific initializers and library code. [Source: config/application.rb, docs/app/development/branding/initializers.md]"
+        },
+        "techDebt": [
+          "The explicit whitelisting of `yaml_column_permitted_classes` for `ActiveRecord` YAML serialization is a workaround for `paper_trail` and older YAML data, with a recommendation to migrate to JSON. [Source: config/application.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/application.rb",
+            "docs/app/development/branding/initializers.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nrequire_relative 'boot'\n\nrequire 'rails'\n# Pick the frameworks you want:\nrequire 'active_model/railtie'\nrequire 'active_job/railtie'\nrequire 'active_record/railtie'\n# require 'active_storage/engine'\nrequire 'action_controller/railtie'\nrequire 'action_mailer/railtie'\n# require 'action_mailbox/engine'\n# require 'action_text/engine'\nrequire 'action_view/railtie'\n# require 'action_cable/engine'\nrequire 'sprockets/railtie'\nrequire 'rails/test_unit/railtie'\n\n# Require the gems listed in Gemfile, including any gems\n# you've limited to :test, :development, or :production.\nBundler.require(*Rails.groups(assets: %w[development test integration]))\n\n# Load other things\nrequire 'ims/lti'\nrequire 'digest/md5'\n\n# Include the OAuth proxy object for LTI\nrequire 'oauth/request_proxy/action_controller_request'\n\nrequire 'telegraf/rails'\n\n##\n# Configure the brand from an environment variable.\n#\n# We do this here to ensure the brand is configured correctly before the\n# initiali...",
+              "source": "config/application.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/application.rb",
+              "relevance": 38
+            },
+            {
+              "path": "services/account/config/application.rb",
+              "relevance": 34
+            },
+            {
+              "path": "services/course/config/application.rb",
+              "relevance": 34
+            }
+          ]
+        }
+      },
+      "ApplicationController": {
+        "type": "Controller",
+        "description": "The base controller for the main web application, providing common functionalities for authentication, authorization, internationalization, error handling, and session management. It includes several modules and defines `before_action` and `around_action` hooks for core application logic.",
+        "interactions": {
+          "interaction_0": "Includes `FeatureTogglesHelper` for feature flag evaluation [Source: app/controllers/application_controller.rb]",
+          "interaction_1": "Includes `Login` module for authentication-related helpers [Source: app/controllers/application_controller.rb]",
+          "interaction_2": "Includes `Locale` module for internationalization support [Source: app/controllers/application_controller.rb]",
+          "interaction_3": "Includes `Status` module for specific error classes and handling [Source: app/controllers/application_controller.rb]",
+          "interaction_4": "Uses `Xikolo::Common::Auth::Middleware` for handling authentication flow [Source: app/controllers/application_controller.rb]",
+          "interaction_5": "Fetches `current_user` from `request.env` or `Xikolo::Common::Auth::CurrentUser` [Source: app/controllers/application_controller.rb]",
+          "interaction_6": "Interacts with `Xikolo.api(:account)` to create new sessions for authenticated users [Source: app/controllers/application_controller.rb]",
+          "interaction_7": "Clears `Acfs` queue before each action [Source: app/controllers/application_controller.rb]",
+          "interaction_8": "Manages user authorization with `authorize!` and `authorize_any!` methods [Source: app/controllers/application_controller.rb]",
+          "interaction_9": "Handles redirects and stores/forgets user location in cookies [Source: app/controllers/application_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/application_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 16,
+              "code": "class ApplicationController < ActionController::Base\n  # Make the FeatureTogglesHelper available in views as well as controllers\n  helper FeatureTogglesHelper\n  include FeatureTogglesHelper\n\n  include Login\n\n  protect_from_forgery with: :exception\n  before_action { Acfs.runner.clear } # clear Acfs queue\n  around_action :auth_middleware\n  after_action  :remember_user\n\n  include Locale",
+              "source": "app/controllers/application_controller.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 20,
+              "code": "  before_action :forget_location, if: proc {|_| current_user.anonymous? }\n\n  add_flash_types :error, :success",
+              "source": "app/controllers/application_controller.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 31,
+              "code": "  include Status # specific error classes and handling\n\n  def add_flash_message(type, message)\n    (flash[type] ||= Set.new) << message\n  end\n\n  def redirect_to(options = {}, response_status = {})\n    (%i[error notice alert success] & response_status.keys).each do |type|\n      add_flash_message type, response_status.delete(type)\n    end\n\n    super\n  end",
+              "source": "app/controllers/application_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class ApplicationController < ActionController::Base\n  include Vary\n\n  # This is API!\n  skip_before_action :verify_authenticity_token\n\n  rescue_from ActiveRecord::RecordNotFound, with: :error_not_found\n  rescue_from ActionController::ParameterMissing, with: :error_param_missing",
+              "source": "app/controllers/application_controller.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 25,
+              "code": "  def api_version\n    1\n  end\n\n  def error_not_found\n    error :not_found\n  end\n\n  def error_param_missing(exception)\n    error :unprocessable_content, json: {errors: {exception.param => 'required'}}\n  end\n\n  def rescue_from_api_error(err)\n    render json: err, status: err.status\n  end\n\n  def error(code, opts = {})\n    render opts.merge(status: code, plain: '{}')\n  end\n\n  def error!(...)\n    raise APIError.new(...)\n  end",
+              "source": "app/controllers/application_controller.rb"
+            },
+            {
+              "startLine": 27,
+              "endLine": 39,
+              "code": "  class APIError < StandardError\n    attr_reader :status, :errors, :extra\n\n    def initialize(errors:, status: :unprocessable_content, **extra)\n      @errors = errors\n      @status = status\n      @extra  = extra\n\n      super('API error')\n    end\n\n    def as_json(...)",
+              "source": "app/controllers/application_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/application_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/account/app/controllers/application_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/course/app/controllers/application_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "ApplicationJob": {
+        "type": "ActiveJob Base Class",
+        "description": "The base class for all background jobs in the application, configured to use the 'default' queue and defining a maximum run time. It also provides a custom error class for explicit retries.",
+        "interactions": {
+          "interaction_0": "Sets the default queue for jobs to 'default' [Source: app/jobs/application_job.rb]",
+          "interaction_1": "Defines a `max_run_time` of 20 minutes for jobs [Source: app/jobs/application_job.rb]",
+          "interaction_2": "Provides `ExpectedRetry` error for explicit job retries that are ignored by Sentry [Source: app/jobs/application_job.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/jobs/application_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 24,
+              "code": "# frozen_string_literal: true\n\nclass ApplicationJob < ActiveJob::Base\n  queue_as 'default'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Allow a regular job to run for 20 minutes, which is the delayed gem default.\n  def max_run_time\n    20.minutes\n  end\n\n  # Automatically retry jobs that encountered a deadlock.\n  # retry_on ActiveRecord::Deadlocked\n\n  # Most jobs are safe to ignore if the underlying records are no longer available.\n  # discard_on ActiveJob::DeserializationError\n\n  # Should be used to indicate explicit retries to ActiveJob.\n  # This error is ignored by Sentry.\n  class ExpectedRetry < StandardError; end\nend",
+              "source": "app/jobs/application_job.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 13,
+              "code": "  # Should be used to indicate explicit retries to ActiveJob or\n  # the job backend such as sidekiq. This error is ignored by e.g.\n  # Sentry.\n  class Retry < StandardError; end",
+              "source": "app/jobs/application_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/account/app/jobs/application_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/pinboard/app/jobs/application_job.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "ApplicationRecord": {
+        "type": "ActiveRecord Base Class",
+        "description": "The abstract base class for all ActiveRecord models, ensuring common configurations and behaviors across the application's data models.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/application_record.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": "# frozen_string_literal: true\n\nclass ApplicationRecord < ActiveRecord::Base\n  self.abstract_class = true\n\n  # We're removing `#to_json` and `#as_json` here from all models\n  # to ensure models are not directly used for serialization.\n  #\n  # An exception will be raised when a model is tried to be rendered or\n  # used undecorated e.g. due to a forgotten `#decorate_assocization`.\n  #\n  undef_method :to_json\n  undef_method :as_json\nend",
+              "source": "app/models/application_record.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/application_record.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/account/app/models/application_record.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/course/app/models/application_record.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "ApplicationOperation": {
+        "type": "Service Object Base Class",
+        "description": "A base class for defining business logic operations, promoting a structured approach to encapsulate specific functionalities. It includes a `ResultNegotiation` pattern for handling various outcomes (e.g., success, failure) without relying on type checking.",
+        "interactions": {
+          "interaction_0": "Provides a `call` class method to execute operations [Source: app/operations/application_operation.rb]",
+          "interaction_1": "Uses `ResultNegotiation` to wrap operation results, allowing clients to react to different outcomes (e.g., `success`, `failure`) [Source: app/operations/application_operation.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/application_operation.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 32,
+              "code": "class ApplicationOperation\n  class << self\n    def call(...)\n      new(...).call\n    end\n  end\n\n  ##\n  # Return one of several result variants.\n  #\n  # Operations should use this to decorate the return values of `#call`.\n  #\n  # The result will be wrapped so that clients can use to decide what to do for\n  # each type of result, without checking the type class.\n  #\n  #     OperationClass.call(...).on do |result|\n  #       result.success { redirect_with_flash }\n  #       result.failure { redirect_back_to_form_with_errors }\n  #     end\n  #\n  # The block which will be executed is chosen based on the class name of the\n  # result object returned from `#call`. The result object itself will be\n  # passed to the handler block.\n  #\n  def result(result)\n    ResultNegotiation.new result\n  end\n\n  class ResultNegotiation\n    def initialize(result)\n      @result = result\n\n      @variants = {}\n    end\n\n    def on\n      # Call the provided block to collect all response va...",
+              "source": "app/operations/application_operation.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/operations/application_operation.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/account/app/operations/application_operation.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/course/app/operations/application_operation.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Makefile": {
+        "type": "Build System",
+        "description": "Manages the build process for frontend assets (Webpack and Sprockets) and internationalization files. It supports brand-specific compilation and is used for both development and packaging the application.",
+        "interactions": {
+          "interaction_0": "Orchestrates `webpack` and `sprockets` targets for asset compilation [Source: Makefile]",
+          "interaction_1": "Invokes `bundle exec rake assets:i18n:export` for i18n file generation [Source: Makefile]",
+          "interaction_2": "Uses `corepack yarn run build` for Webpack compilation [Source: Makefile]",
+          "interaction_3": "Uses `bundle exec rake assets:precompile` for Sprockets asset compilation [Source: Makefile]",
+          "interaction_4": "Supports `BRAND` environment variable for brand-specific builds [Source: Makefile]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Makefile"
+          ]
+        }
+      },
+      "Procfile": {
+        "type": "Process Manager Configuration",
+        "description": "Defines processes for local development, allowing `overmind` (or similar tools) to start multiple services concurrently, including the main web application, microservices, asset compilation, message queue listeners, and background job processors.",
+        "interactions": {
+          "interaction_0": "Starts `bin/rails server` for the web application.",
+          "interaction_1": "Starts `yarn start` for web assets compilation.",
+          "interaction_2": "Starts `bundle exec msgr` for message queue listening.",
+          "interaction_3": "Starts `bundle exec sidekiq` for Sidekiq background jobs.",
+          "interaction_4": "Starts `bin/rake delayed:work` for Delayed Job background jobs.",
+          "interaction_5": "Starts microservices (e.g., `account`, `course`) via `overmind start`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Procfile",
+            "Procfile.web"
+          ]
+        }
+      },
+      "bin/entrypoint": {
+        "type": "Docker Entrypoint Script",
+        "description": "A Bash script serving as the entrypoint for Docker containers, handling various commands such as starting the application server, running database migrations, or initiating background job processors. It sets environment variables for concurrency.",
+        "interactions": {
+          "interaction_0": "Executes database migrations via `bundle exec rake db:prepare` [Source: bin/entrypoint]",
+          "interaction_1": "Starts Delayed Job workers via `bundle exec rake delayed:work` [Source: bin/entrypoint]",
+          "interaction_2": "Starts `msgr` AMQP consumer via `bundle exec msgr` [Source: bin/entrypoint]",
+          "interaction_3": "Starts `sidekiq` workers via `bundle exec sidekiq` [Source: bin/entrypoint]",
+          "interaction_4": "Starts the Puma application server via `/app/bin/thrust puma` [Source: bin/entrypoint]",
+          "interaction_5": "Sets `WORKERS`, `CONCURRENCY`, and `RAILS_MAX_THREADS` environment variables [Source: bin/entrypoint]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "bin/entrypoint"
+          ]
+        }
+      },
+      "Xikolo (Global Config/Namespace)": {
+        "type": "Global Configuration Module",
+        "description": "A global module or namespace that holds application-wide configuration, secrets, and provides access to microservice clients. It is crucial for centralizing environment-specific settings and inter-service communication.",
+        "interactions": {
+          "interaction_0": "Sets the application `brand` based on `ENV['BRAND']` [Source: config/application.rb]",
+          "interaction_1": "Includes `Xikolo::Common::Secrets` for accessing sensitive configuration [Source: config/application.rb]",
+          "interaction_2": "Includes `Xikolo::Common::Nomad` for Nomad-related configurations [Source: config/application.rb]",
+          "interaction_3": "Provides access to microservice APIs (e.g., `Xikolo.api(:account)`) [Source: app/controllers/application_controller.rb]",
+          "interaction_4": "Used by `ActionMailer` to determine default URL options [Source: config/application.rb]",
+          "interaction_5": "Used by `ActionController::Base` to set the asset host [Source: config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/application.rb",
+            "app/controllers/application_controller.rb",
+            "docker/config/xikolo.yml",
+            "config/secrets.yml",
+            "config/services.yml"
+          ]
+        }
+      },
+      "Xikolo::Common::Auth::Middleware": {
+        "type": "Authentication Middleware",
+        "description": "A Rack middleware responsible for handling the authentication flow, potentially integrating with OmniAuth strategies. It processes authentication requests and manages user sessions.",
+        "interactions": {
+          "interaction_0": "Called by `ApplicationController#auth_middleware` during `around_action` [Source: app/controllers/application_controller.rb]",
+          "interaction_1": "Processes `RelayState` from SAML/OpenID Connect for session management [Source: app/controllers/application_controller.rb]",
+          "interaction_2": "Sets `xikolo_context` in the request environment [Source: app/controllers/application_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/application_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 13,
+              "code": "module Xikolo   module Common     module Auth       class Middleware         TOKEN_AUTH_REGEX = /^(Legacy-)?Token token=(?<token>[0-9a-f]+)$/ # rubocop:disable Lint/MixedRegexpCaptureTypes         SESSION_ID_REGEX = /^Xikolo-Session session_id=(?<session_id>[-0-9a-fA-F]+)$/          def initialize(app, path: '/')           @app = app           @path = path         end",
+              "source": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 18,
+              "code": "        def call(env)           env['current_user'] = current_user_promise(env) if env['PATH_INFO'].to_s.start_with? @path            @app.call(env)         end",
+              "source": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 27,
+              "code": "        def current_user_promise(env)           Xikolo.api(:account).value!.rel(:session).get({             id: session_id(env),             embed: 'user,permissions,features',             context: context_id(env),           }).then do |session|             Xikolo::Common::Auth::CurrentUser.from_session session           end         end",
+              "source": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 31,
+              "code": "        private          def session_id(env)        ...",
+              "source": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb",
+              "relevance": 51
+            },
+            {
+              "path": "api/xikolo/versioning/middleware.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 36
+            }
+          ]
+        }
+      },
+      "Xikolo::Common::Auth::CurrentUser": {
+        "type": "User Abstraction",
+        "description": "An abstraction for the current user, providing methods to determine login status, permissions, and feature flag access. It can be initialized from session data.",
+        "interactions": {
+          "interaction_0": "Used by `ApplicationController#current_user` to represent the authenticated user [Source: app/controllers/application_controller.rb]",
+          "interaction_1": "Provides `logged_in?`, `anonymous?`, `allowed?`, `allowed_any?`, `feature?` methods [Source: app/controllers/application_controller.rb]",
+          "interaction_2": "Sets Sentry user context with the user's ID [Source: app/controllers/application_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/application_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 13,
+              "code": "  def self.from_session(session)\n    # We check for false explicitly here in case no user is embedded\n    # (in which case `dig` would return `nil`, which is also falsy).\n    if session.dig('user', 'anonymous') === false # rubocop:disable Style/CaseEquality\n      Authenticated.new session\n    else\n      Anonymous.new session\n    end\n  end",
+              "source": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 32,
+              "code": "  class Base\n    def initialize(session)\n      @session = session\n      @user = session['user'].to_h\n      @features = session['features'].to_h\n      @permissions = session['permissions'].to_a\n      @permission_map = {}\n    end\n\n    def session_id\n      @session['id']\n    end\n\n    def interrupts\n      @session['interrupts'] || []\n    end\n\n    # @deprecated\n    def interrupt_session?\n      interrupts.any?\n    end\n    alias interrupt interrupt_session?\n    alias interrupt? interrupt_session?\n\n    # Permission Checks\n    # ===============",
+              "source": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 30,
+              "code": "        def current_user_promise(env)\n          Xikolo.api(:account).value!.rel(:session).get({\n            id: session_id(env),\n            embed: 'user,permissions,features',\n            context: context_id(env),\n          }).then do |session|\n            Xikolo::Common::Auth::CurrentUser.from_session session\n          end\n        end",
+              "source": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb",
+              "relevance": 21
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common.rb",
+              "relevance": 18
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/auth/current_user.rb",
+              "relevance": 17
+            }
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "RabbitMQ Client",
+        "description": "A Ruby gem (`msgr`) used for connecting to RabbitMQ, facilitating asynchronous messaging between services. It is configured via `config/rabbitmq.yml` and defines message routes for various events.",
+        "interactions": {
+          "interaction_0": "Connects to RabbitMQ for message exchange [Source: Gemfile, config/rabbitmq.yml]",
+          "interaction_1": "Routes messages to specific handlers (e.g., for gamification events) [Source: config/msgr.rb]",
+          "interaction_2": "Integrates with Puma's `before_fork` hook to stop client connections gracefully [Source: config/puma.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/msgr.rb",
+            "config/rabbitmq.yml",
+            "config/puma.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 19,
+              "code": "module MsgrSentryIntegration   def dispatch(*)     Sentry.with_scope do       super     rescue Sentry::Error       raise # Don't capture Sentry errors     rescue Exception => e # rubocop:disable Lint/RescueException       Sentry.capture_exception(e)       raise     end   end end  Msgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Sentry": {
+        "type": "Error Tracking",
+        "description": "An error tracking and performance monitoring service integrated into the Rails application, Sidekiq, and general Ruby environment to capture and report exceptions and performance data.",
+        "interactions": {
+          "interaction_0": "Integrated via `sentry-rails`, `sentry-ruby`, `sentry-sidekiq` gems [Source: Gemfile]",
+          "interaction_1": "Sets user context with `current_user.id` in `ApplicationController` [Source: app/controllers/application_controller.rb]",
+          "interaction_2": "Provides `sentry_meta_tags` helper for trace propagation in views [Source: app/helpers/application_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "app/controllers/application_controller.rb",
+            "app/helpers/application_helper.rb",
+            "docs/app/deployment/opensource/index.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 22,
+              "code": "Sentry.init do |config|\n  # Include /api as in-app stacktrace lines.\n  #\n  # Ignore lib/acfs_rails_cache.rb and config/initializers/acfs.rb.\n  # They define generic wrappers that would otherwise be the summary for\n  # the \"primary\" line for many exceptions.\n  config.app_dirs_pattern = %r{(api|app|config(?!/initializers/acfs.rb$)|lib(?!/acfs_rails_cache.rb$))}\n\n  # Ignore a few common exceptions that sometimes bubble up to Rails' error\n  # handling middleware. These are expected to occur and have dedicated\n  # handler logic in our exceptions app.\n  config.excluded_exceptions += %w[\n    Acfs::BadGateway\n    Acfs::GatewayTimeout\n    Acfs::ServiceUnavailable\n    Status::NotFound\n    Restify::BadGateway\n    Restify::GatewayTimeout\n    Restify::ServiceUnavailable\n    ApplicationJob::ExpectedRetry\n  ]\n\n  # Far too many exception when sidekiq workers are just reconnecting\n  config.excluded_exceptions += %w[Redis::CannotC...",
+              "source": "config/initializers/sentry.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 22,
+              "code": "Sentry.init do |config|\n  # We trigger intentional retries using this class, so no need to report them.\n  config.excluded_exceptions += %w[ApplicationJob::Retry]\n\n  # Far too many exception when sidekiq workers are just reconnecting\n  config.excluded_exceptions += %w[Redis::CannotConnectError RedisClient::CannotConnectError]\n\n  # Do not send full list of gems with each event\n  config.send_modules = false\n\n  filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)\n  config.before_send = lambda do |event, _hint|\n    # use Rails' parameter filter to sanitize the event\n    filter.filter(event.to_hash)\n  end\n\n  # The default sampling rate for Sentry transactions. Unless other\n  # rules apply below, sample all requests by default.\n  #\n  # Collect profiles are transactions that are sampled.\n  config.traces_sample_rate = ENV.fetch('SENTRY_TRACES_SAMPLE_RATE', '1.0').to_f\n  config.profiles_s...",
+              "source": "config/initializers/sentry.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 24,
+              "code": "Sentry.init do |config|\n  # Far too many exception when sidekiq workers are just reconnecting\n  config.excluded_exceptions += %w[Redis::CannotConnectError RedisClient::CannotConnectError]\n\n  # Do not send full list of gems with each event\n  config.send_modules = false\n\n  filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)\n  config.before_send = lambda do |event, _hint|\n    # use Rails' parameter filter to sanitize the event\n    filter.filter(event.to_hash)\n  end\n\n  # The default sampling rate for Sentry transactions. Unless other\n  # rules apply below, sample all requests by default.\n  #\n  # Collect profiles are transactions that are sampled.\n  config.traces_sample_rate = ENV.fetch('SENTRY_TRACES_SAMPLE_RATE', '1.0').to_f\n  config.profiles_sample_rate = 1.0\n\n  config.traces_sampler = lambda do |ctx|\n    # If this is the continuation of a trace, just use that decision\n    # (rat...",
+              "source": "config/initializers/sentry.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/initializers/sentry.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/account/config/initializers/sentry.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/course/config/initializers/sentry.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Telegraf": {
+        "type": "Monitoring Agent Integration",
+        "description": "Integration with the Telegraf data collector for sending application-specific metrics. The `xikolo-common` gem provides `Xikolo.metrics` for custom metric collection.",
+        "interactions": {
+          "interaction_0": "Receives metrics from `Xikolo.metrics` [Source: gems/xikolo-common/README.md]",
+          "interaction_1": "Sends collected data to a configured Telegraf endpoint [Source: config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/application.rb",
+            "gems/xikolo-common/README.md"
+          ]
+        }
+      },
+      "Rack::Attack": {
+        "type": "Middleware",
+        "description": "A Rack middleware used for protecting the application from abusive clients by throttling or blocking requests based on defined rules.",
+        "interactions": {
+          "interaction_0": "Intercepts incoming requests before they reach the Rails application. [Source: config/application.rb]",
+          "interaction_1": "Applies rate limiting and blocking rules to requests. [Source: config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/application.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 13,
+              "code": "class Rack::Attack\n  blocklist('allow2ban login scrapers') do |req|\n    Allow2Ban.filter(\n      req.env['action_dispatch.remote_ip'].to_s,\n      # we still need the values (required)\n      maxretry: 1,\n      findtime: 1.minute,\n      bantime: 1.hour\n    ) do\n      # do not trigger the filter from here\n      false\n    end\n  end",
+              "source": "config/initializers/rack_attack.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 29,
+              "code": "  blocklist('allow2ban password reset bombing') do |req|\n    remote_ip = req.env['action_dispatch.remote_ip'].to_s\n\n    # Fall back to 'nil' for requests not made on password reset\n    # In that case, this blocklist won't be used anyway\n    mail_hash = Digest::SHA1.hexdigest(req.params.dig('reset', 'email')&.downcase || 'nil')\n\n    Allow2Ban.filter(\n      \"#{remote_ip}---#{mail_hash}\",\n      maxretry: 10,\n      findtime: 1.day,\n      bantime: 1.day\n    ) do\n      req.path == '/account/reset' and req.post?\n    end\n  end",
+              "source": "config/initializers/rack_attack.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 33,
+              "code": "  safelist('allow from localhost') do |req|\n    ['127.0.0.1', '::1'].include?(req.ip)\n  end",
+              "source": "config/initializers/rack_attack.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/initializers/rack_attack.rb",
+              "relevance": 18
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common.rb",
+              "relevance": 4
+            }
+          ]
+        }
+      },
+      "Rack::Cors": {
+        "type": "Middleware",
+        "description": "A Rack middleware that enables Cross-Origin Resource Sharing (CORS) for the application, allowing controlled access from different domains. It's configured to permit specific origins and HTTP methods for certain resources.",
+        "interactions": {
+          "interaction_0": "Allows POST requests from `*.openhpi.de`. [Source: config/application.rb]",
+          "interaction_1": "Allows GET requests from any origin (`*`) to `/playlists/*` for external video players. [Source: config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/application.rb"
+          ]
+        }
+      },
+      "I18n": {
+        "type": "Internationalization Framework",
+        "description": "The Rails internationalization framework, configured to support German and English locales, with English as the default and fallback. It's also integrated with `i18n-js` for frontend localization.",
+        "interactions": {
+          "interaction_0": "Configured in `config/application.rb` with `available_locales` (`de`, `en`), `default_locale` (`en`), and `fallbacks` (`en`) [Source: config/application.rb]",
+          "interaction_1": "Used by `Rakefile` tasks (`assets:i18n:export`, `i18n:missing_keys`) for managing translation files [Source: Rakefile]",
+          "interaction_2": "Integrated with `i18n-js` gem to export translations to JSON for frontend use [Source: Rakefile, docs/app/development/local_setup/index.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/application.rb",
+            "Rakefile",
+            "Gemfile",
+            "docs/app/development/local_setup/index.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 22,
+              "code": "import { I18n } from 'i18n-js';\n\n// Create the I18n instance\nconst i18n = new I18n();\n\nexport const loadTranslations = async () => {\n  const locale = document.documentElement.lang;\n  const defaultLocale = document.documentElement.getAttribute(\n    'data-default-locale',\n  );\n\n  if (!locale || !defaultLocale) return;\n\n  // Configure the I18n instance\n  i18n.defaultLocale = defaultLocale;\n  i18n.locale = locale;\n\n  // Lazy load translations based on the locale\n  const translation = await import(`./translations/${locale}`);\n  i18n.store(translation.default);\n};\n\nexport default i18n;",
+              "source": "app/assets/i18n/i18n.ts"
+            },
+            {
+              "startLine": 5,
+              "endLine": 19,
+              "code": "I18n.enforce_available_locales = true\n\n# Add branch specific locale file\n# sitename must be used lowercase and . are replaced by _\nRails.application.config.tap do |config|\n  config.i18n.load_path += Rails.root.glob(\"brand/#{Xikolo.config.brand}/locales/**/*.{rb,yml}\").map(&:to_s)\nend\n\nRails.application.config.after_initialize do\n  if Rails.env.development?\n    require 'i18n-js/listen'\n    # Generate frontend translations on-the-fly.\n    I18nJS.listen\n  end\nend",
+              "source": "app/assets/i18n/i18n.ts"
+            },
+            {
+              "startLine": 5,
+              "endLine": 31,
+              "code": "I18n.enforce_available_locales = true\n\nmodule ActionView\n  module Helpers\n    module TranslationHelper\n      alias orig_translate translate\n      def translate(key, options = {})\n        options[:rescue_format] = :html unless options.key?(:rescue_format)\n        options[:default] = wrap_translate_defaults(options[:default]) if options[:default]\n\n        html_safe_options = options.dup\n        options.except(*I18n::RESERVED_KEYS).each do |name, value|\n          unless name == :count && value.is_a?(Numeric)\n            html_safe_options[name] = ERB::Util.html_escape(value.to_s)\n          end\n        end\n\n        # deprecated\n        unless html_safe_options[:brand] || key == :brand\n          html_safe_options[:brand] = (@brand ||= Xikolo.config.site_name)\n        end\n\n        unless html_safe_options[:site_name] || key == :site_name\n          html_safe_options[:site_name] = (@site_name ||= Xikolo.config.site_name)\n ...",
+              "source": "app/assets/i18n/i18n.ts"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/assets/i18n/i18n.ts",
+              "relevance": 11
+            },
+            {
+              "path": "config/initializers/i18n.rb",
+              "relevance": 11
+            },
+            {
+              "path": "config/initializers/i18n_translate.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Bootsnap": {
+        "type": "Performance Enhancement",
+        "description": "A gem that speeds up application boot by caching Ruby instruction sequences, load paths, and YAML configurations. It is conditionally loaded only in the development environment.",
+        "interactions": {
+          "interaction_0": "Accelerates application startup by caching various Ruby artifacts. [Source: config/boot.rb]",
+          "interaction_1": "Loaded conditionally based on the Rails environment (development only). [Source: config/boot.rb]"
+        },
+        "techDebt": [
+          "Bootsnap has assumptions about the environment (e.g., running as the same user) which makes it less suitable for production environments where different users or system services might interact with the codebase. [Source: config/boot.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/boot.rb"
+          ]
+        }
+      },
+      "RubyVM::YJIT": {
+        "type": "Ruby JIT Compiler",
+        "description": "Ruby's Just-In-Time (JIT) compiler, automatically enabled for Ruby 3.3 and newer versions to provide significant performance improvements.",
+        "interactions": {
+          "interaction_0": "Enabled in an `after_initialize` block if `RubyVM::YJIT.enable` is defined (Ruby 3.3+) [Source: config/initializers/enable_yjit.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/enable_yjit.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": "# frozen_string_literal: true\n\n# Automatically enable YJIT if running Ruby 3.3 or newer,\n# as it brings very sizeable performance improvements.\n# Many users reported 15-25% improved latency.\n\n# If you are deploying to a memory-constrained environment,\n# you may want to delete this file, but otherwise, it's free\n# performance.\nif defined? RubyVM::YJIT.enable\n  Rails.application.config.after_initialize do\n    RubyVM::YJIT.enable\n  end\nend",
+              "source": "config/initializers/enable_yjit.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/initializers/enable_yjit.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/account/config/initializers/enable_yjit.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/course/config/initializers/enable_yjit.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Lookbook": {
+        "type": "ViewComponent Documentation Tool",
+        "description": "A tool for documenting and previewing ViewComponents, integrated into the Rails application to streamline UI development and maintain component libraries.",
+        "interactions": {
+          "interaction_0": "Configured in `config/application.rb` to show previews, define preview layouts, listen paths, and page paths [Source: config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/application.rb"
+          ]
+        }
+      },
+      "Imagecrop": {
+        "type": "Image Transformation Helper",
+        "description": "A helper module that facilitates image transformations, likely by generating URLs for an external image proxy service like imgproxy.",
+        "interactions": {
+          "interaction_0": "Used by `ApplicationHelper#imagecrop` to transform image URLs [Source: app/helpers/application_helper.rb]",
+          "interaction_1": "Relies on `imgproxy` gem [Source: Gemfile]",
+          "interaction_2": "Configuration for imgproxy URL and secrets are in `xikolo.yml` and `secrets.yml` [Source: docker/config/xikolo.yml, config/secrets.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/helpers/application_helper.rb",
+            "Gemfile",
+            "docker/config/xikolo.yml",
+            "config/secrets.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 21,
+              "code": "    def transform(image_url, query_params = {})\n      # Leave the URL untouched when there is no imagecrop service\n      return image_url unless enabled?\n\n      # The imagecrop service can only deal with non-SVG images\n      return image_url if image_url.end_with?('.svg')\n\n      # Do not try to optimize (and break) .ico icons\n      return image_url if image_url.end_with?('.ico')\n\n      # imagecrop needs absolute URLs, make paths relative to base_url:\n      # (if join is called with an URL, the URL is returned unchanged)\n      image_url = Xikolo.base_url.join(image_url).to_s\n\n      ImgproxyWrapper.new(image_url, query_params).proxy_url\n    end",
+              "source": "app/lib/imagecrop.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 27,
+              "code": "    def enabled?\n      imgproxy_url.present? &&\n        Rails.application.secrets.imgproxy_key.present? &&\n        Rails.application.secrets.imgproxy_salt.present?\n    end",
+              "source": "app/lib/imagecrop.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 31,
+              "code": "    def origin\n      imgproxy_url.origin if enabled?\n    end",
+              "source": "app/lib/imagecrop.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/imagecrop.rb",
+              "relevance": 30
+            },
+            {
+              "path": "spec/lib/imagecrop_spec.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "BrowserSupport": {
+        "type": "Browser Compatibility Helper",
+        "description": "A utility class or module used to detect browser capabilities and manage compatibility warnings for users.",
+        "interactions": {
+          "interaction_0": "Instantiated by `ApplicationHelper#browser_support` to provide browser-specific information [Source: app/helpers/application_helper.rb]",
+          "interaction_1": "Used to determine whether to hide browser warnings based on cookies [Source: app/helpers/application_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/helpers/application_helper.rb"
+          ]
+        }
+      },
+      "Acfs": {
+        "type": "Microservice Client (Legacy)",
+        "description": "A legacy microservice client used for inter-service communication. It is being phased out in favor of `Restify`.",
+        "interactions": {
+          "interaction_0": "Queue is cleared `before_action` in `ApplicationController` [Source: app/controllers/application_controller.rb]",
+          "interaction_1": "Used for promise-compatible interfaces in `ApplicationController` [Source: app/controllers/application_controller.rb]",
+          "interaction_2": "Exceptions (`Acfs::BadGateway`, `Acfs::ServiceUnavailable`, `Acfs::GatewayTimeout`) are mapped to HTTP status codes [Source: config/application.rb]"
+        },
+        "techDebt": [
+          "Migration from `Acfs` to `Restify` is ongoing. [Source: docs/app/development/best_practices/project_guidelines.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "app/controllers/application_controller.rb",
+            "config/application.rb",
+            "docs/app/development/best_practices/project_guidelines.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 32,
+              "code": "module RestifyCompatiblity\n  #\n  # Provides a restify compatible access ([], keys?, fetch) to Acfs\n  # resources. These methods return non-casted values e.g. times as\n  # string. Only basic JSON types are directly supported: nil, string,\n  # int, boolean\n  #\n  # the new `raw_attributes` stores each attributes unprocesses as it\n  # has been received from the service\n  #\n  # `write_local_attribute` and `write_attribute` have been extended to\n  # record the input value in `raw_attributes`.\n  #\n  def raw_attributes\n    @_raw_attrs ||= {} # rubocop:disable Naming/MemoizedInstanceVariableName\n  end\n\n  def write_local_attribute(name, value, opts = {})\n    raw_attributes[name.to_s] = value.as_json\n    super\n  end\n\n  def write_attribute(name, value, opts = {})\n    raw_attributes[name.to_s] = value.as_json\n    super\n  end\n\n  delegate :[], :key?, :fetch, to: :raw_attributes\nend\n\nAcfs::Resource.include RestifyCompatiblity",
+              "source": "config/initializers/acfs.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/initializers/acfs.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Restify": {
+        "type": "HTTP Client",
+        "description": "A gem used for HTTP communication between services. It is the preferred client over `Acfs` for new implementations.",
+        "interactions": {
+          "interaction_0": "Facilitates HTTP requests to other microservices [Source: Gemfile]",
+          "interaction_1": "Handles `BadGateway`, `ServiceUnavailable`, and `GatewayTimeout` exceptions [Source: config/application.rb]"
+        },
+        "techDebt": [
+          "Part of an ongoing migration to replace `Acfs` [Source: docs/app/development/best_practices/project_guidelines.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/application.rb",
+            "docs/app/development/best_practices/project_guidelines.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 17,
+              "code": "module Xikolo::Common   module Restify     require 'xikolo/common/restify/paginator'      def paginate(request, &block)       paginator = Paginator.new(request)        if block         paginator.each_item(&block)       else         paginator       end     end   end    ::Xikolo.extend Restify end",
+              "source": "gems/xikolo-common/lib/xikolo/common/restify.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 18,
+              "code": "module RestifyForwardable   # a `def_delegators` compatible method designed to be used on restify   # responses: the field are access via obj['field_name'] not obj.field_name.   # the references object can be a `Restify::Promise`, the promise will be   # resolved transparently on access.   def def_restify_delegators(dest, *fields)     fields.each do |field|       class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1         # delegates to restify resource or promise:         # restify strict modus compatible         def #{field}                                              # def name           value = #{dest}                                         #   value = @promise           value = value.value! if value.is_a?(Restify::Promise)   #   value = value.value! if value.is_a?(Restify::Promise)           value[#{field.to_s.inspect}]                            #   value['name']         end                                                       # end       RUBY_EVAL",
+              "source": "gems/xikolo-common/lib/xikolo/common/restify.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 13,
+              "code": "class RestifyPaginationCollection   def initialize(collection)     @collection = collection   end    def total_pages     @collection.response.headers['X_TOTAL_PAGES'].to_i   end    def current_page     @collection.response.headers['X_CURRENT_PAGE'].to_i   end end",
+              "source": "gems/xikolo-common/lib/xikolo/common/restify.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/restify.rb",
+              "relevance": 30
+            },
+            {
+              "path": "lib/restify_forwardable.rb",
+              "relevance": 30
+            },
+            {
+              "path": "lib/restify_pagination_collection.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Delayed (Delayed Job)": {
+        "type": "Background Job Processor",
+        "description": "A background job processing system used for asynchronous tasks. It is configured as the default queue adapter for ActiveJob.",
+        "interactions": {
+          "interaction_0": "Configured as `config.active_job.queue_adapter = :delayed` in `config/application.rb` [Source: config/application.rb]",
+          "interaction_1": "Workers are started via `bin/rake delayed:work` in `Procfile` and `bin/entrypoint` [Source: Procfile, bin/entrypoint]",
+          "interaction_2": "Integrated via `delayed` gem [Source: Gemfile]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/application.rb",
+            "Procfile",
+            "bin/entrypoint"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 24,
+              "code": "# frozen_string_literal: true\n\nclass ApplicationJob < ActiveJob::Base\n  queue_as 'default'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Allow a regular job to run for 20 minutes, which is the delayed gem default.\n  def max_run_time\n    20.minutes\n  end\n\n  # Automatically retry jobs that encountered a deadlock.\n  # retry_on ActiveRecord::Deadlocked\n\n  # Most jobs are safe to ignore if the underlying records are no longer available.\n  # discard_on ActiveJob::DeserializationError\n\n  # Should be used to indicate explicit retries to ActiveJob.\n  # This error is ignored by Sentry.\n  class ExpectedRetry < StandardError; end\nend",
+              "source": "app/assets/admin/reports/report-jobs.js"
+            },
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nclass LongRunningApplicationJob < ApplicationJob\n  queue_as 'long_running'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Long-running jobs are allowed to run for 10 hours, which is the globally\n  # configured maximum runtime.\n  def max_run_time\n    10.hours\n  end\n\n  def max_attempts\n    5\n  end\nend",
+              "source": "app/assets/admin/reports/report-jobs.js"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/long_running_application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Sidekiq": {
+        "type": "Background Job Processor",
+        "description": "A background job processor, configured by the `xikolo-sidekiq` gem. It manages Redis connections for job queues and integrates with `sidekiq-cron` for scheduled tasks.",
+        "interactions": {
+          "interaction_0": "Processes background jobs using Redis [Source: Gemfile, config/sidekiq_redis.yml]",
+          "interaction_1": "Runs scheduled cron jobs defined in `config/cron.yml` [Source: Gemfile, gems/xikolo-sidekiq/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/sidekiq_redis.yml",
+            "gems/xikolo-sidekiq/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 8,
+              "code": "# frozen_string_literal: true\n\nrequire 'yaml'\n\nmodule Xikolo\n  module Sidekiq\n    require 'xikolo/sidekiq/railtie' if defined? Rails\n  end\nend",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nif Rails.env.integration?\n  require 'sidekiq/api'\n\n  XiIntegration.hook :test_setup do\n    Sidekiq::Queue.new.clear\n    Sidekiq::ScheduledSet.new.clear\n    Sidekiq::RetrySet.new.clear\n  end\nend",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb",
+              "relevance": 30
+            },
+            {
+              "path": "integration/features/support/lib/server.rb",
+              "relevance": 19
+            },
+            {
+              "path": "integration/features/support/lib/initializers/integration_sidekiq.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Xikolo.config": {
+        "type": "Configuration Manager",
+        "description": "A centralized key-value store for site-specific configuration, provided by the `xikolo-config` gem. It loads settings from `app/xikolo.yml` and environment-specific overrides, defining global options, feature toggles, course settings, integrations, and more.",
+        "interactions": {
+          "interaction_0": "Provides configuration values to Xikolo::Web::Application and other components [Source: config/application.rb]",
+          "interaction_1": "Reads configuration from `app/xikolo.yml` and environment-specific YAML files [Source: app/xikolo.yml, docs/app/development/application_configuration/index.md, gems/xikolo-config/README.md]",
+          "interaction_2": "Influences asset host, CSP, and various feature behaviors [Source: app/xikolo.yml, config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/xikolo.yml",
+            "config/application.rb",
+            "docs/app/development/application_configuration/index.md",
+            "gems/xikolo-config/README.md",
+            "gems/xikolo-config/lib/xikolo/config.development.yml",
+            "gems/xikolo-config/lib/xikolo/config.yml",
+            "config/xikolo.test.yml"
+          ]
+        }
+      },
+      "Xikolo.metrics": {
+        "type": "Metrics Collector",
+        "description": "A utility provided by the `xikolo-common` gem for sending app-specific metrics to a pre-configured Telegraf data collector. It allows tracking custom application and engineering metrics over time.",
+        "interactions": {
+          "interaction_0": "Sends data to Telegraf [Source: gems/xikolo-common/README.md]",
+          "interaction_1": "Used by various application components to report custom events and values [Source: gems/xikolo-common/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "gems/xikolo-common/README.md"
+          ]
+        }
+      },
+      "Xikolo::S3": {
+        "type": "Internal Gem",
+        "description": "A Ruby gem that encapsulates common S3 file operations, handling AWS S3 client instantiation and configuration. It promotes a philosophy where each service manages its own files within S3 and provides helpers for interacting with S3 buckets and objects, managing uploads, and processing markup with file references.",
+        "interactions": {
+          "interaction_0": "Configures AWS S3 client using `xikolo-config`. [Source: gems/xikolo-s3/README.md]",
+          "interaction_1": "Interacts with AWS S3 buckets and objects for file storage and retrieval. [Source: gems/xikolo-s3/README.md]",
+          "interaction_2": "Receives upload references from the frontend for processing. [Source: gems/xikolo-s3/README.md]",
+          "interaction_3": "Provides `Xikolo::S3.stub_responses!` for testing S3 interactions. [Source: gems/xikolo-s3/README.md]"
+        },
+        "techDebt": [
+          "`Xikolo::S3::SingleFileUpload` is deprecated; `UploadByUri` should be used for new implementations. [Source: gems/xikolo-s3/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-s3/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nrequire 'active_support'\nrequire 'active_support/core_ext'\nrequire 'aws-sdk-s3'\nrequire 'uuid4'\nrequire 'xikolo/config'\n\nmodule Xikolo\n  module S3\n    class << self\n      def bucket_for(name)\n        configured_name = bucket_config[name.to_s]\n        if configured_name.blank?\n          raise ArgumentError.new \\\n            \"Configure the #{name} bucket in Xikolo.config.s3['buckets']!\"\n        end\n        resource.bucket configured_name\n      end\n\n      def object(uri)\n        parsed = URI.parse uri\n        unless parsed.scheme == 's3'\n          raise \"unknown storage schema in uri: #{uri}\"\n        end\n\n        resource.bucket(parsed.host).object(parsed.path[1..].to_s)\n      end\n\n      def resource\n        @resource ||= Aws::S3::Resource.new \\\n          client: (Aws::S3::Client.new(client_config).tap do |client|\n            client.handlers.add(Seahorse::MnemosyneHandler, step: :build) if defined?(::Mnemosyne)\n          end)\n      end\n\n      def stub_respon...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 12,
+              "code": "# frozen_string_literal: true\n\nclass S3FileDeletionJob < ApplicationJob\n  queue_as :default\n  queue_with_priority :eventual\n\n  def perform(uri)\n    Xikolo::S3.object(uri).delete if uri.present?\n  rescue URI::InvalidURIError, ArgumentError\n    # No valid URI, no deletion\n  rescue Aws::S3::Errors::ServiceError => e\n    ::Mnemosyne.attach_error(e)\n    ::Sentry.capture_exception(e)\n  end\nend",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 46,
+              "code": "# frozen_string_literal: true\n\nrequire 'active_model'\n\nmodule Xikolo\n  module S3\n    class Markup < ActiveModel::Type::Value\n      attr_reader :uploads\n\n      def initialize(uploads: nil)\n        @uploads = uploads\n        super()\n      end\n\n      def type\n        :xikolo_s3_markup\n      end\n\n      def cast_value(value)\n        Field.new(value)\n      end\n\n      def serialize(value)\n        value.to_s.presence\n      end\n\n      class Field\n        def initialize(markup)\n          @markup = markup\n        end\n\n        def file_refs\n          S3.extract_file_refs(@markup)\n        end\n\n        def url_mapping\n          media_refs[:url_mapping]\n        end\n\n        def other_files\n          media_refs[:other_files]\n        end\n\n        def external\n          @external ||= Xikolo::S3.externalize_file_refs(@markup, public: true)\n        end\n\n        def to_s\n          @markup\n        end\n\n        def to_hash\n          {\n            'markup' => @markup,\n            'url_mapping' => url_mapping,...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 30
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "Puma": {
+        "type": "Application Server",
+        "description": "The primary web server for the Rails application, configured for multi-threaded and multi-worker operation. It uses `preload_app!` for memory optimization and manages database connections across worker forks.",
+        "interactions": {
+          "interaction_0": "Serves HTTP requests for the Rails application [Source: Gemfile, config/puma.rb]",
+          "interaction_1": "Manages ActiveRecord database connections during worker lifecycle [Source: config/puma.rb]",
+          "interaction_2": "Integrates with Msgr to stop RabbitMQ client connections before forking [Source: config/puma.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/puma.rb",
+            "config/puma.production.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 24,
+              "code": "# frozen_string_literal: true\n\nrequire 'etc'\n\nenvironment 'production'\n\npreload_app!\n\ntc = ENV.fetch('CONCURRENCY', ENV.fetch('RAILS_MAX_THREADS', 16))\nthreads tc, tc\nworkers ENV.fetch('WORKERS', Etc.nprocessors.clamp(2, 8))\n\nbefore_fork do\n  ActiveRecord::Base.connection.disconnect!\n  Msgr.client.stop if defined?(Msgr)\nend\n\non_worker_boot do\n  ActiveSupport.on_load(:active_record) do\n    ActiveRecord::Base.establish_connection\n  end\nend\n\nplugin :tmp_restart",
+              "source": "config/puma.production.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/puma.production.rb",
+              "relevance": 11
+            },
+            {
+              "path": "config/puma.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/account/config/puma.production.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Delayed Job": {
+        "type": "Background Job Processor",
+        "description": "The Active Job queue adapter used for processing background tasks asynchronously, such as sending emails.",
+        "interactions": {
+          "interaction_0": "Processes jobs enqueued via Active Job [Source: config/application.rb]",
+          "interaction_1": "Utilizes a dedicated 'mails' queue for email delivery [Source: config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "config/application.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 41,
+              "code": "const addErrorModalListener = () => {\n  document.addEventListener('click', (event) => {\n    if (!event.target.matches('[data-id=\"show-report-job-error-modal\"]'))\n      return;\n\n    document.querySelector(\n      '[data-id=\"report-job-error-modal-body\"]',\n    ).innerHTML = event.target.dataset.error;\n  });\n};\n\nconst fetchReportsJobs = () =>\n  fetch('/reports')\n    .then((response) => {\n      if (!response.ok) throw new Error(response.statusText);\n      return response.text();\n    })\n    .then((html) => {\n      document.querySelector('[data-id=\"report-jobs\"]').innerHTML = html;\n    });\n\nconst pollReportJobs = () => {\n  fetchReportsJobs().finally(() => {\n    setTimeout(pollReportJobs, 10000);\n  });\n};\n\nready(() => {\n  const reportJobsElement = document.querySelector('[data-id=\"report-jobs\"]');\n\n  if (!reportJobsElement) return;\n\n  addErrorModalListener();\n\n  pollReportJobs();\n});",
+              "source": "app/assets/admin/reports/report-jobs.js"
+            },
+            {
+              "startLine": 3,
+              "endLine": 18,
+              "code": "class ApplicationJob < ActiveJob::Base\n  queue_as 'default'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Allow a regular job to run for 20 minutes, which is the delayed gem default.\n  def max_run_time\n    20.minutes\n  end\n\n  # Automatically retry jobs that encountered a deadlock.\n  # retry_on ActiveRecord::Deadlocked\n\n  # Most jobs are safe to ignore if the underlying records are no longer available.\n  # discard_on ActiveJob::DeserializationError\n\n  # Should be used to indicate explicit retries to ActiveJob.\n  # This error is ignored by Sentry.\n  class ExpectedRetry < StandardError; end",
+              "source": "app/assets/admin/reports/report-jobs.js"
+            },
+            {
+              "startLine": 3,
+              "endLine": 13,
+              "code": "class LongRunningApplicationJob < ApplicationJob\n  queue_as 'long_running'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Long-running jobs are allowed to run for 10 hours, which is the globally\n  # configured maximum runtime.\n  def max_run_time\n    10.hours\n  end\n\n  def max_attempts\n    5\n  end\nend",
+              "source": "app/assets/admin/reports/report-jobs.js"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/long_running_application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Grape": {
+        "type": "API Framework",
+        "description": "A Rack-based API framework used to build public and internal APIs for the main application, mounted at `/api`.",
+        "interactions": {
+          "interaction_0": "Defines API endpoints for the main application [Source: Gemfile]",
+          "interaction_1": "Integrates with `grape-entity` for API response serialization [Source: Gemfile]"
+        },
+        "techDebt": [
+          "Version constraint `< 2.3` due to breaking changes with deprecated API::V2 [Source: Gemfile]"
+        ],
+        "provenance": {
+          "sources": [
+            "Gemfile"
+          ]
+        }
+      },
+      "Dockerignore": {
+        "type": "Configuration",
+        "description": "Specifies files and directories to be excluded from the Docker build context, optimizing image size and build times by only including necessary application components. It's configured to include specific application and service directories while excluding others.",
+        "interactions": {
+          "interaction_0": "Interacts with Docker build processes to filter context."
+        },
+        "techDebt": [
+          "Extensive use of '!' include rules can make the file complex and potentially error-prone to maintain. A more explicit `COPY` strategy in Dockerfiles might be clearer."
+        ],
+        "provenance": {
+          "sources": [
+            ".dockerignore"
+          ]
+        }
+      },
+      "EnvFile": {
+        "type": "Configuration",
+        "description": "Manages environment variables for local development (`.env`) and Dockerized environments (`.env.docker`), defining settings like application ports and database connection strings.",
+        "interactions": {
+          "interaction_0": "Provides environment variables to `Procfile` for local execution.",
+          "interaction_1": "Provides environment variables to Docker Compose services for container configuration."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            ".env",
+            ".env.docker"
+          ]
+        },
+        "codeImplementation": {
+          "sourceFiles": [],
+          "codeBlocks": [],
+          "implementationStrategy": "static_fallback",
+          "confidence": 0.3
+        }
+      },
+      "PumaConfiguration": {
+        "type": "Web Server Configuration",
+        "description": "Configures the Puma web server for both development (`config/puma.rb`) and production (`config/puma.production.rb`) environments. It manages thread and worker counts, port binding, application preloading (`preload_app!`), and graceful handling of database and message queue connections during worker forks.",
+        "interactions": {
+          "interaction_0": "Serves the Rails application (web and microservices).",
+          "interaction_1": "Disconnects from `ActiveRecord::Base` and `Msgr.client` before forking workers.",
+          "interaction_2": "Re-establishes `ActiveRecord::Base` connection after worker boot."
+        },
+        "techDebt": [
+          "The presence of both Puma and Unicorn configurations might indicate a legacy setup or a need to consolidate on a single application server for consistency and reduced maintenance overhead."
+        ],
+        "provenance": {
+          "sources": [
+            "config/puma.rb",
+            "config/puma.production.rb"
+          ]
+        }
+      },
+      "UnicornConfiguration": {
+        "type": "Web Server Configuration",
+        "description": "Configures the Unicorn web server, specifying worker processes, logging, application preloading, and connection handling during forks. It also includes logic for graceful restarts by killing old processes.",
+        "interactions": {
+          "interaction_0": "Serves the Rails application.",
+          "interaction_1": "Disconnects from `ActiveRecord::Base` before forking workers.",
+          "interaction_2": "Re-establishes `ActiveRecord::Base` connection after worker boot.",
+          "interaction_3": "Manages graceful restarts by signaling old Unicorn processes."
+        },
+        "techDebt": [
+          "The presence of both Puma and Unicorn configurations might indicate a legacy setup or a need to consolidate on a single application server for consistency and reduced maintenance overhead."
+        ],
+        "provenance": {
+          "sources": [
+            "config/unicorn.rb"
+          ]
+        }
+      },
+      "DockerBakeHCL": {
+        "type": "Docker Build Definition",
+        "description": "An HCL file used with `docker buildx bake` to define multi-platform Docker image builds for base images like `ruby-base`, `ruby-base-node`, and `ruby-base-chrome`, facilitating a consistent and efficient base layer for all services.",
+        "interactions": {
+          "interaction_0": "Defines base images used by service-specific Dockerfiles (e.g., `account.Dockerfile`, `web.Dockerfile`).",
+          "interaction_1": "Utilizes `CI_REGISTRY_IMAGE` and `TAG` variables for image naming and versioning."
+        },
+        "techDebt": [
+          "The actual Dockerfiles for services are not provided, making it difficult to fully assess the build process and dependencies."
+        ],
+        "provenance": {
+          "sources": [
+            "docker-bake.hcl",
+            "docker/README.md"
+          ]
+        }
+      },
+      "DockerComposeBackground": {
+        "type": "Docker Compose Service Definition",
+        "description": "Defines shared infrastructure services required by the Xikolo platform, including PostgreSQL, RabbitMQ, Redis (for cache and Sidekiq), Minio (S3-compatible storage), and Mailpit (email testing). Each service includes health checks and network configurations.",
+        "interactions": {
+          "interaction_0": "Provides database services to all application components.",
+          "interaction_1": "Provides message queuing for inter-service communication and background jobs.",
+          "interaction_2": "Provides caching and job queue storage for Redis-dependent services.",
+          "interaction_3": "Provides S3-compatible object storage.",
+          "interaction_4": "Provides an email testing server for development."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.background.yml"
+          ]
+        }
+      },
+      "DockerComposeInit": {
+        "type": "Docker Compose Service Definition",
+        "description": "Defines initialization services that run once during deployment, specifically for database migrations (`init-database`) and loading initial permissions (`init-permissions`). These services ensure the application's foundational data is set up correctly before other services start.",
+        "interactions": {
+          "interaction_0": "Depends on `PostgreSQL`, `RabbitMQ`, `RedisCache`, `RedisSidekiq` being healthy.",
+          "interaction_1": "Runs database migrations for the `xikolo-web` application.",
+          "interaction_2": "Loads permissions for the `xikolo-account` service.",
+          "interaction_3": "Ensures `init-database` completes successfully before `init-permissions` starts."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.init.yml"
+          ]
+        }
+      },
+      "DockerComposeService": {
+        "type": "Docker Compose Service Definition",
+        "description": "A generic representation for Docker Compose definitions of individual microservices (e.g., Account, Course, News, Notification, Pinboard, Quiz, TimeEffort). Each service typically includes a server, Sidekiq worker, and sometimes a message queue listener, mounting service-specific configuration files and exposing ports.",
+        "interactions": {
+          "interaction_0": "Builds images from service-specific Dockerfiles.",
+          "interaction_1": "Uses environment variables from `.env`.",
+          "interaction_2": "Connects to `PostgreSQL`, `RabbitMQ`, `RedisCache`, `RedisSidekiq`.",
+          "interaction_3": "Mounts `xikolo.yml` and service-specific configuration files.",
+          "interaction_4": "Exposes ports for API access (e.g., `3100:80` for account-server)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.account.yml",
+            "docker/compose.course.yml",
+            "docker/compose.news.yml",
+            "docker/compose.notification.yml",
+            "docker/compose.pinboard.yml",
+            "docker/compose.quiz.yml",
+            "docker/compose.timeeffort.yml"
+          ]
+        }
+      },
+      "DockerComposeWeb": {
+        "type": "Docker Compose Service Definition",
+        "description": "Defines the Docker Compose services for the main `Xikolo::Web` application, including the web server, Delayed Job worker, message queue listener, and Sidekiq worker. It builds from a specific Dockerfile, mounts configuration, and exposes the primary application port.",
+        "interactions": {
+          "interaction_0": "Builds image from `docker/files/web.Dockerfile`.",
+          "interaction_1": "Uses environment variables from `.env`.",
+          "interaction_2": "Connects to `PostgreSQL`, `RabbitMQ`, `RedisCache`, `RedisSidekiq`.",
+          "interaction_3": "Mounts `xikolo.yml` and `xikolo/web.yml` configuration files.",
+          "interaction_4": "Exposes port `3000:80` for the web server."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.web.yml"
+          ]
+        }
+      },
+      "DockerComposeNginx": {
+        "type": "Docker Compose Service Definition",
+        "description": "Defines the Nginx reverse proxy service, which routes incoming requests to the appropriate backend web and microservices. It uses a specific Nginx image and mounts a configuration template.",
+        "interactions": {
+          "interaction_0": "Routes traffic to `DockerComposeWeb` and `DockerComposeService` instances.",
+          "interaction_1": "Exposes ports `8000:80` and `8443:443` for external access."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.yml"
+          ]
+        }
+      },
+      "DockerComposeMain": {
+        "type": "Docker Compose Orchestrator",
+        "description": "The top-level Docker Compose file that orchestrates the entire Xikolo platform by including all background, initialization, web, microservice, and Nginx compose definitions. It creates a unified deployment of the distributed system.",
+        "interactions": {
+          "interaction_0": "Includes `DockerComposeBackground`, `DockerComposeInit`, `DockerComposeWeb`, `DockerComposeService` (for all microservices), and `DockerComposeNginx`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.yml"
+          ]
+        }
+      },
+      "PostgreSQL": {
+        "type": "Database Service",
+        "description": "The primary relational database used for data persistence across all Xikolo applications and services. Configured with health checks and persistent volumes in Docker Compose.",
+        "interactions": {
+          "interaction_0": "Accessed by `DockerComposeWeb` and all `DockerComposeService` instances.",
+          "interaction_1": "Initialized by `init-database` service."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.background.yml",
+            "docs/app/deployment/opensource/index.md"
+          ]
+        }
+      },
+      "RabbitMQ": {
+        "type": "Message Broker",
+        "description": "Provides asynchronous messaging capabilities for inter-service communication and background job queuing. Configured with health checks in Docker Compose.",
+        "interactions": {
+          "interaction_0": "Used by `web-msgr` and `*-msgr` services for message processing.",
+          "interaction_1": "Accessed by `DockerComposeWeb` and all `DockerComposeService` instances for message publishing/consuming."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.background.yml",
+            "docs/app/deployment/opensource/index.md"
+          ]
+        }
+      },
+      "RedisCache": {
+        "type": "Caching Service",
+        "description": "A Redis instance dedicated to application caching, improving performance by storing frequently accessed data. Configured with health checks in Docker Compose.",
+        "interactions": {
+          "interaction_0": "Accessed by `DockerComposeWeb` and all `DockerComposeService` instances for caching operations."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.background.yml",
+            "docs/app/deployment/opensource/index.md"
+          ]
+        }
+      },
+      "RedisSidekiq": {
+        "type": "Job Queue Service",
+        "description": "A Redis instance specifically used by Sidekiq for managing background job queues. Configured with health checks in Docker Compose.",
+        "interactions": {
+          "interaction_0": "Accessed by `web-sidekiq` and `*-sidekiq` services for job queuing and processing."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.background.yml",
+            "docs/app/deployment/opensource/index.md"
+          ]
+        }
+      },
+      "Minio": {
+        "type": "Object Storage Service",
+        "description": "An S3-compatible object storage server used for storing files, configured with persistent volumes in Docker Compose.",
+        "interactions": {
+          "interaction_0": "Provides file storage capabilities to application services that require S3-compatible storage."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.background.yml",
+            "docs/app/deployment/opensource/index.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "def self.delete_all\n    Xikolo::S3.resource.buckets.each do |bucket|\n      # First, delete all objects inside the bucket\n      bucket.objects.each(&:delete)\n\n      # Then, delete the empty bucket\n      bucket.delete\n    end\n  end",
+              "source": "integration/features/support/minio.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 34,
+              "code": "def self.setup\n    uploads = Xikolo::S3.resource.bucket 'xikolo-uploads'\n    uploads.create unless uploads.exists?\n    uploads.policy.put policy: JSON.dump(YAML.safe_load(<<~POLICY))\n      Id: uploads\n      Version: '2012-10-17'\n      Statement:\n        - Sid: content\n          Action:\n            - 's3:GetObject'\n            - 's3:DeleteObject'\n          Effect: Allow\n          Resource:\n            - 'arn:aws:s3:::#{uploads.name}/*'\n          Principal: {'AWS': '*'}\n    POLICY\n\n    public = Xikolo::S3.resource.bucket 'xikolo-public'\n    public.create unless public.exists?\n    public.policy.put policy: JSON.dump(YAML.safe_load(<<~POLICY))\n      Id: public\n      Version: '2012-10-17'\n      Statement:\n        - S...",
+              "source": "integration/features/support/minio.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "integration/features/support/minio.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Mailpit": {
+        "type": "Email Testing Service",
+        "description": "A local SMTP server and web interface for capturing and inspecting emails during development, preventing actual emails from being sent.",
+        "interactions": {
+          "interaction_0": "Receives emails sent by application services for testing purposes."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.background.yml"
+          ]
+        }
+      },
+      "Nginx": {
+        "type": "Reverse Proxy / Load Balancer",
+        "description": "Serves as the entry point for external traffic, routing requests to the appropriate backend web and microservices. It's configured with a custom template and exposes HTTP/HTTPS ports.",
+        "interactions": {
+          "interaction_0": "Receives incoming HTTP/HTTPS requests.",
+          "interaction_1": "Forwards requests to `web-server` and `*-server` services based on routing rules."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.yml"
+          ]
+        }
+      },
+      "Xikolo.config (app/xikolo.yml)": {
+        "type": "Configuration Store",
+        "description": "A centralized YAML-based configuration file providing a wide range of settings for global options, platform features, course behavior, certificates, helpdesk, video, authentication, products, statistics, assets, layout, SEO, mobile apps, social media, and various integrations. It supports environment-specific overrides.",
+        "interactions": {
+          "interaction_0": "Provides `locales` settings for I18n. [Source: app/xikolo.yml]",
+          "interaction_1": "Defines `email.smtp` server for outgoing emails. [Source: app/xikolo.yml]",
+          "interaction_2": "Enables/disables `beta_features`, `gamification`, `voucher`, `open_mode`, `recaptcha`, `moochub_api`, `portal_api`, `transpipe`, `open_badges`, and `persisted_learning_evaluation`. [Source: app/xikolo.yml]",
+          "interaction_3": "Configures `asset_host` and `csp` headers. [Source: app/xikolo.yml]",
+          "interaction_4": "Specifies `imgproxy_url` for image processing. [Source: app/xikolo.yml]",
+          "interaction_5": "Controls `header`, `footer`, and `profile` menu content and visibility. [Source: app/xikolo.yml]",
+          "interaction_6": "Defines `proctoring_smowl_options` thresholds. [Source: app/xikolo.yml]",
+          "interaction_7": "Used by `ActionController::Base` to set `asset_host` during application initialization. [Source: config/application.rb]",
+          "interaction_8": "Can be overridden by `config/xikolo.test.yml` for specific environments. [Source: config/xikolo.test.yml, config/xikolo.test.yml]",
+          "interaction_9": "Can be overridden by local development files (`~/.xikolo.development.yml` or `config/xikolo.development.yml`). [Source: docs/app/development/application_configuration/index.md]"
+        },
+        "techDebt": [
+          "Extensive single YAML file for all configurations might become unwieldy for very large applications, though it's well-structured with comments. [Source: app/xikolo.yml]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/xikolo.yml",
+            "config/xikolo.test.yml",
+            "config/application.rb",
+            "app/xikolo.yml",
+            "docs/app/development/application_configuration/index.md"
+          ]
+        }
+      },
+      "Secrets (config/secrets.yml)": {
+        "type": "Configuration Store (Sensitive)",
+        "description": "Manages sensitive application secrets, including `secret_key_base` for cookie integrity, credentials for external services (e.g., imgproxy, Smowl), and shared secrets for various bridge APIs (lanalytics, shop, transpipe, portal_api, chatbot).",
+        "interactions": {
+          "interaction_0": "Provides `secret_key_base` for Rails cookie signing. [Source: config/secrets.yml]",
+          "interaction_1": "Supplies `imgproxy_key` and `imgproxy_salt` for signing image processing URLs. [Source: config/secrets.yml]",
+          "interaction_2": "Stores `smowl_entity`, `smowl_license_key`, `smowl_password` for proctoring integration. [Source: config/secrets.yml]",
+          "interaction_3": "Contains `chatbot_bridge_private_key` and `chatbot_bridge_shared_secret` for chatbot integration. [Source: config/secrets.yml]",
+          "interaction_4": "Holds shared secrets for `bridge_lanalytics`, `bridge_shop`, `bridge_transpipe`, and `portal_api` authentication. [Source: config/secrets.yml]",
+          "interaction_5": "Manages `open_badge_private_key` for Open Badge signing. [Source: config/secrets.yml]",
+          "interaction_6": "Stores `jwt_hmac_secret` for external booking systems. [Source: config/secrets.yml]",
+          "interaction_7": "Provides `recaptcha_v3` and `recaptcha_v2` keys for reCAPTCHA integration. [Source: config/secrets.yml]"
+        },
+        "techDebt": [
+          "Development and test environments contain hardcoded private keys and secrets, which are explicitly marked as 'NOT meant to be used in production'. This is acceptable for non-production but highlights the need for secure environment variable management in production. [Source: config/secrets.yml]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/secrets.yml",
+            "config/secrets.yml"
+          ]
+        }
+      },
+      "Service Endpoints (config/services.yml)": {
+        "type": "Configuration Store (Microservices)",
+        "description": "Defines the URLs for various microservices that the main web application interacts with, such as account, course, news, notification, quiz, etc. These can be configured via environment variables or default to localhost for development.",
+        "interactions": {
+          "interaction_0": "Provides endpoint URLs for `account`, `course`, `learnanalytics`, `news`, `notification`, `pinboard`, `quiz`, `quizimporter`, and `timeeffort` services. [Source: config/services.yml]",
+          "interaction_1": "Allows environment variables (`ENV['XIKOLO_SERVICE_ACCOUNT']`, etc.) to override default `localhost` URLs. [Source: config/services.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/services.yml",
+            "config/services.yml"
+          ]
+        }
+      },
+      "Redis Configuration (Cache & Sidekiq)": {
+        "type": "Configuration Store (External Service)",
+        "description": "Separate YAML files (`config/cache_redis.yml`, `config/sidekiq_redis.yml`) define connection parameters for Redis instances used for caching and Sidekiq background jobs. This includes URL, database index, and connection timeouts.",
+        "interactions": {
+          "interaction_0": "Configures Redis `url` and `db` for caching. [Source: config/cache_redis.yml]",
+          "interaction_1": "Configures Redis `url`, `db`, `pool_timeout`, and `network_timeout` for Sidekiq. [Source: config/sidekiq_redis.yml]",
+          "interaction_2": "Utilizes `ENV.fetch(\"CACHE_REDIS_URL\", nil)` and `ENV.fetch(\"SIDEKIQ_REDIS_URL\", nil)` for dynamic URL configuration. [Source: config/cache_redis.yml, config/sidekiq_redis.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/cache_redis.yml",
+            "config/sidekiq_redis.yml",
+            "config/cache_redis.yml",
+            "config/sidekiq_redis.yml"
+          ]
+        }
+      },
+      "Rake Tasks": {
+        "type": "Utility/Maintenance",
+        "description": "A collection of Rake tasks defined in `Rakefile` for various development, CI, and maintenance operations, including database setup, API documentation generation, asset management, and internationalization checks.",
+        "interactions": {
+          "interaction_0": "Loads `Xikolo::Web::Application.load_tasks` to make application-specific tasks available. [Source: Rakefile]",
+          "interaction_1": "`ci:setup` interacts with the database (`db:drop:all`, `db:create:all`, `db:schema:load`) and asset pipeline (`assets:i18n:export`). [Source: Rakefile]",
+          "interaction_2": "`api:docs` calls `Xikolo::API.make_docs!` to generate API documentation. [Source: Rakefile]",
+          "interaction_3": "`assets:brand:check` validates the existence of brand-specific asset directories based on `ENV['BRAND']`. [Source: Rakefile]",
+          "interaction_4": "`assets:i18n:export` uses `i18n-js` gem to export translations. [Source: Rakefile]",
+          "interaction_5": "`i18n:missing_keys` inspects `I18n.backend` for translation completeness. [Source: Rakefile]"
+        },
+        "techDebt": [
+          "The `i18n:missing_keys` task directly accesses `I18n.backend.send(:init_translations)` and `I18n.backend.send(:translations)`, which relies on internal implementation details of the `i18n` gem and might be brittle to future updates. [Source: Rakefile]"
+        ],
+        "provenance": {
+          "sources": [
+            "Rakefile"
+          ]
+        }
+      },
+      "Middleware::NewsTracker": {
+        "type": "Middleware",
+        "description": "A custom Rack middleware for tracking news-related activities or requests within the application.",
+        "interactions": {
+          "interaction_0": "Intercepts incoming requests. [Source: config/application.rb]",
+          "interaction_1": "Performs custom tracking logic for news-related operations. [Source: config/application.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/application.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 35,
+              "code": "    def initialize(app)\n      @app = app\n    end\n\n    def call(env)\n      request = Rack::Request.new env\n\n      if news_tracking_info? request\n        announcement = UUID4.try_convert request.params['tracking_id']\n        user = UUID4.try_convert request.params['tracking_user']\n\n        mark_as_read! announcement, user if announcement && user\n      end\n\n      @app.call env\n    end\n\n    private\n\n    def news_tracking_info?(request)\n      request.params['tracking_type'] == 'news' && %w[tracking_user tracking_id].all? {|key| request.params.key? key }\n    end\n\n    def mark_as_read!(announcement_id, user_id)\n      # Send the request to mark the announcement as read for the given user.\n      #\n      # NOTE: We're not calling `value` here, so that the request is executed in parallel\n      # while the actual application is run. Also, this way we do not delay sending of the\n      # resp...",
+              "source": "lib/middleware/news_tracker.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/middleware/news_tracker.rb",
+              "relevance": 26
+            },
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/middleware/session.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Xikolo::Common": {
+        "type": "Internal Gem",
+        "description": "A foundational Ruby gem providing common utilities, shared libraries, and configurations for all Ruby-based services. It integrates Restify for inter-service communication and offers helpers for pagination and authentication. It also provides a mechanism for sending custom application metrics to Telegraf.",
+        "interactions": {
+          "interaction_0": "Integrates `Restify` for HTTP communication with other services. [Source: gems/xikolo-common/README.md]",
+          "interaction_1": "Provides `Xikolo.metrics` object to send data to Telegraf for monitoring. [Source: gems/xikolo-common/README.md]",
+          "interaction_2": "Offers helpers for authentication with the account service. [Source: gems/xikolo-common/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-common/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 24,
+              "code": "# frozen_string_literal: true\n\nrequire 'yaml'\n\nmodule Xikolo\n  module Common\n    require 'xikolo/common/api'\n    require 'xikolo/common/metrics'\n    require 'xikolo/common/secrets'\n    require 'xikolo/common/nomad'\n    require 'xikolo/common/railtie' if defined? Rails\n    require 'xikolo/common/restify'\n\n    module Auth\n      require 'xikolo/common/auth/current_user'\n      require 'xikolo/common/auth/middleware'\n    end\n\n    module Rack\n      require 'xikolo/common/rack/always_continue'\n    end\n\n    module Tracking\n      require 'xikolo/common/tracking/external_link'\n    end\n  end\nend",
+              "source": "gems/xikolo-common/lib/xikolo/common.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nrequire 'xikolo/common/auth/current_user'\n\nmodule Xikolo\n  module Common\n    module Auth\n      class Middleware\n        TOKEN_AUTH_REGEX = /^(Legacy-)?Token token=(?<token>[0-9a-f]+)$/ # rubocop:disable Lint/MixedRegexpCaptureTypes\n        SESSION_ID_REGEX = /^Xikolo-Session session_id=(?<session_id>[-0-9a-fA-F]+)$/\n\n        def initialize(app, path: '/')\n          @app = app\n          @path = path\n        end\n\n        def call(env)\n          env['current_user'] = current_user_promise(env) if env['PATH_INFO'].to_s.start_with? @path\n\n          @app.call(env)\n        end\n\n        def current_user_promise(env)\n          Xikolo.api(:account).value!.rel(:session).get({\n            id: session_id(env),\n            embed: 'user,permissions,features',\n            context: context_id(env),\n          }).then do |session|\n            Xikolo::Common::Auth::CurrentUser.from_session session\n          end\n        end",
+              "source": "gems/xikolo-common/lib/xikolo/common.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\nrequire 'active_support/concern'\n\nmodule Xikolo\n  module Common\n    # Load configurations from `/local/config` too, since that directory\n    # is used by Nomad to inject templates, and we will not need to bind\n    # mount all config additionally into `/app/config`.\n    module Nomad\n      extend ActiveSupport::Concern\n\n      included do\n        prepend LocalConfigFor\n\n        unless Rails.env.local?\n          config.paths['config'].unshift '/local/config'\n          config.paths['config/database'].unshift '/local/config/database.yml'\n          config.paths['config/secrets'] << '/local/config'\n        end\n      end\n\n      module LocalConfigFor\n        def lookup_config_for(name)\n          return name if name.is_a?(Pathname)\n\n          files = paths['config'].existent.map {|path| Pathname.new(path).join(\"#{name}.yml\") }\n          if (file = files.find(&:file?))\n            $stdout.puts \"Loading config for #{name}: #{file}\" if Rails.env.production?\n",
+              "source": "gems/xikolo-common/lib/xikolo/common.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common.rb",
+              "relevance": 37
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/nomad.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "Xikolo::Config": {
+        "type": "Internal Gem",
+        "description": "A Ruby gem acting as a simple key-value store for site-specific configuration. It reads values from YAML files, allowing environment-specific overrides for settings like brand, base URL, mail sender, and locales. It supports a hierarchical loading order for configuration files.",
+        "interactions": {
+          "interaction_0": "Reads configuration from `xikolo.yml` files, respecting Rails environments. [Source: gems/xikolo-config/README.md]",
+          "interaction_1": "Provides `Xikolo.base_url` as an `Addressable::URI` object for URL generation. [Source: gems/xikolo-config/README.md]",
+          "interaction_2": "Integrates with Salt for managing instance-specific values in production. [Source: gems/xikolo-config/README.md]"
+        },
+        "techDebt": [
+          "Explicit instruction: 'Do not add new config values in this gem, unless explicitly decided by the team!' to prevent uncontrolled growth. [Source: gems/xikolo-config/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-config/README.md",
+            "gems/xikolo-config/lib/xikolo/config.yml",
+            "gems/xikolo-config/lib/xikolo/config.development.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nrequire 'active_support/configurable'\nrequire 'active_support/string_inquirer'\nrequire 'addressable'\nrequire 'erb'\nrequire 'yaml'\n\nmodule Xikolo\n  include ActiveSupport::Configurable",
+              "source": "gems/xikolo-config/lib/xikolo/config.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 32,
+              "code": "  config_accessor :site, :brand, :base_url\n\n  class Configuration < ActiveSupport::Configurable::Configuration\n    def load_file(path)\n      if (data = parse_file(path))\n        merge(data)\n      end\n    end\n\n    def parse_file(path)\n      $stdout.puts \"[xikolo.config] Load file: #{path}\" if ENV['RAILS_ENV'] == 'production'\n      YAML.safe_load(ERB.new(::File.read(path)).result)\n    end\n\n    def merge(opts)\n      opts.each do |k, v|\n        send :\"#{k}=\", v\n      end\n\n      compile_methods!\n    end\n  end",
+              "source": "gems/xikolo-config/lib/xikolo/config.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 39,
+              "code": "  class GlobalConfiguration < Configuration\n    %w[site brand].each do |string_inquirer_option|\n      class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1 # rubocop:disable Style/DocumentDynamicEvalDefinition\n        # StringInquirer the string argument\n        def #{string_inqu...",
+              "source": "gems/xikolo-config/lib/xikolo/config.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-config/lib/xikolo/config.rb",
+              "relevance": 37
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/secrets.rb",
+              "relevance": 26
+            },
+            {
+              "path": "gems/xikolo-config/spec/lib/xikolo/config_spec.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Xikolo::Sidekiq": {
+        "type": "Internal Gem",
+        "description": "A Ruby gem responsible for setting up Sidekiq in Rails projects, including Redis connection configuration and integration with ActiveJob. It also facilitates the scheduling of cron jobs via `sidekiq-cron` by parsing a dedicated `cron.yml` file.",
+        "interactions": {
+          "interaction_0": "Configures Sidekiq to use Redis, with connection details from `config/sidekiq_redis.yml`. [Source: gems/xikolo-sidekiq/README.md]",
+          "interaction_1": "Integrates with ActiveJob for background processing. [Source: gems/xikolo-sidekiq/README.md]",
+          "interaction_2": "Loads cron job schedules from `config/cron.yml` for `sidekiq-cron`. [Source: gems/xikolo-sidekiq/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-sidekiq/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 8,
+              "code": "# frozen_string_literal: true\n\nrequire 'yaml'\n\nmodule Xikolo\n  module Sidekiq\n    require 'xikolo/sidekiq/railtie' if defined? Rails\n  end\nend",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb",
+              "relevance": 37
+            },
+            {
+              "path": "integration/features/support/lib/server.rb",
+              "relevance": 19
+            },
+            {
+              "path": "integration/features/support/lib/initializers/integration_sidekiq.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Xikolo::UI::Form": {
+        "type": "Internal Gem",
+        "description": "A custom internal Ruby gem for UI form functionalities. Specific details are not available in the provided context.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 33,
+              "code": "# frozen_string_literal: true\n\nrequire 'active_model'\nrequire 'active_model/type/hash'\nrequire 'active_model/type/list'\nrequire 'active_model/type/markup'\nrequire 'active_model/type/new_upload'\nrequire 'active_model/type/single_line_string'\nrequire 'active_model/type/subform'\nrequire 'active_model/type/text'\nrequire 'active_model/type/uri'\nrequire 'active_model/type/uuid'\nrequire 'active_model/type/upload'\nrequire 'active_model/type/xikolo_string'\n\nmodule XUI\n  class Form\n    require 'xui/form/attribute_type'\n    require 'xui/form/dynamic_attributes'\n    require 'xui/form/errors'\n    require 'xui/form/hash_fields'\n    require 'xui/form/naming'\n    require 'xui/form/persistence'\n    require 'xui/form/processors'\n    require 'xui/form/type_extension'\n\n    include ActiveModel::Model\n    include ActiveModel::Attributes\n\n    include AttributeType\n    include DynamicAttributes\n    include Errors\n    include HashFields\n    include Persistence\n    include Processors\n    extend Naming",
+              "source": "gems/xui-form/lib/xui/form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xui-form/lib/xui/form.rb",
+              "relevance": 33
+            },
+            {
+              "path": "app/components/report/form.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/format/pretty_json.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "check-gem-versions": {
+        "type": "Utility Script",
+        "description": "A Ruby script that parses `Gemfile.lock` files across the main application and all microservices to identify and report inconsistencies in gem versions. It supports various options for reporting, exclusion, and exit codes.",
+        "interactions": {
+          "interaction_0": "Reads `Gemfile.lock` files from the `web` application and all `services/*` directories. [Source: scripts/check-gem-versions]",
+          "interaction_1": "Outputs reports in console or CSV format. [Source: scripts/check-gem-versions]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "scripts/check-gem-versions"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Loads and initializes Rails frameworks and gems [Source: config/application.rb]",
+      "interaction_1": "Configures `ActiveJob` to use `:delayed` queue adapter [Source: config/application.rb]",
+      "interaction_2": "Sets `ActionMailer` default URL options based on `Xikolo.base_url` [Source: config/application.rb]",
+      "interaction_3": "Defines `I18n` available locales, default locale, and fallbacks [Source: config/application.rb]",
+      "interaction_4": "Configures `Rack::Attack`, `Middleware::NewsTracker`, and `Rack::Cors` middleware [Source: config/application.rb]",
+      "interaction_5": "Integrates `Sentry` and `Telegraf` for monitoring [Source: config/application.rb]",
+      "interaction_6": "Configures `ViewComponent` and `Lookbook` for UI development and documentation [Source: config/application.rb]",
+      "interaction_7": "Loads brand-specific initializers and library paths based on `ENV['BRAND']` [Source: config/application.rb]",
+      "interaction_8": "Handles exceptions by mapping them to HTTP status codes via `ErrorsController` [Source: config/application.rb]",
+      "interaction_9": "Includes `FeatureTogglesHelper` for feature flag evaluation [Source: app/controllers/application_controller.rb]",
+      "interaction_10": "Includes `Login` module for authentication-related helpers [Source: app/controllers/application_controller.rb]",
+      "interaction_11": "Includes `Locale` module for internationalization support [Source: app/controllers/application_controller.rb]",
+      "interaction_12": "Includes `Status` module for specific error classes and handling [Source: app/controllers/application_controller.rb]",
+      "interaction_13": "Uses `Xikolo::Common::Auth::Middleware` for handling authentication flow [Source: app/controllers/application_controller.rb]",
+      "interaction_14": "Fetches `current_user` from `request.env` or `Xikolo::Common::Auth::CurrentUser` [Source: app/controllers/application_controller.rb]",
+      "interaction_15": "Interacts with `Xikolo.api(:account)` to create new sessions for authenticated users [Source: app/controllers/application_controller.rb]",
+      "interaction_16": "Clears `Acfs` queue before each action [Source: app/controllers/application_controller.rb]",
+      "interaction_17": "Manages user authorization with `authorize!` and `authorize_any!` methods [Source: app/controllers/application_controller.rb]",
+      "interaction_18": "Handles redirects and stores/forgets user location in cookies [Source: app/controllers/application_controller.rb]",
+      "interaction_19": "Sets the default queue for jobs to 'default' [Source: app/jobs/application_job.rb]",
+      "interaction_20": "Defines a `max_run_time` of 20 minutes for jobs [Source: app/jobs/application_job.rb]",
+      "interaction_21": "Provides `ExpectedRetry` error for explicit job retries that are ignored by Sentry [Source: app/jobs/application_job.rb]",
+      "interaction_22": "Provides a `call` class method to execute operations [Source: app/operations/application_operation.rb]",
+      "interaction_23": "Uses `ResultNegotiation` to wrap operation results, allowing clients to react to different outcomes (e.g., `success`, `failure`) [Source: app/operations/application_operation.rb]",
+      "interaction_24": "Orchestrates `webpack` and `sprockets` targets for asset compilation [Source: Makefile]",
+      "interaction_25": "Invokes `bundle exec rake assets:i18n:export` for i18n file generation [Source: Makefile]",
+      "interaction_26": "Uses `corepack yarn run build` for Webpack compilation [Source: Makefile]",
+      "interaction_27": "Uses `bundle exec rake assets:precompile` for Sprockets asset compilation [Source: Makefile]",
+      "interaction_28": "Supports `BRAND` environment variable for brand-specific builds [Source: Makefile]",
+      "interaction_29": "Starts the `web` Rails server [Source: Procfile]",
+      "interaction_30": "Initiates `yarn start` for frontend asset compilation in development [Source: Procfile]",
+      "interaction_31": "Runs `bundle exec msgr` for RabbitMQ message consumption [Source: Procfile]",
+      "interaction_32": "Starts `bundle exec sidekiq` for Sidekiq background jobs [Source: Procfile]",
+      "interaction_33": "Starts `bin/rake delayed:work` for Delayed Job background tasks [Source: Procfile]",
+      "interaction_34": "Launches individual microservices (e.g., `account`, `course`, `news`) via `overmind start` commands [Source: Procfile]",
+      "interaction_35": "Executes database migrations via `bundle exec rake db:prepare` [Source: bin/entrypoint]",
+      "interaction_36": "Starts Delayed Job workers via `bundle exec rake delayed:work` [Source: bin/entrypoint]",
+      "interaction_37": "Starts `msgr` AMQP consumer via `bundle exec msgr` [Source: bin/entrypoint]",
+      "interaction_38": "Starts `sidekiq` workers via `bundle exec sidekiq` [Source: bin/entrypoint]",
+      "interaction_39": "Starts the Puma application server via `/app/bin/thrust puma` [Source: bin/entrypoint]",
+      "interaction_40": "Sets `WORKERS`, `CONCURRENCY`, and `RAILS_MAX_THREADS` environment variables [Source: bin/entrypoint]",
+      "interaction_41": "Sets the application `brand` based on `ENV['BRAND']` [Source: config/application.rb]",
+      "interaction_42": "Includes `Xikolo::Common::Secrets` for accessing sensitive configuration [Source: config/application.rb]",
+      "interaction_43": "Includes `Xikolo::Common::Nomad` for Nomad-related configurations [Source: config/application.rb]",
+      "interaction_44": "Provides access to microservice APIs (e.g., `Xikolo.api(:account)`) [Source: app/controllers/application_controller.rb]",
+      "interaction_45": "Used by `ActionMailer` to determine default URL options [Source: config/application.rb]",
+      "interaction_46": "Used by `ActionController::Base` to set the asset host [Source: config/application.rb]",
+      "interaction_47": "Called by `ApplicationController#auth_middleware` during `around_action` [Source: app/controllers/application_controller.rb]",
+      "interaction_48": "Processes `RelayState` from SAML/OpenID Connect for session management [Source: app/controllers/application_controller.rb]",
+      "interaction_49": "Sets `xikolo_context` in the request environment [Source: app/controllers/application_controller.rb]",
+      "interaction_50": "Used by `ApplicationController#current_user` to represent the authenticated user [Source: app/controllers/application_controller.rb]",
+      "interaction_51": "Provides `logged_in?`, `anonymous?`, `allowed?`, `allowed_any?`, `feature?` methods [Source: app/controllers/application_controller.rb]",
+      "interaction_52": "Sets Sentry user context with the user's ID [Source: app/controllers/application_controller.rb]",
+      "interaction_53": "Client is stopped `before_fork` in Puma to prevent connection issues [Source: config/puma.rb]",
+      "interaction_54": "Run as a separate process via `bundle exec msgr` in `Procfile` and `bin/entrypoint` [Source: Procfile, bin/entrypoint]",
+      "interaction_55": "Configured via `config/rabbitmq.yml` using `ENV['XIKOLO_RABBITMQ_URL']` [Source: config/rabbitmq.yml]",
+      "interaction_56": "Integrated via `sentry-rails`, `sentry-ruby`, `sentry-sidekiq` gems [Source: Gemfile]",
+      "interaction_57": "Sets user context with `current_user.id` in `ApplicationController` [Source: app/controllers/application_controller.rb]",
+      "interaction_58": "Provides `sentry_meta_tags` helper for trace propagation in views [Source: app/helpers/application_helper.rb]",
+      "interaction_59": "Integrated via `telegraf` gem [Source: Gemfile]",
+      "interaction_60": "Configured in `config/application.rb` with `connect` URL and `tags` (e.g., `application: 'web'`) [Source: config/application.rb]",
+      "interaction_61": "Inserted into the Rails middleware stack in `config/application.rb` [Source: config/application.rb]",
+      "interaction_62": "Inserted into the Rails middleware stack in `config/application.rb` [Source: config/application.rb]",
+      "interaction_63": "Configured to allow specific origins (e.g., `*.openhpi.de`) and methods for resources [Source: config/application.rb]",
+      "interaction_64": "Specifically allows access to `/playlists/*` for external video players [Source: config/application.rb]",
+      "interaction_65": "Configured in `config/application.rb` with `available_locales` (`de`, `en`), `default_locale` (`en`), and `fallbacks` (`en`) [Source: config/application.rb]",
+      "interaction_66": "Used by `Rakefile` tasks (`assets:i18n:export`, `i18n:missing_keys`) for managing translation files [Source: Rakefile]",
+      "interaction_67": "Integrated with `i18n-js` gem to export translations to JSON for frontend use [Source: Rakefile, docs/app/development/local_setup/index.md]",
+      "interaction_68": "Conditionally required in `config/boot.rb` based on the Rails environment [Source: config/boot.rb]",
+      "interaction_69": "Enabled in an `after_initialize` block if `RubyVM::YJIT.enable` is defined (Ruby 3.3+) [Source: config/initializers/enable_yjit.rb]",
+      "interaction_70": "Configured in `config/application.rb` to show previews, define preview layouts, listen paths, and page paths [Source: config/application.rb]",
+      "interaction_71": "Used by `ApplicationHelper#imagecrop` to transform image URLs [Source: app/helpers/application_helper.rb]",
+      "interaction_72": "Relies on `imgproxy` gem [Source: Gemfile]",
+      "interaction_73": "Configuration for imgproxy URL and secrets are in `xikolo.yml` and `secrets.yml` [Source: docker/config/xikolo.yml, config/secrets.yml]",
+      "interaction_74": "Instantiated by `ApplicationHelper#browser_support` to provide browser-specific information [Source: app/helpers/application_helper.rb]",
+      "interaction_75": "Used to determine whether to hide browser warnings based on cookies [Source: app/helpers/application_helper.rb]",
+      "interaction_76": "Queue is cleared `before_action` in `ApplicationController` [Source: app/controllers/application_controller.rb]",
+      "interaction_77": "Used for promise-compatible interfaces in `ApplicationController` [Source: app/controllers/application_controller.rb]",
+      "interaction_78": "Exceptions (`Acfs::BadGateway`, `Acfs::ServiceUnavailable`, `Acfs::GatewayTimeout`) are mapped to HTTP status codes [Source: config/application.rb]",
+      "interaction_79": "Used by `ApplicationController#current_user` to handle `Restify::NotFound` exceptions (session expired) [Source: app/controllers/application_controller.rb]",
+      "interaction_80": "Exceptions (`Restify::BadGateway`, `Restify::ServiceUnavailable`, `Restify::GatewayTimeout`) are mapped to HTTP status codes [Source: config/application.rb]",
+      "interaction_81": "Configured as `config.active_job.queue_adapter = :delayed` in `config/application.rb` [Source: config/application.rb]",
+      "interaction_82": "Workers are started via `bin/rake delayed:work` in `Procfile` and `bin/entrypoint` [Source: Procfile, bin/entrypoint]",
+      "interaction_83": "Integrated via `delayed` gem [Source: Gemfile]",
+      "interaction_84": "Workers are started via `bundle exec sidekiq` in `Procfile` and `bin/entrypoint` [Source: Procfile, bin/entrypoint]",
+      "interaction_85": "Integrated via `sidekiq-cron` gem [Source: Gemfile]",
+      "interaction_86": "Uses Redis for job queue storage, configured via `SIDEKIQ_REDIS_URL` [Source: docker/.env]",
+      "interaction_87": "Interacts with PostgreSQL database via ActiveRecord [Source: Gemfile, config/database.yml]",
+      "interaction_88": "Uses Redis for caching [Source: Gemfile, config/cache_redis.yml]",
+      "interaction_89": "Serves requests via Puma application server [Source: Gemfile, config/puma.rb]",
+      "interaction_90": "Communicates with microservices via Grape (API endpoints) and Restify (HTTP client) [Source: Gemfile]",
+      "interaction_91": "Processes background jobs using Delayed Job [Source: Gemfile, config/application.rb]",
+      "interaction_92": "Sends metrics to Telegraf [Source: Gemfile, config/application.rb]",
+      "interaction_93": "Integrates with Sentry for error tracking [Source: Gemfile]",
+      "interaction_94": "Loads configuration from Xikolo.config [Source: config/application.rb]",
+      "interaction_95": "Handles asset serving and compilation via Sprockets [Source: Gemfile, config/application.rb]",
+      "interaction_96": "Manages authentication via Devise-related gems (bcrypt, oauth2, omniauth) [Source: Gemfile]",
+      "interaction_97": "Applies Rack::Attack for request throttling and Rack::Cors for CORS policies [Source: config/application.rb]",
+      "interaction_98": "Provides configuration values to Xikolo::Web::Application and other components [Source: config/application.rb]",
+      "interaction_99": "Reads configuration from `app/xikolo.yml` and environment-specific YAML files [Source: app/xikolo.yml, docs/app/development/application_configuration/index.md, gems/xikolo-config/README.md]",
+      "interaction_100": "Influences asset host, CSP, and various feature behaviors [Source: app/xikolo.yml, config/application.rb]",
+      "interaction_101": "Sends data to Telegraf [Source: gems/xikolo-common/README.md]",
+      "interaction_102": "Used by various application components to report custom events and values [Source: gems/xikolo-common/README.md]",
+      "interaction_103": "Manages file uploads and storage in S3 buckets [Source: gems/xikolo-s3/README.md]",
+      "interaction_104": "Provides methods to reference S3 buckets and objects [Source: gems/xikolo-s3/README.md]",
+      "interaction_105": "Supports upload processing and validation via `SingleFileUpload` and `UploadByUri` [Source: gems/xikolo-s3/README.md]",
+      "interaction_106": "Assists in processing markup fields with file references [Source: gems/xikolo-s3/README.md]",
+      "interaction_107": "Connects to RabbitMQ for message exchange [Source: Gemfile, config/rabbitmq.yml]",
+      "interaction_108": "Routes messages to specific handlers (e.g., for gamification events) [Source: config/msgr.rb]",
+      "interaction_109": "Integrates with Puma's `before_fork` hook to stop client connections gracefully [Source: config/puma.rb]",
+      "interaction_110": "Serves HTTP requests for the Rails application [Source: Gemfile, config/puma.rb]",
+      "interaction_111": "Manages ActiveRecord database connections during worker lifecycle [Source: config/puma.rb]",
+      "interaction_112": "Integrates with Msgr to stop RabbitMQ client connections before forking [Source: config/puma.rb]",
+      "interaction_113": "Intercepts incoming HTTP requests [Source: config/application.rb]",
+      "interaction_114": "Applies throttling and blacklisting rules before requests reach the application [Source: config/application.rb]",
+      "interaction_115": "Processes jobs enqueued via Active Job [Source: config/application.rb]",
+      "interaction_116": "Utilizes a dedicated 'mails' queue for email delivery [Source: config/application.rb]",
+      "interaction_117": "Processes background jobs using Redis [Source: Gemfile, config/sidekiq_redis.yml]",
+      "interaction_118": "Runs scheduled cron jobs defined in `config/cron.yml` [Source: Gemfile, gems/xikolo-sidekiq/README.md]",
+      "interaction_119": "Receives metrics from `Xikolo.metrics` [Source: gems/xikolo-common/README.md]",
+      "interaction_120": "Sends collected data to a configured Telegraf endpoint [Source: config/application.rb]",
+      "interaction_121": "Caches Ruby code for faster application startup [Source: config/boot.rb]",
+      "interaction_122": "Defines API endpoints for the main application [Source: Gemfile]",
+      "interaction_123": "Integrates with `grape-entity` for API response serialization [Source: Gemfile]",
+      "interaction_124": "Facilitates HTTP requests to other microservices [Source: Gemfile]",
+      "interaction_125": "Handles `BadGateway`, `ServiceUnavailable`, and `GatewayTimeout` exceptions [Source: config/application.rb]",
+      "interaction_126": "Interacts with Docker build processes to filter context.",
+      "interaction_127": "Provides environment variables to `Procfile` for local execution.",
+      "interaction_128": "Provides environment variables to Docker Compose services for container configuration.",
+      "interaction_129": "Starts `bin/rails server` for the web application.",
+      "interaction_130": "Starts `yarn start` for web assets compilation.",
+      "interaction_131": "Starts `bundle exec msgr` for message queue listening.",
+      "interaction_132": "Starts `bundle exec sidekiq` for Sidekiq background jobs.",
+      "interaction_133": "Starts `bin/rake delayed:work` for Delayed Job background jobs.",
+      "interaction_134": "Starts microservices (e.g., `account`, `course`) via `overmind start`.",
+      "interaction_135": "Serves the Rails application (web and microservices).",
+      "interaction_136": "Disconnects from `ActiveRecord::Base` and `Msgr.client` before forking workers.",
+      "interaction_137": "Re-establishes `ActiveRecord::Base` connection after worker boot.",
+      "interaction_138": "Serves the Rails application.",
+      "interaction_139": "Disconnects from `ActiveRecord::Base` before forking workers.",
+      "interaction_140": "Re-establishes `ActiveRecord::Base` connection after worker boot.",
+      "interaction_141": "Manages graceful restarts by signaling old Unicorn processes.",
+      "interaction_142": "Defines base images used by service-specific Dockerfiles (e.g., `account.Dockerfile`, `web.Dockerfile`).",
+      "interaction_143": "Utilizes `CI_REGISTRY_IMAGE` and `TAG` variables for image naming and versioning.",
+      "interaction_144": "Provides database services to all application components.",
+      "interaction_145": "Provides message queuing for inter-service communication and background jobs.",
+      "interaction_146": "Provides caching and job queue storage for Redis-dependent services.",
+      "interaction_147": "Provides S3-compatible object storage.",
+      "interaction_148": "Provides an email testing server for development.",
+      "interaction_149": "Depends on `PostgreSQL`, `RabbitMQ`, `RedisCache`, `RedisSidekiq` being healthy.",
+      "interaction_150": "Runs database migrations for the `xikolo-web` application.",
+      "interaction_151": "Loads permissions for the `xikolo-account` service.",
+      "interaction_152": "Ensures `init-database` completes successfully before `init-permissions` starts.",
+      "interaction_153": "Builds images from service-specific Dockerfiles.",
+      "interaction_154": "Uses environment variables from `.env`.",
+      "interaction_155": "Connects to `PostgreSQL`, `RabbitMQ`, `RedisCache`, `RedisSidekiq`.",
+      "interaction_156": "Mounts `xikolo.yml` and service-specific configuration files.",
+      "interaction_157": "Exposes ports for API access (e.g., `3100:80` for account-server).",
+      "interaction_158": "Builds image from `docker/files/web.Dockerfile`.",
+      "interaction_159": "Uses environment variables from `.env`.",
+      "interaction_160": "Connects to `PostgreSQL`, `RabbitMQ`, `RedisCache`, `RedisSidekiq`.",
+      "interaction_161": "Mounts `xikolo.yml` and `xikolo/web.yml` configuration files.",
+      "interaction_162": "Exposes port `3000:80` for the web server.",
+      "interaction_163": "Routes traffic to `DockerComposeWeb` and `DockerComposeService` instances.",
+      "interaction_164": "Exposes ports `8000:80` and `8443:443` for external access.",
+      "interaction_165": "Includes `DockerComposeBackground`, `DockerComposeInit`, `DockerComposeWeb`, `DockerComposeService` (for all microservices), and `DockerComposeNginx`.",
+      "interaction_166": "Accessed by `DockerComposeWeb` and all `DockerComposeService` instances.",
+      "interaction_167": "Initialized by `init-database` service.",
+      "interaction_168": "Used by `web-msgr` and `*-msgr` services for message processing.",
+      "interaction_169": "Accessed by `DockerComposeWeb` and all `DockerComposeService` instances for message publishing/consuming.",
+      "interaction_170": "Accessed by `DockerComposeWeb` and all `DockerComposeService` instances for caching operations.",
+      "interaction_171": "Accessed by `web-sidekiq` and `*-sidekiq` services for job queuing and processing.",
+      "interaction_172": "Provides file storage capabilities to application services that require S3-compatible storage.",
+      "interaction_173": "Receives emails sent by application services for testing purposes.",
+      "interaction_174": "Receives incoming HTTP/HTTPS requests.",
+      "interaction_175": "Forwards requests to `web-server` and `*-server` services based on routing rules.",
+      "interaction_176": "Loads Rails frameworks (ActiveRecord, ActionController, etc.). [Source: config/application.rb]",
+      "interaction_177": "Configures `Xikolo.brand` based on `ENV['BRAND']`. [Source: config/application.rb]",
+      "interaction_178": "Includes `Xikolo::Common::Secrets` and `Xikolo::Common::Nomad`. [Source: config/application.rb]",
+      "interaction_179": "Configures `ActiveJob` to use `:delayed` adapter. [Source: config/application.rb]",
+      "interaction_180": "Sets `ActionMailer` default URL options and queue. [Source: config/application.rb]",
+      "interaction_181": "Configures `I18n` available locales, default locale, and fallbacks. [Source: config/application.rb]",
+      "interaction_182": "Registers `ErrorsController` for exception handling. [Source: config/application.rb]",
+      "interaction_183": "Applies `Rack::Attack` and `Middleware::NewsTracker` middleware. [Source: config/application.rb]",
+      "interaction_184": "Configures `Rack::Cors` for cross-origin resource sharing. [Source: config/application.rb]",
+      "interaction_185": "Configures `Telegraf` for event collection. [Source: config/application.rb]",
+      "interaction_186": "Whitelists classes for `ActiveRecord` YAML serialization for `paper_trail` compatibility. [Source: config/application.rb]",
+      "interaction_187": "Configures `ViewComponent` instrumentation and previews. [Source: config/application.rb]",
+      "interaction_188": "Sets `ActionController::Base.asset_host` dynamically after initialization. [Source: config/application.rb]",
+      "interaction_189": "Loads brand-specific initializers and library code. [Source: config/application.rb, docs/app/development/branding/initializers.md]",
+      "interaction_190": "Provides `locales` settings for I18n. [Source: app/xikolo.yml]",
+      "interaction_191": "Defines `email.smtp` server for outgoing emails. [Source: app/xikolo.yml]",
+      "interaction_192": "Enables/disables `beta_features`, `gamification`, `voucher`, `open_mode`, `recaptcha`, `moochub_api`, `portal_api`, `transpipe`, `open_badges`, and `persisted_learning_evaluation`. [Source: app/xikolo.yml]",
+      "interaction_193": "Configures `asset_host` and `csp` headers. [Source: app/xikolo.yml]",
+      "interaction_194": "Specifies `imgproxy_url` for image processing. [Source: app/xikolo.yml]",
+      "interaction_195": "Controls `header`, `footer`, and `profile` menu content and visibility. [Source: app/xikolo.yml]",
+      "interaction_196": "Defines `proctoring_smowl_options` thresholds. [Source: app/xikolo.yml]",
+      "interaction_197": "Used by `ActionController::Base` to set `asset_host` during application initialization. [Source: config/application.rb]",
+      "interaction_198": "Can be overridden by `config/xikolo.test.yml` for specific environments. [Source: config/xikolo.test.yml, config/xikolo.test.yml]",
+      "interaction_199": "Can be overridden by local development files (`~/.xikolo.development.yml` or `config/xikolo.development.yml`). [Source: docs/app/development/application_configuration/index.md]",
+      "interaction_200": "Provides `secret_key_base` for Rails cookie signing. [Source: config/secrets.yml]",
+      "interaction_201": "Supplies `imgproxy_key` and `imgproxy_salt` for signing image processing URLs. [Source: config/secrets.yml]",
+      "interaction_202": "Stores `smowl_entity`, `smowl_license_key`, `smowl_password` for proctoring integration. [Source: config/secrets.yml]",
+      "interaction_203": "Contains `chatbot_bridge_private_key` and `chatbot_bridge_shared_secret` for chatbot integration. [Source: config/secrets.yml]",
+      "interaction_204": "Holds shared secrets for `bridge_lanalytics`, `bridge_shop`, `bridge_transpipe`, and `portal_api` authentication. [Source: config/secrets.yml]",
+      "interaction_205": "Manages `open_badge_private_key` for Open Badge signing. [Source: config/secrets.yml]",
+      "interaction_206": "Stores `jwt_hmac_secret` for external booking systems. [Source: config/secrets.yml]",
+      "interaction_207": "Provides `recaptcha_v3` and `recaptcha_v2` keys for reCAPTCHA integration. [Source: config/secrets.yml]",
+      "interaction_208": "Provides endpoint URLs for `account`, `course`, `learnanalytics`, `news`, `notification`, `pinboard`, `quiz`, `quizimporter`, and `timeeffort` services. [Source: config/services.yml]",
+      "interaction_209": "Allows environment variables (`ENV['XIKOLO_SERVICE_ACCOUNT']`, etc.) to override default `localhost` URLs. [Source: config/services.yml]",
+      "interaction_210": "Configures Redis `url` and `db` for caching. [Source: config/cache_redis.yml]",
+      "interaction_211": "Configures Redis `url`, `db`, `pool_timeout`, and `network_timeout` for Sidekiq. [Source: config/sidekiq_redis.yml]",
+      "interaction_212": "Utilizes `ENV.fetch(\"CACHE_REDIS_URL\", nil)` and `ENV.fetch(\"SIDEKIQ_REDIS_URL\", nil)` for dynamic URL configuration. [Source: config/cache_redis.yml, config/sidekiq_redis.yml]",
+      "interaction_213": "Loads `Xikolo::Web::Application.load_tasks` to make application-specific tasks available. [Source: Rakefile]",
+      "interaction_214": "`ci:setup` interacts with the database (`db:drop:all`, `db:create:all`, `db:schema:load`) and asset pipeline (`assets:i18n:export`). [Source: Rakefile]",
+      "interaction_215": "`api:docs` calls `Xikolo::API.make_docs!` to generate API documentation. [Source: Rakefile]",
+      "interaction_216": "`assets:brand:check` validates the existence of brand-specific asset directories based on `ENV['BRAND']`. [Source: Rakefile]",
+      "interaction_217": "`assets:i18n:export` uses `i18n-js` gem to export translations. [Source: Rakefile]",
+      "interaction_218": "`i18n:missing_keys` inspects `I18n.backend` for translation completeness. [Source: Rakefile]",
+      "interaction_219": "Accelerates application startup by caching various Ruby artifacts. [Source: config/boot.rb]",
+      "interaction_220": "Loaded conditionally based on the Rails environment (development only). [Source: config/boot.rb]",
+      "interaction_221": "Intercepts incoming requests before they reach the Rails application. [Source: config/application.rb]",
+      "interaction_222": "Applies rate limiting and blocking rules to requests. [Source: config/application.rb]",
+      "interaction_223": "Intercepts incoming requests. [Source: config/application.rb]",
+      "interaction_224": "Performs custom tracking logic for news-related operations. [Source: config/application.rb]",
+      "interaction_225": "Allows POST requests from `*.openhpi.de`. [Source: config/application.rb]",
+      "interaction_226": "Allows GET requests from any origin (`*`) to `/playlists/*` for external video players. [Source: config/application.rb]",
+      "interaction_227": "Integrates `Restify` for HTTP communication with other services. [Source: gems/xikolo-common/README.md]",
+      "interaction_228": "Provides `Xikolo.metrics` object to send data to Telegraf for monitoring. [Source: gems/xikolo-common/README.md]",
+      "interaction_229": "Offers helpers for authentication with the account service. [Source: gems/xikolo-common/README.md]",
+      "interaction_230": "Reads configuration from `xikolo.yml` files, respecting Rails environments. [Source: gems/xikolo-config/README.md]",
+      "interaction_231": "Provides `Xikolo.base_url` as an `Addressable::URI` object for URL generation. [Source: gems/xikolo-config/README.md]",
+      "interaction_232": "Integrates with Salt for managing instance-specific values in production. [Source: gems/xikolo-config/README.md]",
+      "interaction_233": "Configures AWS S3 client using `xikolo-config`. [Source: gems/xikolo-s3/README.md]",
+      "interaction_234": "Interacts with AWS S3 buckets and objects for file storage and retrieval. [Source: gems/xikolo-s3/README.md]",
+      "interaction_235": "Receives upload references from the frontend for processing. [Source: gems/xikolo-s3/README.md]",
+      "interaction_236": "Provides `Xikolo::S3.stub_responses!` for testing S3 interactions. [Source: gems/xikolo-s3/README.md]",
+      "interaction_237": "Configures Sidekiq to use Redis, with connection details from `config/sidekiq_redis.yml`. [Source: gems/xikolo-sidekiq/README.md]",
+      "interaction_238": "Integrates with ActiveJob for background processing. [Source: gems/xikolo-sidekiq/README.md]",
+      "interaction_239": "Loads cron job schedules from `config/cron.yml` for `sidekiq-cron`. [Source: gems/xikolo-sidekiq/README.md]",
+      "interaction_240": "Reads `Gemfile.lock` files from the `web` application and all `services/*` directories. [Source: scripts/check-gem-versions]",
+      "interaction_241": "Outputs reports in console or CSV format. [Source: scripts/check-gem-versions]"
+    },
+    "technicalDebt": [
+      "YAML serialization for `paper_trail` requires explicit whitelisting of classes; migration to JSON is recommended. [Source: config/application.rb]",
+      "Migration from `Acfs` to `Restify` is ongoing. [Source: docs/app/development/best_practices/project_guidelines.md]",
+      "YAML serialization for PaperTrail requires explicit class whitelisting, with a recommendation to migrate to JSONB columns [Source: config/application.rb]",
+      "The `SingleFileUpload` approach has drawbacks; `UploadByUri` is recommended for new implementations [Source: gems/xikolo-s3/README.md]",
+      "Bootsnap has assumptions about the environment (e.g., running as the same user) that make it less suitable for production, hence its restriction to development [Source: config/boot.rb]",
+      "Version constraint `< 2.3` due to breaking changes with deprecated API::V2 [Source: Gemfile]",
+      "Part of an ongoing migration to replace `Acfs` [Source: docs/app/development/best_practices/project_guidelines.md]",
+      "Extensive use of '!' include rules can make the file complex and potentially error-prone to maintain. A more explicit `COPY` strategy in Dockerfiles might be clearer.",
+      "The presence of both Puma and Unicorn configurations might indicate a legacy setup or a need to consolidate on a single application server for consistency and reduced maintenance overhead.",
+      "The actual Dockerfiles for services are not provided, making it difficult to fully assess the build process and dependencies.",
+      "The explicit whitelisting of `yaml_column_permitted_classes` for `ActiveRecord` YAML serialization is a workaround for `paper_trail` and older YAML data, with a recommendation to migrate to JSON. [Source: config/application.rb]",
+      "Extensive single YAML file for all configurations might become unwieldy for very large applications, though it's well-structured with comments. [Source: app/xikolo.yml]",
+      "Development and test environments contain hardcoded private keys and secrets, which are explicitly marked as 'NOT meant to be used in production'. This is acceptable for non-production but highlights the need for secure environment variable management in production. [Source: config/secrets.yml]",
+      "The `i18n:missing_keys` task directly accesses `I18n.backend.send(:init_translations)` and `I18n.backend.send(:translations)`, which relies on internal implementation details of the `i18n` gem and might be brittle to future updates. [Source: Rakefile]",
+      "Bootsnap has assumptions about the environment (e.g., running as the same user) which makes it less suitable for production environments where different users or system services might interact with the codebase. [Source: config/boot.rb]",
+      "Explicit instruction: 'Do not add new config values in this gem, unless explicitly decided by the team!' to prevent uncontrolled growth. [Source: gems/xikolo-config/README.md]",
+      "`Xikolo::S3::SingleFileUpload` is deprecated; `UploadByUri` should be used for new implementations. [Source: gems/xikolo-s3/README.md]"
+    ]
+  }
+}

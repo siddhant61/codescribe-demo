@@ -1,0 +1,1158 @@
+{
+  "clusterId": "04_CORE_CourseNavigation",
+  "featureFocus": "Frontend Display and Navigation for Courses, Sections, and Items",
+  "documentationReport": "## Frontend Display and Navigation for Courses, Sections, and Items\n\nThis feature cluster manages the display and navigation of courses, sections, and individual learning items within the Xikolo web application. It heavily relies on data fetched from the `Xikolo::CourseService` microservice via ACFS (Asynchronous Client-side Fetching System) and uses a presenter-based architecture for rendering complex views.\n\n### Course Display (`Course::CoursesController`)\n\nThe `Course::CoursesController` handles the primary course overview page. The `show` action is responsible for orchestrating the data fetching and presentation for a given course [Source: app/controllers/course/courses_controller.rb]. It includes several `before_action` filters to ensure canonical URLs, redirect from public course pages if disabled, and set no-cache headers [Source: app/controllers/course/courses_controller.rb].\n\nKey data fetched and presented on the course page includes:\n*   **Teacher Information:** Retrieved using `Course::TeacherListPresenter.for_course` [Source: app/controllers/course/courses_controller.rb].\n*   **Sections:** All sections belonging to `the_course` are fetched. A flag `@show_section_info` is set if any section has a description, influencing the view's rendering [Source: app/controllers/course/courses_controller.rb].\n*   **Featured Items:** A list of featured video items (`content_type: 'video'`, `featured: true`) is fetched and presented using `FeaturedItemPresenter` [Source: app/controllers/course/courses_controller.rb].\n*   **Course Previews and Details:** `CourseLargePreviewPresenter` and `Course::CourseDetailsPresenter` are used to build comprehensive views of the course, including enrollment status and meta tags for SEO [Source: app/controllers/course/courses_controller.rb].\n\nThe `resume` action allows users to quickly navigate to their last visited or the first available item in a course. It queries the `Xikolo::Course::Item` service for the 'current' item based on the user and course context [Source: app/controllers/course/courses_controller.rb]. If no redirectable item is found, it redirects back to the course path with a notice [Source: app/controllers/course/courses_controller.rb].\n\nCourse eligibility checks (`check_course_eligibility`) ensure that only published courses are accessible, or if not published, only by users with `course.content.access` permission [Source: app/controllers/course/courses_controller.rb]. Anonymous users attempting to access restricted content are redirected to the course URL and prompted to log in [Source: app/helpers/course_context_helper.rb].\n\n### Section Display and Navigation (`SectionsController`)\n\n`SectionsController` manages the listing and display of course sections. The `index` action is primarily for content editors, displaying all sections for a course, distinguishing between legacy and new course structures [Source: app/controllers/sections_controller.rb]. It uses `CoursePresenter` and `Xikolo::Course::Section.new` for creating new sections [Source: app/controllers/sections_controller.rb].\n\nThe `show` action redirects the user to the first available item within a section. If no item is available but the user has `course.content.access` permission, it redirects to the item with the minimum position [Source: app/controllers/sections_controller.rb]. For sections with `alternative_state: 'parent'`, it renders a dedicated view using `SectionPresenter` [Source: app/controllers/sections_controller.rb].\n\nAdministrative actions like `create`, `update`, `destroy`, and `move` for sections are also handled here, requiring `ensure_content_editor` authorization [Source: app/controllers/sections_controller.rb]. Section creation can also involve creating implicit tags in the `Xikolo::PinboardService` [Source: app/controllers/sections_controller.rb].\n\n### Item Display and Management (`ItemsController`)\n\n`ItemsController` is responsible for displaying individual course items and handling their creation, editing, updating, moving, and deletion. The `show` action is the core for displaying item content. It uses `ItemPresenter.lookup` to determine the appropriate presenter for the item's `content_type` (e.g., `video`, `rich_text`, `quiz`, `lti_exercise`) [Source: app/controllers/items_controller.rb, app/presenters/item_presenter.rb].\n\nBefore rendering, it performs several checks:\n*   **Item Prerequisites:** If `required_items` are present and not fulfilled, a 'requirements' view is rendered [Source: app/controllers/items_controller.rb]. Item prerequisites mean that other items must be visited or completed with a certain score (default 50% for assessments) before access is granted [Source: services/course/app/models/item.rb]. Surveys cannot be required items as they lack scores [Source: services/course/app/models/item.rb].\n*   **Visits:** A `Xikolo::Course::Visit` record is created for the user and item, unless it's a quiz or the user is masquerading/unauthenticated [Source: app/controllers/items_controller.rb].\n*   **Meta Tags:** Page title and meta tags are set based on the item presenter [Source: app/controllers/items_controller.rb].\n\nThe `new`, `edit`, `create`, `update`, `move`, and `destroy` actions provide a comprehensive interface for content editors to manage items. This includes handling different content types, their specific parameters, and interactions with other microservices like `Xikolo::QuizService` for quizzes [Source: app/controllers/items_controller.rb]. Item movement supports both legacy and tree-based course structures [Source: app/controllers/items_controller.rb]. Deletion of items also involves deleting their associated content from respective services [Source: app/controllers/items_controller.rb].\n\n### Course Syllabus (`Course::SyllabusController`)\n\nThe `Course::SyllabusController` presents an overview of the course content. Its `show` action builds `Course::ProgressPresenter` for the current user and course [Source: app/controllers/course/syllabus_controller.rb]. It renders with a `course_area_two_cols` layout [Source: app/controllers/course/syllabus_controller.rb]. The `check_course_eligibility` method is overridden to allow access in `open_mode` even if the user is not enrolled, provided `Xikolo.config.open_mode['enabled']` is true, the course is not invite-only or hidden, and there are previewable items [Source: app/controllers/course/syllabus_controller.rb].\n\n### Course Progress (`Course::ProgressController`)\n\n`Course::ProgressController` displays the progress of a user within a course. The `show` action fetches user details (either `current_user` or a specified `user_id` if the `current_user` has `course.course.teaching` permission) and then uses `Course::DocumentsPresenter` and directly queries the `course_api` for progress data [Source: app/controllers/course/progress_controller.rb]. Item styling on the learner dashboard is distinct for surveys, non-graded items, and quizzes/exercises, indicating completion, warning, or critical states based on submission and score percentages [Source: app/presenters/course/progress_presenter.rb].\n\n### Context and Navigation Helpers\n\n`CourseContextHelper` and `ItemContextHelper` are crucial for establishing the context of the current course, section, and item. They define `inside_course` and `inside_item` macros that set layout, perform eligibility checks, and load navigation components [Source: app/helpers/course_context_helper.rb, app/helpers/item_context_helper.rb].\n\n*   `CourseContextHelper` provides `the_course`, `the_section`, and `the_item` methods, which lazily load resources from the `Xikolo::CourseService` [Source: app/helpers/course_context_helper.rb]. It also includes logic for checking item and section availability based on `effective_start_date`, `effective_end_date`, and `published` status [Source: app/helpers/course_context_helper.rb].\n*   `load_section_nav` in `CourseContextHelper` builds the `Navigation::TableOfContents` for the course, including current section and item, which is then used in the frontend for navigation [Source: app/helpers/course_context_helper.rb].\n*   `ItemContextHelper` ensures the requested item belongs to the given course and creates `Course::PositionPresenter` and `ItemPresenter` instances for the current item [Source: app/helpers/item_context_helper.rb].\n\n### Presenters\n\nPresenters are heavily used to encapsulate view logic and format data for display:\n*   **`ItemPresenter`:** A base class for all item types, providing common attributes and methods like `partial_name`, `redirect?`, `unlocked?`, `path`, `type_label`, `icon_class`, `css_classes`, `status_type`, `locked?`, `visited?`, `active?`, `meta_tags`, and `with_time_effort?` [Source: app/presenters/item_presenter.rb]. It also handles `required_items` using `Course::RequiredItemPresenter` [Source: app/presenters/item_presenter.rb]. Deadlines for course content elements are managed automatically in background jobs and represented by `NextDate` resources, which have a `type`, `date`, and `title`, and can be general or user-specific [Source: services/course/app/models/next_date.rb].\n*   **`SectionPresenter`:** Provides attributes and methods for sections, including `items` (fetching items for the section), `available?`, `unlocked?`, `alternatives?`, and `required_sections` [Source: app/presenters/section_presenter.rb]. It also handles fetching `section_choices` for alternative sections [Source: app/presenters/section_presenter.rb].\n*   Other presenters like `Course::TeacherListPresenter`, `FeaturedItemPresenter`, `CourseLargePreviewPresenter`, `Course::CourseDetailsPresenter`, `Course::DocumentsPresenter`, `Course::ProgressPresenter`, `CoursePresenter`, `Course::LayoutPresenter`, `Course::PositionPresenter`, `Course::RequiredItemPresenter`, and `Course::RequiredSectionPresenter` are used to structure and format specific parts of the UI.\n\n### Technical Debt and Limitations\n*   The `current_user` passed to `Course::DocumentsPresenter` for feature checks might be an admin/teacher monitoring progress, not the actual user, which is noted as needing refactoring [Source: app/controllers/course/progress_controller.rb].\n*   The `ItemsController#create` and `update` actions have inconsistencies in error handling between content types, with some errors displayed as flash messages and others inline [Source: app/controllers/items_controller.rb].\n*   The `ItemsController#create_video_uploads!` method has a TODO to reuse passed-in upload IDs [Source: app/controllers/items_controller.rb].\n*   Item prerequisites have known limitations: Survey quizzes cannot be required items, deletion of required items is not handled gracefully, and locked/unpublished items should not be required [Source: services/course/app/models/item.rb].\n*   The `SectionsController#create` action has a TODO regarding null values for dates [Source: app/controllers/sections_controller.rb].\n*   The `SectionsController#show` action's redirect logic for alternative sections needs improvement for logged-in vs. anonymous users [Source: app/controllers/sections_controller.rb].\n*   The `CourseContextHelper#check_course_eligibility` has a TODO to improve checks [Source: app/helpers/course_context_helper.rb].\n*   The `open_mode` restriction to video items is temporary and will be removed later [Source: app/controllers/items_controller.rb].\n\nOverall, the frontend display and navigation system is complex, leveraging a microservice architecture with extensive use of presenters and helpers to manage data flow and UI logic. It provides robust functionality for both learners and content editors, with identified areas for future improvement and refactoring.",
+  "componentMapPatch": {
+    "components": {
+      "Course::CoursesController": {
+        "type": "Controller",
+        "description": "Handles the display of the main course overview page, including fetching course details, teacher information, sections, and featured items. Manages user authorization and redirects for course access.",
+        "interactions": {
+          "interaction_0": "Interacts with Xikolo::Course::Course to fetch course details [Source: app/controllers/course/courses_controller.rb]",
+          "interaction_1": "Uses Course::TeacherListPresenter to format teacher data [Source: app/controllers/course/courses_controller.rb]",
+          "interaction_2": "Uses FeaturedItemPresenter to format featured items [Source: app/controllers/course/courses_controller.rb]",
+          "interaction_3": "Uses CourseLargePreviewPresenter and Course::CourseDetailsPresenter for course overview data [Source: app/controllers/course/courses_controller.rb]",
+          "interaction_4": "Redirects to dashboard_path or course_path based on authorization and course availability [Source: app/controllers/course/courses_controller.rb]",
+          "interaction_5": "Interacts with Xikolo::Course::Item to find the current item for resuming a course [Source: app/controllers/course/courses_controller.rb]",
+          "interaction_6": "Leverages CourseContextHelper for course context and eligibility checks [Source: app/controllers/course/courses_controller.rb]"
+        },
+        "techDebt": [
+          "The `check_course_eligibility` method has a TODO for improving checks [Source: app/helpers/course_context_helper.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/courses_controller.rb",
+            "app/helpers/course_context_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class CoursesController < Abstract::AjaxController\n      respond_to :json\n\n      before_action :ensure_logged_in\n\n      def index\n        authorize_any! 'course.course.index', 'course.document.manage'\n\n        courses = course_api.rel(:courses).get({\n          autocomplete: params[:q],\n          offset: params[:offset],\n          limit: 50,\n        }).value!\n\n        render json: courses.map {|c| {id: c['id'], text: \"#{c['title']} (#{c['course_code']})\"} }\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Bridges\n  module Chatbot\n    class CoursesController < BaseController\n      before_action :require_valid_token!\n\n      def index\n        courses = []\n        Xikolo.paginate(\n          course_api.rel(:courses).get({hidden: false})\n        ) do |course|\n          next if course['invite_only']\n\n          courses << serialize(course)\n        end\n\n        render json: courses\n      end\n\n      private\n\n      def serialize(course)\n        {\n          id: course['id'],\n          title: course['title'],\n          course_code: course['course_code'],\n          start_date: course['start_date'],\n          language: course['lang'],\n          self_paced: course['status'] == 'archive',\n          certificates: {\n            roa: {\n              enabled: course['roa_enabled'],\n              requirement: course['roa_threshold_percentage'],\n            },\n            cop: {\n              enabled: course['cop_enabled'],\n              requirement: course['cop_threshold...",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Bridges\n  module Transpipe\n    class CoursesController < BaseController\n      before_action Xi::Controllers::RequireBearerToken.new(\n        realm: Transpipe.realm,\n        token: -> { Transpipe.shared_secret }\n      )\n\n      def index\n        response.link(bridges_transpipe_courses_url(page: page + 1), rel: 'next') if courses.rel?(:next)\n        response.link(bridges_transpipe_courses_url(page: page - 1), rel: 'prev') if courses.rel?(:prev)\n\n        render json: courses.map {|course| serialize_course_for_index(course) }\n      end\n\n      def show\n        return head(:not_found, content_type: 'text/plain') if external_course?\n\n        render json: serialize_course_for_show(course)\n      rescue Restify::NotFound\n        head(:not_found, content_type: 'text/plain')\n      end\n\n      private\n\n      def courses\n        @courses ||= course_api.rel(:courses)\n          .get({exclude_external: true, latest_first: true, page:})\n          .value!\n      end\n\n  ...",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/courses_controller.rb",
+              "relevance": 31
+            }
+          ]
+        }
+      },
+      "Course::SyllabusController": {
+        "type": "Controller",
+        "description": "Manages the display of the course syllabus, providing an overview of course content and progress.",
+        "interactions": {
+          "interaction_0": "Uses Course::ProgressPresenter to build user progress data [Source: app/controllers/course/syllabus_controller.rb]",
+          "interaction_1": "Leverages CourseContextHelper for course context and eligibility checks [Source: app/controllers/course/syllabus_controller.rb]",
+          "interaction_2": "Interacts with Xikolo.api(:course) to fetch previewable items in open mode [Source: app/controllers/course/syllabus_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/syllabus_controller.rb",
+            "app/helpers/course_context_helper.rb"
+          ]
+        }
+      },
+      "Course::ProgressController": {
+        "type": "Controller",
+        "description": "Displays the progress of a user within a specific course, allowing both learners and authorized staff to view progress metrics.",
+        "interactions": {
+          "interaction_0": "Fetches user data from Xikolo::Account::User [Source: app/controllers/course/progress_controller.rb]",
+          "interaction_1": "Uses Course::DocumentsPresenter to display course documents related to progress [Source: app/controllers/course/progress_controller.rb]",
+          "interaction_2": "Queries the course_api for progress data [Source: app/controllers/course/progress_controller.rb]",
+          "interaction_3": "Leverages CourseContextHelper for course context [Source: app/controllers/course/progress_controller.rb]"
+        },
+        "techDebt": [
+          "The `current_user` passed to `Course::DocumentsPresenter` might be an admin/teacher monitoring progress, not the actual user, which needs refactoring [Source: app/controllers/course/progress_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/progress_controller.rb"
+          ]
+        }
+      },
+      "ItemsController": {
+        "type": "Controller",
+        "description": "Manages the display, creation, editing, updating, moving, and deletion of individual course items. Handles various content types like video, rich text, quiz, and LTI exercises.",
+        "interactions": {
+          "interaction_0": "Uses ItemContextHelper for item-specific context and presentation [Source: app/controllers/items_controller.rb]",
+          "interaction_1": "Interacts with Xikolo::Course::Item for item data [Source: app/controllers/items_controller.rb]",
+          "interaction_2": "Uses ItemPresenter.lookup to select appropriate item presenter based on content type [Source: app/controllers/items_controller.rb, app/presenters/item_presenter.rb]",
+          "interaction_3": "Interacts with Video::Video and Video::Store for video content [Source: app/controllers/items_controller.rb]",
+          "interaction_4": "Interacts with Course::Richtext and Course::Richtext::Store for rich text content [Source: app/controllers/items_controller.rb]",
+          "interaction_5": "Interacts with Xikolo::Quiz::Quiz, Xikolo::Quiz::Question, etc., for quiz content [Source: app/controllers/items_controller.rb]",
+          "interaction_6": "Interacts with Lti::Exercise and Lti::Exercise::Store for LTI exercise content [Source: app/controllers/items_controller.rb]",
+          "interaction_7": "Creates Xikolo::Course::Visit records for item views [Source: app/controllers/items_controller.rb]",
+          "interaction_8": "Uses Course::Item.find and Course::Structure::Node for item movement logic [Source: app/controllers/items_controller.rb]",
+          "interaction_9": "Interacts with Xikolo::Account::Preferences to load user preferences [Source: app/controllers/items_controller.rb]",
+          "interaction_10": "Uses FileUpload for handling video-related file uploads [Source: app/controllers/items_controller.rb]"
+        },
+        "techDebt": [
+          "Inconsistencies in error handling between content types for create/update actions [Source: app/controllers/items_controller.rb]",
+          "TODO to reuse passed-in upload IDs in `create_video_uploads!` [Source: app/controllers/items_controller.rb]",
+          "The `open_mode` restriction to video items is temporary [Source: app/controllers/items_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/items_controller.rb",
+            "app/helpers/item_context_helper.rb",
+            "app/presenters/item_presenter.rb",
+            "services/course/app/models/item.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 11,
+              "code": "class ItemsController < Abstract::FrontendController\n  include CourseContextHelper\n  include ItemContextHelper\n\n  before_action :set_no_cache_headers\n\n  include Interruptible",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 19,
+              "code": "  before_action :ensure_content_editor, except: :show\n  before_action :load_user_preferences, only: :show, if: proc {|_| current_user.authenticated? }\n\n  inside_course\n  inside_item only: :show\n  before_action :load_section_nav, except: :destroy",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 24,
+              "endLine": 30,
+              "code": "  def request_section\n    if params[:action] == 'show'\n      course_api.rel(:section).get({id: UUID(item['section_id'])})\n    else\n      super\n    end\n  end",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 41,
+              "code": "  def request_item\n    return nil unless params[:id]\n    raise Status::NotFound if (uuid = UUID4.try_convert(params[:id])).nil?\n\n    get_params = {id: uuid.to_s}.tap do |p|\n      # Authorized users (e.g., course admins) can always access items, but\n      # for regular learners the user-specific access is verified.\n      p[:user_id] = current_user.id unless cur...\n",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 8,
+              "code": "class ItemsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n  include PointsProcessor",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 30,
+              "code": "  def index\n    items = Item.all\n    items.where! content_type: params[:content_type] if params[:content_type]\n    if params[:exercise_type]\n      case params[:exercise_type]\n        when ::ActionController::Parameters\n          items.where! exercise_type: params[:exercise_type].values\n        when String\n          items.where! exercise_type: params[:exercise_type].split(',')\n        else\n          items.where! exercise_type: params[:exercise_type]\n      end\n    end\n    items.where! section_id: params[:section_id] unless params[:section_id].nil?\n    items.where! content_id: params[:content_id] unless params[:content_id].nil?\n    items.where! id: params[:id] unless params[:id].nil?\n    # NOTE: This will also return availabl...",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 13,
+              "code": "class ItemsController < RESTController\n  respond_to :json\n\n  has_scope :section_id do |_controller, scope, value|\n    scope.for_section value.to_s\n  end\n\n  has_scope :course_id do |_controller, scope, value|\n    scope.for_course value.to_s\n  end",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 15,
+              "code": "  rfc6570_params index: %i[section_id course_id]",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 23,
+              "code": "  def create\n    item = Item.create item_params\n\n    respond_with item\n  end",
+              "source": "app/controllers/items_controller.rb"
+            },
+            {
+              "startLine": 28,
+              "endLine": 40,
+              "code": "  def overwrite_time_effort\n    if params[:time_effort].blank?\n      return render status: :unprocessable_content, json: {errors: 'time_effort_required'}\n    end\n\n    item = Item.find(params.require(:item_id))\n    overwrite_for!(item, params[:time_effort])\n\n    head :no_content\n  rescue Errors::OverwriteTimeEffortError => e\n    render status: :unprocessable_content, json: {errors: e.reason}\n  rescue Restify::ClientError => e\n    render status: :unprocessable_content, json: {errors: e.errors}\n  end",
+              "source": "app/controllers/items_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/items_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/course/app/controllers/items_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/timeeffort/app/controllers/items_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "SectionsController": {
+        "type": "Controller",
+        "description": "Manages the listing, display, creation, updating, moving, and deletion of course sections. Handles redirection to the first available item within a section.",
+        "interactions": {
+          "interaction_0": "Uses CourseContextHelper for course context [Source: app/controllers/sections_controller.rb]",
+          "interaction_1": "Uses CoursePresenter to create course presentation data [Source: app/controllers/sections_controller.rb]",
+          "interaction_2": "Interacts with Xikolo::Course::Section for section data and management [Source: app/controllers/sections_controller.rb]",
+          "interaction_3": "Interacts with Course::Course.find to check for legacy course structure [Source: app/controllers/sections_controller.rb]",
+          "interaction_4": "Interacts with Course::Item to find the first item in a section [Source: app/controllers/sections_controller.rb]",
+          "interaction_5": "Uses SectionPresenter for alternative section display [Source: app/controllers/sections_controller.rb]",
+          "interaction_6": "Creates Xikolo::Pinboard::ImplicitTag upon section creation [Source: app/controllers/sections_controller.rb]",
+          "interaction_7": "Creates Xikolo::Course::SectionChoice for alternative section selection [Source: app/controllers/sections_controller.rb]",
+          "interaction_8": "Interacts with Course::Structure::Node for moving sections in non-legacy courses [Source: app/controllers/sections_controller.rb]"
+        },
+        "techDebt": [
+          "TODO for handling null values in section parameters during creation [Source: app/controllers/sections_controller.rb]",
+          "The redirect logic for alternative sections needs to differentiate between logged-in and anonymous users [Source: app/controllers/sections_controller.rb]",
+          "The `load_raw_sections` method is deprecated for courses migrated to the new content tree [Source: app/controllers/sections_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/sections_controller.rb",
+            "app/helpers/course_context_helper.rb",
+            "app/presenters/section_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": "# frozen_string_literal: true\n\nclass SectionsController < Abstract::FrontendController\n  include CourseContextHelper\n\n  before_action :ensure_content_editor, only: %i[index create destroy move update]\n  before_action :load_section_nav, only: [:show]\n  before_action :set_no_cache_headers\n  inside_course\n  respond_to :json\n\n  before_action(only: :create) do\n    next if section_params[:alternative_state] != 'child'\n    next if current_user.feature?('alternative_sections.create')\n\n    raise AbstractController::ActionNotFound\n  end",
+              "source": "app/controllers/sections_controller.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 29,
+              "code": "  def index\n    @course_presenter = CoursePresenter.create(the_course, current_user)\n\n    course = Course::Course.find(the_course.id)\n\n    if course.legacy?\n      @legacy = true\n      @sections = load_raw_sections(the_course)\n    else\n      course.node.preload_tree!\n      @sections = course.node.children\n    end\n\n    Acfs.run\n    @new_section = Xikolo::Course::Section.new\n  end",
+              "source": "app/controllers/sections_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nclass SectionsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder",
+              "source": "app/controllers/sections_controller.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 26,
+              "code": "  def index\n    sections = Section.all\n    sections.where! course_id: params[:course_id] unless params[:course_id].nil?\n    sections.where! published: params[:published] unless params[:published].nil?\n    sections = sections.available unless params[:available].nil?\n    sections.where! id: params[:id] if params[:id]\n    sections.where! position: params[:position] if params[:position]\n    if params[:parent_id]\n      sections.where! parent_id: params[:parent_id]\n    elsif !params[:include_alternatives]\n      sections = sections.not_alternative\n    end\n    sections.includes! :course\n\n    respond_with sections\n  end",
+              "source": "app/controllers/sections_controller.rb"
+            },
+            {
+              "startLine": 28,
+              "endLine": 29,
+              "code": "  def show\n    respond_with Section.find params[:id]\n  end",
+              "source": "app/controllers/sections_controller.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 32,
+              "code": "  def create\n    section = Section.create section_params",
+              "source": "app/controllers/sections_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/sections_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/course/app/controllers/sections_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "CourseContextHelper": {
+        "type": "Helper",
+        "description": "Provides methods and `before_action` hooks to establish the context of the current course, section, and item. Includes logic for course eligibility, resource loading, and navigation setup.",
+        "interactions": {
+          "interaction_0": "Defines `inside_course` macro for controllers [Source: app/helpers/course_context_helper.rb]",
+          "interaction_1": "Loads `the_course`, `the_section`, `the_item` from Xikolo::Course::Course, Xikolo.api(:course) [Source: app/helpers/course_context_helper.rb]",
+          "interaction_2": "Performs `check_course_eligibility` based on user permissions and course availability [Source: app/helpers/course_context_helper.rb]",
+          "interaction_3": "Builds `Navigation::TableOfContents` for section navigation [Source: app/helpers/course_context_helper.rb]",
+          "interaction_4": "Uses Course::LayoutPresenter for course layout [Source: app/helpers/course_context_helper.rb]"
+        },
+        "techDebt": [
+          "TODO for improving checks in `check_course_eligibility` [Source: app/helpers/course_context_helper.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/helpers/course_context_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nmodule CourseContextHelper\n  def course_layout\n    @course_layout ||= Course::LayoutPresenter.new(the_course, current_user)\n  end\n\n  def the_table_of_content\n    if promises.key? :table_of_content\n      promises[:table_of_content]\n    else\n      raise 'Table of content not loaded!'\n    end\n  end\n\n  def self.included(base_controller)\n    # for some reason some other module seems to want to include this\n    return unless base_controller.respond_to? :before_action\n\n    base_controller.helper_method :course_layout\n    base_controller.helper_method :hide_course_nav?\n\n    class << base_controller\n      def inside_course(**)\n        layout('course_area', **)\n        before_action(:check_course_eligibility, **)\n      end\n    end\n  end\n\n  def check_course_eligibility\n    return if current_user.allowed?('course.content.access')\n\n    # TODO: improve checks\n    if !the_course.was_available?\n      unless the_course.published?\n        Rails.logger.debug 'NOT FOUND: cou...\n",
+              "source": "app/helpers/course_context_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/course_context_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "ItemContextHelper": {
+        "type": "Helper",
+        "description": "Provides methods and `before_action` hooks specific to item context, ensuring the item belongs to the course and preparing presenters for display.",
+        "interactions": {
+          "interaction_0": "Defines `inside_item` macro for controllers [Source: app/helpers/item_context_helper.rb]",
+          "interaction_1": "Ensures item belongs to the course [Source: app/helpers/item_context_helper.rb]",
+          "interaction_2": "Creates `Course::PositionPresenter` for item navigation [Source: app/helpers/item_context_helper.rb]",
+          "interaction_3": "Creates `ItemPresenter` for item display [Source: app/helpers/item_context_helper.rb]",
+          "interaction_4": "Creates `Xikolo::Course::Visit` records [Source: app/helpers/item_context_helper.rb]",
+          "interaction_5": "Relies on `the_item` from `CourseContextHelper` [Source: app/helpers/item_context_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/helpers/item_context_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 19,
+              "code": "def self.included(base_controller)\n    # for some reason some other module seems to want to include this\n    return unless base_controller.respond_to? :before_action\n\n    # disabled when_course_loaded would be called to early\n    # (would try to access user):\n    class << base_controller\n      def inside_item(**)\n        layout('course_area_two_cols', **)\n        before_action(:load_section_nav, **)\n        before_action(:create_position_presenter!, **)\n        before_action(:create_item_presenter!, **)\n        before_action(:check_course_path, **)\n      end\n    end\n  end",
+              "source": "app/helpers/item_context_helper.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 30,
+              "code": "def check_course_path\n    # Ensure that the requested item belongs to the given course\n    Acfs.on the_course do |course|\n      if the_section.value!['course_id'] != course.id\n        raise Status::NotFound\n      end\n    end\n  end",
+              "source": "app/helpers/item_context_helper.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 34,
+              "code": "def create_position_presenter!\n    Acfs.on the_course do |course|\n      @inner_course_position = Course::PositionPr...",
+              "source": "app/helpers/item_context_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/item_context_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "ItemPresenter": {
+        "type": "Presenter",
+        "description": "A base presenter for course items, responsible for formatting item data, determining display logic (e.g., locked/unlocked, visited status), and handling item prerequisites.",
+        "interactions": {
+          "interaction_0": "Delegates attributes from `@item` (Xikolo::Course::Item resource) and `@course` (Xikolo::Course::Course resource) [Source: app/presenters/item_presenter.rb]",
+          "interaction_1": "Looks up specific presenters based on `content_type` (e.g., `VideoItemPresenter`, `QuizItemPresenter`) [Source: app/presenters/item_presenter.rb]",
+          "interaction_2": "Determines `required_items` using `Course::RequiredItemPresenter` [Source: app/presenters/item_presenter.rb]",
+          "interaction_3": "Calculates `unlocked?` status based on effective start/end dates and course archived status [Source: app/presenters/item_presenter.rb]",
+          "interaction_4": "Determines `locked?` status based on user permissions and item previewability [Source: app/presenters/item_presenter.rb]",
+          "interaction_5": "Provides `type_label`, `icon_class`, `css_classes`, `status_type` for UI rendering [Source: app/presenters/item_presenter.rb]",
+          "interaction_6": "Checks for `time_effort` feature and formats it [Source: app/presenters/item_presenter.rb]",
+          "interaction_7": "Checks for `Transpipe` integration for video subtitles [Source: app/presenters/item_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/item_presenter.rb",
+            "services/course/app/models/item.rb",
+            "services/course/app/models/next_date.rb",
+            "app/presenters/course/progress_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 34,
+              "code": "# frozen_string_literal: true\n\nclass ItemPresenter < PrivatePresenter\n  def_restify_delegators :@item, :id, :content_id, :title,\n    :max_points,\n    :optional, :position,\n    :section_id, :featured, :public_description,\n    :open_mode, :time_effort,\n    :required_item_ids, :published,\n    :content_type, :exercise_type\n  def_delegator :@course, :id, :course_id\n  def_delegator :@course, :course_code, :course_code\n  def_delegator :@course, :title, :course_title\n  def_delegator :@course, :pinboard_enabled, :course_pinboard?\n  def_delegator :@course, :forum_is_locked, :course_pinboard_closed?\n  def_delegator :@course, :lang, :lang\n\n  class << self\n    def lookup(item)\n      \"#{item['content_type']}_item_presenter\".camelize.constantize\n    rescue NameError\n      UnsupportedItemPresenter\n    end\n\n    def for(item, course: nil, user: nil)\n      lookup(item).new(item:, course:, user:)\n    end\n  end\n\n  def partial_name\n    \"items/#{content_type}/show_item_#{content_type}\"\n  end",
+              "source": "app/presenters/item_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/item_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "SectionPresenter": {
+        "type": "Presenter",
+        "description": "A presenter for course sections, responsible for formatting section data, determining availability, and handling alternative sections and required sections.",
+        "interactions": {
+          "interaction_0": "Delegates attributes from `@section` (Xikolo::Course::Section resource) [Source: app/presenters/section_presenter.rb]",
+          "interaction_1": "Fetches `items` for the section from Xikolo.api(:course) [Source: app/presenters/section_presenter.rb]",
+          "interaction_2": "Determines `available?` and `unlocked?` status based on dates and published status [Source: app/presenters/section_presenter.rb]",
+          "interaction_3": "Handles `alternative_state` and fetches `section_choices` and `alternatives` from Xikolo.api(:course) and Course::Section [Source: app/presenters/section_presenter.rb]",
+          "interaction_4": "Enqueues implicit tags for pinboard integration [Source: app/presenters/section_presenter.rb]",
+          "interaction_5": "Determines `required_sections` using `Course::RequiredSectionPresenter` [Source: app/presenters/section_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/section_presenter.rb",
+            "services/course/app/models/section.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nclass SectionPresenter < PrivatePresenter\n  def_restify_delegators :@section, :id, :title, :published, :alternative_state,\n    :description, :required_section_ids, :course_id, :course_archived\n\n  def items\n    Xikolo.api(:course).value!.rel(:items).get({section_id: id}).value!.map do |item_resource|\n      ItemPresenter.new(item: item_resource, user: @user)\n    end\n  end\n\n  def to_param\n    UUID(id).to_param\n  end\n\n  def available?\n    unlocked? && published\n  end\n\n  def end_date\n    Time.zone.parse(@section['end_date'].to_s) if @section['end_date'].present?\n  end\n\n  def start_date\n    Time.zone.parse(@section['start_date'].to_s) if @section['start_date'].present?\n  end\n\n  def effective_start_date\n    Time.zone.parse(@section['effective_start_date'].to_s) if @section['effective_start_date'].present?\n  end\n\n  def effective_end_date\n    Time.zone.parse(@section['effective_end_date'].to_s) if @section['effective_end_date'].present?\n  end\n\n  def unlocked?\n    ...",
+              "source": "app/presenters/section_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/section_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Navigation::TableOfContents": {
+        "type": "Service/ViewComponent",
+        "description": "A component responsible for building the hierarchical navigation structure (table of contents) for a course, including sections and items, considering user context and current position.",
+        "interactions": {
+          "interaction_0": "Receives course, sections, current_section, and current_item as input [Source: app/helpers/course_context_helper.rb]",
+          "interaction_1": "Used by `CourseContextHelper#load_section_nav` [Source: app/helpers/course_context_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/helpers/course_context_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 35,
+              "code": "module Navigation   class TableOfContents < ApplicationComponent     renders_many :sections, Navigation::Section      class << self       def for_course(...)         CourseToc.new(...).build       end     end      class CourseToc       def initialize(user:, course:, sections:, current_section:, current_item:, context:)         @user = user         @course = course         @sections = sections         @current_section = current_section         @current_item = current_item         @context = context       end        def build         ::Navigation::TableOfContents.new.tap do |toc|           # 1. Add course syllabus if enabled.           if @course.show_syllabus             toc.with_section(               **SyllabusToc.new(context: self, course: @course).build             )           end            # 2. Add all public (visible) sections, including alternative sections.           published_sections.each do |section|             SectionToc.new(context: self, co...",
+              "source": "app/components/navigation/table_of_contents.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 20,
+              "code": "    # @display bg_color \"#fafafa\"     def sections       render Navigation::TableOfContents.new do |toc|         toc.with_section(text: 'With link', link: {href: '/link'})         toc.with_section(text: 'Without link but with a very long text that should be truncated')         toc.with_section(text: 'Active', link: {href: '/active'}, active: true)         toc.with_section(text: 'Locked, with access', icon: {code: 'lock'}, link: {href: '/locked'})         toc.with_section(text: 'Locked, no access', locked: true, tooltip: 'Will be unlocked on Feb. 30th')         toc.with_section(text: 'With tooltip', link: {href: '/tooltip'}, tooltip: 'This is a tooltip')       end     end",
+              "source": "app/components/navigation/table_of_contents.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/navigation/table_of_contents.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/components/navigation/table_of_contents_preview.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/components/dashboard/navigation.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Xikolo::Course::Course": {
+        "type": "ACFS Resource",
+        "description": "Represents a course fetched from the `Xikolo::CourseService` microservice. Used across controllers and helpers to access course-level data.",
+        "interactions": {
+          "interaction_0": "Fetched by `Course::CoursesController`, `ItemsController`, `SectionsController`, `CourseContextHelper` [Source: app/controllers/course/courses_controller.rb, app/controllers/items_controller.rb, app/controllers/sections_controller.rb, app/helpers/course_context_helper.rb]",
+          "interaction_1": "Provides attributes like `id`, `course_code`, `title`, `sections`, `items`, `published`, `context_id`, `pinboard_enabled`, `forum_is_locked`, `lang`, `legacy?`, `node` [Source: app/controllers/course/courses_controller.rb, app/controllers/items_controller.rb, app/controllers/sections_controller.rb, app/presenters/item_presenter.rb, app/helpers/course_context_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/courses_controller.rb",
+            "app/controllers/items_controller.rb",
+            "app/controllers/sections_controller.rb",
+            "app/presenters/item_presenter.rb",
+            "app/helpers/course_context_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 31,
+              "code": "module Xikolo   module Entities     class CourseDate < Grape::Entity       include Rails.application.routes.url_helpers        expose def id         id = \"#{object.course_id}|#{object.type}|#{object.resource_id}\"         Digest::MD5.hexdigest id       end        expose :title       expose :date       expose :type        expose def url         case type           when 'course_start'             course_path object.course_code           when 'item_submission_deadline'             course_item_path object.course_code, UUID(object.resource_id).to_param         end       end        expose def course         object.course_id       end     end   end end",
+              "source": "api/xikolo/entities/course_date.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 27,
+              "code": "module Xikolo   module Model     class CourseRepository       def courses_for(user, course_id)         courses = course_api.rel(:courses).get({           per_page: 100,           user_id: user.id,         }).value!         if course_id.present?           courses.select {|c| c['id'] == course_id }         else           courses         end       end        private        def course_api         @course_api ||= Xikolo.api(:course).value!       end     end   end end",
+              "source": "api/xikolo/entities/course_date.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 23,
+              "code": "module Xikolo   module V2     class CourseAPI < Grape::API::Instance       namespace 'courses' do         route_param :course_id, type: String, desc: 'The course UUID' do           namespace 'time_effort' do             mount Endpoint::GetCourseTimeEffort           end         end       end        namespace 'next_dates' do         mount Endpoint::ListNextDates       end     end   end end",
+              "source": "api/xikolo/entities/course_date.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/course_date.rb",
+              "relevance": 44
+            },
+            {
+              "path": "api/xikolo/model/course_repository.rb",
+              "relevance": 44
+            },
+            {
+              "path": "api/xikolo/v2/course_api.rb",
+              "relevance": 44
+            }
+          ]
+        }
+      },
+      "Xikolo::Course::Section": {
+        "type": "ACFS Resource",
+        "description": "Represents a section within a course, fetched from the `Xikolo::CourseService` microservice. Contains information about its title, position, description, and associated items.",
+        "interactions": {
+          "interaction_0": "Fetched by `Course::CoursesController`, `ItemsController`, `SectionsController`, `CourseContextHelper` [Source: app/controllers/course/courses_controller.rb, app/controllers/items_controller.rb, app/controllers/sections_controller.rb, app/helpers/course_context_helper.rb]",
+          "interaction_1": "Created and updated by `SectionsController` [Source: app/controllers/sections_controller.rb]",
+          "interaction_2": "Provides attributes like `id`, `title`, `description`, `published`, `alternative_state`, `parent_id`, `required_section_ids`, `course_id`, `effective_start_date`, `effective_end_date` [Source: app/controllers/sections_controller.rb, app/presenters/section_presenter.rb, app/helpers/course_context_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/courses_controller.rb",
+            "app/controllers/items_controller.rb",
+            "app/controllers/sections_controller.rb",
+            "app/presenters/section_presenter.rb",
+            "app/helpers/course_context_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 29,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2::Courses\n    class SectionProgresses < Xikolo::Endpoint::CollectionEndpoint\n      entity do\n        type 'section-progresses'\n\n        id {|progress|\n          progress['resource_id']\n        }\n\n        attribute('title') {\n          description 'The section\\'s title'\n          type :string\n        }\n\n        attribute('description') {\n          description 'A text describing the section\\'s content'\n          type :string\n        }\n\n        attribute('position') {\n          description 'The sections\\'s position within its course'\n          type :integer\n        }\n\n        attribute('available') {\n          description 'Whether the section was unlocked yet'\n          type :boolean\n        }\n\n        attribute('parent') {\n          description 'Whether the section is a parent section'\n          type :boolean\n        }\n\n        attribute('main_exercises') {\n          description 'The sections\\'s main exercise statistics for user'\n  ...",
+              "source": "api/xikolo/v2/courses/section_progresses.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2::Courses\n    class Sections < Xikolo::Endpoint::CollectionEndpoint\n      entity do\n        type 'course-sections'\n\n        attribute('title') {\n          description 'The section\\'s title'\n          type :string\n        }\n\n        attribute('description') {\n          description 'A text describing the section\\'s content'\n          type :string\n        }\n\n        attribute('position') {\n          description 'The sections\\'s position within its course'\n          type :integer\n        }\n\n        attribute('start_at') {\n          description 'The date when this section becomes available'\n          type :datetime\n          alias_for 'effective_start_date'\n        }\n\n        attribute('end_at') {\n          description 'The date when access to this section is closed'\n          type :datetime\n          alias_for 'effective_end_date'\n        }\n\n        attribute('accessible') {\n          description 'Whether the section\\'s content can be...'",
+              "source": "api/xikolo/v2/courses/section_progresses.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 9,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Course::Concerns\n  module Section\n    extend ActiveSupport::Concern\n\n    included do\n      validates :title, :course_id, presence: true\n    end\n  end\nend",
+              "source": "api/xikolo/v2/courses/section_progresses.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/courses/section_progresses.rb",
+              "relevance": 40
+            },
+            {
+              "path": "api/xikolo/v2/courses/sections.rb",
+              "relevance": 40
+            },
+            {
+              "path": "clients/xikolo-course/lib/xikolo/course/concerns/section.rb",
+              "relevance": 40
+            }
+          ]
+        }
+      },
+      "Xikolo::Course::Item": {
+        "type": "ACFS Resource",
+        "description": "Represents a learning item within a section, fetched from the `Xikolo::CourseService` microservice. Contains details about its content type, title, dates, and prerequisites.",
+        "interactions": {
+          "interaction_0": "Fetched by `Course::CoursesController`, `ItemsController`, `CourseContextHelper` [Source: app/controllers/course/courses_controller.rb, app/controllers/items_controller.rb, app/helpers/course_context_helper.rb]",
+          "interaction_1": "Created and updated by `ItemsController` [Source: app/controllers/items_controller.rb]",
+          "interaction_2": "Provides attributes like `id`, `content_id`, `content_type`, `title`, `max_points`, `optional`, `position`, `section_id`, `featured`, `public_description`, `open_mode`, `time_effort`, `required_item_ids`, `published`, `exercise_type`, `effective_start_date`, `effective_end_date`, `user_state` [Source: app/controllers/items_controller.rb, app/presenters/item_presenter.rb, app/helpers/course_context_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/courses_controller.rb",
+            "app/controllers/items_controller.rb",
+            "app/presenters/item_presenter.rb",
+            "app/helpers/course_context_helper.rb",
+            "services/course/app/models/item.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 29,
+              "code": "module Xikolo::Course\n  class Item < Acfs::Resource\n    service Xikolo::Course::Client, path: 'items'\n\n    attribute :id, :uuid\n    attribute :title, :string\n    attribute :start_date, :date_time\n    attribute :end_date, :date_time\n    attribute :content_type, :string\n    attribute :content_id, :uuid\n    attribute :section_id, :uuid\n    attribute :published, :boolean\n    attribute :exercise_type, :string\n    attribute :max_points, :float\n    attribute :submission_deadline, :date_time\n    attribute :submission_publishing_date, :date_time\n    attribute :show_in_nav, :boolean\n    attribute :position, :integer\n    attribute :next_item_id, :uuid\n    attribute :prev_item_id, :uuid\n    attribute :effective_start_date, :date_time\n    attribute :effective_end_date, :date_time\n    attribute :course_archived, :boolean\n    attribute :user_state, :string\n    attribute :proctored, :boolean\n    attribute :optional, :boolean, default: false\n    attribute :icon_type, :str...\n  end\nend",
+              "source": "api/xikolo/v2/courses/items.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 9,
+              "code": "module Xikolo::Course::Concerns\n  module Item\n    extend ActiveSupport::Concern\n\n    included do\n      validates :title, :content_type, :content_id, :section_id, presence: true\n    end\n  end\nend",
+              "source": "api/xikolo/v2/courses/items.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 34,
+              "code": "      entity do\n        type 'course-items'\n\n        attribute('title') {\n          description 'The item\\'s title'\n          type :string\n        }\n\n        attribute('position') {\n          description 'The item\\'s position within its section'\n          type :integer\n        }\n\n        attribute('deadline') {\n          description 'The date at which the item must have been finished by the user'\n          type :datetime\n          alias_for 'submission_deadline'\n        }\n\n        attribute('content_type') {\n          description 'The type of item: one of quiz, video, rich_text, lti_exercise'\n          type :string\n        }\n\n        attribute('icon') {\n          version max: 4\n          description 'The icon for this item (reflecting the icon in the xikolo-font)'\n          type :string\n          reading {|item|\n            case item['content_type']\n...",
+              "source": "api/xikolo/v2/courses/items.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/courses/items.rb",
+              "relevance": 40
+            },
+            {
+              "path": "clients/xikolo-course/lib/xikolo/course/concerns/item.rb",
+              "relevance": 40
+            },
+            {
+              "path": "clients/xikolo-course/lib/xikolo/course/item.rb",
+              "relevance": 40
+            }
+          ]
+        }
+      },
+      "Xikolo::Course::Visit": {
+        "type": "ACFS Resource",
+        "description": "Represents a user's visit to a course item, created to track learner engagement.",
+        "interactions": {
+          "interaction_0": "Created by `ItemContextHelper#create_visit!` [Source: app/helpers/item_context_helper.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/helpers/item_context_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 9,
+              "code": "class Visit < Acfs::SingletonResource\n    service Xikolo::Course::Client, path: '/items/:item_id/users/:user_id/visit'\n\n    attribute :item_id, :uuid\n    attribute :user_id, :uuid\n  }",
+              "source": "clients/xikolo-course/lib/xikolo/course/visit.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-course/lib/xikolo/course/visit.rb",
+              "relevance": 40
+            },
+            {
+              "path": "app/models/course/visit.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/gamification/rules/course/visited_item.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Xikolo::Course::SectionChoice": {
+        "type": "ACFS Resource",
+        "description": "Records a user's choice for an alternative section.",
+        "interactions": {
+          "interaction_0": "Created by `SectionsController#choose_alternative_section` [Source: app/controllers/sections_controller.rb]",
+          "interaction_1": "Fetched by `SectionPresenter#fetch_section_choices` [Source: app/presenters/section_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/sections_controller.rb",
+            "app/presenters/section_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Course\n  class SectionChoice < Acfs::Resource\n    service Xikolo::Course::Client, path: '/section_choices'\n\n    attribute :section_id, :uuid\n    attribute :user_id, :uuid\n    attribute :choice_ids, :list\n  end\nend",
+              "source": "clients/xikolo-course/lib/xikolo/course/section_choice.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nclass SectionChoicesController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  def index\n    choices = SectionChoice.all\n    choices.where! user_id: params[:user_id] if params[:user_id]\n    choices.where! section_id: params[:section_id] if params[:section_id]\n    respond_with choices\n  end\n\n  def create\n    sc = SectionChoice.find_or_initialize_by(user_id: params[:user_id],\n      section_id: params[:section_id])\n    choice_id = params[:chosen_section_id]\n    unless sc.choice_ids.include?(choice_id)\n      sc.choice_ids << choice_id\n      sc.save!\n    end\n    respond_with({}, {location: ''})\n  end\nend",
+              "source": "clients/xikolo-course/lib/xikolo/course/section_choice.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 11,
+              "code": "# frozen_string_literal: true\n\nclass SectionChoiceDecorator < ApplicationDecorator\n  delegate_all\n\n  def as_api_v1(_opts)\n    {\n      user_id:,\n      section_id:,\n      choice_ids:,\n    }\n  end\nend",
+              "source": "clients/xikolo-course/lib/xikolo/course/section_choice.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-course/lib/xikolo/course/section_choice.rb",
+              "relevance": 29
+            },
+            {
+              "path": "services/course/app/controllers/section_choices_controller.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/course/app/decorators/section_choice_decorator.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Xikolo::Pinboard::ImplicitTag": {
+        "type": "ACFS Resource",
+        "description": "Represents an implicit tag in the Pinboard service, used for associating pinboard content with course sections.",
+        "interactions": {
+          "interaction_0": "Created by `SectionsController#create` upon section creation [Source: app/controllers/sections_controller.rb]",
+          "interaction_1": "Fetched by `SectionPresenter#enqueue_implicit_tags` [Source: app/presenters/section_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/sections_controller.rb",
+            "app/presenters/section_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "  class ImplicitTag < Xikolo::Pinboard::Tag\n    service Xikolo::Pinboard::Client, path: 'implicit_tags'\n\n    attribute :id, :uuid\n    attribute :name, :string\n    attribute :course_id, :uuid\n    attribute :referenced_resource, :string\n    attribute :type, :string\n  end",
+              "source": "clients/xikolo-pinboard/lib/xikolo/pinboard/implicit_tag.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-pinboard/lib/xikolo/pinboard/implicit_tag.rb",
+              "relevance": 29
+            },
+            {
+              "path": "services/pinboard/app/decorators/implicit_tag_decorator.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/pinboard/app/models/implicit_tag.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Xikolo::Quiz::Quiz": {
+        "type": "ACFS Resource",
+        "description": "Represents a quiz fetched from the `Xikolo::QuizService` microservice. Used for displaying and managing quiz items.",
+        "interactions": {
+          "interaction_0": "Created, updated, and fetched by `ItemsController` for quiz content [Source: app/controllers/items_controller.rb]",
+          "interaction_1": "Interacts with `Xikolo::Quiz::Question` and `Xikolo::Quiz::Answer` for quiz details [Source: app/controllers/items_controller.rb]",
+          "interaction_2": "Deleted by `ItemsController#destroy` [Source: app/controllers/items_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/items_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 7,
+              "endLine": 29,
+              "code": "      entity do\n        type 'quizzes'\n\n        attribute('instructions') {\n          description 'Textual instructions for the quiz taker in Markdown format'\n          type :string\n        }\n\n        attribute('time_limit') {\n          description 'The time (in seconds) that the user can take to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_time'] ? 0 : quiz['time_limit_seconds']\n          }\n        }\n\n        attribute('allowed_attempts') {\n          description 'The number of allowed attempts the user has to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_attempts'] ? 0 : quiz['allowed_attempts']\n          }\n        }\n\n        link('self') {|quiz| \"/api/v2/quizzes/#{quiz['id']}\" }\n",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/quiz/quizzes.rb",
+              "relevance": 44
+            },
+            {
+              "path": "clients/xikolo-quiz/lib/xikolo/quiz.rb",
+              "relevance": 44
+            },
+            {
+              "path": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission.rb",
+              "relevance": 44
+            }
+          ]
+        }
+      },
+      "Lti::Exercise": {
+        "type": "Model/ACFS Resource",
+        "description": "Represents an LTI exercise, used for displaying and managing LTI content items.",
+        "interactions": {
+          "interaction_0": "Created, updated, and fetched by `ItemsController` for LTI exercise content [Source: app/controllers/items_controller.rb]",
+          "interaction_1": "Interacts with `Lti::Provider` for LTI provider details [Source: app/controllers/items_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/items_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 39,
+              "code": "# frozen_string_literal: true\n\nmodule Lti\n  class Exercise < ::ApplicationRecord\n    self.table_name = 'lti_exercises'\n\n    DEFAULT_WEIGHT = 1\n\n    attribute :instructions, Xikolo::S3::Markup.new(\n      uploads: {purpose: 'lti_exercise_instructions', content_type: 'image/*'}\n    )\n\n    validates :lti_provider_id, presence: true\n\n    belongs_to :provider,\n      optional: true,\n      class_name: 'Lti::Provider',\n      foreign_key: :lti_provider_id,\n      inverse_of: :exercises\n\n    has_one :item,\n      class_name: 'Course::Item',\n      as: :content,\n      dependent: :restrict_with_exception\n\n    has_many :gradebooks,\n      class_name: 'Lti::Gradebook',\n      dependent: :destroy,\n      foreign_key: :lti_exercise_id,\n      inverse_of: :exercise\n\n    def score_for(user_id)\n      gradebooks.find_by(user_id:).try(:highest_grade).try(:score)\n    end\n\n    def deleted_provider?\n      persisted? && reload_provider.nil?\n    end\n\n    def weight\n      self[:weight] || DEFAULT_WEIGHT\n    end",
+              "source": "app/models/lti/exercise.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 41,
+              "code": "# frozen_string_literal: true\n\nmodule Lti\n  class Exercise\n    class Store < ApplicationOperation\n      def initialize(exercise, params)\n        super()\n\n        @exercise = exercise\n        @params = params\n      end\n\n      def call\n        if @params[:instructions]\n          instructions = @params.delete(:instructions)\n          @exercise.assign_attributes @params\n          configure_processor! instructions\n          process_instructions_and_save\n        else\n          @exercise.update @params\n        end\n        @exercise\n      end\n\n      private\n\n      def configure_processor!(input)\n        @processor = Xikolo::S3::TextWithUploadsProcessor.new \\\n          bucket: :lti,\n          purpose: 'lti_exercise_instructions',\n          current: @exercise.instructions,\n          text: input,\n          valid_refs: @exercise.instructions&.file_refs || []\n        @processor.on_new do |upload|\n          eid = UUID4(@exercise.id).to_s(format: :base62)\n          {\n            key: \"ltiexercises/#{...",
+              "source": "app/models/lti/exercise.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 33,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2::CourseItems\n    class LtiExercises < Xikolo::Endpoint::CollectionEndpoint\n      entity do\n        type 'lti-exercises'\n\n        attribute('instructions') {\n          description 'A text with detailed explanation what this task will entail'\n          type :string\n        }\n\n        attribute('weight') {\n          description 'A multiplier (integer) for the LTI score (a number between 0 and 1) to achieve the final score for this exercise'\n          type :integer\n        }\n\n        attribute('allowed_attempts') {\n          description 'The maximum number of attempts allowed per user (0 is infinite)'\n          type :integer\n        }\n\n        attribute('launch_url') {\n          description 'URL to launch the LTI tool'\n          type :string\n          reading {|exercise|\n            next unless exercise.lti_provider_id\n\n            item = ::Course::Item.find_by(content_id: exercise.id)\n            course_id = item&.section&.course_id...",
+              "source": "app/models/lti/exercise.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/lti/exercise.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/operations/lti/exercise/store.rb",
+              "relevance": 29
+            },
+            {
+              "path": "api/xikolo/v2/course_items/lti_exercises.rb",
+              "relevance": 18
+            }
+          ]
+        }
+      },
+      "Video::Video": {
+        "type": "Model/ACFS Resource",
+        "description": "Represents a video, used for displaying and managing video content items.",
+        "interactions": {
+          "interaction_0": "Created, updated, and fetched by `ItemsController` for video content [Source: app/controllers/items_controller.rb]",
+          "interaction_1": "Interacts with `Video::Store` for video storage operations [Source: app/controllers/items_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/items_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 27,
+              "code": "      entity do\n        type 'videos'\n\n        attribute('summary') {\n          description 'A short description of the video contents'\n          alias_for 'description'\n          type :string\n        }\n\n        attribute('duration') {\n          description 'The video\\'s duration in seconds, if known'\n          type :integer\n        }\n\n        attribute('single_stream') {\n          description 'Media info about the single stream (picture-in-picture), if it exists. Clients can choose to use this version instead of combining the lecturer and slides streams.'\n          type :hash, of: Xikolo::V2::VideoStream.schema\n          reading {|video|\n            next if video['pip_stream_id'].blank?\n\n            stream = ::Video::Stream.find video['pip_stream_id']\n            Xikolo::V2::VideoStream.data stream, video['id']\n          }\n        }\n\n        at...",
+              "source": "api/xikolo/v2/course_items/videos.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 29,
+              "code": "    class VideoStream\n      class << self\n        def schema\n          {\n            hd_url: :string,\n            sd_url: :string,\n            hls_url: :string,\n            hd_size: :integer,\n            sd_size: :integer,\n            thumbnail_url: :string,\n          }\n        end\n\n        def data(stream, video_id = nil)\n          {\n            hd_url: stream.hd_url,\n            sd_url: stream.sd_url,\n            hls_url: stream.hls_url.present? ? Xikolo::V2::URL.playlist_url(id: stream.id, format: 'm3u8', embed_subtitles_for_video: video_id) : nil,\n            hd_size: stream.hd_size || 0,\n            sd_size: stream.sd_size || 0,\n            thumbnail_url: stream.poster,\n          }\n        end\n      end\n    end",
+              "source": "api/xikolo/v2/course_items/videos.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 35,
+              "code": "  class VideoPlayer < ApplicationComponent\n    def self.compatible?(video)\n      provider_types = %w[vimeo kaltura]\n\n      [video.lecturer_stream, video.slides_stream, video.pip_stream, video.subtitled_stream].compact.all? do |stream|\n        provider_types.include? stream.provider.provider_type\n      end\n    end\n\n    def self.build(video:, user:, **opts)\n      new(video, user:, opts:)\n    end\n\n    def initialize(video, user:, opts: {})\n      @video = video\n      @user = user\n      @opts = opts\n    end\n\n    private\n\n    def streams\n      if @video.lecturer_stream && @video.slides_stream\n        [\n          render_stream(@video.lecturer_stream, 'primary'),\n          render_stream(@video.slides_stream, 'secondary'),\n          tag.xm_presentation('', reference: 'primary,secondary', name: 'dual',\n            label: t(:'video_player.dual_stream_mode')),\n        ]\n      elsif @video.pip_stream\n        [\n          render_stream(@video.pip_stream, 'p...",
+              "source": "api/xikolo/v2/course_items/videos.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/course_items/videos.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/video_stream.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/video/video_player.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Course::Richtext": {
+        "type": "Model/ACFS Resource",
+        "description": "Represents rich text content, used for displaying and managing rich text items.",
+        "interactions": {
+          "interaction_0": "Created, updated, and fetched by `ItemsController` for rich text content [Source: app/controllers/items_controller.rb]",
+          "interaction_1": "Interacts with `Course::Richtext::Store` for rich text storage operations [Source: app/controllers/items_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/items_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 21,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class Richtext < ApplicationRecord\n    attribute :text, Xikolo::S3::Markup.new(\n      uploads: {purpose: 'course_richtext'}\n    )\n\n    belongs_to :course, class_name: 'Course::Course'\n    has_one :item,\n      class_name: 'Course::Item',\n      as: :content,\n      dependent: :restrict_with_exception\n\n    after_commit :delete_s3_objects!, on: :destroy\n\n    def self.referenced?(uri)\n      ::Course::Course.exists?(['description LIKE ?', \"%#{uri}%\"]) ||\n        ::Course::Richtext.exists?(['text LIKE ?', \"%#{uri}%\"])\n    end\n\n    def as_api_v2\n      @api_v2 ||= ::Course::Richtext::APIV2.new(self).as_json # rubocop:disable Naming/MemoizedInstanceVariableName\n    end\n  end\nend",
+              "source": "app/models/course/richtext.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 10,
+              "code": "  def show\n    respond_with Richtext.find params[:id]\n  end",
+              "source": "app/models/course/richtext.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 21,
+              "code": "  def text\n    Xikolo::S3.externalize_file_refs(object.text, public: true)\n  end",
+              "source": "app/models/course/richtext.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/course/richtext.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/course/app/controllers/richtexts_controller.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/course/app/decorators/richtext_decorator.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "Course Overview Display",
+        "description": "A user views the main page for a course, seeing general information, teachers, sections, and featured items.",
+        "involvedComponents": [
+          "Course::CoursesController",
+          "CourseContextHelper",
+          "Course::TeacherListPresenter",
+          "FeaturedItemPresenter",
+          "CourseLargePreviewPresenter",
+          "Course::CourseDetailsPresenter",
+          "Xikolo::Course::Course",
+          "Xikolo::Course::Section",
+          "Xikolo::Course::Item"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/courses_controller.rb",
+            "app/helpers/course_context_helper.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Course Syllabus Navigation",
+        "description": "A user navigates to the course syllabus to see an overview of all content and their progress.",
+        "involvedComponents": [
+          "Course::SyllabusController",
+          "CourseContextHelper",
+          "Course::ProgressPresenter",
+          "Navigation::TableOfContents",
+          "Xikolo::Course::Course",
+          "Xikolo::Course::Section",
+          "Xikolo::Course::Item"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/syllabus_controller.rb",
+            "app/helpers/course_context_helper.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Item Content Display",
+        "description": "A user views a specific learning item within a course, potentially encountering prerequisites or recording a visit.",
+        "involvedComponents": [
+          "ItemsController",
+          "CourseContextHelper",
+          "ItemContextHelper",
+          "ItemPresenter",
+          "Course::PositionPresenter",
+          "Xikolo::Course::Item",
+          "Xikolo::Course::Visit",
+          "Xikolo::Account::Preferences",
+          "Video::Video",
+          "Course::Richtext",
+          "Xikolo::Quiz::Quiz",
+          "Lti::Exercise"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/items_controller.rb",
+            "app/helpers/course_context_helper.rb",
+            "app/helpers/item_context_helper.rb",
+            "app/presenters/item_presenter.rb",
+            "services/course/app/models/item.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Section Management (Admin)",
+        "description": "A content editor creates, updates, moves, or deletes sections within a course.",
+        "involvedComponents": [
+          "SectionsController",
+          "CourseContextHelper",
+          "CoursePresenter",
+          "Xikolo::Course::Section",
+          "Xikolo::Pinboard::ImplicitTag",
+          "Course::Structure::Node"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/sections_controller.rb",
+            "app/helpers/course_context_helper.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Item Management (Admin)",
+        "description": "A content editor creates, updates, moves, or deletes learning items within a course section.",
+        "involvedComponents": [
+          "ItemsController",
+          "CourseContextHelper",
+          "ItemContextHelper",
+          "Xikolo::Course::Item",
+          "Video::Video",
+          "Video::Store",
+          "Course::Richtext",
+          "Course::Richtext::Store",
+          "Xikolo::Quiz::Quiz",
+          "Lti::Exercise",
+          "Lti::Exercise::Store",
+          "FileUpload",
+          "Course::Structure::Node"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/items_controller.rb",
+            "app/helpers/course_context_helper.rb",
+            "app/helpers/item_context_helper.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Course Progress Tracking",
+        "description": "A user or administrator views the progress of a learner in a course, seeing metrics and item statuses.",
+        "involvedComponents": [
+          "Course::ProgressController",
+          "CourseContextHelper",
+          "Xikolo::Account::User",
+          "Course::DocumentsPresenter",
+          "Xikolo.api(:course)"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/progress_controller.rb",
+            "app/helpers/course_context_helper.rb",
+            "app/presenters/course/progress_presenter.rb"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [
+    {
+      "title": "Frontend Display and Navigation for Courses, Sections, and Items - Architecture Overview",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 1400\" width=\"100%\">\n  <title>Frontend Display and Navigation for Courses, Sections, and Items Architecture</title>\n  <desc>\n    An SVG infographic illustrating the architecture and component relationships for the frontend display and navigation\n    feature cluster. It highlights controllers, helpers, presenters, and data models, along with key workflows for\n    item content display and course overview.\n  </desc>\n\n  <defs>\n    <!-- Standard Arrowhead -->\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n    <!-- Workflow: Item Content Display Arrowhead (Green) -->\n    <marker id=\"workflow-item-arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#28A745\" />\n    </marker>\n    <!-- Workflow: Course Overview Display Arrowhead (Blue) -->\n    <marker id=\"workflow-course-arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#007BFF\" />\n    </marker>\n  </defs>\n\n  <style>\n    .component-rect {\n      rx: 10;\n      ry: 10;\n      stroke: #343A40;\n      stroke-width: 2;\n    }\n    .controller-fill { fill: #9b59b6; }\n    .logic-fill { fill: #FFC107; }\n    .model-fill { fill: #6C757D; }\n\n    .component-name {\n      font-family: 'Arial, sans-serif';\n      font-size: 18px;\n      font-weight: bold;\n      fill: #343A40;\n    }\n    .component-desc {\n      font-family: 'Arial, sans-serif';\n      font-size: 12px;\n      fill: #343A40;\n    }\n    .main-title {\n      font-family: 'Arial, sans-serif';\n      font-size: 28px;\n      font-weight: bold;\n      fill: #343A40;\n    }\n    .legend-title {\n      font-family: 'Arial, sans-serif';\n      font-size: 18px;\n      font-weight: bold;\n      fill: #343A40;\n    }\n    .legend-item {\n      font-family: 'Arial, sans-serif';\n      font-size: 14px;\n      fill: #343A40;\n    }\n    .arrow-path {\n      stroke: #343A40;\n      stroke-width: 2;\n      fill: none;\n      marker-end: url(#arrowhead);\n    }\n    .workflow-item-path {\n      stroke: #28A745;\n      stroke-width: 3;\n      fill: none;\n      marker-end: url(#workflow-item-arrowhead);\n      stroke-dasharray: 5 5;\n    }\n    .workflow-course-path {\n      stroke: #007BFF;\n      stroke-width: 3;\n      fill: none;\n      marker-end: url(#workflow-course-arrowhead);\n      stroke-dasharray: 5 5;\n    }\n    .arrow-label {\n      font-family: 'Arial, sans-serif';\n      font-size: 10px;\n      fill: #343A40;\n      text-anchor: middle;\n    }\n    .workflow-label-item {\n      font-family: 'Arial, sans-serif';\n      font-size: 10px;\n      fill: #28A745;\n      font-weight: bold;\n      text-anchor: middle;\n    }\n    .workflow-label-course {\n      font-family: 'Arial, sans-serif';\n      font-size: 10px;\n      fill: #007BFF;\n      font-weight: bold;\n      text-anchor: middle;\n    }\n  </style>\n\n  <!-- Title -->\n  <text x=\"800\" y=\"50\" text-anchor=\"middle\" class=\"main-title\">Frontend Display and Navigation for Courses, Sections, and Items</text>\n\n  <!-- Component Definitions -->\n  <!-- Constants for layout -->\n  <script type=\"text/ecmascript\">\n    const NODE_WIDTH = 280;\n    const NODE_HEIGHT = 100;\n    const H_GAP = 40;\n    const V_GAP = 60;\n    const PADDING = 15;\n    const LINE_HEIGHT = 1.2;\n\n    function createComponent(x, y, name, description, colorClass) {\n      const g = document.createElementNS(\"http://www.w3.org/2000/svg\", \"g\");\n      g.setAttribute(\"transform\", `translate(${x}, ${y})`);\n\n      const rect = document.createElementNS(\"http://www.w3.org/2000/svg\", \"rect\");\n      rect.setAttribute(\"width\", NODE_WIDTH);\n      rect.setAttribute(\"height\", NODE_HEIGHT);\n      rect.setAttribute(\"class\", `component-rect ${colorClass}`);\n      g.appendChild(rect);\n\n      const text = document.createElementNS(\"http://www.w3.org/2000/svg\", \"text\");\n      text.setAttribute(\"x\", PADDING);\n      text.setAttribute(\"y\", PADDING + 10);\n\n      const nameTspan = document.createElementNS(\"http://www.w3.org/2000/svg\", \"tspan\");\n      nameTspan.setAttribute(\"x\", PADDING);\n      nameTspan.setAttribute(\"dy\", \"0\");\n      nameTspan.setAttribute(\"class\", \"component-name\");\n      nameTspan.textContent = name;\n      text.appendChild(nameTspan);\n\n      const descLines = description.split('\\n');\n      descLines.forEach((line, index) => {\n        const descTspan = document.createElementNS(\"http://www.w3.org/2000/svg\", \"tspan\");\n        descTspan.setAttribute(\"x\", PADDING);\n        descTspan.setAttribute(\"dy\", `${LINE_HEIGHT}em`);\n        descTspan.setAttribute(\"class\", \"component-desc\");\n        descTspan.textContent = line;\n        text.appendChild(descTspan);\n      });\n      g.appendChild(text);\n      return g;\n    }\n  </script>\n\n  <!-- Component Coordinates -->\n  <!-- Row 1: Controllers -->\n  <g id=\"controllers-row1\">\n    <script type=\"text/ecmascript\">\n      const y1 = 100;\n      const x1 = 50;\n      document.currentScript.parentNode.appendChild(createComponent(x1, y1, \"Course::CoursesController\", \"Handles main course overview, fetches details,\\nsections & featured items. Manages access.\", \"controller-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + NODE_WIDTH + H_GAP, y1, \"Course::SyllabusController\", \"Displays course syllabus, content overview\\n& progress.\", \"controller-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + 2 * (NODE_WIDTH + H_GAP), y1, \"Course::ProgressController\", \"Shows user progress in a course for learners\\n& staff.\", \"controller-fill\"));\n    </script>\n  </g>\n\n  <!-- Row 2: Controllers -->\n  <g id=\"controllers-row2\">\n    <script type=\"text/ecmascript\">\n      const y2 = 100 + NODE_HEIGHT + V_GAP;\n      const x2_start = x1 + (NODE_WIDTH + H_GAP) / 2;\n      document.currentScript.parentNode.appendChild(createComponent(x2_start, y2, \"ItemsController\", \"Manages display, CRUD for course items\\n(video, quiz, LTI, rich text).\", \"controller-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x2_start + NODE_WIDTH + H_GAP, y2, \"SectionsController\", \"Manages display, CRUD for course sections.\\nRedirects to first available item.\", \"controller-fill\"));\n    </script>\n  </g>\n\n  <!-- Row 3: Helpers & Navigation -->\n  <g id=\"helpers-navigation-row\">\n    <script type=\"text/ecmascript\">\n      const y3 = y2 + NODE_HEIGHT + V_GAP;\n      document.currentScript.parentNode.appendChild(createComponent(x1, y3, \"CourseContextHelper\", \"Establishes current course/section/item context.\\nHandles eligibility & resource loading.\", \"logic-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + NODE_WIDTH + H_GAP, y3, \"ItemContextHelper\", \"Specific context for items, ensures item belongs\\nto course, prepares presenters.\", \"logic-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + 2 * (NODE_WIDTH + H_GAP), y3, \"Navigation::TableOfContents\", \"Builds hierarchical navigation (TOC) for a course,\\nincluding sections & items.\", \"logic-fill\"));\n    </script>\n  </g>\n\n  <!-- Row 4: Presenters -->\n  <g id=\"presenters-row\">\n    <script type=\"text/ecmascript\">\n      const y4 = y3 + NODE_HEIGHT + V_GAP;\n      const x4_start = x1 + (NODE_WIDTH + H_GAP) / 2;\n      document.currentScript.parentNode.appendChild(createComponent(x4_start, y4, \"ItemPresenter\", \"Formats item data, determines display logic\\n(locked/unlocked, visited), prerequisites.\", \"logic-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x4_start + NODE_WIDTH + H_GAP, y4, \"SectionPresenter\", \"Formats section data, determines availability,\\nhandles alternatives & requirements.\", \"logic-fill\"));\n    </script>\n  </g>\n\n  <!-- Row 5: Core Course Models -->\n  <g id=\"core-models-row\">\n    <script type=\"text/ecmascript\">\n      const y5 = y4 + NODE_HEIGHT + V_GAP;\n      document.currentScript.parentNode.appendChild(createComponent(x1, y5, \"Xikolo::Course::Course\", \"Represents a course, fetched from\\n`Xikolo::CourseService`.\", \"model-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + NODE_WIDTH + H_GAP, y5, \"Xikolo::Course::Section\", \"Represents a course section, fetched from\\n`Xikolo::CourseService`.\", \"model-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + 2 * (NODE_WIDTH + H_GAP), y5, \"Xikolo::Course::Item\", \"Represents a learning item, fetched from\\n`Xikolo::CourseService`.\", \"model-fill\"));\n    </script>\n  </g>\n\n  <!-- Row 6: Related Models & Content Types -->\n  <g id=\"related-models-row1\">\n    <script type=\"text/ecmascript\">\n      const y6 = y5 + NODE_HEIGHT + V_GAP;\n      document.currentScript.parentNode.appendChild(createComponent(x1, y6, \"Xikolo::Course::Visit\", \"Tracks user visits to course items\\nfor engagement.\", \"model-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + NODE_WIDTH + H_GAP, y6, \"Xikolo::Course::SectionChoice\", \"Records user's choice for an alternative\\nsection.\", \"model-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + 2 * (NODE_WIDTH + H_GAP), y6, \"Xikolo::Pinboard::ImplicitTag\", \"Implicit tag from Pinboard, links content\\nto sections.\", \"model-fill\"));\n    </script>\n  </g>\n\n  <!-- Row 7: Content Types -->\n  <g id=\"content-types-row\">\n    <script type=\"text/ecmascript\">\n      const y7 = y6 + NODE_HEIGHT + V_GAP;\n      document.currentScript.parentNode.appendChild(createComponent(x1, y7, \"Xikolo::Quiz::Quiz\", \"Represents a quiz, fetched from\\n`Xikolo::QuizService`.\", \"model-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + NODE_WIDTH + H_GAP, y7, \"Lti::Exercise\", \"Represents an LTI exercise item.\", \"model-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + 2 * (NODE_WIDTH + H_GAP), y7, \"Video::Video\", \"Represents a video content item.\", \"model-fill\"));\n      document.currentScript.parentNode.appendChild(createComponent(x1 + 3 * (NODE_WIDTH + H_GAP) - NODE_WIDTH/2, y7, \"Course::Richtext\", \"Represents rich text content item.\", \"model-fill\"));\n    </script>\n  </g>\n\n  <!-- General Interactions (Black Arrows) -->\n  <g id=\"general-interactions\">\n    <!-- Controllers to Helpers -->\n    <path d=\"M 190 200 V 220 H 190 V 360\" class=\"arrow-path\"/> <!-- Course::CoursesController to CourseContextHelper -->\n    <path d=\"M 510 200 V 220 H 510 V 360\" class=\"arrow-path\"/> <!-- Course::SyllabusController to CourseContextHelper -->\n    <path d=\"M 830 200 V 220 H 830 V 360\" class=\"arrow-path\"/> <!-- Course::ProgressController to CourseContextHelper -->\n    <path d=\"M 350 320 V 340 H 350 V 360\" class=\"arrow-path\"/> <!-- ItemsController to CourseContextHelper -->\n    <path d=\"M 670 320 V 340 H 670 V 360\" class=\"arrow-path\"/> <!-- SectionsController to CourseContextHelper -->\n\n    <path d=\"M 350 320 V 340 H 350 V 360 H 510 V 360\" class=\"arrow-path\"/> <!-- ItemsController to ItemContextHelper (via CourseContextHelper area) -->\n    <path d=\"M 510 360 V 460\" class=\"arrow-path\"/> <!-- ItemContextHelper to ItemPresenter -->\n\n    <!-- Controllers to Presenters -->\n    <path d=\"M 190 200 V 220 H 190 V 360 H 190 V 460 H 350 V 460\" class=\"arrow-path\"/> <!-- Course::CoursesController to SectionPresenter -->\n    <path d=\"M 510 200 V 220 H 510 V 360 H 510 V 460 H 670 V 460\" class=\"arrow-path\"/> <!-- Course::SyllabusController to SectionPresenter -->\n    <path d=\"M 830 200 V 220 H 830 V 360 H 830 V 460 H 670 V 460\" class=\"arrow-path\"/> <!-- Course::ProgressController to SectionPresenter -->\n    <path d=\"M 670 320 V 340 H 670 V 460\" class=\"arrow-path\"/> <!-- SectionsController to SectionPresenter -->\n\n    <path d=\"M 190 200 V 220 H 190 V 360 H 190 V 460 H 350 V 460\" class=\"arrow-path\"/> <!-- Course::CoursesController to ItemPresenter -->\n    <path d=\"M 510 200 V 220 H 510 V 360 H 510 V 460 H 350 V 460\" class=\"arrow-path\"/> <!-- Course::SyllabusController to ItemPresenter -->\n    <path d=\"M 830 200 V 220 H 830 V 360 H 830 V 460 H 350 V 460\" class=\"arrow-path\"/> <!-- Course::ProgressController to ItemPresenter -->\n\n\n    <!-- Navigation::TableOfContents to Presenters -->\n    <path d=\"M 830 460 V 480 H 830 V 560 H 670 V 560\" class=\"arrow-path\"/> <!-- Navigation::TableOfContents to SectionPresenter -->\n    <path d=\"M 830 460 V 480 H 830 V 560 H 350 V 560\" class=\"arrow-path\"/> <!-- Navigation::TableOfContents to ItemPresenter -->\n\n    <!-- Presenters to Core Models -->\n    <path d=\"M 350 560 V 580 H 350 V 700 H 830 V 700\" class=\"arrow-path\"/> <!-- ItemPresenter to Xikolo::Course::Item -->\n    <path d=\"M 670 560 V 580 H 670 V 700 H 510 V 700\" class=\"arrow-path\"/> <!-- SectionPresenter to Xikolo::Course::Section -->\n\n    <!-- Helpers to Core Models -->\n    <path d=\"M 190 460 V 480 H 190 V 700\" class=\"arrow-path\"/> <!-- CourseContextHelper to Xikolo::Course::Course -->\n    <path d=\"M 190 460 V 480 H 190 V 700 H 510 V 700\" class=\"arrow-path\"/> <!-- CourseContextHelper to Xikolo::Course::Section -->\n    <path d=\"M 190 460 V 480 H 190 V 700 H 830 V 700\" class=\"arrow-path\"/> <!-- CourseContextHelper to Xikolo::Course::Item -->\n    <path d=\"M 510 460 V 480 H 510 V 700 H 830 V 700\" class=\"arrow-path\"/> <!-- ItemContextHelper to Xikolo::Course::Item -->\n\n    <!-- Core Models to Related Models -->\n    <path d=\"M 830 700 V 720 H 830 V 860\" class=\"arrow-path\"/> <!-- Xikolo::Course::Item to Xikolo::Course::Visit -->\n    <path d=\"M 510 700 V 720 H 510 V 860 H 510 V 860\" class=\"arrow-path\"/> <!-- Xikolo::Course::Section to Xikolo::Course::SectionChoice -->\n    <path d=\"M 510 700 V 720 H 510 V 860 H 830 V 860\" class=\"arrow-path\"/> <!-- Xikolo::Course::Section to Xikolo::Pinboard::ImplicitTag -->\n\n    <!-- Xikolo::Course::Item to Content Types -->\n    <path d=\"M 830 700 V 720 H 830 V 1020\" class=\"arrow-path\"/> <!-- Xikolo::Course::Item to Xikolo::Quiz::Quiz -->\n    <path d=\"M 830 700 V 720 H 830 V 1020 H 510 V 1020\" class=\"arrow-path\"/> <!-- Xikolo::Course::Item to Lti::Exercise -->\n    <path d=\"M 830 700 V 720 H 830 V 1020 H 830 V 1020\" class=\"arrow-path\"/> <!-- Xikolo::Course::Item to Video::Video -->\n    <path d=\"M 830 700 V 720 H 830 V 1020 H 1150 V 1020\" class=\"arrow-path\"/> <!-- Xikolo::Course::Item to Course::Richtext -->\n\n    <!-- Controllers to Related Models (for management workflows) -->\n    <path d=\"M 350 320 V 340 H 350 V 860\" class=\"arrow-path\"/> <!-- ItemsController to Xikolo::Course::Visit (create/update) -->\n    <path d=\"M 670 320 V 340 H 670 V 860 H 510 V 860\" class=\"arrow-path\"/> <!-- SectionsController to Xikolo::Course::SectionChoice (create/update) -->\n  </g>\n\n  <!-- Workflow: Item Content Display (Green Arrows) -->\n  <g id=\"workflow-item-display\">\n    <text x=\"50\" y=\"150\" class=\"workflow-label-item\" text-anchor=\"start\">User Request</text>\n    <path d=\"M 50 160 H 290 V 220 H 350 V 320\" class=\"workflow-item-path\"/> <!-- User to ItemsController -->\n    <text x=\"350\" y=\"300\" class=\"workflow-label-item\">.show()</text>\n\n    <path d=\"M 350 320 V 340 H 350 V 360\" class=\"workflow-item-path\"/> <!-- ItemsController to CourseContextHelper -->\n    <text x=\"350\" y=\"340\" class=\"workflow-label-item\">.set_course_context</text>\n\n    <path d=\"M 350 320 V 340 H 350 V 360 H 510 V 360\" class=\"workflow-item-path\"/> <!-- ItemsController to ItemContextHelper -->\n    <text x=\"430\" y=\"340\" class=\"workflow-label-item\">.set_item_context</text>\n\n    <path d=\"M 190 460 V 480 H 190 V 700\" class=\"workflow-item-path\"/> <!-- CourseContextHelper to Xikolo::Course::Course -->\n    <text x=\"190\" y=\"580\" class=\"workflow-label-item\">fetch</text>\n    <path d=\"M 190 460 V 480 H 190 V 700 H 510 V 700\" class=\"workflow-item-path\"/> <!-- CourseContextHelper to Xikolo::Course::Section -->\n    <text x=\"350\" y=\"580\" class=\"workflow-label-item\">fetch</text>\n\n    <path d=\"M 510 460 V 480 H 510 V 700 H 830 V 700\" class=\"workflow-item-path\"/> <!-- ItemContextHelper to Xikolo::Course::Item -->\n    <text x=\"670\" y=\"580\" class=\"workflow-label-item\">fetch</text>\n\n    <path d=\"M 350 320 V 340 H 350 V 460\" class=\"workflow-item-path\"/> <!-- ItemsController to ItemPresenter -->\n    <text x=\"350\" y=\"440\" class=\"workflow-label-item\">use</text>\n\n    <path d=\"M 350 560 V 580 H 350 V 700 H 830 V 700 H 830 V 860\" class=\"workflow-item-path\"/> <!-- ItemPresenter to Xikolo::Course::Visit -->\n    <text x=\"590\" y=\"780\" class=\"workflow-label-item\">check status</text>\n\n    <path d=\"M 350 320 V 340 H 350 V 860 H 190 V 860\" class=\"workflow-item-path\"/> <!-- ItemsController to Xikolo::Quiz::Quiz (example content type) -->\n    <text x=\"270\" y=\"840\" class=\"workflow-label-item\">load content</text>\n    <path d=\"M 350 320 V 340 H 350 V 860 H 510 V 860\" class=\"workflow-item-path\"/> <!-- ItemsController to Lti::Exercise -->\n    <path d=\"M 350 320 V 340 H 350 V 860 H 830 V 860\" class=\"workflow-item-path\"/> <!-- ItemsController to Video::Video -->\n    <path d=\"M 350 320 V 340 H 350 V 860 H 1150 V 860\" class=\"workflow-item-path\"/> <!-- ItemsController to Course::Richtext -->\n\n    <path d=\"M 350 320 V 340 H 350 V 860\" class=\"workflow-item-path\"/> <!-- ItemsController to Xikolo::Course::Visit (record) -->\n    <text x=\"350\" y=\"840\" class=\"workflow-label-item\">record visit</text>\n  </g>\n\n  <!-- Workflow: Course Overview Display (Blue Arrows) -->\n  <g id=\"workflow-course-overview\">\n    <text x=\"50\" y=\"100\" class=\"workflow-label-course\" text-anchor=\"start\">User Request</text>\n    <path d=\"M 50 110 H 190\" class=\"workflow-course-path\"/> <!-- User to Course::CoursesController -->\n    <text x=\"190\" y=\"90\" class=\"workflow-label-course\">.show()</text>\n\n    <path d=\"M 190 200 V 220 H 190 V 360\" class=\"workflow-course-path\"/> <!-- Course::CoursesController to CourseContextHelper -->\n    <text x=\"190\" y=\"340\" class=\"workflow-label-course\">.set_course_context</text>\n\n    <path d=\"M 190 460 V 480 H 190 V 700\" class=\"workflow-course-path\"/> <!-- CourseContextHelper to Xikolo::Course::Course -->\n    <text x=\"190\" y=\"580\" class=\"workflow-label-course\">fetch</text>\n    <path d=\"M 190 460 V 480 H 190 V 700 H 510 V 700\" class=\"workflow-course-path\"/> <!-- CourseContextHelper to Xikolo::Course::Section -->\n    <text x=\"350\" y=\"580\" class=\"workflow-label-course\">fetch</text>\n    <path d=\"M 190 460 V 480 H 190 V 700 H 830 V 700\" class=\"workflow-course-path\"/> <!-- CourseContextHelper to Xikolo::Course::Item (featured) -->\n    <text x=\"590\" y=\"580\" class=\"workflow-label-course\">fetch featured</text>\n\n    <path d=\"M 190 200 V 220 H 190 V 360 H 190 V 460 H 670 V 460\" class=\"workflow-course-path\"/> <!-- Course::CoursesController to SectionPresenter -->\n    <text x=\"430\" y=\"440\" class=\"workflow-label-course\">use</text>\n    <path d=\"M 190 200 V 220 H 190 V 360 H 190 V 460 H 350 V 460\" class=\"workflow-course-path\"/> <!-- Course::CoursesController to ItemPresenter -->\n    <text x=\"270\" y=\"440\" class=\"workflow-label-course\">use</text>\n  </g>\n\n  <!-- Legend -->\n  <g id=\"legend\">\n    <text x=\"1200\" y=\"100\" class=\"legend-title\">Legend</text>\n\n    <rect x=\"1200\" y=\"130\" width=\"20\" height=\"20\" class=\"component-rect controller-fill\"/>\n    <text x=\"1230\" y=\"145\" class=\"legend-item\">Controller</text>\n\n    <rect x=\"1200\" y=\"160\" width=\"20\" height=\"20\" class=\"component-rect logic-fill\"/>\n    <text x=\"1230\" y=\"175\" class=\"legend-item\">Logic / Helper / Presenter</text>\n\n    <rect x=\"1200\" y=\"190\" width=\"20\" height=\"20\" class=\"component-rect model-fill\"/>\n    <text x=\"1230\" y=\"205\" class=\"legend-item\">Model / Data</text>\n\n    <path d=\"M 1200 240 H 1220\" class=\"arrow-path\" marker-end=\"url(#arrowhead)\"/>\n    <text x=\"1230\" y=\"245\" class=\"legend-item\">General Interaction</text>\n\n    <path d=\"M 1200 270 H 1220\" class=\"workflow-item-path\" marker-end=\"url(#workflow-item-arrowhead)\"/>\n    <text x=\"1230\" y=\"275\" class=\"legend-item\">Workflow: Item Content Display</text>\n\n    <path d=\"M 1200 300 H 1220\" class=\"workflow-course-path\" marker-end=\"url(#workflow-course-arrowhead)\"/>\n    <text x=\"1230\" y=\"305\" class=\"legend-item\">Workflow: Course Overview Display</text>\n  </g>\n\n</svg>\n```"
+    },
+    {
+      "title": "Frontend Display and Navigation for Courses, Sections, and Items - Workflow Diagram",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1400 2800\" width=\"100%\">\n  <title>Business Workflow Flowchart: Frontend Display and Navigation</title>\n  <desc>Detailed SVG flowchart illustrating the business workflows for frontend display and navigation of courses, sections, and items, including user and admin interactions and component involvement, adhering to specified styling and accessibility rules.</desc>\n\n  <defs>\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n  </defs>\n\n  <style>\n    .title { font-family: 'Arial, sans-serif'; font-size: 36px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n    .workflow-title { font-family: 'Arial, sans-serif'; font-size: 24px; font-weight: bold; fill: #343A40; }\n    .node-text { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #FFFFFF; text-anchor: middle; }\n    .start-end { fill: #6C757D; stroke: #343A40; stroke-width: 1; }\n    .controller { fill: #9b59b6; stroke: #343A40; stroke-width: 1; }\n    .service-logic { fill: #FFC107; stroke: #343A40; stroke-width: 1; }\n    .model-db { fill: #6C757D; stroke: #343A40; stroke-width: 1; }\n    .frontend { fill: #007BFF; stroke: #343A40; stroke-width: 1; }\n    .admin { fill: #28A745; stroke: #343A40; stroke-width: 1; }\n    .arrow { stroke: #343A40; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }\n    .arrow-bidirectional { stroke: #343A40; stroke-width: 2; marker-start: url(#arrowhead); marker-end: url(#arrowhead); fill: none; }\n  </style>\n\n  <text x=\"700\" y=\"50\" class=\"title\">Frontend Display and Navigation Workflows</text>\n\n  <!-- Workflow 1: Course Overview Display -->\n  <g transform=\"translate(0, 120)\">\n    <text x=\"100\" y=\"0\" class=\"workflow-title\">1. Course Overview Display</text>\n\n    <!-- Nodes -->\n    <rect x=\"100\" y=\"40\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"65\" class=\"node-text\">Start: User Requests Overview</text>\n\n    <rect x=\"100\" y=\"110\" width=\"200\" height=\"40\" class=\"frontend\" />\n    <text x=\"200\" y=\"135\" class=\"node-text\">User Action: View Course Page</text>\n\n    <rect x=\"100\" y=\"180\" width=\"200\" height=\"60\" class=\"controller\" />\n    <text x=\"200\" y=\"205\" class=\"node-text\"><tspan x=\"200\" dy=\"0\">Course::CoursesController</tspan><tspan x=\"200\" dy=\"18\">Handle Request</tspan></text>\n\n    <rect x=\"350\" y=\"180\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"205\" class=\"node-text\">CourseContextHelper</text>\n\n    <rect x=\"600\" y=\"180\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"205\" class=\"node-text\">Xikolo::Course::Course</text>\n\n    <rect x=\"600\" y=\"230\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"255\" class=\"node-text\">Xikolo::Course::Section</text>\n\n    <rect x=\"600\" y=\"280\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"305\" class=\"node-text\">Xikolo::Course::Item</text>\n\n    <rect x=\"350\" y=\"230\" width=\"200\" height=\"60\" class=\"service-logic\" />\n    <text x=\"450\" y=\"255\" class=\"node-text\"><tspan x=\"450\" dy=\"0\">Course::TeacherListPresenter</tspan><tspan x=\"450\" dy=\"18\">FeaturedItemPresenter</tspan></text>\n\n    <rect x=\"350\" y=\"300\" width=\"200\" height=\"60\" class=\"service-logic\" />\n    <text x=\"450\" y=\"325\" class=\"node-text\"><tspan x=\"450\" dy=\"0\">CourseLargePreviewPresenter</tspan><tspan x=\"450\" dy=\"18\">Course::CourseDetailsPresenter</tspan></text>\n\n    <rect x=\"100\" y=\"390\" width=\"200\" height=\"40\" class=\"frontend\" />\n    <text x=\"200\" y=\"415\" class=\"node-text\">Display Course Overview</text>\n\n    <rect x=\"100\" y=\"460\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"485\" class=\"node-text\">End</text>\n\n    <!-- Arrows -->\n    <line x1=\"200\" y1=\"80\" x2=\"200\" y2=\"110\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"240\" x2=\"200\" y2=\"390\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"430\" x2=\"200\" y2=\"460\" class=\"arrow\" />\n\n    <line x1=\"300\" y1=\"210\" x2=\"350\" y2=\"210\" class=\"arrow\" /> <!-- Controller to Helper -->\n    <line x1=\"550\" y1=\"200\" x2=\"600\" y2=\"200\" class=\"arrow\" /> <!-- Helper to Course Model (request) -->\n    <line x1=\"600\" y1=\"210\" x2=\"550\" y2=\"210\" class=\"arrow\" /> <!-- Course Model to Helper (data) -->\n\n    <line x1=\"550\" y1=\"260\" x2=\"600\" y2=\"260\" class=\"arrow\" /> <!-- Presenter to Section Model (request) -->\n    <line x1=\"600\" y1=\"270\" x2=\"550\" y2=\"270\" class=\"arrow\" /> <!-- Section Model to Presenter (data) -->\n\n    <line x1=\"550\" y1=\"330\" x2=\"600\" y2=\"300\" class=\"arrow\" /> <!-- Presenter to Item Model (request) -->\n    <line x1=\"600\" y1=\"310\" x2=\"550\" y2=\"340\" class=\"arrow\" /> <!-- Item Model to Presenter (data) -->\n\n    <line x1=\"350\" y1=\"260\" x2=\"300\" y2=\"260\" class=\"arrow\" /> <!-- Presenter to Controller -->\n    <line x1=\"350\" y1=\"330\" x2=\"300\" y2=\"330\" class=\"arrow\" /> <!-- Presenter to Controller -->\n  </g>\n\n  <!-- Workflow 2: Course Syllabus Navigation -->\n  <g transform=\"translate(0, 650)\">\n    <text x=\"100\" y=\"0\" class=\"workflow-title\">2. Course Syllabus Navigation</text>\n\n    <rect x=\"100\" y=\"40\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"65\" class=\"node-text\">Start: User Navigates to Syllabus</text>\n\n    <rect x=\"100\" y=\"110\" width=\"200\" height=\"40\" class=\"frontend\" />\n    <text x=\"200\" y=\"135\" class=\"node-text\">User Action: View Syllabus</text>\n\n    <rect x=\"100\" y=\"180\" width=\"200\" height=\"60\" class=\"controller\" />\n    <text x=\"200\" y=\"205\" class=\"node-text\"><tspan x=\"200\" dy=\"0\">Course::SyllabusController</tspan><tspan x=\"200\" dy=\"18\">Handle Request</tspan></text>\n\n    <rect x=\"350\" y=\"180\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"205\" class=\"node-text\">CourseContextHelper</text>\n\n    <rect x=\"600\" y=\"180\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"205\" class=\"node-text\">Xikolo::Course::Course</text>\n\n    <rect x=\"600\" y=\"230\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"255\" class=\"node-text\">Xikolo::Course::Section</text>\n\n    <rect x=\"600\" y=\"280\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"305\" class=\"node-text\">Xikolo::Course::Item</text>\n\n    <rect x=\"350\" y=\"230\" width=\"200\" height=\"60\" class=\"service-logic\" />\n    <text x=\"450\" y=\"255\" class=\"node-text\"><tspan x=\"450\" dy=\"0\">Course::ProgressPresenter</tspan><tspan x=\"450\" dy=\"18\">Navigation::TableOfContents</tspan></text>\n\n    <rect x=\"100\" y=\"390\" width=\"200\" height=\"40\" class=\"frontend\" />\n    <text x=\"200\" y=\"415\" class=\"node-text\">Display Syllabus</text>\n\n    <rect x=\"100\" y=\"460\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"485\" class=\"node-text\">End</text>\n\n    <!-- Arrows -->\n    <line x1=\"200\" y1=\"80\" x2=\"200\" y2=\"110\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"240\" x2=\"200\" y2=\"390\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"430\" x2=\"200\" y2=\"460\" class=\"arrow\" />\n\n    <line x1=\"300\" y1=\"210\" x2=\"350\" y2=\"210\" class=\"arrow\" /> <!-- Controller to Helper -->\n    <line x1=\"550\" y1=\"200\" x2=\"600\" y2=\"200\" class=\"arrow\" /> <!-- Helper to Course Model (request) -->\n    <line x1=\"600\" y1=\"210\" x2=\"550\" y2=\"210\" class=\"arrow\" /> <!-- Course Model to Helper (data) -->\n\n    <line x1=\"550\" y1=\"260\" x2=\"600\" y2=\"260\" class=\"arrow\" /> <!-- Presenter to Section Model (request) -->\n    <line x1=\"600\" y1=\"270\" x2=\"550\" y2=\"270\" class=\"arrow\" /> <!-- Section Model to Presenter (data) -->\n\n    <line x1=\"550\" y1=\"300\" x2=\"600\" y2=\"300\" class=\"arrow\" /> <!-- Presenter to Item Model (request) -->\n    <line x1=\"600\" y1=\"310\" x2=\"550\" y2=\"310\" class=\"arrow\" /> <!-- Item Model to Presenter (data) -->\n\n    <line x1=\"350\" y1=\"260\" x2=\"300\" y2=\"260\" class=\"arrow\" /> <!-- Presenter to Controller -->\n  </g>\n\n  <!-- Workflow 3: Item Content Display -->\n  <g transform=\"translate(0, 1280)\">\n    <text x=\"100\" y=\"0\" class=\"workflow-title\">3. Item Content Display</text>\n\n    <rect x=\"100\" y=\"40\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"65\" class=\"node-text\">Start: User Views Item</text>\n\n    <rect x=\"100\" y=\"110\" width=\"200\" height=\"40\" class=\"frontend\" />\n    <text x=\"200\" y=\"135\" class=\"node-text\">User Action: Access Item</text>\n\n    <rect x=\"100\" y=\"180\" width=\"200\" height=\"60\" class=\"controller\" />\n    <text x=\"200\" y=\"205\" class=\"node-text\"><tspan x=\"200\" dy=\"0\">ItemsController</tspan><tspan x=\"200\" dy=\"18\">Handle Request</tspan></text>\n\n    <rect x=\"350\" y=\"180\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"205\" class=\"node-text\">CourseContextHelper</text>\n\n    <rect x=\"350\" y=\"230\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"255\" class=\"node-text\">ItemContextHelper</text>\n\n    <rect x=\"600\" y=\"180\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"205\" class=\"node-text\">Xikolo::Course::Item</text>\n\n    <rect x=\"600\" y=\"230\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"255\" class=\"node-text\">Xikolo::Course::Visit</text>\n\n    <rect x=\"600\" y=\"280\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"305\" class=\"node-text\">Xikolo::Account::Preferences</text>\n\n    <rect x=\"350\" y=\"280\" width=\"200\" height=\"60\" class=\"service-logic\" />\n    <text x=\"450\" y=\"305\" class=\"node-text\"><tspan x=\"450\" dy=\"0\">ItemPresenter</tspan><tspan x=\"450\" dy=\"18\">Course::PositionPresenter</tspan></text>\n\n    <rect x=\"850\" y=\"180\" width=\"200\" height=\"150\" class=\"model-db\" />\n    <text x=\"950\" y=\"205\" class=\"node-text\"><tspan x=\"950\" dy=\"0\">Content Type Specific:</tspan><tspan x=\"950\" dy=\"20\">Video::Video</tspan><tspan x=\"950\" dy=\"20\">Course::Richtext</tspan><tspan x=\"950\" dy=\"20\">Xikolo::Quiz::Quiz</tspan><tspan x=\"950\" dy=\"20\">Lti::Exercise</tspan></text>\n\n    <rect x=\"100\" y=\"390\" width=\"200\" height=\"40\" class=\"frontend\" />\n    <text x=\"200\" y=\"415\" class=\"node-text\">Display Item Content</text>\n\n    <rect x=\"100\" y=\"460\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"485\" class=\"node-text\">End</text>\n\n    <!-- Arrows -->\n    <line x1=\"200\" y1=\"80\" x2=\"200\" y2=\"110\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"240\" x2=\"200\" y2=\"390\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"430\" x2=\"200\" y2=\"460\" class=\"arrow\" />\n\n    <line x1=\"300\" y1=\"200\" x2=\"350\" y2=\"200\" class=\"arrow\" /> <!-- Controller to CourseContextHelper -->\n    <line x1=\"300\" y1=\"220\" x2=\"350\" y2=\"240\" class=\"arrow\" /> <!-- Controller to ItemContextHelper -->\n\n    <line x1=\"550\" y1=\"200\" x2=\"600\" y2=\"200\" class=\"arrow\" /> <!-- Helper to Item Model (request) -->\n    <line x1=\"600\" y1=\"210\" x2=\"550\" y2=\"210\" class=\"arrow\" /> <!-- Item Model to Helper (data) -->\n\n    <line x1=\"550\" y1=\"240\" x2=\"600\" y2=\"240\" class=\"arrow\" /> <!-- Helper to Visit Model (record) -->\n    <line x1=\"600\" y1=\"250\" x2=\"550\" y2=\"250\" class=\"arrow\" /> <!-- Visit Model to Helper (confirmation) -->\n\n    <line x1=\"550\" y1=\"300\" x2=\"600\" y2=\"300\" class=\"arrow\" /> <!-- Presenter to Preferences Model (request) -->\n    <line x1=\"600\" y1=\"310\" x2=\"550\" y2=\"310\" class=\"arrow\" /> <!-- Preferences Model to Presenter (data) -->\n\n    <line x1=\"350\" y1=\"310\" x2=\"300\" y2=\"310\" class=\"arrow\" /> <!-- Presenter to Controller -->\n    \n    <line x1=\"550\" y1=\"290\" x2=\"850\" y2=\"290\" class=\"arrow-bidirectional\" /> <!-- Presenter to Content Specific -->\n  </g>\n\n  <!-- Workflow 4: Section Management (Admin) -->\n  <g transform=\"translate(0, 1910)\">\n    <text x=\"100\" y=\"0\" class=\"workflow-title\">4. Section Management (Admin)</text>\n\n    <rect x=\"100\" y=\"40\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"65\" class=\"node-text\">Start: Admin Manages Sections</text>\n\n    <rect x=\"100\" y=\"110\" width=\"200\" height=\"40\" class=\"admin\" />\n    <text x=\"200\" y=\"135\" class=\"node-text\">Admin Action: CRUD Section</text>\n\n    <rect x=\"100\" y=\"180\" width=\"200\" height=\"60\" class=\"controller\" />\n    <text x=\"200\" y=\"205\" class=\"node-text\"><tspan x=\"200\" dy=\"0\">SectionsController</tspan><tspan x=\"200\" dy=\"18\">Handle Request</tspan></text>\n\n    <rect x=\"350\" y=\"180\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"205\" class=\"node-text\">CourseContextHelper</text>\n\n    <rect x=\"350\" y=\"230\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"255\" class=\"node-text\">CoursePresenter</text>\n\n    <rect x=\"600\" y=\"180\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"205\" class=\"node-text\">Xikolo::Course::Section</text>\n\n    <rect x=\"600\" y=\"230\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"255\" class=\"node-text\">Xikolo::Pinboard::ImplicitTag</text>\n\n    <rect x=\"600\" y=\"280\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"305\" class=\"node-text\">Course::Structure::Node</text>\n\n    <rect x=\"100\" y=\"390\" width=\"200\" height=\"40\" class=\"admin\" />\n    <text x=\"200\" y=\"415\" class=\"node-text\">Confirmation/Refresh Display</text>\n\n    <rect x=\"100\" y=\"460\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"485\" class=\"node-text\">End</text>\n\n    <!-- Arrows -->\n    <line x1=\"200\" y1=\"80\" x2=\"200\" y2=\"110\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"240\" x2=\"200\" y2=\"390\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"430\" x2=\"200\" y2=\"460\" class=\"arrow\" />\n\n    <line x1=\"300\" y1=\"200\" x2=\"350\" y2=\"200\" class=\"arrow\" /> <!-- Controller to CourseContextHelper -->\n    <line x1=\"300\" y1=\"220\" x2=\"350\" y2=\"240\" class=\"arrow\" /> <!-- Controller to CoursePresenter -->\n\n    <line x1=\"550\" y1=\"200\" x2=\"600\" y2=\"200\" class=\"arrow-bidirectional\" /> <!-- Helper to Section Model (CRUD) -->\n    <line x1=\"550\" y1=\"250\" x2=\"600\" y2=\"250\" class=\"arrow-bidirectional\" /> <!-- Presenter to Tag Model (update) -->\n    <line x1=\"550\" y1=\"300\" x2=\"600\" y2=\"300\" class=\"arrow-bidirectional\" /> <!-- Presenter to Structure Node (update) -->\n\n    <line x1=\"350\" y1=\"250\" x2=\"300\" y2=\"250\" class=\"arrow\" /> <!-- Presenter to Controller -->\n  </g>\n\n  <!-- Workflow 5: Item Management (Admin) -->\n  <g transform=\"translate(0, 2540)\">\n    <text x=\"100\" y=\"0\" class=\"workflow-title\">5. Item Management (Admin)</text>\n\n    <rect x=\"100\" y=\"40\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"65\" class=\"node-text\">Start: Admin Manages Items</text>\n\n    <rect x=\"100\" y=\"110\" width=\"200\" height=\"40\" class=\"admin\" />\n    <text x=\"200\" y=\"135\" class=\"node-text\">Admin Action: CRUD Item</text>\n\n    <rect x=\"100\" y=\"180\" width=\"200\" height=\"60\" class=\"controller\" />\n    <text x=\"200\" y=\"205\" class=\"node-text\"><tspan x=\"200\" dy=\"0\">ItemsController</tspan><tspan x=\"200\" dy=\"18\">Handle Request</tspan></text>\n\n    <rect x=\"350\" y=\"180\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"205\" class=\"node-text\">CourseContextHelper</text>\n\n    <rect x=\"350\" y=\"230\" width=\"200\" height=\"40\" class=\"service-logic\" />\n    <text x=\"450\" y=\"255\" class=\"node-text\">ItemContextHelper</text>\n\n    <rect x=\"600\" y=\"180\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"205\" class=\"node-text\">Xikolo::Course::Item</text>\n\n    <rect x=\"600\" y=\"230\" width=\"200\" height=\"40\" class=\"model-db\" />\n    <text x=\"700\" y=\"255\" class=\"node-text\">Course::Structure::Node</text>\n\n    <rect x=\"850\" y=\"180\" width=\"200\" height=\"180\" class=\"model-db\" />\n    <text x=\"950\" y=\"205\" class=\"node-text\"><tspan x=\"950\" dy=\"0\">Content Type Specific:</tspan><tspan x=\"950\" dy=\"20\">Video::Video, Video::Store</tspan><tspan x=\"950\" dy=\"20\">Course::Richtext, Course::Richtext::Store</tspan><tspan x=\"950\" dy=\"20\">Xikolo::Quiz::Quiz</tspan><tspan x=\"950\" dy=\"20\">Lti::Exercise, Lti::Exercise::Store</tspan><tspan x=\"950\" dy=\"20\">FileUpload</tspan></text>\n\n    <rect x=\"100\" y=\"390\" width=\"200\" height=\"40\" class=\"admin\" />\n    <text x=\"200\" y=\"415\" class=\"node-text\">Confirmation/Refresh Display</text>\n\n    <rect x=\"100\" y=\"460\" width=\"200\" height=\"40\" rx=\"20\" ry=\"20\" class=\"start-end\" />\n    <text x=\"200\" y=\"485\" class=\"node-text\">End</text>\n\n    <!-- Arrows -->\n    <line x1=\"200\" y1=\"80\" x2=\"200\" y2=\"110\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"150\" x2=\"200\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"240\" x2=\"200\" y2=\"390\" class=\"arrow\" />\n    <line x1=\"200\" y1=\"430\" x2=\"200\" y2=\"460\" class=\"arrow\" />\n\n    <line x1=\"300\" y1=\"200\" x2=\"350\" y2=\"200\" class=\"arrow\" /> <!-- Controller to CourseContextHelper -->\n    <line x1=\"300\" y1=\"220\" x2=\"350\" y2=\"240\" class=\"arrow\" /> <!-- Controller to ItemContextHelper -->\n\n    <line x1=\"550\" y1=\"200\" x2=\"600\" y2=\"200\" class=\"arrow-bidirectional\" /> <!-- Helper to Item Model (CRUD) -->\n    <line x1=\"550\" y1=\"250\" x2=\"600\" y2=\"250\" class=\"arrow-bidirectional\" /> <!-- Helper to Structure Node (update) -->\n\n    <line x1=\"350\" y1=\"250\" x2=\"300\" y2=\"250\" class=\"arrow\" /> <!-- ItemContextHelper to Controller -->\n\n    <line x1=\"550\" y1=\"290\" x2=\"850\" y2=\"290\" class=\"arrow-bidirectional\" /> <!-- Helper to Content Specific (CRUD) -->\n  </g>\n</svg>\n```"
+    }
+  ],
+  "success": true,
+  "sourceFile": "cluster_main_app_course_display_navigation_2025-09-15T11-21-30.json",
+  "runId": "run_4",
+  "filePath": "run_4/clusters/cluster_main_app_course_display_navigation_2025-09-15T11-21-30.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "main_app_course_display_navigation",
+      "runId": "run_4"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:11:12.844Z"
+  }
+}

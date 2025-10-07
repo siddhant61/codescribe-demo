@@ -1,0 +1,464 @@
+{
+  "clusterId": "33_ADMIN_Support",
+  "featureFocus": "User Support, Ticket Management, and Helpdesk Integration",
+  "documentationReport": "{\n  \"title\": \"User Support, Ticket Management, and Helpdesk Integration Cluster Documentation\",\n  \"overview\": \"This cluster provides a comprehensive system for users to submit support tickets, facilitating both web-based and programmatic interactions. It integrates core components for ticket creation, validation, notification, and management, ensuring a robust and extensible support infrastructure. The system is designed to handle diverse support requests, including general inquiries and course-specific issues, and integrates with external systems for asynchronous processing.\",\n  \"functional_domain\": \"User Support, Ticket Management, and Helpdesk Integration\",\n  \"core_components\": [\n    {\n      \"name\": \"Helpdesk::Ticket Model\",\n      \"description\": \"The central ActiveRecord model representing a support ticket. It includes fields for `title`, `report` (description), `topic` (e.g., technical, reactivation, course), `language`, `mail`, `url`, `data` (client information), and `user_id`. It belongs to an optional `Course::Course` model.\",\n      \"details\": {\n        \"source_file\": \"app/models/helpdesk/ticket.rb\",\n        \"validations\": [\n          \"Presence for `report`, `topic`, `language`, `title`.\",\n          \"`title` max length 255, custom `allowed_title` to prevent URLs.\",\n          \"`mail` validated for email format.\",\n          \"`course_id` conditionally required if `topic` is 'course'.\"\n        ],\n        \"associations\": [\n          \"belongs_to :course, class_name: 'Course::Course', optional: true\"\n        ],\n        \"callbacks\": [\n          \"after_commit on: :create: Sends email notification via `Helpdesk::TicketMailer`.\",\n          \"after_commit on: :create: Publishes ticket JSON to RabbitMQ topic `xikolo.helpdesk.ticket.create` using `Msgr`.\",\n          \"before_validation: Truncates `url` field if it exceeds 255 characters.\"\n        ]\n      }\n    },\n    {\n      \"name\": \"HelpdeskController\",\n      \"description\": \"The frontend controller responsible for handling web-based ticket submissions. It orchestrates the user interaction, validation, and ticket creation process.\",\n      \"details\": {\n        \"source_file\": \"app/controllers/helpdesk_controller.rb\",\n        \"integrations\": [\n          \"`Xi::Recaptcha::Integration` for user submission verification.\"\n        ],\n        \"methods\": [\n          \"`create_ticket!`: Private method to construct `Helpdesk::Ticket` from request parameters, assigning `current_user`'s email/ID and deriving `topic`/`course_id` from a `category` parameter.\",\n          \"`annotate_with_metadata`: Processes a `data` hash into a string for the ticket's `data` field.\",\n          \"Referrer URL extraction: Attempts to get URL from `params[:url]` or `request.referer`, with graceful handling of invalid URIs.\",\n          \"Layouts: Uses `helpdesk_layout` helper for 'simple' layout or no layout for XHR requests.\"\n        ]\n      }\n    },\n    {\n      \"name\": \"Helpdesk::TicketForm\",\n      \"description\": \"A form object used by the `HelpdeskController` to encapsulate and manage ticket submission data. It defines the `data` attribute and provides dynamic category options.\",\n      \"details\": {\n        \"source_file\": \"app/forms/helpdesk/ticket_form.rb\",\n        \"attributes\": [\n          \"`data` attribute.\"\n        ],\n        \"methods\": [\n          \"`categories_for`: Suggests dynamic options for ticket categories based on the current user.\"\n        ]\n      }\n    },\n    {\n      \"name\": \"Helpdesk::TicketMailer\",\n      \"description\": \"Responsible for sending email notifications upon the creation of a new helpdesk ticket. It ensures the relevant parties are informed.\",\n      \"details\": {\n        \"source_file\": \"app/mailers/helpdesk/ticket_mailer.rb\",\n        \"configuration\": \"Sends emails to `Xikolo.config.helpdesk_email`.\",\n        \"email_details\": [\n          \"Sets `reply_to` address to the ticket submitter's email.\",\n          \"Subject line prefixed with course information (channel code, course code) if ticket is course-related.\"\n        ]\n      }\n    },\n    {\n      \"name\": \"Xikolo::V2::Helpdesk::Tickets API Endpoint\",\n      \"description\": \"A Grape-based API endpoint enabling programmatic creation of helpdesk tickets, allowing external systems or client applications to submit support requests.\",\n      \"details\": {\n        \"source_file\": \"api/xikolo/v2/helpdesk/tickets.rb\",\n        \"writable_attributes\": [\n          \"`title`, `report`, `topic`, `language`, `mail`, `url`, `data`.\"\n        ],\n        \"mail_handling\": \"`mail` attribute automatically extracted from authenticated user if authorization header present, otherwise required for POST requests.\",\n        \"course_relationship\": \"Supports associating a ticket with a `course` via `course_id` foreign key.\",\n        \"post_action\": \"Creates a `Helpdesk::Ticket` record, automatically assigning `current_user`'s `id` and `email` if authenticated.\"\n      }\n    },\n    {\n      \"name\": \"Xi::Recaptcha::Integration\",\n      \"description\": \"A dedicated integration component for ReCAPTCHA services, used by the `HelpdeskController` to verify user submissions and prevent spam.\",\n      \"details\": {\n        \"source_file\": \"app/controllers/helpdesk_controller.rb (integrated)\",\n        \"functionality\": \"Verifies user submissions, requiring manual verification if automated checks fail.\"\n      }\n    },\n    {\n      \"name\": \"Msgr\",\n      \"description\": \"A messaging library used for publishing messages to RabbitMQ, specifically for notifying other services about new helpdesk tickets.\",\n      \"details\": {\n        \"source_file\": \"app/models/helpdesk/ticket.rb (used in callback)\",\n        \"functionality\": \"Publishes ticket JSON to the `xikolo.helpdesk.ticket.create` RabbitMQ topic.\"\n      }\n    },\n    {\n      \"name\": \"Course::Course Model\",\n      \"description\": \"An associated model representing a course, which can be optionally linked to a helpdesk ticket.\",\n      \"details\": {\n        \"source_file\": \"app/models/helpdesk/ticket.rb (associated)\",\n        \"functionality\": \"Provides context for course-specific helpdesk tickets.\"\n      }\n    }\n  ],\n  \"key_functionality\": [\n    \"Web-based Ticket Submission: Users can submit support tickets through a dedicated web interface, leveraging form objects and ReCAPTCHA for validation.\",\n    \"Programmatic API Ticket Submission: External systems or client applications can create tickets via a Grape-based RESTful API endpoint.\",\n    \"Comprehensive Data Validation: Tickets undergo rigorous validation for presence, length, format (email, URL), and conditional requirements (e.g., `course_id` for 'course' topic).\",\n    \"Automated Notification System: New ticket creation triggers email notifications to configured helpdesk addresses and publishes messages to a RabbitMQ topic for asynchronous processing.\",\n    \"Security and Spam Prevention: Integration with `Xi::Recaptcha::Integration` helps verify user submissions and mitigate spam on the web interface.\",\n    \"Contextual Ticket Creation: Automatically assigns authenticated user information (ID, email) and derives topic/course context based on submission parameters and referrer URLs.\",\n    \"Extensible Data Capture: A generic `data` field allows for capturing additional, unstructured client information.\",\n    \"Helpdesk Administration: Permissions exist for managing helpdesk-related content such as pages and polls, indicating broader administrative capabilities beyond just ticket submission.\"\n  ],\n  \"workflows\": [\n    {\n      \"name\": \"User Submits Helpdesk Ticket (Frontend)\",\n      \"description\": \"A user navigates to the helpdesk page, fills out a form, and submits it. The `HelpdeskController` validates the submission (including ReCAPTCHA via `Xi::Recaptcha::Integration`), processes the data using `Helpdesk::TicketForm`, and creates a `Helpdesk::Ticket` record. Upon successful creation, a success message is rendered, an email is sent via `Helpdesk::TicketMailer`, and a message is published to RabbitMQ via `Msgr`.\",\n      \"components_involved\": [\n        \"HelpdeskController\",\n        \"Helpdesk::TicketForm\",\n        \"Helpdesk::Ticket\",\n        \"Helpdesk::TicketMailer\",\n        \"Xi::Recaptcha::Integration\",\n        \"Msgr\"\n      ]\n    },\n    {\n      \"name\": \"User Submits Helpdesk Ticket (API)\",\n      \"description\": \"An external system or client application sends a POST request to the `/api/v2/helpdesk/tickets` endpoint. The `Xikolo::V2::Helpdesk::Tickets` API endpoint receives the request, validates the provided attributes, potentially enriches it with authenticated user information, and creates a `Helpdesk::Ticket` record. This action triggers email notifications via `Helpdesk::TicketMailer` and RabbitMQ messages via `Msgr`, similar to the frontend workflow.\",\n      \"components_involved\": [\n        \"Xikolo::V2::Helpdesk::Tickets API Endpoint\",\n        \"Helpdesk::Ticket\",\n        \"Helpdesk::TicketMailer\",\n        \"Msgr\"\n      ]\n    },\n    {\n      \"name\": \"Helpdesk Ticket Processing\",\n      \"description\": \"Once a `Helpdesk::Ticket` is successfully created (either via frontend or API), an email notification is sent to the configured helpdesk email address using `Helpdesk::TicketMailer`. Concurrently, a message containing the ticket's JSON representation is published to the `xikolo.helpdesk.ticket.create` RabbitMQ topic using `Msgr`. This enables asynchronous processing by other services or external helpdesk systems that consume these messages.\",\n      \"components_involved\": [\n        \"Helpdesk::Ticket\",\n        \"Helpdesk::TicketMailer\",\n        \"Msgr\"\n      ]\n    }\n  ],\n  \"permissions_and_roles\": {\n    \"description\": \"The `account` microservice defines specific roles for helpdesk administration, indicating broader management capabilities beyond just ticket submission.\",\n    \"roles\": [\n      \"`helpdesk.pages.admin`: For storing helpdesk pages.\",\n      \"`helpdesk.polls.admin`: For managing helpdesk polls.\"\n    ],\n    \"assignment\": \"These roles are granted to the `xikolo.admins` group within the `root` context.\"\n  },\n  \"technical_considerations_and_debt\": [\n    {\n      \"issue\": \"Direct `params` access in `HelpdeskController`\",\n      \"description\": \"The `HelpdeskController`'s `create_ticket!` method directly accesses `params` multiple times without consistently using `ticket_params` for all values. While `params.permit` is used for `ticket_params`, this pattern could introduce mass assignment vulnerabilities if not meticulously managed across all parameter usages.\",\n      \"source\": \"app/controllers/helpdesk_controller.rb\"\n    },\n    {\n      \"issue\": \"Generic `data` field\",\n      \"description\": \"The `data` field in `Helpdesk::Ticket` and `Helpdesk::TicketForm` is a generic string. This approach might lead to inconsistent data storage if various client information needs to be captured. A more structured approach, such as using a JSONB column, would be beneficial for improved querying, analysis, and data integrity.\",\n      \"source\": \"app/models/helpdesk/ticket.rb, app/forms/helpdesk/ticket_form.rb\"\n    },\n    {\n      \"issue\": \"`allowed_title` validation complexity\",\n      \"description\": \"The `allowed_title` validation uses `URI::DEFAULT_PARSER.make_regexp` to prevent URLs in the title. This regular expression can be complex and potentially lead to unexpected behavior, false positives, or false negatives depending on the exact definition of what constitutes a 'URL' within a title.\",\n      \"source\": \"app/models/helpdesk/ticket.rb\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Helpdesk::Ticket": {
+        "type": "Model",
+        "description": "An ActiveRecord model representing a support ticket. It handles data persistence, validations, and triggers post-creation actions like email notifications and message queue events.",
+        "interactions": {
+          "interaction_0": "Belongs to `Course::Course` (optional) for course-specific tickets. [Source: app/models/helpdesk/ticket.rb]",
+          "interaction_1": "Triggers `Helpdesk::TicketMailer` to send email notifications upon creation. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]",
+          "interaction_2": "Publishes a message to RabbitMQ via `Msgr` upon creation. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]",
+          "interaction_3": "Validated and created by `HelpdeskController`. [Source: app/controllers/helpdesk_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/helpdesk/ticket.rb",
+            "spec/models/helpdesk/ticket_spec.rb",
+            "spec/factories/helpdesk.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 23,
+              "code": "    def new_ticket_email(ticket)\n      @ticket = ticket\n\n      mail(\n        to: Xikolo.config.helpdesk_email,\n        subject: \"#{get_prefix(ticket)}#{ticket.title || 'No Title'}\",\n        reply_to: ticket.mail\n      )\n    end\n\n    private\n\n    def get_prefix(ticket)\n      return '' unless ticket.course\n\n      course = ticket.course\n\n      if course.channel.present?\n        \"#{course.channel.code} - #{course.course_code}: \"\n      else\n        \"#{course.course_code}: \"\n      end\n    end",
+              "source": "app/mailers/helpdesk/ticket_mailer.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 12,
+              "code": "    validates :report, :topic, :language, presence: true\n    validates :title, length: {maximum: 255}, presence: true\n    validates :course_id, presence: true, if: proc {|t| t.topic == 'course' }\n    validates :course_id, absence: true, if: proc {|t| t.topic != 'course' }\n    validate :allowed_title",
+              "source": "app/mailers/helpdesk/ticket_mailer.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 20,
+              "code": "    LCHARS = %r{\\w+\\p{L}\\p{N}\\-!/#\\$%&'*+=?^`{|}~} # rubocop:disable Style/RedundantRegexpEscape\n    LOCAL = /[#{LCHARS.source}]+(\\.[#{LCHARS.source}]+)*/\n    DCHARS = /A-z\\d/\n    DOMAIN = /[#{DCHARS.source}][#{DCHARS.source}-]*(\\.[#{DCHARS.source}-]+)*/\n    EMAIL = /\\A#{LOCAL.source}@#{DOMAIN.source}\\z/i\n    validates :mail, presence: true, format: {with: EMAIL}",
+              "source": "app/mailers/helpdesk/ticket_mailer.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 25,
+              "code": "    belongs_to :course, class_name: '::Course::Course', optional: true\n\n    scope :created_last_day, -> { where(created_at: 1.day.ago..) }\n    scope :created_last_year, -> { where(created_at: 1.year.ago..) }",
+              "source": "app/mailers/helpdesk/ticket_mailer.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 30,
+              "code": "      entity do\n        type 'tickets'\n\n        writable attribute('title') {\n          description 'The title of the ticket. Required for POST.'\n          type :string\n        }\n\n        writable attribute('report') {\n          description 'The description of the ticket. Required for POST.'\n          type :string\n        }\n\n        writable attribute('topic') {\n          description 'The topic of the ticket, either technical, reactivation, or course. If course, a relationship must be passed as well. Required for POST.'\n          type :string\n        }\n\n        writable attribute('language') {\n          description 'The language of the user\\'s client. Required for POST.'\n          type :string\n        }\n\n        writable attribute('mail') {\n          description 'The user\\'s email. Required for POST if no authorization header is sent, otherwise ignored and extract...\n",
+              "source": "app/mailers/helpdesk/ticket_mailer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/mailers/helpdesk/ticket_mailer.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/helpdesk/ticket.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/helpdesk/tickets.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "HelpdeskController": {
+        "type": "Controller",
+        "description": "Handles incoming HTTP requests for the helpdesk system, displaying the ticket submission form and processing form submissions. It orchestrates reCAPTCHA verification and ticket creation.",
+        "interactions": {
+          "interaction_0": "Interacts with `Xi::Recaptcha::Integration` for spam prevention. [Source: app/controllers/helpdesk_controller.rb]",
+          "interaction_1": "Uses `Helpdesk::TicketForm` to initialize and annotate form data. [Source: app/controllers/helpdesk_controller.rb]",
+          "interaction_2": "Creates `Helpdesk::Ticket` instances to persist support requests. [Source: app/controllers/helpdesk_controller.rb]",
+          "interaction_3": "Utilizes `Helpdesk::CategoryOptions` to determine ticket topic and course association. [Source: app/controllers/helpdesk_controller.rb]",
+          "interaction_4": "Accesses `current_user` for user email and ID if logged in. [Source: app/controllers/helpdesk_controller.rb]",
+          "interaction_5": "Renders views for form display, success, or error. [Source: app/controllers/helpdesk_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/helpdesk_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nrequire 'uri'\nrequire 'xi/recaptcha/integration'\n\nclass HelpdeskController < Abstract::FrontendController\n  layout :helpdesk_layout",
+              "source": "app/controllers/helpdesk_controller.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 27,
+              "code": "  def send_helpdesk\n    @recaptcha = Xi::Recaptcha::Integration.new(request: request, params: params, action: 'helpdesk')\n    unless @recaptcha.verified?\n      @recaptcha.require_manual_verification!\n      @ticket = Helpdesk::TicketForm.new(ticket_params).tap { annotate_with_metadata it }\n\n      if helpdesk_layout\n        return render action: :show\n      else\n        return render plain: 'checkbox_recaptcha'\n      end\n    end\n\n    create_ticket!\n    render 'success'\n  rescue ActiveRecord::RecordInvalid\n    render 'error', status: :unprocessable_entity\n  end",
+              "source": "app/controllers/helpdesk_controller.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 32,
+              "code": "  def show\n    @recaptcha = Xi::Recaptcha::Integration.new(request: request, params: params, action: 'helpdesk')\n    @ticket = Helpdesk::TicketForm.new(ticket_params).tap { annotate_with_metadata it }\n  end",
+              "source": "app/controllers/helpdesk_controller.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 35,
+              "code": "  private\n\n  def create...",
+              "source": "app/controllers/helpdesk_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/helpdesk_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Helpdesk::TicketForm": {
+        "type": "Form Object",
+        "description": "A form object inheriting from `XUI::Form` that encapsulates form-specific logic and attributes for helpdesk ticket submission. It provides category options to the view.",
+        "interactions": {
+          "interaction_0": "Provides `categories_for` method, delegating to `Helpdesk::CategoryOptions`. [Source: app/forms/helpdesk/ticket_form.rb]",
+          "interaction_1": "Used by `HelpdeskController` to manage form data. [Source: app/controllers/helpdesk_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/helpdesk/ticket_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass Helpdesk::TicketForm < XUI::Form\n  self.form_name = 'ticket'\n\n  attribute :data, :string\n\n  def categories_for(current_user)\n    Helpdesk::CategoryOptions.options_for current_user\n  end\nend",
+              "source": "app/forms/helpdesk/ticket_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/helpdesk/ticket_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/components/global/helpdesk_button.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/global/helpdesk_button_preview.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Helpdesk::TicketMailer": {
+        "type": "Mailer",
+        "description": "Responsible for sending email notifications to the helpdesk system when a new ticket is created. It formats the email subject based on course details.",
+        "interactions": {
+          "interaction_0": "Receives a `Helpdesk::Ticket` object to construct the email. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+          "interaction_1": "Retrieves helpdesk email recipient from `Xikolo.config.helpdesk_email`. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+          "interaction_2": "Interacts with `Course::Course` (via `ticket.course`) to get course and channel codes for the subject. [Source: app/mailers/helpdesk/ticket_mailer.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/mailers/helpdesk/ticket_mailer.rb",
+            "app/models/helpdesk/ticket.rb",
+            "spec/models/helpdesk/ticket_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nmodule Helpdesk\n  class TicketMailer < ::ApplicationMailer\n    default from: 'helpdesk-mailer@openhpi.de'\n\n    def new_ticket_email(ticket)\n      @ticket = ticket\n\n      mail(\n        to: Xikolo.config.helpdesk_email,\n        subject: \"#{get_prefix(ticket)}#{ticket.title || 'No Title'}\",\n        reply_to: ticket.mail\n      )\n    end\n\n    private\n\n    def get_prefix(ticket)\n      return '' unless ticket.course\n\n      course = ticket.course\n\n      if course.channel.present?\n        \"#{course.channel.code} - #{course.course_code}: \"\n      else\n        \"#{course.course_code}: \"\n      end\n    end\n  end\nend",
+              "source": "app/mailers/helpdesk/ticket_mailer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/mailers/helpdesk/ticket_mailer.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/components/global/helpdesk_button.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/global/helpdesk_button_preview.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Xikolo::V2::Helpdesk::Tickets": {
+        "type": "API Endpoint",
+        "description": "A Grape-based API endpoint for programmatically creating helpdesk tickets. It defines writable attributes for ticket details and handles user authentication for automatic field population.",
+        "interactions": {
+          "interaction_0": "Creates `Helpdesk::Ticket` records [Source: api/xikolo/v2/helpdesk/tickets.rb]",
+          "interaction_1": "Accesses `current_user` for user details if authenticated [Source: api/xikolo/v2/helpdesk/tickets.rb]",
+          "interaction_2": "Raises `Xikolo::Error::UnprocessableEntity` on `ActiveRecord::RecordInvalid` [Source: api/xikolo/v2/helpdesk/tickets.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/v2/helpdesk/tickets.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 29,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2::Helpdesk\n    class Tickets < Xikolo::Endpoint::CollectionEndpoint\n      entity do\n        type 'tickets'\n\n        writable attribute('title') {\n          description 'The title of the ticket. Required for POST.'\n          type :string\n        }\n\n        writable attribute('report') {\n          description 'The description of the ticket. Required for POST.'\n          type :string\n        }\n\n        writable attribute('topic') {\n          description 'The topic of the ticket, either technical, reactivation, or course. If course, a relationship must be passed as well. Required for POST.'\n          type :string\n        }\n\n        writable attribute('language') {\n          description 'The language of the user\\'s client. Required for POST.'\n          type :string\n        }\n\n        writable attribute('mail') {\n          description 'The user\\'s email. Required for POST if no authorization header is sent, otherwise ignored and extract...\n",
+              "source": "api/xikolo/v2/helpdesk/tickets.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/helpdesk/tickets.rb",
+              "relevance": 47
+            },
+            {
+              "path": "spec/api/v2/helpdesk/tickets_spec.rb",
+              "relevance": 17
+            },
+            {
+              "path": "api/xikolo/v2/activity/platform_events.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Xi::Recaptcha::Integration": {
+        "type": "External Integration",
+        "description": "A component responsible for integrating with Google reCAPTCHA to prevent spam submissions on the helpdesk form.",
+        "interactions": {
+          "interaction_0": "Used by `HelpdeskController` to verify form submissions. [Source: app/controllers/helpdesk_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/helpdesk_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Xi\n  module Recaptcha\n    ##\n    # Handle integration of reCAPTCHA v2 and v3 for verifying user actions.\n    class Integration\n      include ::Recaptcha::Adapters::ViewMethods\n      include ActionView::Helpers::TranslationHelper\n\n      # @return [Boolean] True if reCAPTCHA is enabled, false otherwise.\n      def self.enabled?\n        Xikolo.config.recaptcha['enabled']\n      end\n\n      # @param request [ActionDispatch::Request] The HTTP request object.\n      # @param params [Hash] The request parameters.\n      # @param action [String] The action to verify.\n      def initialize(request:, params:, action:)\n        @request = request\n        @params = params\n        @action = action\n        @verification_method = :automatic\n      end\n\n      # Verifies the user using either reCAPTCHA v3 or v2.\n      # @return [Boolean] True if verification is successful, false otherwise.\n      def verified?\n        return true unless self.class.enabled?\n\n        [",
+              "source": "lib/xi/recaptcha/integration.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/xi/recaptcha/integration.rb",
+              "relevance": 44
+            },
+            {
+              "path": "integration/features/support/lib/initializers/integration.rb",
+              "relevance": 15
+            },
+            {
+              "path": "integration/features/support/lib/initializers/integration_video.rb",
+              "relevance": 15
+            }
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "Message Queue Client",
+        "description": "The client for RabbitMQ, used to publish events to the message queue. In this context, it publishes a 'ticket.create' event.",
+        "interactions": {
+          "interaction_0": "Receives a `Helpdesk::Ticket`'s JSON representation and publishes it to the `xikolo.helpdesk.ticket.create` topic. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/helpdesk/ticket.rb",
+            "spec/models/helpdesk/ticket_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 18,
+              "code": "module MsgrSentryIntegration   def dispatch(*)     Sentry.with_scope do       super     rescue Sentry::Error       raise # Don't capture Sentry errors     rescue Exception => e # rubocop:disable Lint/RescueException       Sentry.capture_exception(e)       raise     end   end end  Msgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Helpdesk::CategoryOptions": {
+        "type": "Helper/Service Object",
+        "description": "A helper or service object (inferred from usage) responsible for providing and managing helpdesk ticket categories, potentially based on user context.",
+        "interactions": {
+          "interaction_0": "Used by `HelpdeskController` to determine ticket topic. [Source: app/controllers/helpdesk_controller.rb]",
+          "interaction_1": "Used by `Helpdesk::TicketForm` to retrieve categories for display. [Source: app/forms/helpdesk/ticket_form.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/helpdesk_controller.rb",
+            "app/forms/helpdesk/ticket_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 37,
+              "code": "# frozen_string_literal: true\n\nmodule Helpdesk\n  class CategoryOptions\n    class << self\n      def general_question(key, text, opts = {})\n        general_questions << Helpdesk::GeneralQuestion.new({key:, text:}.merge(opts))\n      end\n\n      def general_questions\n        @general_questions ||= []\n      end\n\n      def general?(topic)\n        general_questions.map(&:key).include? topic\n      end\n\n      def default\n        general_questions.first.key\n      end\n\n      def options_for(user)\n        {\n          I18n.t(:'helpdesk.general_question') => general_questions\n            .select {|option| option.applicable? user }\n            .map(&:as_option),\n          I18n.t(:'helpdesk.course_specific_question') => all_courses\n            .map {|c| [c['title'], c['id']] },\n        }\n      end\n\n      def all_courses\n        Xikolo.api(:course).value!.rel(:courses).get({\n          public: true, hidden: false, per_page: 500\n        }).value!\n      end\n    end\n\n    # Add possible options for general q...\n",
+              "source": "app/presenters/helpdesk/category_options.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/helpdesk/category_options.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/components/global/helpdesk_button.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/global/helpdesk_button_preview.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Xikolo.config": {
+        "type": "Configuration",
+        "description": "The application's configuration object, used to retrieve settings like the helpdesk email address.",
+        "interactions": {
+          "interaction_0": "Accessed by `Helpdesk::TicketMailer` to get the recipient email address [Source: app/mailers/helpdesk/ticket_mailer.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/mailers/helpdesk/ticket_mailer.rb"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Belongs to `Course::Course` (optional) [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_1": "Created by `HelpdeskController` [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_2": "Created by `Xikolo::V2::Helpdesk::Tickets` API endpoint [Source: api/xikolo/v2/helpdesk/tickets.rb]",
+      "interaction_3": "Triggers `Helpdesk::TicketMailer.new_ticket_email` on create [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_4": "Publishes messages to RabbitMQ via `Msgr` on create [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_5": "Uses `Xi::Recaptcha::Integration` for spam verification [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_6": "Instantiates and uses `Helpdesk::TicketForm` [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_7": "Creates `Helpdesk::Ticket` records [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_8": "Accesses `current_user` for user details [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_9": "Uses `I18n.locale` for language [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_10": "Relies on `Helpdesk::CategoryOptions` for topic derivation [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_11": "Used by `HelpdeskController` to manage form data [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_12": "Uses `Helpdesk::CategoryOptions` to provide categories [Source: app/forms/helpdesk/ticket_form.rb]",
+      "interaction_13": "Called by `Helpdesk::Ticket` after creation [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_14": "Accesses `Xikolo.config.helpdesk_email` for recipient [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_15": "Accesses `Helpdesk::Ticket` object for email content and reply-to address [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_16": "Creates `Helpdesk::Ticket` records [Source: api/xikolo/v2/helpdesk/tickets.rb]",
+      "interaction_17": "Accesses `current_user` for user details if authenticated [Source: api/xikolo/v2/helpdesk/tickets.rb]",
+      "interaction_18": "Raises `Xikolo::Error::UnprocessableEntity` on `ActiveRecord::RecordInvalid` [Source: api/xikolo/v2/helpdesk/tickets.rb]",
+      "interaction_19": "Instantiated and used by `HelpdeskController` [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_20": "Used by `Helpdesk::Ticket` to publish messages on create [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_21": "Used by `Helpdesk::TicketForm` to populate category options [Source: app/forms/helpdesk/ticket_form.rb]",
+      "interaction_22": "Used by `HelpdeskController` to determine ticket topic and course association [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_23": "Accessed by `Helpdesk::TicketMailer` to get the recipient email address [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_24": "Interacts with `Xi::Recaptcha::Integration` for reCAPTCHA verification. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_25": "Initializes `Helpdesk::TicketForm` to handle form data. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_26": "Creates `Helpdesk::Ticket` records in the database. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_27": "Accesses `current_user` for user-specific information (email, ID). [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_28": "Uses `I18n.locale` for language information. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_29": "Determines ticket topic and course ID based on `Helpdesk::CategoryOptions`. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_30": "Parses referrer URLs using `URI`. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_31": "Inherits functionality from `XUI::Form`. [Source: app/forms/helpdesk/ticket_form.rb]",
+      "interaction_32": "Retrieves helpdesk categories using `Helpdesk::CategoryOptions`. [Source: app/forms/helpdesk/ticket_form.rb]",
+      "interaction_33": "Receives data from `HelpdeskController` for annotation. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_34": "Receives a `Helpdesk::Ticket` object to extract details for the email. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_35": "Retrieves the recipient email address from `Xikolo.config.helpdesk_email`. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_36": "Inherits from `::ApplicationMailer`. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_37": "Belongs to `::Course::Course` for course-specific tickets. [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_38": "Triggers `Helpdesk::TicketMailer.new_ticket_email` to send an email after creation. [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_39": "Publishes a message to RabbitMQ (`xikolo.helpdesk.ticket.create`) via `Msgr` after creation. [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_40": "Uses `URI::DEFAULT_PARSER` for URL detection in title validation. [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_41": "Used by `HelpdeskController` to verify incoming requests. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_42": "Used by `Helpdesk::TicketForm` to retrieve categories for display. [Source: app/forms/helpdesk/ticket_form.rb]",
+      "interaction_43": "Used by `HelpdeskController` to interpret category selection for ticket creation. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_44": "Publishes `Helpdesk::Ticket` creation events to RabbitMQ. [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_45": "Interacts with `Xi::Recaptcha::Integration` for spam prevention. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_46": "Uses `Helpdesk::TicketForm` to initialize and annotate form data. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_47": "Creates `Helpdesk::Ticket` instances to persist support requests. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_48": "Utilizes `Helpdesk::CategoryOptions` to determine ticket topic and course association. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_49": "Accesses `current_user` for user email and ID if logged in. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_50": "Renders views for form display, success, or error. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_51": "Provides `categories_for` method, delegating to `Helpdesk::CategoryOptions`. [Source: app/forms/helpdesk/ticket_form.rb]",
+      "interaction_52": "Used by `HelpdeskController` to manage form data. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_53": "Belongs to `Course::Course` (optional) for course-specific tickets. [Source: app/models/helpdesk/ticket.rb]",
+      "interaction_54": "Triggers `Helpdesk::TicketMailer` to send email notifications upon creation. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]",
+      "interaction_55": "Publishes a message to RabbitMQ via `Msgr` upon creation. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]",
+      "interaction_56": "Validated and created by `HelpdeskController`. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_57": "Receives a `Helpdesk::Ticket` object to construct the email. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_58": "Retrieves helpdesk email recipient from `Xikolo.config.helpdesk_email`. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_59": "Interacts with `Course::Course` (via `ticket.course`) to get course and channel codes for the subject. [Source: app/mailers/helpdesk/ticket_mailer.rb]",
+      "interaction_60": "Used by `HelpdeskController` to verify form submissions. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_61": "Receives a `Helpdesk::Ticket`'s JSON representation and publishes it to the `xikolo.helpdesk.ticket.create` topic. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]",
+      "interaction_62": "Used by `HelpdeskController` to determine ticket topic. [Source: app/controllers/helpdesk_controller.rb]",
+      "interaction_63": "Used by `Helpdesk::TicketForm` to retrieve categories for display. [Source: app/forms/helpdesk/ticket_form.rb]"
+    },
+    "technicalDebt": [
+      "The `data` field is a generic string, which could be better structured (e.g., JSONB) for consistency and querying [Source: app/models/helpdesk/ticket.rb].",
+      "The `allowed_title` validation uses a complex regex for URLs, which might be brittle or have edge cases [Source: app/models/helpdesk/ticket.rb]",
+      "Direct access to `params` in `create_ticket!` for some fields (e.g., `userAgent`, `cookie`, `language`, `category`) rather than using `ticket_params` could be a potential source of mass assignment vulnerabilities if not carefully managed [Source: app/controllers/helpdesk_controller.rb].",
+      "The `create_ticket!` method contains significant business logic for determining `topic` and `course_id`, which could be extracted into a service object or the form object for better separation of concerns. [Source: app/controllers/helpdesk_controller.rb]",
+      "Directly accesses `params` for various data points (`data`, `userAgent`, `cookie`, `language`) which could be more explicitly handled by the `ticket_params` or a dedicated form object. [Source: app/controllers/helpdesk_controller.rb]",
+      "The `allowed_title` validation uses a regular expression to detect URLs, which might be brittle and not cover all possible URL patterns. [Source: app/models/helpdesk/ticket.rb]",
+      "The `EMAIL` regex for validation is complex; consider using a simpler regex or a dedicated gem for more robust email validation. [Source: app/models/helpdesk/ticket.rb]"
+    ]
+  }
+}

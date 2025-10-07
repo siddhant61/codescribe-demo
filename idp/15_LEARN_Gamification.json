@@ -1,0 +1,717 @@
+{
+  "clusterId": "15_LEARN_Gamification",
+  "featureFocus": "Gamification System (Badges, Levels, Scores)",
+  "documentationReport": "{\n  \"title\": \"Gamification System: Achievements, Scoring, and User Progression\",\n  \"introduction\": \"The Gamification System is a core component designed to enhance user engagement and motivation within the platform by rewarding various activities. It operates on an event-driven architecture, leveraging a points-based scoring system, badges, and user levels to recognize user contributions and progression. The system's logic encompasses event processing, score generation, achievement display, and configuration management, integrating seamlessly with other platform services. This merged cluster documentation synthesizes insights into the Gamification System, Badges, Levels, and User Scores, highlighting the comprehensive Gamification Logic and Achievement Display.\",\n  \"core_functionality\": [\n    {\n      \"heading\": \"Event Consumption and Score Generation\",\n      \"description\": \"The `GamificationConsumer` class serves as the central entry point for all gamification-related events. Extending `Msgr::Consumer`, it actively listens for messages published via RabbitMQ (Msgr) on a variety of topics, including `xikolo.course.result.create`, `xikolo.course.visit.create`, `xikolo.pinboard.vote.create`, `xikolo.pinboard.comment.create`, `xikolo.pinboard.question.create`, `xikolo.pinboard.answer.create`, and `xikolo.pinboard.question.update`.\\nBefore processing, a global check ensures gamification is enabled via `Xikolo.config.gamification['enabled']`. If active, the consumer dispatches event payloads to specialized rule classes (e.g., `Gamification::Rules::Course::TakeExam`, `Gamification::Rules::Pinboard::UpvoteAnswer`). These rule classes are responsible for creating `Gamification::Score` records.\\nThe `Gamification::Score` model captures details such as the `user`, `course`, the specific `rule` applied (e.g., 'take_exam', 'upvote_answer'), `points` awarded, and event-specific `data`. A `checksum` mechanism is employed to prevent the creation of duplicate scores for the same event. Scores are generated for a wide array of user actions, including taking exams/selftests, visiting course items, upvoting pinboard content, creating comments/questions, answering questions, and having answers accepted. Special rules, such as `attended_section` and `continuous_attendance`, also contribute to scores based on user activity patterns.\"\n    },\n    {\n      \"heading\": \"Badges and Achievements\",\n      \"description\": \"Badges are digital awards granted to users upon accumulating specific scores for predefined rules. The `app/models/gamification/badge_types.yml` configuration file defines various badge types (e.g., `communicator`, `knowledgeable`, `selftest_master`), the contributing `rules` (events), and `levels` (e.g., 0, 1, 2 for bronze, silver, gold) with their corresponding score thresholds.\\nThe `Gamification::Badge` model represents an earned badge, storing its `name` and `level`. The `Dashboard::GamificationBadge` `ViewComponent` is responsible for rendering these badges within the user interface, dynamically determining the image source based on the badge's name and level (e.g., `communicator_1.png` for gained vs. `communicator_not_gained.png` for not-yet-gained). Badge images are located in `app/assets/images/gamification/badges/`.\\nThe system also supports integration with the Open Badges standard, indicated by `open_badges` configuration in `badge_config.yml` fixtures. This includes public and private RSA keys for signing verifiable digital badges, suggesting a capability for external issuance and recognition of achievements.\"\n    },\n    {\n      \"heading\": \"User Levels and Progression\",\n      \"description\": \"User levels signify overall progression within the platform, achieved through the accumulation of experience points (XP). The `app/models/gamification/user_levels.yml` file defines these levels (e.g., `yellow`, `orange`, `green`), each with a `min_xp` requirement, a `title` (e.g., \\\"Yellow Belt\\\"), and an associated `image` (e.g., `kyu02yellow.png`). These level images are stored in `app/assets/images/gamification/userstates/`.\\nA user's current score (XP) and level are prominently displayed in the global navigation bar and on the dedicated dashboard achievements page when the gamification feature is enabled, providing immediate feedback on their progression.\"\n    }\n  ],\n  \"components_and_configuration\": {\n    \"components\": [\n      \"`GamificationConsumer`\",\n      \"`Msgr::Consumer`\",\n      \"`Gamification::Rules::*`\",\n      \"`Gamification::Score` Model\",\n      \"`Gamification::Badge` Model\",\n      \"`Dashboard::GamificationBadge`\",\n      \"`Xikolo.config.gamification`\",\n      \"`Gamification (Presenter/Decorator)`\"\n    ],\n    \"configuration_files\": [\n      \"`app/models/gamification/badge_types.yml` (Gamification Badge Configuration)\",\n      \"`app/models/gamification/user_levels.yml` (Gamification User Level Configuration)\",\n      \"`spec/fixtures/files/badge_config.yml` (Open Badges Configuration)\",\n      \"`spec/support/files/certificate/badge_config.yml` (Open Badges Configuration)\"\n    ],\n    \"feature_toggles\": \"The entire gamification system can be globally enabled or disabled using the `Xikolo.config.gamification['enabled']` flag. Furthermore, individual gamification rules can be effectively deactivated by setting their awarded points to zero or by commenting them out in the configuration, though the latter approach requires careful consideration of potential side effects on dependent rules or badge calculations.\"\n  },\n  \"open_badges_integration\": {\n    \"description\": \"The system includes configuration for Open Badges, specifically `open_badges` settings within `badge_config.yml` fixtures. This configuration contains public and private RSA keys, indicating the capability to issue verifiable digital badges compliant with the Open Badges standard. While the direct issuance implementation is not detailed, this feature signifies a broader potential for external recognition of user achievements.\"\n  },\n  \"technical_debt_and_future_improvements\": [\n    {\n      \"item\": \"Internationalization\",\n      \"details\": \"A `TODO` exists within `Dashboard::GamificationBadge` to move badge level titles to locale files, improving internationalization and maintainability.\"\n    },\n    {\n      \"item\": \"Test Clarity\",\n      \"details\": \"Comments in test files suggest areas for improvement in test clarity, including a \\\"dirty fix\\\" for point expectations and a recommendation to rename a test context.\"\n    },\n    {\n      \"item\": \"Edge Case Handling\",\n      \"details\": \"A `TODO XI-3433` highlights an unresolved edge case concerning the correct handling of alternative sections in the `xikolo.course.visit.create` event, specifically impacting continuous attendance score calculations.\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "GamificationConsumer": {
+        "type": "Msgr Consumer",
+        "description": "An Msgr consumer responsible for processing various gamification-related events published across the system. It dispatches event payloads to specific `Gamification::Rules` classes to calculate and create user scores, provided the gamification feature is enabled.",
+        "interactions": {
+          "interaction_0": "Consumes messages from RabbitMQ via the `Msgr` gem.",
+          "interaction_1": "Checks `Xikolo.config.gamification['enabled']` to determine if gamification processing should occur.",
+          "interaction_2": "Instantiates and calls `create_score!` on various `Gamification::Rules` classes (e.g., `Gamification::Rules::Course::TakeExam`, `Gamification::Rules::Pinboard::UpvoteAnswer`) based on the event type and payload."
+        },
+        "techDebt": [
+          "The consumer's internal documentation highlights a potential for brittle rule dependencies if rules are deactivated by removing/commenting them in the config, suggesting a need for careful management of rule interdependencies."
+        ],
+        "provenance": {
+          "sources": [
+            "app/consumers/gamification_consumer.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass GamificationConsumer < Msgr::Consumer\n  # In general, there are two ways to deactivate a rule:\n  # 1. Remove or comment the rule in the config file\n  #    Then, check if the rule is active/exists: rule_active?(:attended_section).\n  #    Be careful as some rules serve as the basis for other rules, also for the badges.\n  #    If you choose this option, side effects may occur.\n  # 2. Award 0 points for the rule\n  #    This only affects the rule at hand. No side effects will be caused for other rules.",
+              "source": "app/consumers/gamification_consumer.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 23,
+              "code": "  ##\n  # COURSE-RELATED ROUTES\n\n  def result_create\n    return unless Xikolo.config.gamification['enabled']\n\n    # Make sure we have a rule matching the exercise type\n    case payload.fetch(:exercise_type)\n      when 'main'\n        Gamification::Rules::Course::TakeExam.new(payload).create_score!\n      when 'selftest'\n        Gamification::Rules::Course::TakeSelftest.new(payload).create_score!\n    end\n  end",
+              "source": "app/consumers/gamification_consumer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/consumers/gamification_consumer.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Gamification::Rules::*": {
+        "type": "Service/Rule",
+        "description": "A family of inferred classes (e.g., `Gamification::Rules::Course::TakeExam`, `Gamification::Rules::Pinboard::UpvoteAnswer`) that encapsulate the specific business logic for calculating and creating scores based on distinct gamification events. Each rule processes a payload and updates user scores accordingly.",
+        "interactions": {
+          "interaction_0": "Instantiated by `GamificationConsumer` with an event `payload`.",
+          "interaction_1": "Executes the `create_score!` method to apply gamification logic and persist scores."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/consumers/gamification_consumer.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 52,
+              "code": "module Gamification   module Rules     # Subclasses MUST implement the #name method     class Base       def initialize(payload)         @payload = payload       end        def create_score!         return unless payload_has_required_keys?          Gamification::Score.create score       end        private        def score         {           user_id: receiver,           course_id:,           rule: name,           points:,           data:,           checksum:,         }       end        def payload_has_required_keys?         required_keys.all? {|key| @payload.key? key }       end        def required_keys         []       end        def receiver         @payload.fetch :user_id       end        def course_id         @payload.fetch :course_id       end        def active?(rule_name = nil)         !rule_config(rule_name).nil?       end        def points         rule_config['value']       end        def config_param(key)         rule_config['params'][key.to_s]       end     end   end end",
+              "source": "vendor/assets/javascripts/m.e.i.n.e.l.js"
+            },
+            {
+              "startLine": 3,
+              "endLine": 35,
+              "code": "module Gamification   module Rules     module Course       class AttendedSection < Gamification::Rules::Base         def create_score!           # To completely deactivate this rule, remove it from the config file           return unless active?            return unless continuously_attended_section?            super            Gamification::Rules::Course::ContinuousAttendance.new(@payload).create_score!         end          private          def name           :attended_section         end          def checksum           @payload.fetch :section_id         end          def data           {section_id: @payload.fetch(:section_id)}         end          def continuously_attended_section?           (video_items_visited_percentage > 70) &&             score_for_rule_in_section?(:take_exam) &&             score_for_rule_in_section?(:take_selftest)         end          def video_items_visited_percentage           return 0 if visited_item_scores.empty?           re...         end       end     end   end end",
+              "source": "vendor/assets/javascripts/m.e.i.n.e.l.js"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "vendor/assets/javascripts/m.e.i.n.e.l.js",
+              "relevance": 19
+            },
+            {
+              "path": "app/models/gamification/rules/base.rb",
+              "relevance": 14
+            },
+            {
+              "path": "app/models/gamification/rules/course/attended_section.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Gamification::Score": {
+        "type": "Model",
+        "description": "Represents a single gamification score earned by a user for a specific action. It includes details about the user, course, the rule that triggered the score, points awarded, and event-specific data. A checksum is used to ensure uniqueness for each event.",
+        "interactions": {
+          "interaction_0": "Created by `Gamification::Rules::*` classes [Inferred from app/consumers/gamification_consumer.rb]",
+          "interaction_1": "Used in calculations for user levels and badge progression [Inferred from app/models/gamification/badge_types.yml, app/models/gamification/user_levels.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "spec/factories/gamification.rb",
+            "spec/events/xikolo.course.result.create_spec.rb",
+            "spec/events/xikolo.course.visit.create_spec.rb",
+            "spec/events/xikolo.pinboard.answer.create_spec.rb",
+            "spec/events/xikolo.pinboard.comment.create_spec.rb",
+            "spec/events/xikolo.pinboard.question.create_spec.rb",
+            "spec/events/xikolo.pinboard.question.update_spec.rb",
+            "spec/events/xikolo.pinboard.vote.create_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 21,
+              "code": "module Gamification   class Score < ::ApplicationRecord     belongs_to :user, class_name: 'Account::User'     belongs_to :course, class_name: 'Course::Course'      validates :rule, presence: true     validates :checksum, uniqueness: {scope: :rule}      serialize :data, coder: YAML      after_create :update_user_badges!      class << self       def total         sum(:points)       end     end",
+              "source": "app/models/gamification/score.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 33,
+              "code": "    private      # Calculate and create/update all badges for this score's user.     #     # Badges are awarded based on the number of scores in a category, so every     # new score may cause a new badge (level) to be awarded.     def update_user_badges!       Badge.types.each do |name, config|         scores = Score.where(user_id:, rule: config['rules'])         grouped_scores = if config['scope'] == 'course'                            scores.group(:course_id).count                          else                            {nil => scores.count}",
+              "source": "app/models/gamification/score.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 22,
+              "code": "    def initialize(user)       @user = user     end      def any?       by_course.count > 1     end      def columns       @columns ||= [*CATEGORIES.keys, :total]     end      def by_course       @by_course ||= @user.gamification_scores         .where(rule: CATEGORIES.values.flatten).where('points > 0')         .group(:course_id, :rule).total         .then { sum_per_category(it) }         .then { sum_total_per_category(it) }         .then { load_courses(it) }     end",
+              "source": "app/models/gamification/score.rb"
+            },
+            {
+              "startLine": 26,
+              "endLine": 29,
+              "code": "    CATEGORIES = {       selftests: %i[selftest_master take_selftest],       communication: %i[upvote_answer upvote_question accepted_answer answered_question],     }.freeze",
+              "source": "app/models/gamification/score.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/gamification/score.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/presenters/gamification/scores_presenter.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/course/learner_dashboard/section_progress/score.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Gamification::Badge": {
+        "type": "Model/Entity",
+        "description": "An inferred model or entity representing a specific gamification badge earned by a user. It holds attributes like the badge's name, its current level, and its persistence status (whether it has been gained).",
+        "interactions": {
+          "interaction_0": "Passed as a parameter to `Dashboard::GamificationBadge` for rendering.",
+          "interaction_1": "Its attributes (`name`, `level`, `persisted?`) are accessed by the ViewComponent to determine display logic."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/components/dashboard/gamification_badge.rb",
+            "app/models/gamification/badge_types.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 13,
+              "code": "# frozen_string_literal: true\n\nmodule Gamification\n  class Badge < ::ApplicationRecord\n    default_scope { order(level: :desc) }\n\n    belongs_to :course, class_name: 'Course::Course', optional: true\n    belongs_to :user, class_name: 'Account::User'\n\n    class << self\n      def types\n        @types ||= YAML.load_file(File.expand_path('./badge_types.yml', __dir__))\n      end\n    end\n  end\nend",
+              "source": "app/models/gamification/badge.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 40,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  class GamificationBadge < ApplicationComponent\n    # @param badge [Gamification::Badge]\n    def initialize(badge)\n      @badge = badge\n    end\n\n    def call\n      helpers.image_tag image_source, alt: title\n    end\n\n    private\n\n    def title\n      # TODO: Move to locale file\n      if gained?\n        \"#{@badge.name.titleize} (#{level_title})\"\n      else\n        @badge.name.titleize\n      end\n    end\n\n    def image_source\n      if gained?\n        \"gamification/badges/#{@badge.name.downcase}_#{@badge.level}.png\"\n      else\n        \"gamification/badges/#{@badge.name.downcase}_not_gained.png\"\n      end\n    end\n\n    def gained?\n      @badge.persisted?\n    end\n\n    def level_title\n      lookup = [\n        :\"gamification.badge.level.#{@badge.name.downcase}.#{@badge.level}\",\n        :\"gamification.badge.level.default.#{@badge.level}\",\n        @badge.level,\n      ]\n\n      I18n.t(lookup.shift, default: lookup)\n    end\n  end\nend",
+              "source": "app/models/gamification/badge.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/gamification/badge.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/dashboard/gamification_badge.rb",
+              "relevance": 18
+            },
+            {
+              "path": "spec/components/dashboard/gamification_badge_spec.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Dashboard::GamificationBadge": {
+        "type": "ViewComponent",
+        "description": "Renders a single gamification badge, displaying its image and title. It dynamically selects the image source and title based on whether the badge has been gained and its current level. It leverages I18n for localized level titles.",
+        "interactions": {
+          "interaction_0": "Receives a `Gamification::Badge` object during initialization.",
+          "interaction_1": "Uses `helpers.image_tag` to render the badge image, constructing the path based on badge name and level/gained status.",
+          "interaction_2": "Interacts with `I18n` for looking up localized badge level titles.",
+          "interaction_3": "Assumes badge images are located in `app/assets/images/gamification/badges/`."
+        },
+        "techDebt": [
+          "The badge title generation logic (e.g., `\"#{@badge.name.titleize} (#{level_title})\"`) contains a TODO to move to a locale file for better internationalization and maintainability."
+        ],
+        "provenance": {
+          "sources": [
+            "app/components/dashboard/gamification_badge.rb",
+            "app/models/gamification/badge_types.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 7,
+              "code": "    # @param badge [Gamification::Badge]\n    def initialize(badge)\n      @badge = badge\n    end",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 11,
+              "code": "    def call\n      helpers.image_tag image_source, alt: title\n    end",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 21,
+              "code": "    def title\n      # TODO: Move to locale file\n      if gained?\n        \"#{@badge.name.titleize} (#{level_title})\"\n      else\n        @badge.name.titleize\n      end",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 29,
+              "code": "    def image_source\n      if gained?\n        \"gamification/badges/#{@badge.name.downcase}_#{@badge.level}.png\"\n      else\n        \"gamification/badges/#{@badge.name.downcase}_not_gained.png\"\n      end\n    }",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 33,
+              "code": "    def gained?\n      @badge.persisted?\n    }",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 35,
+              "endLine": 43,
+              "code": "    def level_title\n      lookup = [\n        :\"gamification.badge.level.#{@badge.name.downcase}.#{@badge.level}\",\n        :\"gamification.badge.level.default.#{@badge.level}\",\n        @badge.level,\n      ]\n\n      I18n.t(lookup.shift, default: lookup)\n    }",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/gamification_badge.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/components/dashboard/ical_feed.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/dashboard/ical_feed_preview.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Gamification Configuration (YAML)": {
+        "type": "Configuration",
+        "description": "YAML files defining the structure and rules for gamification elements. `badge_types.yml` specifies badge names, contributing rules, and level thresholds. `user_levels.yml` defines user experience point (XP) levels, their titles, and associated images.",
+        "interactions": {
+          "interaction_0": "Defines the rules for `Gamification::Badge` progression [Source: app/models/gamification/badge_types.yml]",
+          "interaction_1": "Defines the thresholds and metadata for user levels [Source: app/models/gamification/user_levels.yml]",
+          "interaction_2": "Provides image paths for badges and user levels [Source: app/models/gamification/badge_types.yml, app/models/gamification/user_levels.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/gamification/badge_types.yml",
+            "app/models/gamification/user_levels.yml"
+          ]
+        }
+      },
+      "Xikolo.config.gamification": {
+        "type": "Configuration",
+        "description": "A global configuration object used to enable or disable the entire gamification system. It acts as a feature flag.",
+        "interactions": {
+          "interaction_0": "Checked by `GamificationConsumer` to determine if event processing should occur [Source: app/consumers/gamification_consumer.rb]",
+          "interaction_1": "Configured in test environments to enable/disable gamification for specific tests [Source: spec/events/xikolo.course.result.create_spec.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/consumers/gamification_consumer.rb",
+            "spec/events/xikolo.course.result.create_spec.rb",
+            "spec/events/xikolo.course.visit.create_spec.rb",
+            "spec/events/xikolo.pinboard.answer.create_spec.rb",
+            "spec/events/xikolo.pinboard.comment.create_spec.rb",
+            "spec/events/xikolo.pinboard.question.create_spec.rb",
+            "spec/events/xikolo.pinboard.question.update_spec.rb",
+            "spec/events/xikolo.pinboard.vote.create_spec.rb",
+            "integration/features/xikolo/global/gamification/user_score.feature"
+          ]
+        }
+      },
+      "Open Badges Configuration": {
+        "type": "Configuration",
+        "description": "Configuration settings for integrating with the Open Badges standard, including public and private RSA keys. This suggests the capability to issue verifiable digital badges.",
+        "interactions": {
+          "interaction_0": "Enables/disables Open Badges functionality [Source: spec/fixtures/files/badge_config.yml]",
+          "interaction_1": "Provides cryptographic keys for badge signing [Source: spec/fixtures/files/badge_config.yml, spec/support/files/certificate/badge_config.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "spec/fixtures/files/badge_config.yml",
+            "spec/support/files/certificate/badge_config.yml"
+          ]
+        }
+      },
+      "Gamification::Badge (Implied Model)": {
+        "type": "Model",
+        "description": "An implied model representing a gamification badge, likely storing its name, level, and whether it has been gained by a user. It is used by the `Dashboard::GamificationBadge` component.",
+        "interactions": {
+          "interaction_0": "Provided as an input to `Dashboard::GamificationBadge`.",
+          "interaction_1": "Its attributes (`name`, `level`, `persisted?`) are accessed by `Dashboard::GamificationBadge`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/components/dashboard/gamification_badge.rb",
+            "app/models/gamification/badge_types.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  class GamificationBadge < ApplicationComponent\n    # @param badge [Gamification::Badge]\n    def initialize(badge)\n      @badge = badge\n    end\n\n    def call\n      helpers.image_tag image_source, alt: title\n    end\n\n    private\n\n    def title\n      # TODO: Move to locale file\n      if gained?\n        \"#{@badge.name.titleize} (#{level_title})\"\n      else\n        @badge.name.titleize\n      end\n    end\n\n    def image_source\n      if gained?\n        \"gamification/badges/#{@badge.name.downcase}_#{@badge.level}.png\"\n      else\n        \"gamification/badges/#{@badge.name.downcase}_not_gained.png\"\n      end\n    end\n\n    def gained?\n      @badge.persisted?\n    end\n\n    def level_title\n      lookup = [\n        :\"gamification.badge.level.#{@badge.name.downcase}.#{@badge.level}\",\n        :\"gamification.badge.level.default.#{@badge.level}\",\n        @badge.level,\n      ]\n\n      I18n.t(lookup.shift, default: lookup)\n    end\n  end\nend",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 16,
+              "code": "# frozen_string_literal: true\n\nmodule Gamification\n  class Badge < ::ApplicationRecord\n    default_scope { order(level: :desc) }\n\n    belongs_to :course, class_name: 'Course::Course', optional: true\n    belongs_to :user, class_name: 'Account::User'\n\n    class << self\n      def types\n        @types ||= YAML.load_file(File.expand_path('./badge_types.yml', __dir__))\n      end\n    end\n  end\nend",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/gamification_badge.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/consumers/gamification_consumer.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/models/gamification/badge.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Gamification::Configuration": {
+        "type": "Configuration",
+        "description": "The system configuration for the gamification feature, controlled by `Xikolo.config.gamification['enabled']`. It determines whether the gamification system is active.",
+        "interactions": {
+          "interaction_0": "Checked by `GamificationConsumer` before processing events.",
+          "interaction_1": "Manipulated by integration tests to enable/disable the feature."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/consumers/gamification_consumer.rb",
+            "integration/features/steps/gamification/user_score.rb",
+            "integration/features/xikolo/global/gamification/user_score.feature"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 8,
+              "endLine": 10,
+              "code": "module Xikolo\n  include ActiveSupport::Configurable\n\n  config_accessor :site, :brand, :base_url",
+              "source": "gems/xikolo-common/lib/xikolo/common/secrets.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 30,
+              "code": "  class Configuration < ActiveSupport::Configurable::Configuration\n    def load_file(path)\n      if (data = parse_file(path))\n        merge(data)\n      end\n    end\n\n    def parse_file(path)\n      $stdout.puts \"[xikolo.config] Load file: #{path}\" if ENV['RAILS_ENV'] == 'production'\n      YAML.safe_load(ERB.new(::File.read(path)).result)\n    end\n\n    def merge(opts)\n      opts.each do |k, v|\n        send :\"#{k}\"#, v\n      end\n\n      compile_methods!\n    end\n  end",
+              "source": "gems/xikolo-common/lib/xikolo/common/secrets.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 37,
+              "code": "  class GlobalConfiguration < Configuration\n    %w[site brand].each do |string_inquirer_option|\n      class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1 # rubocop:disable Style/DocumentDynamicEvalDefinition\n        # StringInquirer the string argument\n        def #{string_inqu...\n",
+              "source": "gems/xikolo-common/lib/xikolo/common/secrets.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/secrets.rb",
+              "relevance": 19
+            },
+            {
+              "path": "gems/xikolo-config/lib/xikolo/config.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/components/dashboard/gamification_badge.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Gamification::BadgeTypes (YAML)": {
+        "type": "Configuration",
+        "description": "A YAML configuration file (`app/models/gamification/badge_types.yml`) that defines all available badges, the rules (events) that contribute to them, and the score thresholds for achieving different levels of each badge.",
+        "interactions": {
+          "interaction_0": "Defines the structure and requirements for `Gamification::Badge` instances."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/gamification/badge_types.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 12,
+              "endLine": 17,
+              "code": "    class << self\n      def types\n        @types ||= YAML.load_file(File.expand_path('./badge_types.yml', __dir__))\n      end\n    end",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 42,
+              "code": "module Dashboard\n  class GamificationBadge < ApplicationComponent\n    # @param badge [Gamification::Badge]\n    def initialize(badge)\n      @badge = badge\n    end\n\n    def call\n      helpers.image_tag image_source, alt: title\n    end\n\n    private\n\n    def title\n      # TODO: Move to locale file\n      if gained?\n        \"#{@badge.name.titleize} (#{level_title})\"\n      else\n        @badge.name.titleize\n      end\n    end\n\n    def image_source\n      if gained?\n        \"gamification/badges/#{@badge.name.downcase}_#{@badge.level}.png\"\n      else\n        \"gamification/badges/#{@badge.name.downcase}_not_gained.png\"\n      end\n    end\n\n    def gained?\n      @badge.persisted?\n    end\n\n    def level_title\n      lookup = [\n        :\"gamification.badge.level.#{@badge.name.downcase}.#{@badge.level}\",\n        :\"gamification.badge.level.default.#{@badge.level}\",\n        @badge.level,\n      ]\n\n      I18n.t(lookup.shift, default: lookup)\n    end\n  end\nend",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/gamification_badge.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/consumers/gamification_consumer.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/models/gamification/badge.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Gamification::UserLevels (YAML)": {
+        "type": "Configuration",
+        "description": "A YAML configuration file (`app/models/gamification/user_levels.yml`) that defines the different user levels, their required experience points (XP), titles, and associated images.",
+        "interactions": {
+          "interaction_0": "Defines the progression and display properties for user levels based on accumulated XP."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/gamification/user_levels.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  class GamificationBadge < ApplicationComponent\n    # @param badge [Gamification::Badge]\n    def initialize(badge)\n      @badge = badge\n    end\n\n    def call\n      helpers.image_tag image_source, alt: title\n    end\n\n    private\n\n    def title\n      # TODO: Move to locale file\n      if gained?\n        \"#{@badge.name.titleize} (#{level_title})\"\n      else\n        @badge.name.titleize\n      end\n    end\n\n    def image_source\n      if gained?\n        \"gamification/badges/#{@badge.name.downcase}_#{@badge.level}.png\"\n      else\n        \"gamification/badges/#{@badge.name.downcase}_not_gained.png\"\n      end\n    end\n\n    def gained?\n      @badge.persisted?\n    end\n\n    def level_title\n      lookup = [\n        :\"gamification.badge.level.#{@badge.name.downcase}.#{@badge.level}\",\n        :\"gamification.badge.level.default.#{@badge.level}\",\n        @badge.level,\n      ]\n\n      I18n.t(lookup.shift, default: lookup)\n    end\n  end\nend",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 35,
+              "code": "  def result_create\n    return unless Xikolo.config.gamification['enabled']\n\n    # Make sure we have a rule matching the exercise type\n    case payload.fetch(:exercise_type)\n      when 'main'\n        Gamification::Rules::Course::TakeExam.new(payload).create_score!\n      when 'selftest'\n        Gamification::Rules::Course::TakeSelftest.new(payload).create_score!\n    end\n  end\n\n  def visit_create\n    return unless Xikolo.conf...",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 16,
+              "code": "# frozen_string_literal: true\n\nmodule Gamification\n  class Badge < ::ApplicationRecord\n    default_scope { order(level: :desc) }\n\n    belongs_to :course, class_name: 'Course::Course', optional: true\n    belongs_to :user, class_name: 'Account::User'\n\n    class << self\n      def types\n        @types ||= YAML.load_file(File.expand_path('./badge_types.yml', __dir__))\n      end\n    end\n  end\nend",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/gamification_badge.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/consumers/gamification_consumer.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/models/gamification/badge.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Gamification Badge Configuration": {
+        "type": "Configuration",
+        "description": "A YAML file (`badge_types.yml`) that defines all available gamification badges. It specifies the rules (events) that contribute to each badge and the score thresholds required to achieve different levels of a badge.",
+        "interactions": {
+          "interaction_0": "Informs the gamification system about the criteria for awarding and leveling up badges.",
+          "interaction_1": "Implicitly guides the implementation of `Gamification::Rules` by listing contributing events.",
+          "interaction_2": "Establishes naming conventions for badge image assets."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/gamification/badge_types.yml"
+          ]
+        }
+      },
+      "Gamification User Level Configuration": {
+        "type": "Configuration",
+        "description": "A YAML file (`user_levels.yml`) that defines the progression of user levels within the gamification system. Each level is associated with a minimum experience point (XP) requirement, a title, and an image file.",
+        "interactions": {
+          "interaction_0": "Used by the gamification system to determine a user's current level based on their accumulated XP.",
+          "interaction_1": "Establishes naming conventions for user level image assets."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/gamification/user_levels.yml"
+          ]
+        }
+      },
+      "Gamification (Presenter/Decorator)": {
+        "type": "Presenter/Decorator",
+        "description": "An inferred object (likely a presenter or decorator) responsible for aggregating and preparing gamification data, such as a user's earned badges and scores, for display in the `dashboard/achievements.html.slim` view.",
+        "interactions": {
+          "interaction_0": "Provides collections of `badges` and `scores` to the `achievements.html.slim` view.",
+          "interaction_1": "Encapsulates logic for retrieving and structuring gamification data relevant to a user."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/views/dashboard/achievements.html.slim"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.6,
+          "codeBlocks": [
+            {
+              "startLine": 7,
+              "endLine": 15,
+              "code": "  class << self\n    def notification(name, opts = {})\n      notifications[name] = opts\n    end\n\n    def notifications\n      @notifications ||= {}\n    end\n  end",
+              "source": "app/presenters/abuse_report_presenter.rb"
+            },
+            {
+              "startLine": 21,
+              "endLine": 21,
+              "code": "  notification 'stats', platform: false, teacher: true",
+              "source": "app/presenters/abuse_report_presenter.rb"
+            },
+            {
+              "startLine": 35,
+              "endLine": 42,
+              "code": "  def notifications\n    self.class.notifications.reject do |_, opts|\n      opts[:teacher]\n    end.map do |name, opts|\n      NotificationPresenter.new @preferences, name, opts\n    end\n  end",
+              "source": "app/presenters/abuse_report_presenter.rb"
+            },
+            {
+              "startLine": 44,
+              "endLine": 51,
+              "code": "  def teacher_notifications\n    self.class.notifications.select do |_, opts|\n      opts[:teacher]\n    end.map do |name, opts|\n      NotificationPresenter.new @preferences, name, opts\n    end\n  end",
+              "source": "app/presenters/abuse_report_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/preferences_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "State::Empty": {
+        "type": "ViewComponent",
+        "description": "A generic ViewComponent used to display a message indicating that there is no content or data available, specifically used here when a user has no gamification scores.",
+        "interactions": {
+          "interaction_0": "Rendered conditionally in `achievements.html.slim` when `@gamification.scores` is empty."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/views/dashboard/achievements.html.slim"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 21,
+              "code": "# frozen_string_literal: true\n\nmodule State\n  class Empty < ApplicationComponent\n    SIZES = %i[small compact].freeze\n    POSITIONS = %i[left].freeze\n\n    def initialize(text, size: nil, align: nil)\n      @text = text\n      @size = size\n      @align = align\n    end\n\n    def css_modifiers\n      modifiers = []\n      modifiers << \"empty-state--#{@size}\" if SIZES.include?(@size)\n      modifiers << \"empty-state--#{@align}\" if POSITIONS.include?(@align)\n      modifiers.join(' ')\n    end\n  end\nend",
+              "source": "app/components/state/empty.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 23,
+              "code": "    def with_additional_content\n      render State::Empty.new('No courses found') do\n        'Call to Action'\n      end\n    end",
+              "source": "app/components/state/empty.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/state/empty.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/state/empty_preview.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/endpoint/relationships/has_many_relationship.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Consumes messages from RabbitMQ (Msgr) for events like 'xikolo.course.result.create', 'xikolo.pinboard.vote.create', etc. [Source: app/consumers/gamification_consumer.rb]",
+      "interaction_1": "Interacts with `Xikolo.config` to check if gamification is enabled [Source: app/consumers/gamification_consumer.rb]",
+      "interaction_2": "Instantiates and calls `create_score!` on various `Gamification::Rules::*` classes to generate scores [Source: app/consumers/gamification_consumer.rb]",
+      "interaction_3": "Instantiated by `GamificationConsumer` with an event payload [Source: app/consumers/gamification_consumer.rb]",
+      "interaction_4": "Creates instances of `Gamification::Score` [Inferred from app/consumers/gamification_consumer.rb and spec/factories/gamification.rb]",
+      "interaction_5": "Created by `Gamification::Rules::*` classes [Inferred from app/consumers/gamification_consumer.rb]",
+      "interaction_6": "Used in calculations for user levels and badge progression [Inferred from app/models/gamification/badge_types.yml, app/models/gamification/user_levels.yml]",
+      "interaction_7": "Passed to `Dashboard::GamificationBadge` for rendering [Source: app/components/dashboard/gamification_badge.rb]",
+      "interaction_8": "Its state (`persisted?`, `name`, `level`) determines the visual representation [Source: app/components/dashboard/gamification_badge.rb]",
+      "interaction_9": "Defined by `app/models/gamification/badge_types.yml` [Source: app/models/gamification/badge_types.yml]",
+      "interaction_10": "Receives a `Gamification::Badge` object during initialization [Source: app/components/dashboard/gamification_badge.rb]",
+      "interaction_11": "Uses `helpers.image_tag` to display badge images from `app/assets/images/gamification/badges/` [Source: app/components/dashboard/gamification_badge.rb]",
+      "interaction_12": "Uses `I18n.t` for localizing badge level titles [Source: app/components/dashboard/gamification_badge.rb]",
+      "interaction_13": "Defines the rules for `Gamification::Badge` progression [Source: app/models/gamification/badge_types.yml]",
+      "interaction_14": "Defines the thresholds and metadata for user levels [Source: app/models/gamification/user_levels.yml]",
+      "interaction_15": "Provides image paths for badges and user levels [Source: app/models/gamification/badge_types.yml, app/models/gamification/user_levels.yml]",
+      "interaction_16": "Checked by `GamificationConsumer` to determine if event processing should occur [Source: app/consumers/gamification_consumer.rb]",
+      "interaction_17": "Configured in test environments to enable/disable gamification for specific tests [Source: spec/events/xikolo.course.result.create_spec.rb]",
+      "interaction_18": "Enables/disables Open Badges functionality [Source: spec/fixtures/files/badge_config.yml]",
+      "interaction_19": "Provides cryptographic keys for badge signing [Source: spec/fixtures/files/badge_config.yml, spec/support/files/certificate/badge_config.yml]",
+      "interaction_20": "Consumes messages from RabbitMQ (Msgr).",
+      "interaction_21": "Instantiates and calls `create_score!` on various `Gamification::Rules` classes (e.g., `Gamification::Rules::Course::TakeExam`, `Gamification::Rules::Pinboard::UpvoteAnswer`).",
+      "interaction_22": "Checks `Xikolo.config.gamification['enabled']` to determine if gamification is active.",
+      "interaction_23": "Instantiated and invoked by `GamificationConsumer` with event `payload`.",
+      "interaction_24": "Calls `create_score!` (implying interaction with a `Gamification::Score` model or service).",
+      "interaction_25": "Provided as an input to `Dashboard::GamificationBadge`.",
+      "interaction_26": "Its attributes (`name`, `level`, `persisted?`) are accessed by `Dashboard::GamificationBadge`.",
+      "interaction_27": "Receives a `Gamification::Badge` object as input.",
+      "interaction_28": "Generates image paths based on badge name and level, referencing `app/assets/images/gamification/badges/`.",
+      "interaction_29": "Uses `I18n` for localized level titles.",
+      "interaction_30": "Checked by `GamificationConsumer` before processing events.",
+      "interaction_31": "Manipulated by integration tests to enable/disable the feature.",
+      "interaction_32": "Defines the structure and requirements for `Gamification::Badge` instances.",
+      "interaction_33": "Defines the progression and display properties for user levels based on accumulated XP.",
+      "interaction_34": "Receives a `Gamification::Badge` object during initialization.",
+      "interaction_35": "Uses `helpers.image_tag` to render the badge image, constructing the path based on badge name and level/gained status.",
+      "interaction_36": "Interacts with `I18n` for looking up localized badge level titles.",
+      "interaction_37": "Assumes badge images are located in `app/assets/images/gamification/badges/`.",
+      "interaction_38": "Consumes messages from RabbitMQ via the `Msgr` gem.",
+      "interaction_39": "Checks `Xikolo.config.gamification['enabled']` to determine if gamification processing should occur.",
+      "interaction_40": "Instantiates and calls `create_score!` on various `Gamification::Rules` classes (e.g., `Gamification::Rules::Course::TakeExam`, `Gamification::Rules::Pinboard::UpvoteAnswer`) based on the event type and payload.",
+      "interaction_41": "Informs the gamification system about the criteria for awarding and leveling up badges.",
+      "interaction_42": "Implicitly guides the implementation of `Gamification::Rules` by listing contributing events.",
+      "interaction_43": "Establishes naming conventions for badge image assets.",
+      "interaction_44": "Used by the gamification system to determine a user's current level based on their accumulated XP.",
+      "interaction_45": "Establishes naming conventions for user level image assets.",
+      "interaction_46": "Provides collections of `badges` and `scores` to the `achievements.html.slim` view.",
+      "interaction_47": "Encapsulates logic for retrieving and structuring gamification data relevant to a user.",
+      "interaction_48": "Passed as a parameter to `Dashboard::GamificationBadge` for rendering.",
+      "interaction_49": "Its attributes (`name`, `level`, `persisted?`) are accessed by the ViewComponent to determine display logic.",
+      "interaction_50": "Instantiated by `GamificationConsumer` with an event `payload`.",
+      "interaction_51": "Executes the `create_score!` method to apply gamification logic and persist scores.",
+      "interaction_52": "Rendered conditionally in `achievements.html.slim` when `@gamification.scores` is empty."
+    },
+    "technicalDebt": [
+      "Comments suggest two ways to deactivate rules (remove/comment or award 0 points), with a warning about side effects for the first option, indicating potential complexity in rule management [Source: app/consumers/gamification_consumer.rb]",
+      "TODO: Move badge level titles to locale files for better internationalization [Source: app/components/dashboard/gamification_badge.rb]",
+      "TODO: Move badge names to locale file for better internationalization.",
+      "The badge title generation logic (e.g., `\"#{@badge.name.titleize} (#{level_title})\"`) contains a TODO to move to a locale file for better internationalization and maintainability.",
+      "The consumer's internal documentation highlights a potential for brittle rule dependencies if rules are deactivated by removing/commenting them in the config, suggesting a need for careful management of rule interdependencies."
+    ]
+  }
+}

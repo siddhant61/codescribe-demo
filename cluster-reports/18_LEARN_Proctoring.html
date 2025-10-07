@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proctoring standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Proctoring standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#learn" class="breadcrumb-link">LEARN</a></li>
+            <li class="breadcrumb-item active">Proctoring standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-proctoring-configuration-and-activation" class="sidebar-nav-link">1. Proctoring Configuration and Activation</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-booking%2Fclaiming-proctoring" class="sidebar-nav-link">2. User Booking/Claiming Proctoring</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-proctoring-data-processing-and-storage" class="sidebar-nav-link">3. Proctoring Data Processing and Storage</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#4.-proctoring-results-display" class="sidebar-nav-link">4. Proctoring Results Display</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-learn">LEARN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="online-proctoring-integration-for-quizzes-and-exams---technical-documentation" tabindex="-1"><a class="header-anchor" href="#online-proctoring-integration-for-quizzes-and-exams---technical-documentation"><span>Online Proctoring Integration for Quizzes and Exams - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the architecture and operational workflows of the Xikolo 18_LEARN_Proctoring cluster, which implements an online proctoring integration using the SMOWL solution for quizzes and exams. The primary purpose is to manage proctored enrollment status, process real-time proctoring results, and display these outcomes to users. Key components include models for handling enrollment and submission data, a service object for voucher-based proctoring activation, and presenters/views for rendering proctoring statistics. It is critical to note that this entire feature is explicitly marked as deprecated and is scheduled for removal from the platform.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo proctoring architecture is centered around several core components that manage the lifecycle of proctored activities, from configuration and user enrollment to data processing and result presentation. At its heart, the system integrates with the external SMOWL solution via a dedicated adapter, processing various states and outcomes. While broad, the system primarily involves backend logic for data handling and frontend components for visualization, all built upon existing Xikolo platform services like S3 for storage and a course microservice for enrollment updates. This section provides a high-level overview of the most impactful components and their interactions within this deprecated feature.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-proctoring-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-proctoring-architecture-overview"><span>Main Proctoring Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRequest["User Request (Proctoring)"]
+  voucherProductTypes["Voucher::ProductTypes::Proctoring"]
+  quizSubmissionProctoring["Quiz::Submission::Proctoring"]
+  smowlAdapter["::Proctoring::SmowlAdapter"]
+  quizSubmissionPresenter["QuizSubmissionProctoringPresenter"]
+  proctoringChart["_proctoring_chart.html.slim"]
+
+  userRequest -->|"claim proctoring"| voucherProductTypes
+  userRequest -->|"submit quiz with vendor data"| quizSubmissionProctoring
+  voucherProductTypes -->|"checks enablement, upgrades"| smowlAdapter
+  quizSubmissionProctoring -->|"delegates results processing"| smowlAdapter
+  smowlAdapter -->|"returns proctoring results"| quizSubmissionProctoring
+  quizSubmissionProctoring -->|"provides data"| quizSubmissionPresenter
+  quizSubmissionPresenter -->|"generates UI callouts"| proctoringChart
+  proctoringChart -->|"renders data in UI"| userInterface["User Interface"]
+
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Course::Enrollment::Proctoring:</strong> Interacts with <code>UUID4</code> for generating unique identifiers [Source: app/models/course/enrollment/proctoring.rb].</li>
+<li><strong>Course::Enrollment::Proctoring:</strong> Interacts with <code>Xikolo::S3</code> to access the <code>:certificate</code> bucket [Source: app/models/course/enrollment/proctoring.rb].</li>
+<li><strong>Quiz::Submission::Proctoring:</strong> Initializes with a <code>Quiz::Submission</code> object [Source: app/models/quiz/submission/proctoring.rb].</li>
+<li><strong>Quiz::Submission::Proctoring:</strong> Interacts with an implied <code>::Proctoring::SmowlAdapter</code> to get and interpret proctoring results from <code>vendor_data</code> [Source: app/models/quiz/submission/proctoring.rb].</li>
+<li><strong>Voucher::ProductTypes::Proctoring:</strong> Checks global proctoring enablement via <code>::Proctoring.enabled?</code> [Source: app/models/voucher/product_types/proctoring.rb].</li>
+<li><strong>Voucher::ProductTypes::Proctoring:</strong> Checks course-specific proctoring enablement via <code>course.proctored?</code> [Source: app/models/voucher/product_types/proctoring.rb].</li>
+<li><strong>QuizSubmissionProctoringPresenter:</strong> Initializes with a <code>Quiz::Submission::Proctoring</code> object [Source: app/presenters/quiz_submission_proctoring_presenter.rb].</li>
+<li><strong>QuizSubmissionProctoringPresenter:</strong> Calls <code>results</code> on the <code>Quiz::Submission::Proctoring</code> object to get the raw proctoring outcome [Source: app/presenters/quiz_submission_proctoring_presenter.rb].</li>
+<li><strong>_proctoring_chart.html.slim:</strong> Receives <code>proctoring_data</code> as an input variable [Source: app/views/shared/_proctoring_chart.html.slim].</li>
+<li><strong>_proctoring_chart.html.slim:</strong> Uses <code>dimple.js</code> (which relies on D3.js) for chart rendering [Source: app/views/shared/_proctoring_chart.html.slim].</li>
+<li><strong>::Proctoring::SmowlAdapter:</strong> Instantiated by <code>Course::Enrollment::Proctoring</code> and <code>Quiz::Submission::Proctoring</code> [Source: app/models/course/enrollment/proctoring.rb, app/models/quiz/submission/proctoring.rb].</li>
+<li><strong>::Proctoring::SmowlAdapter:</strong> Receives <code>course</code> context during initialization [Source: app/models/course/enrollment/proctoring.rb, app/models/quiz/submission/proctoring.rb].</li>
+<li><strong>::Proctoring::CourseContext:</strong> Instantiated by <code>Voucher::ProductTypes::Proctoring</code> with <code>course</code> and <code>enrollment</code> objects [Source: app/models/voucher/product_types/proctoring.rb].</li>
+<li><strong>::Proctoring::CourseContext:</strong> Provides <code>upgrade_possible?</code> method to check eligibility [Source: app/models/voucher/product_types/proctoring.rb].</li>
+<li><strong>::Proctoring (Module):</strong> Provides <code>enabled?</code> method to check if proctoring is globally active [Source: app/models/voucher/product_types/proctoring.rb].</li>
+<li><strong>::Proctoring (Module):</strong> Provides <code>store_url</code> method to retrieve the external shop URL [Source: app/models/voucher/product_types/proctoring.rb].</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-proctoring-configuration-and-activation" tabindex="-1"><a class="header-anchor" href="#1.-proctoring-configuration-and-activation"><span>1. Proctoring Configuration and Activation</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  startConfig["Start Proctoring Configuration"]
+  updateXikoloYaml["Update xikolo.yml (Store URL, Thresholds)"]
+  updateSecretsYaml["Update secrets.yml (SMOWL API Credentials)"]
+  enableFeatureFlipper["Enable 'proctoring' Feature Flipper"]
+  configureCourseAdmin["Configure Course Admin (Proctored Course/Homework)"]
+  smowlExternalActivation["SMOWL External Activation"]
+  configComplete["Configuration Complete"]
+
+  startConfig -->|"define settings"| updateXikoloYaml
+  startConfig -->|"secure credentials"| updateSecretsYaml
+  updateXikoloYaml -->|"activate feature globally"| enableFeatureFlipper
+  updateSecretsYaml --> enableFeatureFlipper
+  enableFeatureFlipper -->|"set course/item specific"| configureCourseAdmin
+  configureCourseAdmin -->|"initial external setup"| smowlExternalActivation
+  smowlExternalActivation -->|"proctoring ready"| configComplete
+
+</pre></div>
+<p>This workflow details the comprehensive steps required to enable and configure the proctoring feature across the platform and for specific courses. It starts with platform-level settings defined in configuration files. The <code>::Proctoring (Module)</code> plays a central role in validating these settings, ensuring that SMOWL API credentials and feature thresholds are correctly established. Once the global feature flipper is active, individual courses and specific assignments can then be designated as ‘proctored’ via administrative interfaces. This process ensures that only correctly configured courses can leverage the proctoring capabilities, leveraging the <code>::Proctoring::SmowlAdapter</code> for any SMOWL-side activation requirements.</p>
+<h3 id="2.-user-booking%2Fclaiming-proctoring" tabindex="-1"><a class="header-anchor" href="#2.-user-booking%2Fclaiming-proctoring"><span>2. User Booking/Claiming Proctoring</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRedeemVoucher["User Redeems Proctoring Voucher"]
+  voucherProductTypes["Voucher::ProductTypes::Proctoring"]
+  proctoringModule["::Proctoring (Module)"]
+  proctoringCourseContext["::Proctoring::CourseContext"]
+  courseMicroservice["Xikolo.api(:course)"]
+  updateEnrollmentStatus["Update Enrollment Status"]
+
+  userRedeemVoucher -->|"initiates claim"| voucherProductTypes
+  voucherProductTypes -->|"checks global enablement"| proctoringModule
+  proctoringModule -->|"returns enabled status"| voucherProductTypes
+  voucherProductTypes -->|"checks course eligibility"| proctoringCourseContext
+  proctoringCourseContext -->|"returns upgrade possibility"| voucherProductTypes
+  voucherProductTypes -->|"calls API to update"| courseMicroservice
+  courseMicroservice -->|"sets proctored: true"| updateEnrollmentStatus
+  updateEnrollmentStatus -->|"confirm success"| voucherProductTypes
+
+</pre></div>
+<p>This workflow describes the process by which a user can obtain proctored status for a course, typically through the redemption of a voucher. The <code>Voucher::ProductTypes::Proctoring</code> service object orchestrates this process, first checking <code>::Proctoring (Module)</code> to ascertain if the proctoring feature is globally enabled. It then consults the <code>course.proctored?</code> status to confirm course-level activation. Further eligibility checks, such as existing enrollments and the possibility of a proctoring upgrade, are performed using <code>::Proctoring::CourseContext</code>. Upon successful validation, an API call is made to <code>Xikolo.api(:course)</code> to update the user’s enrollment record, officially marking them as proctored for that course.</p>
+<h3 id="3.-proctoring-data-processing-and-storage" tabindex="-1"><a class="header-anchor" href="#3.-proctoring-data-processing-and-storage"><span>3. Proctoring Data Processing and Storage</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  quizSubmission["Quiz::Submission (with vendor_data)"]
+  quizSubmissionProctoring["Quiz::Submission::Proctoring"]
+  smowlAdapter["::Proctoring::SmowlAdapter"]
+  courseEnrollmentProctoring["Course::Enrollment::Proctoring"]
+  xikoloS3["Xikolo::S3 (:certificate bucket)"]
+  dataProcessingComplete["Data Processing Complete"]
+
+  quizSubmission -->|"receives submission"| quizSubmissionProctoring
+  quizSubmissionProctoring -->|"extracts and processes vendor_data"| smowlAdapter
+  smowlAdapter -->|"returns processed results"| quizSubmissionProctoring
+  courseEnrollmentProctoring -->|"generates UUIDs"| uuid4["UUID4"]
+  uuid4 -->|"creates unique S3 paths"| courseEnrollmentProctoring
+  courseEnrollmentProctoring -->|"stores images"| xikoloS3
+  quizSubmissionProctoring --> dataProcessingComplete
+  xikoloS3 --> dataProcessingComplete
+</pre></div>
+<p>This workflow focuses on the handling and persistence of proctoring-related data, encompassing both image storage and quiz submission results. When a proctored enrollment is established, <code>Course::Enrollment::Proctoring</code> utilizes <code>UUID4</code> to generate unique identifiers, constructing specific S3 object paths for storing proctoring images within the <code>:certificate</code> bucket via <code>Xikolo::S3</code>. Concurrently, <code>Quiz::Submission::Proctoring</code> is responsible for extracting and interpreting raw <code>vendor_data</code> from quiz submissions. This data is then passed to <code>::Proctoring::SmowlAdapter</code>, which processes it to derive actionable proctoring results. This ensures that all relevant data generated during proctored activities is systematically captured and made accessible.</p>
+<h3 id="4.-proctoring-results-display" tabindex="-1"><a class="header-anchor" href="#4.-proctoring-results-display"><span>4. Proctoring Results Display</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  submissionProctoringObject["Quiz::Submission::Proctoring Object"]
+  proctoringPresenter["QuizSubmissionProctoringPresenter"]
+  globalCallout["Global::Callout Objects"]
+  proctoringChartTemplate["_proctoring_chart.html.slim"]
+  userInterface["User Interface"]
+
+  submissionProctoringObject -->|"provides proctoring results"| proctoringPresenter
+  proctoringPresenter -->|"formats as status messages"| globalCallout
+  proctoringPresenter -->|"extracts chart data"| proctoringChartTemplate
+  globalCallout -->|"displays status"| userInterface
+  proctoringChartTemplate -->|"renders interactive chart"| userInterface
+
+</pre></div>
+<p>This workflow outlines how the processed proctoring results are presented to users within the Xikolo application’s user interface. Following a quiz submission, <code>Quiz::Submission::Proctoring</code> retrieves the raw proctoring outcome from the <code>::Proctoring::SmowlAdapter</code>. The <code>QuizSubmissionProctoringPresenter</code> then takes this raw data and transforms it into user-friendly <code>Global::Callout</code> objects, providing localized messages indicating whether the submission was ‘perfect’, ‘valid with issues’, ‘not passed’, or if data is ‘unavailable’. Additionally, the <code>_proctoring_chart.html.slim</code> view component receives <code>proctoring_data</code> and renders a visual bar chart using <code>dimple.js</code>, offering a detailed graphical representation of various proctoring metrics directly within the user interface.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The 18_LEARN_Proctoring cluster primarily integrates the SMOWL proctoring solution, which is notably marked as deprecated and slated for removal, indicating significant technical debt. From a technical standpoint, the feature relies on a blend of server-side Ruby/Rails models and presenters for business logic and data processing, coupled with client-side JavaScript for interactive data visualization. <code>Course::Enrollment::Proctoring</code> leverages <code>UUID4</code> for generating unique identifiers used in constructing S3 paths (e.g., <code>proctoring/{user_uid}/{course_uid}.jpg</code>) for image storage in the <code>Xikolo::S3</code> <code>:certificate</code> bucket. <code>Quiz::Submission::Proctoring</code> and <code>Voucher::ProductTypes::Proctoring</code> heavily interact with <code>::Proctoring::SmowlAdapter</code> and <code>::Proctoring::CourseContext</code> respectively, which encapsulate the logic for interpreting SMOWL-specific <code>vendor_data</code> and determining proctoring eligibility.</p>
+<p><strong>Dependencies and Integrations:</strong>
+This feature integrates with several key external and internal services. It communicates with the external SMOWL service via the <code>::Proctoring::SmowlAdapter</code>, which relies on API credentials configured in <code>secrets.yml</code>. <code>Xikolo::S3</code> is used for storing proctoring-related images, and the <code>Xikolo.api(:course)</code> microservice is called to update user enrollment statuses. Internally, the system uses <code>UUID4</code> for unique ID generation, <code>I18n</code> for localization of messages, and <code>Global::Callout</code> for standardized UI feedback. On the frontend, <code>_proctoring_chart.html.slim</code> depends on <code>dimple.js</code> (which itself uses <code>D3.js</code>) for charting and <code>jQuery</code> for DOM manipulation and event handling, which are considered legacy practices given Xikolo’s foundational context often includes React and TypeScript. The use of <code>raw</code> in the Slim template to embed <code>proctoring_data.to_json</code> could pose a Cross-Site Scripting (XSS) vulnerability if <code>proctoring_data</code> is not meticulously sanitized prior to rendering.</p>
+<p><strong>Configuration Requirements:</strong>
+Enabling and operating the proctoring feature requires specific configurations across different layers:</p>
+<ul>
+<li><strong>Platform-level <code>xikolo.yml</code>:</strong> Must include a <code>store_url</code> (or locale-specific URLs) for external proctoring booking, and SMOWL-specific thresholds (e.g., <code>nobodyinthepicture</code>, <code>wronguser</code>, <code>severalpeople</code>, <code>webcamcovered</code>, <code>othertab</code>) to define pass/fail criteria for activities. Not specified in cluster data if these are default values.</li>
+<li><strong>Platform-level <code>secrets.yml</code>:</strong> Essential for securely storing SMOWL API credentials, specifically <code>smowl_entity</code>, <code>smowl_license_key</code>, and <code>smowl_password</code>. These are critical for the <code>::Proctoring::SmowlAdapter</code> to communicate with the SMOWL API.</li>
+<li><strong>Feature Flipper:</strong> The <code>proctoring</code> feature flipper must be globally enabled to activate the functionality across the platform, typically affecting all courses and logged-in users.</li>
+<li><strong>Course Administration:</strong> Individual courses must be explicitly designated as ‘proctored’ within the ‘Certificates’ section of course administration. Furthermore, specific homeworks or exams within these courses need to have their ‘Proctored’ option toggled on in their respective item settings.</li>
+<li><strong>SMOWL-side Activation:</strong> Initial activation on the external SMOWL platform is also a prerequisite for the feature to function correctly, though specific details of this external process are not specified in cluster data.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>QuizSubmissionProctoringPresenter</strong> <code>app/presenters/quiz_submission_proctoring_presenter.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Course::Enrollment::Proctoring</strong> <code>app/models/course/enrollment/proctoring.rb</code></li>
+<li>📄 <strong>Quiz::Submission::Proctoring</strong> <code>app/models/quiz/submission/proctoring.rb</code></li>
+<li>📄 <strong>Voucher::ProductTypes::Proctoring</strong> <code>app/models/voucher/product_types/proctoring.rb</code></li>
+<li>📄 <strong>::Proctoring::SmowlAdapter</strong> <code>app/models/course/enrollment/proctoring.rb</code></li>
+<li>📄 <strong>::Proctoring::SmowlAdapter</strong> <code>app/models/quiz/submission/proctoring.rb</code></li>
+<li>📄 <strong>::Proctoring::CourseContext</strong> <code>app/models/voucher/product_types/proctoring.rb</code></li>
+<li>📄 <strong>::Proctoring (Module)</strong> <code>app/models/voucher/product_types/proctoring.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>::Proctoring (Module)</strong> <code>RAG: docs/app/features/proctoring.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>_proctoring_chart.html.slim</strong> <code>app/views/shared/_proctoring_chart.html.slim</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295929"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

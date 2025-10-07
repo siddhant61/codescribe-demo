@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CookieConsent standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for CookieConsent standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#sec" class="breadcrumb-link">SEC</a></li>
+            <li class="breadcrumb-item active">CookieConsent standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-cookie-consent-decision-workflow" class="sidebar-nav-link">1. Cookie Consent Decision Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-sec">SEC</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="cookie-consent-management---technical-documentation" tabindex="-1"><a class="header-anchor" href="#cookie-consent-management---technical-documentation"><span>Cookie Consent Management - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/19/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo cluster 50_SEC_CookieConsent manages the application’s cookie consent mechanism, ensuring user preferences regarding cookie usage are captured and respected. This system primarily operates through a client-side banner, <code>Global::CookieConsentBanner</code>, which interacts with the user to obtain their consent. User decisions are then processed by the <code>CookieConsentController</code>, which in turn utilizes the <code>ConsentCookie</code> service object to manage the persistent <code>cookie_consents</code> cookie. The main purpose is to display a consent banner for undecided cookie types and store user choices with a one-year expiry, preventing repeated prompts for decided consents.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Cookie Consent Management feature comprises several key components that work in concert to manage user cookie preferences. At the frontend, the <code>Global::CookieConsentBanner</code> is responsible for rendering the visual banner and gathering user input. This banner dynamically determines whether to display itself by querying the <code>ConsentCookie</code> for the current consent status and fetching localized text via the <code>Translations</code> utility. User decisions (accept or decline) are submitted as a POST request to the <code>CookieConsentController</code>. This controller acts as the central processing unit, receiving the consent input and delegating the actual cookie manipulation to the <code>ConsentCookie</code> service object. The <code>ConsentCookie</code> is crucial for reading, writing, and updating the <code>cookie_consents</code> cookie on the client side, relying on <code>xi_config</code> for the definitions of available consents and <code>ActionDispatch::Cookies::CookieJar</code> for low-level cookie operations. After processing, the controller redirects the user back to their previous page, and the banner will no longer display for decided consents on subsequent page loads.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture%3A-cookie-consent-management" tabindex="-1"><a class="header-anchor" href="#main-architecture%3A-cookie-consent-management"><span>Main Architecture: Cookie Consent Management</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appUser["User"] -->|"visits application"| cookieBanner["Global::CookieConsentBanner"]
+  cookieBanner -->|"checks consent status"| consentCookie["ConsentCookie"]
+  cookieBanner -->|"fetches localized text"| translations["Translations"]
+  cookieBanner -->|"submits decision (POST)"| consentController["CookieConsentController"]
+  consentController -->|"manages cookie state"| consentCookie
+  consentCookie -->|"relies on consent definitions"| xiConfig["xi_config"]
+
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Global::CookieConsentBanner:</strong> Interacts with <code>ConsentCookie</code> to determine if a banner should be rendered and to retrieve current consent details. [Source: app/components/global/cookie_consent_banner.rb]</li>
+<li><strong>Global::CookieConsentBanner:</strong> Interacts with <code>Translations</code> to fetch localized consent text. [Source: app/components/global/cookie_consent_banner.rb]</li>
+<li><strong>CookieConsentController:</strong> Receives consent decisions from <code>Global::CookieConsentBanner</code>. [Source: app/components/global/cookie_consent_banner.html.slim]</li>
+<li><strong>CookieConsentController:</strong> Instantiates and uses <code>ConsentCookie</code> to manage the <code>cookie_consents</code> cookie based on user input. [Source: app/controllers/cookie_consent_controller.rb]</li>
+<li><strong>ConsentCookie:</strong> Accessed by <code>Global::CookieConsentBanner</code> to check for current consent and render the banner. [Source: app/components/global/cookie_consent_banner.rb]</li>
+<li><strong>ConsentCookie:</strong> Accessed by <code>CookieConsentController</code> to record user decisions (accept/decline) into the cookie. [Source: app/controllers/cookie_consent_controller.rb]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-cookie-consent-decision-workflow" tabindex="-1"><a class="header-anchor" href="#1.-cookie-consent-decision-workflow"><span>1. Cookie Consent Decision Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userAccess["User Accesses Application"]
+  bannerCheck["Banner Checks Consent Status"]
+  renderForm["Render Consent Form (if undecided)"]
+  userDecides["User Decides Consent"]
+  processConsent["Process Consent Decision"]
+  flowConcludes["Consent Flow Concludes"]
+
+  userAccess -->|"initiates page load"| bannerCheck
+  bannerCheck -- "undecided consent" --> renderForm
+  renderForm -->|"presents options"| userDecides
+  userDecides -->|"submits choice (POST)"| processConsent
+  processConsent -->|"updates cookie & redirects"| flowConcludes
+  bannerCheck -- "all consents decided" --> flowConcludes
+
+</pre></div>
+<p>This workflow outlines the process from a user visiting the application to their cookie consent decision being recorded and respected, leading to the banner’s conditional display.</p>
+<p>Upon a user’s initial visit to the application, the <code>Global::CookieConsentBanner</code> component is initialized. It immediately checks the client’s <code>cookie_consents</code> using the <code>ConsentCookie</code> service to determine if there are any undecided cookie consents. If an undecided consent is identified, the banner is rendered prominently at the bottom of the page, displaying localized text (fetched via <code>Translations</code>) and offering “Accept” and “Decline” options. The user then interacts with this banner by clicking either “Accept” or “Decline”. This action triggers a POST request, specifically to the <code>CookieConsentController#create</code> action, transmitting the <code>consent_name</code> and the user’s decision. The <code>CookieConsentController</code> takes this input and, through its <code>create</code> action, instructs an instance of <code>ConsentCookie</code> to update the <code>cookie_consents</code> cookie with the new decision for the specified consent. The cookie, which stores decisions as a JSON array (e.g., <code>[&quot;+google_analytics&quot;]</code>), is set with a one-year expiry. Finally, the controller redirects the user back to the page they were on, completing the server-side processing. For all subsequent page loads, the <code>Global::CookieConsentBanner</code> will re-evaluate the <code>cookie_consents</code> cookie, and if all configured consents have been decided, the banner will no longer be displayed, ensuring a seamless user experience.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Cookie Consent Management system demonstrates several key technical considerations and dependencies. The <code>Global::CookieConsentBanner</code> component, responsible for UI rendering, employs <code>html_safe</code> for displaying consent text. As indicated in the cluster data, this practice explicitly disables Rubocop’s <code>Rails/OutputSafety</code> check and necessitates strict control and sanitization of the <code>text</code> variable’s source (e.g., <code>Translations</code> or <code>xi_config</code>) to mitigate potential Cross-Site Scripting (XSS) risks.</p>
+<p>The core logic for managing the <code>cookie_consents</code> cookie resides within the <code>ConsentCookie</code> service object. This class is instantiated by both the <code>Global::CookieConsentBanner</code> (for reading consent status) and the <code>CookieConsentController</code> (for writing decisions). The <code>ConsentCookie</code>’s functionality, although initially observed as inferred from its usage and test suite, is actually partially implemented in <code>app/lib/consent_cookie.rb</code> with methods like <code>accept</code>, <code>decline</code>, <code>current</code>, and <code>add</code> directly manipulating the <code>cookie_consents</code> value. The cookie itself is a JSON array, encoding decisions with <code>+</code> for accepted and <code>-</code> for declined, and is consistently set with a one-year expiry, providing long-term persistence for user choices.</p>
+<p>Key dependencies for this feature include <code>Translations</code>, which <code>Global::CookieConsentBanner</code> uses to fetch localized text for the consent banner, ensuring internationalization support. More critically, the <code>ConsentCookie</code> relies on <code>xi_config</code> to define and order the available cookie consents and their associated texts. This central configuration point dictates which consents are presented to the user and in what sequence, necessitating careful management of this external configuration. Furthermore, <code>ConsentCookie</code> directly interacts with <code>ActionDispatch::Cookies::CookieJar</code> to perform the actual client-side cookie manipulation. As indicated by the RAG context, this specific cookie consent mechanism is primarily client-side focused and does not provide a post-banner user interface for managing consent decisions, distinguishing it from broader, more comprehensive user consent management systems that might allow profile-based preference adjustments or integration with external consent managers.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>CookieConsentController</strong> <code>app/controllers/cookie_consent_controller.rb</code></li>
+<li>📄 <strong>CookieConsentController</strong> <code>spec/requests/cookie_consent/create_spec.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Global::CookieConsentBanner</strong> <code>app/components/global/cookie_consent_banner.rb</code></li>
+<li>📄 <strong>ConsentCookie</strong> <code>app/components/global/cookie_consent_banner.rb</code></li>
+<li>📄 <strong>ConsentCookie</strong> <code>app/controllers/cookie_consent_controller.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>Global::CookieConsentBanner</strong> <code>app/components/global/cookie_consent_banner.html.slim</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294447"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

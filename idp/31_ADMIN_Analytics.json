@@ -1,0 +1,741 @@
+{
+  "clusterId": "31_ADMIN_Analytics",
+  "featureFocus": "Platform-Wide and Course-Specific Analytics and Reporting",
+  "documentationReport": "{\n  \"title\": \"Platform-Wide and Course-Specific Analytics and Reporting\",\n  \"functional_domain\": \"This cluster provides comprehensive analytics and reporting capabilities for a learning platform, encompassing platform-wide usage statistics, detailed course performance metrics, and a robust system for generating custom reports. It serves as the central hub for administrators and stakeholders to gain insights into user activity, course engagement, and overall platform health.\",\n  \"sections\": [\n    {\n      \"title\": \"Overview and Core Components\",\n      \"description\": \"The 'Platform-Wide and Course-Specific Analytics and Reporting' feature cluster is a comprehensive system designed to provide deep insights into user activity, course performance, and overall platform usage. Managed primarily through the `admin` namespace controllers, this cluster integrates data from various microservices and internal models to deliver a unified view of the learning platform's operational and educational metrics.\",\n      \"components\": [\n        {\n          \"name\": \"Admin::StatisticsController\",\n          \"source\": \"app/controllers/admin/statistics_controller.rb\",\n          \"responsibility\": \"Serves as the primary entry point for the statistics dashboard, setting up the overall navigation and context.\"\n        },\n        {\n          \"name\": \"Course::Admin::StatisticsController\",\n          \"source\": \"Merged Source 1\",\n          \"responsibility\": \"Provides an administrative interface or specific statistics views related to courses, complementing the general `Admin::StatisticsController`.\"\n        },\n        {\n          \"name\": \"Admin::StatisticsPresenter\",\n          \"source\": \"app/presenters/admin/statistics_presenter.rb\",\n          \"responsibility\": \"Assists in formatting and presenting course-related data for the dashboard.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Platform-Wide Statistics\",\n      \"description\": \"Platform-level insights are aggregated and served by the `Admin::Ajax::PlatformStatisticsController`. These statistics are aggressively cached using `Rails.cache` for performance, with expiration times ranging from 30 minutes to 1 hour.\",\n      \"components\": [\n        {\n          \"name\": \"Admin::Ajax::PlatformStatisticsController\",\n          \"source\": \"app/controllers/admin/ajax/platform_statistics_controller.rb\",\n          \"responsibility\": \"Responsible for fetching and aggregating platform-level statistics.\"\n        }\n      ],\n      \"features\": [\n        {\n          \"name\": \"Learners and Enrollments\",\n          \"details\": \"Gathers data on confirmed users, deleted users, total enrollments, and course counts by making concurrent calls to `account_api` and `course_api` using `Restify::Promise`. Incorporates `Xikolo.config.global_enrollment_delta` and `Xikolo.config.global_users_delta` for adjustments.\"\n        },\n        {\n          \"name\": \"Activity\",\n          \"details\": \"Reports active user counts for the last 24 hours and 7 days by calling a generic `fetch_metric` function, which interacts with the `lanalytics_api`.\"\n        },\n        {\n          \"name\": \"Certificates\",\n          \"details\": \"Provides counts for 'Record of Achievement' (ROA) and 'Confirmation of Participation' (COP) certificates, also fetched via `fetch_metric` from `lanalytics_api`.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Course-Specific Statistics\",\n      \"description\": \"Detailed analytics for individual courses are provided by the `Admin::Ajax::DetailStatisticsController`. These detail statistics also leverage `Rails.cache` for performance.\",\n      \"components\": [\n        {\n          \"name\": \"Admin::Ajax::DetailStatisticsController\",\n          \"source\": \"app/controllers/admin/ajax/detail_statistics_controller.rb\",\n          \"responsibility\": \"Provides detailed analytics for individual courses.\"\n        },\n        {\n          \"name\": \"GeoIP::Lookup\",\n          \"source\": \"lib/geo_ip/lookup.rb\",\n          \"responsibility\": \"Module available for resolving IP addresses to geographical locations, suggesting how geographical data might be collected or enriched by the analytics service.\"\n        }\n      ],\n      \"features\": [\n        {\n          \"name\": \"Geographical Data\",\n          \"details\": \"Fetches `top_countries` and `top_cities` based on user activity within a specified course and date range. This data is cached.\"\n        },\n        {\n          \"name\": \"Top Item Types\",\n          \"details\": \"Aggregates visits by content type or exercise type for course items. It first retrieves all items for a course from `course_api` and then fetches `top_items` metrics, combining them to present a summary of item type visits.\"\n        },\n        {\n          \"name\": \"Videos\",\n          \"details\": \"Retrieves `video_statistics` for a given course from `lanalytics_api`.\"\n        },\n        {\n          \"name\": \"Most Active Users\",\n          \"details\": \"If the `teaching_team_pinboard_activity` beta feature is enabled, it fetches the most active users on the course pinboard from `pinboard_api`.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Course Model Statistics (Core Business Logic)\",\n      \"description\": \"Beyond the administrative AJAX controllers, the `Course::Statistics` model provides core business logic for course-level metrics.\",\n      \"components\": [\n        {\n          \"name\": \"Course::Statistics\",\n          \"source\": \"app/models/course/statistics.rb\",\n          \"responsibility\": \"Provides core business logic for course-level metrics.\"\n        },\n        {\n          \"name\": \"Course::EnrollmentsStatistics\",\n          \"source\": \"app/models/course/enrollments_statistics.rb\",\n          \"responsibility\": \"Calculates current, start-date, and end-date enrollments, accounting for an `enrollment_delta` stored on the `Course` model.\"\n        }\n      ],\n      \"features\": [\n        {\n          \"name\": \"Enrollment Statistics\",\n          \"details\": \"Delegates to `Course::EnrollmentsStatistics` to calculate current, start-date, and end-date enrollments, accounting for an `enrollment_delta` stored on the `Course` model.\"\n        },\n        {\n          \"name\": \"Shows at Middle\",\n          \"details\": \"Determines the number of distinct users who visited at least one course item by the middle of the course, using `Course::Visit` records.\"\n        },\n        {\n          \"name\": \"Completion Rate\",\n          \"details\": \"Calculates the percentage of users who achieved a 'Record of Achievement' (ROA) relative to the 'shows at middle' count.\"\n        },\n        {\n          \"name\": \"Certificate Counts\",\n          \"details\": \"Fetches ROA and COP counts from the `lanalytics_api` for the specific course, with caching.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Report Generation and Management\",\n      \"description\": \"The `Admin::ReportsController` is the central hub for users to create, manage, and download custom reports.\",\n      \"components\": [\n        {\n          \"name\": \"Admin::ReportsController\",\n          \"source\": \"app/controllers/admin/reports_controller.rb\",\n          \"responsibility\": \"Central hub for users to create, manage, and download custom reports.\"\n        },\n        {\n          \"name\": \"Admin::ReportJobPresenter\",\n          \"source\": \"app/presenters/admin/report_job_presenter.rb\",\n          \"responsibility\": \"Presents existing report jobs fetched asynchronously via AJAX from `lanalytics_api`.\"\n        },\n        {\n          \"name\": \"Admin::ReportPresenter\",\n          \"source\": \"app/presenters/admin/report_presenter.rb\",\n          \"responsibility\": \"Used to format and display available report types and their configurable options, dynamically populating select fields with courses and classifiers.\"\n        }\n      ],\n      \"features\": [\n        {\n          \"name\": \"Report Job Listing\",\n          \"details\": \"Lists existing report jobs, fetched asynchronously via AJAX from `lanalytics_api` and presented using `Admin::ReportJobPresenter`.\"\n        },\n        {\n          \"name\": \"Report Creation\",\n          \"details\": \"Users can create new report jobs by selecting a `task_type`, `task_scope`, and various `options`. These options can include course selection (fetched from `course_api`) and classifier selection (from `Course::Classifier`).\"\n        },\n        {\n          \"name\": \"Job Management\",\n          \"details\": \"The controller handles restarting failed jobs and deleting completed or failed jobs, interacting with `lanalytics_api`.\"\n        }\n      ],\n      \"permissions\": [\n        {\n          \"name\": \"lanalytics.report.create\",\n          \"details\": \"Permission required to create new reports.\"\n        },\n        {\n          \"name\": \"lanalytics.report.delete\",\n          \"details\": \"Permission required to delete reports.\"\n        },\n        {\n          \"name\": \"lanalytics.report.admin\",\n          \"details\": \"A role encompassing both create and delete permissions, manually grantable/revocable via Rails console in `xi-account` service.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Auxiliary Components and Interactions\",\n      \"description\": \"Various AJAX endpoints and helper modules support the analytics and reporting functionality.\",\n      \"components\": [\n        {\n          \"name\": \"Admin::Ajax::ClassifiersController\",\n          \"source\": \"app/controllers/admin/ajax/classifiers_controller.rb\",\n          \"responsibility\": \"Provides AJAX endpoints to fetch data for dropdowns and auto-completion fields.\"\n        },\n        {\n          \"name\": \"Admin::Ajax::CoursesController\",\n          \"source\": \"app/controllers/admin/ajax/courses_controller.rb\",\n          \"responsibility\": \"Provides AJAX endpoints to fetch data for dropdowns and auto-completion fields.\"\n        },\n        {\n          \"name\": \"Admin::Ajax::UsersController\",\n          \"source\": \"app/controllers/admin/ajax/users_controller.rb\",\n          \"responsibility\": \"Provides AJAX endpoints to fetch data for dropdowns and auto-completion fields.\"\n        },\n        {\n          \"name\": \"Admin::Ajax::StreamsController\",\n          \"source\": \"app/controllers/admin/ajax/streams_controller.rb\",\n          \"responsibility\": \"Provides AJAX endpoints to fetch data for dropdowns and auto-completion fields.\"\n        },\n        {\n          \"name\": \"LanalyticsHelper\",\n          \"source\": \"app/helpers/lanalytics_helper.rb\",\n          \"responsibility\": \"Provides `lanalytics_data` for frontend consumption, including user ID and build version.\"\n        }\n      ],\n      \"key_interactions\": [\n        \"`account_api`\",\n        \"`course_api`\",\n        \"`lanalytics_api`\",\n        \"`pinboard_api`\",\n        \"`Restify::Promise`\",\n        \"`Rails.cache`\",\n        \"`GeoIP::Lookup`\"\n      ]\n    },\n    {\n      \"title\": \"Technical Debt\",\n      \"issues\": [\n        {\n          \"component\": \"LanalyticsHelper\",\n          \"source\": \"app/helpers/lanalytics_helper.rb\",\n          \"description\": \"Contains a `TODO` to avoid instance variables, indicating a potential for refactoring to pass data explicitly for better maintainability.\"\n        },\n        {\n          \"component\": \"Admin::Ajax::StreamsController\",\n          \"source\": \"app/controllers/admin/ajax/streams_controller.rb\",\n          \"description\": \"Has a `TODO` to add pagination, which could lead to performance issues with a large number of video streams.\"\n        }\n      ]\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Admin::Ajax::ClassifiersController": {
+        "type": "Controller",
+        "description": "Provides AJAX endpoints for querying `Course::Classifier` objects, used for filtering or selecting classifiers in admin interfaces, such as report generation forms. It ensures the user is logged in and has `course.course.edit` permission.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Classifier` model to retrieve classifier data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/classifiers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class ClassifiersController < Abstract::AjaxController\n      before_action :ensure_logged_in\n      require_permission 'course.course.edit'\n      respond_to? :json\n\n      def index\n        classifiers = ::Course::Classifier.all\n\n        if params[:cluster].present?\n          classifiers = classifiers.where(cluster_id: params[:cluster])\n        end\n\n        if params[:q].present?\n          classifiers = classifiers.query(params[:q])\n        end\n\n        render json: serialize_classifiers(classifiers)\n      end\n\n      private\n\n      def serialize_classifiers(classifiers)\n        classifiers.map do |classifier|\n          {\n            id: classifier.id,\n            title: classifier.title,\n            cluster_id: classifier.cluster_id,\n            translations: classifier.translations,\n          }.compact\n        end\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/classifiers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "services/course/app/controllers/classifiers_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::CoursesController": {
+        "type": "Controller",
+        "description": "Provides AJAX endpoints for searching and retrieving course data from the `course_api` microservice, typically for auto-completion or selection in admin forms. It authorizes users with `course.course.index` or `course.document.manage` permissions.",
+        "interactions": {
+          "interaction_0": "Communicates with `course_api` service to fetch course details."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/courses_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 19,
+              "code": "module Admin   module Ajax     class CoursesController < Abstract::AjaxController       respond_to :json        before_action :ensure_logged_in        def index         authorize_any! 'course.course.index', 'course.document.manage'          courses = course_api.rel(:courses).get({           autocomplete: params[:q],           offset: params[:offset],           limit: 50,         }).value!          render json: courses.map {|c| {id: c['id'], text: \"#{c['title']} (#{c['course_code']})\"} }       end     end   end end",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/courses_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::DetailStatisticsController": {
+        "type": "Controller",
+        "description": "Handles AJAX requests for detailed course-specific statistics, including geographical data (countries, cities), top item types, video statistics, and most active users. It requires `global.dashboard.show` permission.",
+        "interactions": {
+          "interaction_0": "Fetches 'top_countries', 'top_cities', 'top_items', 'video_statistics' metrics from `learnanalytics_api` via `fetch_metric` helper. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]",
+          "interaction_1": "Fetches course items from `course_api`. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]",
+          "interaction_2": "Fetches pinboard statistics from `pinboard_api` if `teaching_team_pinboard_activity` beta feature is enabled. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]",
+          "interaction_3": "Uses `Rails.cache` to cache statistics data for 6 hours. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/detail_statistics_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class DetailStatisticsController < Abstract::AjaxController\n      require_permission 'global.dashboard.show'\n\n      def countries\n        data = Rails.cache.fetch(\"statistics/geo/countries?#{query}\", expires_in: 6.hours,\n          race_condition_ttl: 10.seconds) do\n          fetch_metric(**{\n            name: 'top_countries',\n            course_id: params[:course_id],\n            start_date: params[:start_date].presence || 1.month.ago,\n            end_date: params[:end_date].presence || Time.zone.now,\n          }.compact).value!\n        end\n\n        render json: data\n      end\n\n      def cities\n        data = Rails.cache.fetch(\"statistics/geo/cities#{query}\", expires_in: 6.hours,\n          race_condition_ttl: 10.seconds) do\n          fetch_metric(**{\n            name: 'top_cities',\n            course_id: params[:course_id],\n            start_date: params[:end...",
+              "source": "app/controllers/admin/ajax/detail_statistics_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/detail_statistics_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::PlatformStatisticsController": {
+        "type": "Controller",
+        "description": "Handles AJAX requests for platform-wide statistics, such as learners, enrollments, daily/weekly activity, and certificate counts. It requires `global.dashboard.show` permission.",
+        "interactions": {
+          "interaction_0": "Fetches account statistics from `account_api`. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+          "interaction_1": "Fetches course statistics (global enrollments, course count) from `course_api`. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+          "interaction_2": "Fetches 'active_user_count' and 'certificates' metrics from `learnanalytics_api` via `fetch_metric` helper. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+          "interaction_3": "Uses `Restify::Promise` for concurrent API calls to improve performance. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+          "interaction_4": "Uses `Rails.cache` to cache statistics data for 30 minutes to 1 hour. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/platform_statistics_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 24,
+              "code": "# frozen_string_literal: true\n\nmodule Admin\n  module Ajax\n    class PlatformStatisticsController < Abstract::AjaxController\n      require_permission 'global.dashboard.show'\n\n      def learners_and_enrollments\n        data = Rails.cache.fetch('platform_statistics/learners_and_enrollments/', expires_in: 1.hour,\n          race_condition_ttl: 1.minute) do\n          Restify::Promise.new([\n            account_api.rel(:statistics).get,\n            course_api.rel(:stats).get({key: 'global'}),\n          ]) do |account_stats, course_stats|\n            total_enrollments = course_stats['platform_enrollments'] +\n                                course_stats['platform_enrollment_delta_sum'] +\n                                Xikolo.config.global_enrollment_delta\n            confirmed_users = account_stats['confirmed_users'] + Xikolo.config.global_users_delta\n\n            {\n              confirmed_users:,\n              confirmed_users_last_day: account_stats['confirmed_users_last_day'],\n              d...",
+              "source": "app/controllers/admin/ajax/platform_statistics_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/platform_statistics_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::StreamsController": {
+        "type": "Controller",
+        "description": "Provides AJAX endpoints for querying video streams, likely for selection in forms or reports. It authorizes users with `video.video.index` permission.",
+        "interactions": {
+          "interaction_0": "Interacts with `Video::Stream` model to retrieve stream data."
+        },
+        "techDebt": [
+          "TODO: (XI-6286) add pagination (tomSelect supports this pretty easily, see https://tom-select.js.org/plugins/virtual_scroll/)"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/streams_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 23,
+              "code": "module Admin   module Ajax     class StreamsController < Abstract::AjaxController       # TODO: (XI-6286) add pagination (tomSelect supports this pretty easily, see https://tom-select.js.org/plugins/virtual_scroll/)        def index         authorize! 'video.video.index'          streams = Video::Stream.includes(:provider).query(params[:q]).limit(250)          render(           json: streams.map do |stream|             {               id: stream.id,               text: \"#{stream.title} (#{stream.provider_name})\",             }           end         )       end     end   end end",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/streams_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::Ajax::UsersController": {
+        "type": "Controller",
+        "description": "Provides AJAX endpoints for searching and retrieving user data from the `account_api` microservice, typically for auto-completion or selection in admin forms. Requires `account.user.find` permission.",
+        "interactions": {
+          "interaction_0": "Communicates with `account_api` service to fetch user details."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/ajax/users_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 16,
+              "code": "module Admin   module Ajax     class UsersController < Abstract::AjaxController       respond_to :json        before_action :ensure_logged_in       require_permission 'account.user.find'        def index         users = account_api.rel(:users).get({           query: params[:q],         }).value!          render json: users.map {|u| {id: u['id'], text: \"#{u['name']} (#{u['email']})\"} }       end     end   end end",
+              "source": "app/controllers/admin/ajax/users_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/users_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/users_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/portal_api/users_controller.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "Admin::ReportsController": {
+        "type": "Controller",
+        "description": "Manages report generation jobs. Allows users to view, create, restart, and delete reports. It requires `lanalytics.report.create` and `lanalytics.report.delete` permissions.",
+        "interactions": {
+          "interaction_0": "Fetches report jobs and report types from `learnanalytics_api`. [Source: app/controllers/admin/reports_controller.rb]",
+          "interaction_1": "Creates, restarts, and deletes report jobs via `learnanalytics_api`. [Source: app/controllers/admin/reports_controller.rb]",
+          "interaction_2": "Fetches courses from `course_api` for report options. [Source: app/controllers/admin/reports_controller.rb]",
+          "interaction_3": "Fetches classifiers from local `Course::Classifier` model for report options. [Source: app/controllers/admin/reports_controller.rb]",
+          "interaction_4": "Uses `Admin::ReportJobPresenter` and `Admin::ReportPresenter` to format data for views. [Source: app/controllers/admin/reports_controller.rb]",
+          "interaction_5": "Handles `request.xhr?` for asynchronous rendering of report jobs table. [Source: app/controllers/admin/reports_controller.rb]"
+        },
+        "techDebt": [
+          "The `task_options` method includes logic to cast checkbox values from '0'/'1' strings to booleans, which is a common Rails pattern but could be encapsulated more cleanly or handled by a custom type. [Source: app/controllers/admin/reports_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/reports_controller.rb"
+          ]
+        }
+      },
+      "Admin::StatisticsController": {
+        "type": "Controller",
+        "description": "A basic controller for the news statistics dashboard, requiring `global.dashboard.show` permission.",
+        "interactions": {
+          "interaction_0": "Initializes `IconNavigationPresenter` for dashboard navigation. [Source: app/controllers/admin/statistics_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/statistics_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 20,
+              "code": "class StatisticsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  def show\n    course = Course.find(params[:course_id])\n    enrollments = course.enrollments\n    current_enrollments = enrollments.active\n    respond_with(\n      course_id: course.id,\n      enrollments: enrollments.count + course.enrollment_delta,\n      current_enrollments: current_enrollments.count + course.enrollment_delta,\n      last_day_enrollments: enrollments.created_last_day.count,\n      last_7days_enrollments: enrollments.created_last_7days.count\n    )\n  end",
+              "source": "services/course/app/controllers/statistics_controller.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 28,
+              "code": "  rfc6570_params enrollment_stats: %i[start_date end_date classifier_id]\n  def enrollment_stats\n    start_date = params[:start_date]\n    end_date = params[:end_date]\n    classifier_id = params[:classifier_id]\n\n    enrollments = Enrollment.where(created_at: Time.zone.parse(start_da...",
+              "source": "services/course/app/controllers/statistics_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 33,
+              "code": "class StatisticsController < ApplicationController\n  responders Responders::HttpCacheResponder\n\n  respond_to :json\n\n  def index\n    stats = []\n    if params[:course_id]\n      members = []\n      if params[:for_teaching_team] == 'true'\n        members = teaching_team_members\n      elsif params[:most_active].present?\n        if params[:include_teaching_team].present?\n          members = most_active_users(Integer(params[:most_active]), with_teaching_team: params[:include_teaching_team])\n        else\n          members = most_active_users(Integer(params[:most_active]))\n        end\n      end\n      stats = stats_for_users(members)\n    end\n\n    respond_with stats\n  end\n\n  def show\n    respond_with Stats.new(\n      course_id: params[:id],\n      user_id: params[:user_id]\n    ).to_h\n  end\n\n  private\n\n  def stats_for_users(members)\n    members.map do |member|\n      Stats.new(\n        course_id: params[:course_id],\n        user_id: member['id']\n      ).to_h.merge(user:...",
+              "source": "services/course/app/controllers/statistics_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/statistics_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/pinboard/app/controllers/statistics_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "LanalyticsHelper": {
+        "type": "Helper",
+        "description": "Provides utility methods for analytics-related data, specifically `lanalytics_data` which prepares data for frontend consumption, including user ID and build version.",
+        "interactions": {
+          "interaction_0": "Accesses `current_user` to determine user ID.",
+          "interaction_1": "Reads `ENV['RELEASE_NUMBER']` for build version."
+        },
+        "techDebt": [
+          "TODO: Do not use instance variables"
+        ],
+        "provenance": {
+          "sources": [
+            "app/helpers/lanalytics_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 15,
+              "code": "module LanalyticsHelper\n  def lanalytics_data\n    {\n      in_app: @in_app,\n    }.tap do |data|\n      data[:user_id] = current_user.id unless current_user.anonymous?\n      data[:build_version] = ENV['RELEASE_NUMBER'] if ENV['RELEASE_NUMBER'].present?\n    end.to_json\n  end\nend",
+              "source": "app/helpers/lanalytics_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/lanalytics_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Course::EnrollmentsStatistics": {
+        "type": "Model",
+        "description": "Calculates enrollment statistics for a given course, including current enrollments and enrollments at the course's start and end dates.",
+        "interactions": {
+          "interaction_0": "Queries `Course::Enrollment` records directly from the database. [Source: app/models/course/enrollments_statistics.rb]",
+          "interaction_1": "Considers `course.enrollment_delta` for adjusted counts. [Source: app/models/course/enrollments_statistics.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/course/enrollments_statistics.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class EnrollmentsStatistics\n    # @param course [Course::Course]\n    def initialize(course:)\n      @course = course\n      @enrollments = course.enrollments.unscope(:order)\n    end\n\n    def current\n      @enrollments.count + @course.enrollment_delta\n    end\n\n    def at_start\n      return unless @course.start_date&.past?\n\n      enrollments = created_by(@enrollments, date: @course.start_date)\n      enrollments.count + @course.enrollment_delta\n    end\n\n    def at_end\n      return unless @course.end_date&.past?\n\n      enrollments = created_by(@enrollments, date: @course.end_date)\n      enrollments.count + @course.enrollment_delta\n    end\n\n    private\n\n    def created_by(scope, date:)\n      scope.where(created_at: ..date)\n    end\n  end\nend",
+              "source": "app/models/course/enrollments_statistics.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/course/enrollments_statistics.rb",
+              "relevance": 26
+            },
+            {
+              "path": "api/xikolo/entities/course_date.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/model/course_repository.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Course::Statistics": {
+        "type": "Model",
+        "description": "Provides various statistical calculations for a specific course, such as shows at the middle of the course, completion rate, and certificate counts (ROA, COP).",
+        "interactions": {
+          "interaction_0": "Uses `Course::EnrollmentsStatistics` to get enrollment data. [Source: app/models/course/statistics.rb]",
+          "interaction_1": "Queries `Course::Visit` records to determine user shows. [Source: app/models/course/statistics.rb]",
+          "interaction_2": "Fetches certificate statistics from `learnanalytics_api` via `Xikolo.api(:learnanalytics)`. [Source: app/models/course/statistics.rb]",
+          "interaction_3": "Uses `Rails.cache` to cache certificate data for 1 hour. [Source: app/models/course/statistics.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/course/statistics.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 37,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class Statistics\n    # @param course [Course::Course]\n    def initialize(course)\n      @course = course\n    end\n\n    # The number of users who enrolled in the course and visited at least\n    # one item by the middle of the course.\n    #\n    # If the course middle is in the future, we cannot determine the shows\n    # and explicitly return `nil`.\n    def shows_at_middle\n      return unless @course.middle_of_course&.past?\n\n      shows_at(@course.middle_of_course, course: @course)\n    end\n\n    def completion_rate\n      percent(roa_count, shows_at_middle)\n    end\n\n    def cop_count\n      certificates['confirmation_of_participation']\n    end\n\n    def roa_count\n      certificates['record_of_achievement']\n    end\n\n    def enrollments\n      @enrollments ||= ::Course::EnrollmentsStatistics.new(course: @course)\n    end\n\n    private\n\n    # @param date [ActiveSupport::TimeWithZone]\n    # @param course [Course::Course]\n    def shows_at(date, course:)\n  ...",
+              "source": "app/models/course/statistics.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/course/statistics.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/course/app/controllers/statistics_controller.rb",
+              "relevance": 33
+            },
+            {
+              "path": "api/xikolo/v2/statistics_api.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Admin::ReportJobPresenter": {
+        "type": "Presenter",
+        "description": "Formats and provides display logic for a single report job, including its status, download URL, progress, and error messages.",
+        "interactions": {
+          "interaction_0": "Receives raw job data and `current_user` object. [Source: app/presenters/admin/report_job_presenter.rb]",
+          "interaction_1": "Determines if a job is downloadable, error-prone, or restartable based on its status. [Source: app/presenters/admin/report_job_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/report_job_presenter.rb"
+          ]
+        }
+      },
+      "Admin::ReportPresenter": {
+        "type": "Presenter",
+        "description": "Formats and provides display logic for a report type, including its name, description, scope, and options. It dynamically populates select options for courses and classifiers.",
+        "interactions": {
+          "interaction_0": "Receives report type definition, list of courses, list of classifiers, and prefill data. [Source: app/presenters/admin/report_presenter.rb]",
+          "interaction_1": "Maps `courses` and `classifiers` data to select input options. [Source: app/presenters/admin/report_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/report_presenter.rb"
+          ]
+        }
+      },
+      "Admin::StatisticsPresenter": {
+        "type": "Presenter",
+        "description": "Provides a list of courses relevant for statistics dashboards, specifically those linked to a 'dashboard' classifier in the 'reporting' cluster.",
+        "interactions": {
+          "interaction_0": "Queries `Course::Classifier` to find relevant courses. [Source: app/presenters/admin/statistics_presenter.rb]",
+          "interaction_1": "Wraps `Course::Course` objects with an inner `Course` class for formatted display. [Source: app/presenters/admin/statistics_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/statistics_presenter.rb"
+          ]
+        }
+      },
+      "GeoIP::Lookup": {
+        "type": "Utility/Service",
+        "description": "A singleton module for resolving IP addresses to geographical locations using the MaxMind GeoLite2 database. It's a foundational component for geographical statistics, likely used by the `lanalytics_api` or a similar service.",
+        "interactions": {
+          "interaction_0": "Reads from the `vendor/GeoLite2-Country/GeoLite2-Country.mmdb` database."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "lib/geo_ip/lookup.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 27,
+              "code": "# frozen_string_literal: true\n\nmodule GeoIP\n  extend ActiveSupport::Autoload\n\n  def self.eager_load!\n    super\n    Lookup.instance\n  end\n\n  class Lookup\n    include Singleton\n\n    attr_reader :db\n\n    def initialize\n      # Ensure that you have a fresh version of the MaxMind GeoLite2 Database\n      # located in vendor/GeoLite2-Country. The database is NOT included\n      # in the open source code base.\n      # see https://dev.maxmind.com/geoip/geolite2-free-geolocation-data\n      @db = MaxMindDB.new('vendor/GeoLite2-Country/GeoLite2-Country.mmdb')\n    end\n\n    def self.resolve(user_ip)\n      instance.db.lookup(user_ip)\n    end\n  end\nend",
+              "source": "lib/geo_ip/lookup.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/geo_ip/lookup.rb",
+              "relevance": 34
+            },
+            {
+              "path": "services/account/spec/models/role/lookup_spec.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Course::Admin::StatisticsController": {
+        "type": "Controller",
+        "description": "Provides various course-specific statistics dashboards (activity, geo, news, pinboard, social, referrer, item visits, quiz, videos, downloads, rich texts, item details). Requires `course.dashboard.view` or `course.item_stats.show` permissions.",
+        "interactions": {
+          "interaction_0": "Uses `CourseContextHelper` to establish course context. [Source: app/controllers/course/admin/statistics_controller.rb]",
+          "interaction_1": "Uses `Acfs.run` (likely a frontend data fetching mechanism) for each statistics view. [Source: app/controllers/course/admin/statistics_controller.rb]",
+          "interaction_2": "Access to pinboard statistics is gated by `teaching_team_pinboard_activity` beta feature. [Source: app/controllers/course/admin/statistics_controller.rb]"
+        },
+        "techDebt": [
+          "The repeated `Acfs.run` call in every action suggests a potential for refactoring into a `before_action` or a more generic data loading pattern if `Acfs.run` performs a common setup. [Source: app/controllers/course/admin/statistics_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/statistics_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 29,
+              "code": "class StatisticsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  def show\n    course = Course.find(params[:course_id])\n    enrollments = course.enrollments\n    current_enrollments = enrollments.active\n    respond_with(\n      course_id: course.id,\n      enrollments: enrollments.count + course.enrollment_delta,\n      current_enrollments: current_enrollments.count + course.enrollment_delta,\n      last_day_enrollments: enrollments.created_last_day.count,\n      last_7days_enrollments: enrollments.created_last_7days.count\n    )\n  end\n\n  rfc6570_params enrollment_stats: %i[start_date end_date classifier_id]\n  def enrollment_stats\n    start_date = params[:start_date]\n    end_date = params[:end_date]\n    classifier_id = params[:classifier_id]\n\n    enrollments = Enrollment.where(created_at: Time.zone.parse(start_da...",
+              "source": "services/course/app/controllers/statistics_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/statistics_controller.rb",
+              "relevance": 27
+            },
+            {
+              "path": "services/pinboard/app/controllers/statistics_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Poll::Stats": {
+        "type": "Model",
+        "description": "Calculates statistics for a poll, including the number of participants and response counts for each option.",
+        "interactions": {
+          "interaction_0": "Directly queries the database (`poll_responses` table) using raw SQL to count responses. [Source: app/models/poll/stats.rb]"
+        },
+        "techDebt": [
+          "Using raw SQL for counting poll responses can be less maintainable than ActiveRecord queries, though it might be optimized for performance. [Source: app/models/poll/stats.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/poll/stats.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 30,
+              "code": "module Poll   class Stats     def initialize(poll)       @poll = poll     end      def participants       @participants ||= @poll.responses.count     end      def responses       @responses ||= @poll.options.index_with do |option|         response_counts.fetch(option.id, 0)       end     end      private      def response_counts       @response_counts ||= ::Poll::Poll.connection.select_all(         <<-SQL.squish, 'Count poll responses'           WITH choices AS (             SELECT UNNEST(choices) as choice FROM poll_responses             WHERE poll_id = '#{@poll.id}'           )           SELECT choice, COUNT(*)           FROM choices           GROUP BY choice         SQL       ).to_h {|row| [row['choice'], row['count']] }     end   end end",
+              "source": "app/models/poll/stats.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/poll/stats.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/voucher/stats.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/course/app/controllers/stats_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Voucher::Stats": {
+        "type": "Model",
+        "description": "Calculates global and grouped statistics for vouchers (by product, tag, and course), including issued and claimed counts.",
+        "interactions": {
+          "interaction_0": "Queries `Voucher::Voucher` and `Course::Course` models directly from the database. [Source: app/models/voucher/stats.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/voucher/stats.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 39,
+              "code": "# frozen_string_literal: true\n\nmodule Voucher\n  class Stats\n    GroupedStats = Struct.new(:issued, :claimed) do\n      def percentage\n        (claimed.to_f / issued * 100).round(2)\n      end\n    end\n\n    def global\n      @global ||= GroupedStats.new(\n        ::Voucher::Voucher.count,\n        ::Voucher::Voucher.claimed.count\n      )\n    end\n\n    def by_product\n      @by_product ||= grouped(\n        ::Voucher::Voucher.group(:product_type).order(:product_type),\n        transform_keys: lambda do |types|\n          types.to_h {|type| [type, type] }\n        end\n      )\n    end\n\n    def by_tag\n      @by_tag ||= grouped(\n        ::Voucher::Voucher.group(:tag).order(:tag),\n        transform_keys: lambda do |tags|\n          tags.to_h {|tag| [tag, tag] }\n        end\n      )\n    end\n\n    def by_course\n      @by_course ||= grouped(\n        ::Voucher::Voucher\n          .where.not(course_id: nil)\n          .joins(:course)\n          .group(:course_id)\n          .order(count_all: :desc),\n        transfor...",
+              "source": "app/models/voucher/stats.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/voucher/stats.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/poll/stats.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/course/app/controllers/stats_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "report-jobs.js": {
+        "type": "Frontend Script",
+        "description": "Client-side JavaScript for the admin reports page. It asynchronously fetches and updates the list of report jobs and handles error display.",
+        "interactions": {
+          "interaction_0": "Polls the `/reports` endpoint every 10 seconds to update the report jobs table. [Source: app/assets/admin/reports/report-jobs.js]",
+          "interaction_1": "Fetches HTML content from `/reports` and injects it into the `[data-id=\"report-jobs\"]` element. [Source: app/assets/admin/reports/report-jobs.js]",
+          "interaction_2": "Displays error details for failed report jobs in a modal. [Source: app/assets/admin/reports/report-jobs.js]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/admin/reports/report-jobs.js"
+          ]
+        }
+      },
+      "lanalytics.report.admin Role": {
+        "type": "Permission Role",
+        "description": "A specific role for users who need access to sensitive reporting data. It grants permissions to create and delete reports.",
+        "interactions": {
+          "interaction_0": "Includes `lanalytics.report.create` permission. [Source: services/account/lib/tasks/permissions/lanalytics.yml]",
+          "interaction_1": "Includes `lanalytics.report.delete` permission. [Source: services/account/lib/tasks/permissions/lanalytics.yml]",
+          "interaction_2": "Managed manually via Rails console in the `account` service. [Source: docs/app/features/permissions/reporting.md]"
+        },
+        "techDebt": [
+          "Manual management of this role via Rails console could be prone to errors and lacks a user-friendly interface for non-technical administrators. [Source: docs/app/features/permissions/reporting.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "docs/app/features/permissions/reporting.md",
+            "services/account/lib/tasks/permissions/lanalytics.yml"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Interacts with `Course::Classifier` model to retrieve classifier data.",
+      "interaction_1": "Communicates with `course_api` service to fetch course details.",
+      "interaction_2": "Communicates with `lanalytics_api` (via `fetch_metric` for `top_countries`, `top_cities`, `top_items`, `video_statistics`).",
+      "interaction_3": "Communicates with `course_api` to retrieve course items.",
+      "interaction_4": "Communicates with `pinboard_api` for `most_active` pinboard users (if beta feature enabled).",
+      "interaction_5": "Uses `Rails.cache` for performance.",
+      "interaction_6": "Communicates concurrently with `account_api` for user statistics.",
+      "interaction_7": "Communicates concurrently with `course_api` for global course statistics.",
+      "interaction_8": "Communicates with `lanalytics_api` (via `fetch_metric` for `active_user_count` and `certificates`).",
+      "interaction_9": "Uses `Restify::Promise` for concurrent API calls.",
+      "interaction_10": "Uses `Rails.cache` for performance.",
+      "interaction_11": "Interacts with `Video::Stream` model to retrieve stream data.",
+      "interaction_12": "Communicates with `account_api` service to fetch user details.",
+      "interaction_13": "Communicates with `lanalytics_api` to fetch report types, create report jobs, retrieve job status, and delete jobs.",
+      "interaction_14": "Uses `Admin::ReportJobPresenter` to display report job details.",
+      "interaction_15": "Uses `Admin::ReportPresenter` to display available report types and their options.",
+      "interaction_16": "Fetches courses from `course_api` for report parameters.",
+      "interaction_17": "Fetches classifiers from `Course::Classifier` for report parameters.",
+      "interaction_18": "Interacts with `current_user` for permission checks and job ownership.",
+      "interaction_19": "Uses `IconNavigationPresenter` and `PlatformDashboardNav` for dashboard navigation.",
+      "interaction_20": "Accesses `current_user` to determine user ID.",
+      "interaction_21": "Reads `ENV['RELEASE_NUMBER']` for build version.",
+      "interaction_22": "Interacts with `Course::Course` and its `enrollments` association to count enrollments.",
+      "interaction_23": "Uses `Course::EnrollmentsStatistics` to get enrollment figures.",
+      "interaction_24": "Queries `Course::Visit` records to determine user engagement ('shows').",
+      "interaction_25": "Communicates with `lanalytics_api` (via `Xikolo.api(:learnanalytics)`) to fetch certificate data.",
+      "interaction_26": "Uses `Rails.cache` for certificate data.",
+      "interaction_27": "Receives report job data (hash) and `User` object for authorization checks (e.g., `masqueraded?`).",
+      "interaction_28": "Receives report type data (hash), a list of courses, a list of classifiers, and prefill data.",
+      "interaction_29": "Transforms raw options into formatted attributes for form rendering.",
+      "interaction_30": "Interacts with `Course::Classifier` to find relevant courses.",
+      "interaction_31": "Wraps `Course` objects for presentation.",
+      "interaction_32": "Reads from the `vendor/GeoLite2-Country/GeoLite2-Country.mmdb` database.",
+      "interaction_33": "Fetches 'top_countries', 'top_cities', 'top_items', 'video_statistics' metrics from `learnanalytics_api` via `fetch_metric` helper. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]",
+      "interaction_34": "Fetches course items from `course_api`. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]",
+      "interaction_35": "Fetches pinboard statistics from `pinboard_api` if `teaching_team_pinboard_activity` beta feature is enabled. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]",
+      "interaction_36": "Uses `Rails.cache` to cache statistics data for 6 hours. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]",
+      "interaction_37": "Fetches account statistics from `account_api`. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+      "interaction_38": "Fetches course statistics (global enrollments, course count) from `course_api`. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+      "interaction_39": "Fetches 'active_user_count' and 'certificates' metrics from `learnanalytics_api` via `fetch_metric` helper. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+      "interaction_40": "Uses `Restify::Promise` for concurrent API calls to improve performance. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+      "interaction_41": "Uses `Rails.cache` to cache statistics data for 30 minutes to 1 hour. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]",
+      "interaction_42": "Fetches report jobs and report types from `learnanalytics_api`. [Source: app/controllers/admin/reports_controller.rb]",
+      "interaction_43": "Creates, restarts, and deletes report jobs via `learnanalytics_api`. [Source: app/controllers/admin/reports_controller.rb]",
+      "interaction_44": "Fetches courses from `course_api` for report options. [Source: app/controllers/admin/reports_controller.rb]",
+      "interaction_45": "Fetches classifiers from local `Course::Classifier` model for report options. [Source: app/controllers/admin/reports_controller.rb]",
+      "interaction_46": "Uses `Admin::ReportJobPresenter` and `Admin::ReportPresenter` to format data for views. [Source: app/controllers/admin/reports_controller.rb]",
+      "interaction_47": "Handles `request.xhr?` for asynchronous rendering of report jobs table. [Source: app/controllers/admin/reports_controller.rb]",
+      "interaction_48": "Initializes `IconNavigationPresenter` for dashboard navigation. [Source: app/controllers/admin/statistics_controller.rb]",
+      "interaction_49": "Uses `CourseContextHelper` to establish course context. [Source: app/controllers/course/admin/statistics_controller.rb]",
+      "interaction_50": "Uses `Acfs.run` (likely a frontend data fetching mechanism) for each statistics view. [Source: app/controllers/course/admin/statistics_controller.rb]",
+      "interaction_51": "Access to pinboard statistics is gated by `teaching_team_pinboard_activity` beta feature. [Source: app/controllers/course/admin/statistics_controller.rb]",
+      "interaction_52": "Queries `Course::Enrollment` records directly from the database. [Source: app/models/course/enrollments_statistics.rb]",
+      "interaction_53": "Considers `course.enrollment_delta` for adjusted counts. [Source: app/models/course/enrollments_statistics.rb]",
+      "interaction_54": "Uses `Course::EnrollmentsStatistics` to get enrollment data. [Source: app/models/course/statistics.rb]",
+      "interaction_55": "Queries `Course::Visit` records to determine user shows. [Source: app/models/course/statistics.rb]",
+      "interaction_56": "Fetches certificate statistics from `learnanalytics_api` via `Xikolo.api(:learnanalytics)`. [Source: app/models/course/statistics.rb]",
+      "interaction_57": "Uses `Rails.cache` to cache certificate data for 1 hour. [Source: app/models/course/statistics.rb]",
+      "interaction_58": "Directly queries the database (`poll_responses` table) using raw SQL to count responses. [Source: app/models/poll/stats.rb]",
+      "interaction_59": "Queries `Voucher::Voucher` and `Course::Course` models directly from the database. [Source: app/models/voucher/stats.rb]",
+      "interaction_60": "Receives raw job data and `current_user` object. [Source: app/presenters/admin/report_job_presenter.rb]",
+      "interaction_61": "Determines if a job is downloadable, error-prone, or restartable based on its status. [Source: app/presenters/admin/report_job_presenter.rb]",
+      "interaction_62": "Receives report type definition, list of courses, list of classifiers, and prefill data. [Source: app/presenters/admin/report_presenter.rb]",
+      "interaction_63": "Maps `courses` and `classifiers` data to select input options. [Source: app/presenters/admin/report_presenter.rb]",
+      "interaction_64": "Queries `Course::Classifier` to find relevant courses. [Source: app/presenters/admin/statistics_presenter.rb]",
+      "interaction_65": "Wraps `Course::Course` objects with an inner `Course` class for formatted display. [Source: app/presenters/admin/statistics_presenter.rb]",
+      "interaction_66": "Polls the `/reports` endpoint every 10 seconds to update the report jobs table. [Source: app/assets/admin/reports/report-jobs.js]",
+      "interaction_67": "Fetches HTML content from `/reports` and injects it into the `[data-id=\"report-jobs\"]` element. [Source: app/assets/admin/reports/report-jobs.js]",
+      "interaction_68": "Displays error details for failed report jobs in a modal. [Source: app/assets/admin/reports/report-jobs.js]",
+      "interaction_69": "Includes `lanalytics.report.create` permission. [Source: services/account/lib/tasks/permissions/lanalytics.yml]",
+      "interaction_70": "Includes `lanalytics.report.delete` permission. [Source: services/account/lib/tasks/permissions/lanalytics.yml]",
+      "interaction_71": "Managed manually via Rails console in the `account` service. [Source: docs/app/features/permissions/reporting.md]"
+    },
+    "technicalDebt": [
+      "TODO: (XI-6286) add pagination (tomSelect supports this pretty easily, see https://tom-select.js.org/plugins/virtual_scroll/)",
+      "TODO: Do not use instance variables",
+      "The `task_options` method includes logic to cast checkbox values from '0'/'1' strings to booleans, which is a common Rails pattern but could be encapsulated more cleanly or handled by a custom type. [Source: app/controllers/admin/reports_controller.rb]",
+      "The repeated `Acfs.run` call in every action suggests a potential for refactoring into a `before_action` or a more generic data loading pattern if `Acfs.run` performs a common setup. [Source: app/controllers/course/admin/statistics_controller.rb]",
+      "Using raw SQL for counting poll responses can be less maintainable than ActiveRecord queries, though it might be optimized for performance. [Source: app/models/poll/stats.rb]",
+      "Manual management of this role via Rails console could be prone to errors and lacks a user-friendly interface for non-technical administrators. [Source: docs/app/features/permissions/reporting.md]"
+    ]
+  }
+}

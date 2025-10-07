@@ -1,0 +1,1762 @@
+{
+  "clusterId": "05_CORE_APIGateway",
+  "featureFocus": "Main Application API Gateway and Grape API",
+  "documentationReport": "{\n  \"title\": \"Xikolo Unified API Cluster Documentation\",\n  \"overview\": \"This document synthesizes the architecture, functionality, and integration points of the Xikolo API cluster, which serves as the central nervous system for mobile applications, external portals, and various external service integrations. It adheres to modern API design principles, including JSON-API and REST, while providing robust versioning and a flexible, declarative endpoint structure. The cluster encompasses a public-facing API, dedicated Bridge APIs for external system integrations, and a Portal API for external application management.\",\n  \"sections\": [\n    {\n      \"title\": \"Core Xikolo Public API\",\n      \"description\": \"The Xikolo API is the primary data access point for mobile applications, enabling both data retrieval from backend services and the writing of specific data (e.g., user events, enrollments, quiz submissions). It is designed to conform to the JSON-API standard, providing a generic solution for API problems by defining how to serialize resources and links, describe relationships, and embed related resources. The API also adheres to REST architectural principles, exposing concepts as URI-identifiable resources (nouns) manipulated through HTTP methods, and using JSON objects as representations. Hypermedia is leveraged, with representations containing URLs of related resources to enable API discoverability and navigation from a root endpoint.\",\n      \"subsections\": [\n        {\n          \"title\": \"Architecture and Endpoint Definition\",\n          \"content\": \"The architecture of the API is centered around the concept of an 'endpoint', implemented in a declarative manner. Each endpoint defines its representation structure (attributes, relationships, links), field meanings (for automatic documentation generation), writability of attributes, methods for loading and storing resources, supported HTTP methods, authorization requirements, and filters. New endpoints are created by extending `Xikolo::Endpoint::CollectionEndpoint`, utilizing separate blocks for `entity` (representation), `filters`, `collection` (for collection-level requests), and `member` (for singular resource requests).\\n\\nAttributes within an endpoint can be defined with a `description`, an optional `alias_for` (for mapping between API and service attribute names), and `reading`/`writing` blocks for data transformation. A `map` shortcut is available for reversible value mappings. Attributes must be explicitly declared `writable` to allow POST or PATCH requests. Relationships are supported in three types: `has_many` (e.g., `friends` pointing to a collection, requiring a `filter_by` method), `has_one` (e.g., `group` pointing to a singular resource, identified by a `foreign_key`), and polymorphic `morph-one`.\"\n        },\n        {\n          \"title\": \"API Versioning Strategy\",\n          \"content\": \"API versioning is crucial due to the difficulty of forcing mobile app updates. The strategy ensures backwards-compatibility or side-by-side operation of old and new API versions. Clients are expected to send the API version they were built against using the `Accept` header with an `xikolo-version` parameter (e.g., `Accept: application/vnd.api+json; xikolo-version=2`). The API responds with the `xikolo-version` it used and, for deprecated versions, includes a `Sunset` header indicating the last day of support. Clients are guided to notify users to update their apps based on this `Sunset` date. This versioning is managed by components like `Xikolo::Versioning::Middleware` and `Versioning::Version`.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"API Gateway and Infrastructure\",\n      \"description\": \"The main application's API gateway structure is defined in `config/routes.rb`. The core Grape API, `Xikolo::API`, is mounted at `/api`. This public API infrastructure leverages `Auth::Helpers` and `Model::Helpers` for common functionalities. Authentication is enforced through middleware such as `Xi::Controllers::RequireBearerToken`, ensuring secure access to resources.\",\n      \"components\": [\n        \"Xikolo::API\",\n        \"Grape\",\n        \"Rails.application.routes\",\n        \"Xi::Controllers::RequireBearerToken\",\n        \"Auth::Helpers\",\n        \"Model::Helpers\",\n        \"Xikolo::Versioning::Middleware\",\n        \"Versioning::Version\"\n      ]\n    },\n    {\n      \"title\": \"Bridge APIs for External Integrations\",\n      \"description\": \"Beyond the core public API, the system includes dedicated Bridge APIs for seamless integration with various external services. These APIs facilitate communication with systems such as Chatbot, Lanalytics, Shop, MOOChub, and TransPipe. They are built upon an `Abstract::BridgeAPIController` and utilize `TokenSigning` for secure communication, often requiring `Xi::Controllers::RequireBearerToken` for authentication.\",\n      \"integrations\": [\n        \"Chatbot Bridge API\",\n        \"Shop Bridge API\",\n        \"MOOChub Bridge API\",\n        \"TransPipe Bridge API\",\n        \"Lanalytics\"\n      ],\n      \"components\": [\n        \"Abstract::BridgeAPIController\",\n        \"ChatbotBridgeAPI\",\n        \"ShopBridgeAPI\",\n        \"TokenSigning\",\n        \"Transpipe::URL\"\n      ]\n    },\n    {\n      \"title\": \"Portal API for External Applications\",\n      \"description\": \"A distinct Portal API (`PortalApi`, `PortalApiBeta`) is provided for external applications, focusing on course and enrollment management. This API gateway exposes specific resources for managing `Courses API Resource`, `Users API Resource`, and `Enrollments API Resource`, allowing external systems to interact with core platform data.\",\n      \"functional_domains\": [\n        \"Course Management\",\n        \"User Management\",\n        \"Enrollment Management\"\n      ],\n      \"components\": [\n        \"PortalApi\",\n        \"PortalApiBeta\",\n        \"CourseCatalogAPI\",\n        \"UserManagementAPI\",\n        \"EnrollmentManagementAPI\",\n        \"Course\"\n      ]\n    },\n    {\n      \"title\": \"API Evolution and Changelog\",\n      \"description\": \"The `api/CHANGELOG.md` documents notable API endpoint changes, including additions, deprecations, and removals, reflecting the dynamic evolution of the platform. Recent changes between versions 3.0 and 4.11 illustrate this evolution:\\n\\n**Removals:** `experiment-assignments`, `learning-units`, `objectives` and related endpoints, `payments` and `products` endpoints, and various attributes from `courses`, `classifiers`, `channels`, `statistics`, `subtitle-cues`, `videos`, `quizzes`, and `user-profile` types.\\n\\n**Additions:** `referenceLink` to `questions`, `show_on_list` to `courses`, `preview_html` to `platform-events`, new `features` and `course-features` endpoints, `clusters` endpoint, `learning_goals` and `target_groups` to `courses`, `last-visits` endpoint, `images` to `courses`, `full_name` to `user-profile`, and various attributes to `lti-exercises`, `peer-assessments`, `items`, and `channels`.\"\n    }\n  ],\n  \"key_components_summary\": [\n    \"Xikolo::API (Core Public API)\",\n    \"Xikolo::Endpoint::CollectionEndpoint (Declarative Endpoint Base)\",\n    \"Xikolo::Versioning::Middleware (API Versioning)\",\n    \"Xi::Controllers::RequireBearerToken (Authentication Middleware)\",\n    \"Abstract::BridgeAPIController (Base for Bridge APIs)\",\n    \"ChatbotBridgeAPI, ShopBridgeAPI, MOOChub Bridge API, TransPipe Bridge API (Specific Bridge Implementations)\",\n    \"PortalApi, PortalApiBeta (External Portal API)\",\n    \"CourseCatalogAPI, UserManagementAPI, EnrollmentManagementAPI (Portal API Components)\",\n    \"TokenSigning (Security for Bridge APIs)\",\n    \"Grape (API Framework)\",\n    \"Rails.application.routes (API Gateway Routing)\",\n    \"Auth::Helpers, Model::Helpers (Common API Helpers)\"\n  ],\n  \"functional_domains_summary\": [\n    \"Mobile Application Data Access (Read/Write)\",\n    \"External System Integrations (Chatbot, Shop, MOOChub, TransPipe, Lanalytics)\",\n    \"External Portal Management (Courses, Users, Enrollments)\",\n    \"API Versioning and Deprecation Management\",\n    \"Declarative API Endpoint Definition\",\n    \"Authentication and Authorization\"\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Xikolo::API": {
+        "type": "API Gateway/Root",
+        "description": "The main Grape API instance and entry point for all public API requests. It orchestrates versioning, content negotiation, authentication, error handling, and mounts specific API versions.",
+        "interactions": {
+          "interaction_0": "Uses `Xikolo::Versioning::Middleware` for API version negotiation.",
+          "interaction_1": "Uses `Auth::Middleware::LegacyToken` and `Auth::Middleware::Session` for authentication.",
+          "interaction_2": "Rescues from `Error::Base` exceptions to standardize error responses.",
+          "interaction_3": "Mounts `V2::Base` to expose version 2 API endpoints.",
+          "interaction_4": "Utilizes `Format::PrettyJSON` for JSON formatting and `Grape::Parser::Json` for JSON parsing.",
+          "interaction_5": "Calls `Xikolo::Docs::Generator` to produce API documentation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb",
+            "api/README.md",
+            "api/VERSIONING.md",
+            "docs/portalapi/docs/authentication.md",
+            "docs/portalapi/docs/errors.md",
+            "docs/portalapi/docs/negotiation.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 30,
+              "code": "module Xikolo   class API < Grape::API::Instance     # This is the place to list supported API versions, from old to new,     # and (optionally) their expiry dates.     #     # When introducing backwards-incompatible changes, a new major version     # should be added to this array. For backwards-compatible changes,     # please increase the minor version number of each affected version.     #     # Once an expiry date has passed, the corresponding version can be     # safely removed.     def self.supported_versions       [         Versioning::Version.new('4.10'),       ]     end      def self.latest_version       supported_versions.last     end      content_type :xml, 'application/xml'     content_type :json, 'application/json'     content_type :json_api, 'application/vnd.api+json'      formatter :json, Format::PrettyJSON     formatter :json_api, ->(str, _env) { JSON.pretty_generate JSON.parse(str) }     parser :json_api, Grape::Parser::Json      default_...",
+              "source": "api/xikolo/api.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/api.rb",
+              "relevance": 37
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/api.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/account/lib/xikolo/responders/api.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Xikolo::Endpoint::CollectionEndpoint": {
+        "type": "API Endpoint Definition Base Class",
+        "description": "A base class for defining API resources in a declarative manner. It encapsulates the structure, representation, filters, and service call logic for both collection and member resources, handling JSON-API serialization/deserialization and relationship management.",
+        "interactions": {
+          "interaction_0": "Extended by specific API endpoint classes (e.g., `Users` in documentation example) to define resource-specific logic.",
+          "interaction_1": "Utilized by the `Xikolo::API` to process incoming requests and generate responses.",
+          "interaction_2": "Interacts with backend services to load and store data for the defined resources."
+        },
+        "techDebt": [
+          "Complexity in managing `reading` and `writing` transformations for attributes, requiring careful implementation for reversibility and consistency. [Source: api/xikolo/endpoint/collection_endpoint.rb]",
+          "Ensuring that `alias_for` and `map` configurations correctly handle data mapping between API and service representations. [Source: api/xikolo/endpoint/collection_endpoint.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "api/xikolo/endpoint/collection_endpoint.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 31,
+              "code": "class CollectionEndpoint < Grape::API::Instance\n      class << self\n        def entity(&)\n          @entity = Endpoint::EntityDefinition::Factory.new.build(&)\n        end\n\n        def entity_definition\n          raise \"No entity definition was found for class #{self}\" unless @entity\n\n          @entity\n        end\n\n        include Xikolo::Versioning::Subject\n\n        def filters(&)\n          filter_definition.from(&)\n        end\n\n        def filter_definition\n          @filter_definition ||= Endpoint::FilterRegistration.new\n        end\n\n        def paginate!(opts = {})\n          @pagination = Endpoint::Pagination.new opts\n        end\n\n        def pagination?\n          !!@pagination\n        end\n\n        attr_reader :pagination\n\n        def collection(&)\n          handlers = {\n            get: Xikolo::Endpoint::Handler::GetCollection.new(self),\n            post: Xikolo::Endpoint::Handler::PostCollection.new(self),\n        ...",
+              "source": "api/xikolo/endpoint/collection_endpoint.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 36,
+              "code": "      class Factory\n        def initialize\n          @type = nil\n          @attributes = []\n          @relationships = {}\n          @links = {}\n          @opts = {}\n        end\n\n        def build(&specification)\n          instance_exec(&specification) if specification\n\n          EntityDefinition.new(@type, @attributes, @relationships, @links, **@opts)\n        end\n\n        def type(name)\n          @type = name\n        end\n\n        def id(&builder)\n          @opts[:id_builder] = builder\n        end\n\n        def attribute(name, &)\n          Endpoint::EntityAttribute::Factory.new(name).build(&).tap {|attribute|\n            @attributes << attribute\n          }\n        end\n\n        def writable(attribute)\n          attribute.tap {|attr|\n            attr.writable = true\n          }\n        end\n\n        def member_only(attribute)\n          attribute.tap {|attr|\n            attr.member_only = true\n        ...",
+              "source": "api/xikolo/endpoint/collection_endpoint.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/endpoint/collection_endpoint.rb",
+              "relevance": 33
+            },
+            {
+              "path": "api/xikolo/endpoint/entity_attribute.rb",
+              "relevance": 14
+            },
+            {
+              "path": "api/xikolo/endpoint/entity_definition.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "API Gateway (Rails Routes)": {
+        "type": "API Gateway",
+        "description": "The `config/routes.rb` file in the main Rails application acts as a central API gateway. It routes requests to the primary Grape API (`/api`) and also defines several specialized 'bridge' APIs for internal and external integrations, such as `portalapi-beta`, `transpipe`, `lanalytics`, `moochub`, `chatbot`, and `shop`.",
+        "interactions": {
+          "interaction_0": "Receives all incoming API requests to the main application.",
+          "interaction_1": "Routes requests to the `Xikolo::API` for general mobile app consumption.",
+          "interaction_2": "Routes requests to specific 'bridge' API modules for specialized internal or external integrations.",
+          "interaction_3": "Includes a private `/api/tracking-events` endpoint for frontend-only use."
+        },
+        "techDebt": [
+          "Managing a growing number of distinct API entry points and ensuring consistent security, logging, and performance monitoring across all of them. [Source: config/routes.rb]",
+          "Potential for route conflicts or overlapping responsibilities if not carefully managed. [Source: config/routes.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Portal API": {
+        "type": "API (External Bridge)",
+        "description": "A public API specifically designed for customer portals, providing endpoints for managing courses, users, and enrollments. It is exposed under the `/portalapi-beta` path.",
+        "interactions": {
+          "interaction_0": "Consumed by external customer portal applications.",
+          "interaction_1": "Interacts with underlying services to manage course, user, and enrollment data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Transpipe Bridge API": {
+        "type": "API (Internal Bridge)",
+        "description": "An internal API bridge focused on video processing, including endpoints for retrieving and updating subtitles for videos. It is exposed under `/bridges/transpipe`.",
+        "interactions": {
+          "interaction_0": "Used by internal services requiring video and subtitle manipulation.",
+          "interaction_1": "Interacts with video storage and processing components."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Lanalytics Bridge API": {
+        "type": "API (Internal Bridge)",
+        "description": "An internal API bridge dedicated to learning analytics, providing statistics related to courses (ticket stats, open badge stats) and videos. It is exposed under `/bridges/lanalytics` and defaults to JSON format.",
+        "interactions": {
+          "interaction_0": "Consumed by internal analytics and reporting tools.",
+          "interaction_1": "Aggregates and exposes statistical data from various learning components."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Moochub Bridge API": {
+        "type": "API (Internal Bridge)",
+        "description": "An internal API bridge for MOOC hub integration, primarily used for listing courses. It is exposed under `/bridges/moochub`.",
+        "interactions": {
+          "interaction_0": "Interacts with external MOOC hub platforms or internal components related to MOOCs.",
+          "interaction_1": "Provides course listings."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Chatbot Bridge API": {
+        "type": "External API Endpoint",
+        "description": "A dedicated API for external chatbot systems to interact with the Xikolo platform. It enables user authentication, retrieval of user and course information, and management of course enrollments and quizzes on behalf of authenticated users.",
+        "interactions": {
+          "interaction_0": "Authenticates external chatbot systems using a shared secret (Bearer token) for initial access to the authentication endpoint. [Source: app/controllers/bridges/chatbot/authentications_controller.rb]",
+          "interaction_1": "Issues user-specific authentication tokens based on a provided SAML `uid` (NameID). [Source: app/controllers/bridges/chatbot/authentications_controller.rb]",
+          "interaction_2": "Provides endpoints for retrieving user data (internal ID), course listings, user-specific enrolled courses, and course achievement details. [Source: app/controllers/bridges/chatbot/users_controller.rb, app/controllers/bridges/chatbot/courses_controller.rb]",
+          "interaction_3": "Supports actions such as enrolling and unenrolling users from courses. [Source: app/controllers/bridges/chatbot/my_courses_controller.rb]",
+          "interaction_4": "Offers access to quiz information for specific courses. [Source: app/controllers/bridges/chatbot/my_quizzes_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/chatbot/authentications_controller.rb",
+            "app/controllers/bridges/chatbot/courses_controller.rb",
+            "app/controllers/bridges/chatbot/users_controller.rb",
+            "app/controllers/bridges/chatbot/my_courses_controller.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Shop Bridge API": {
+        "type": "External API Endpoint",
+        "description": "An API for external e-commerce shops to manage the creation and listing of digital vouchers for various Xikolo platform products, such as course reactivation or proctoring services.",
+        "interactions": {
+          "interaction_0": "Authenticates external shop systems using a shared secret provided as a Bearer token. [Source: app/controllers/bridges/shop/base_controller.rb]",
+          "interaction_1": "Allows for the bulk creation of vouchers with specified quantities, product types, countries, and tags via a POST request to `/vouchers`. [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+          "interaction_2": "Provides a mechanism to list existing vouchers, including their claim status and claimant details, via a GET request to `/vouchers`. [Source: app/controllers/bridges/shop/vouchers_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/shop/vouchers_controller.rb",
+            "app/controllers/bridges/shop/base_controller.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "API Changelog": {
+        "type": "Documentation/Process",
+        "description": "A markdown document (`api/CHANGELOG.md`) that tracks all notable API endpoint changes, especially breaking ones, following the 'Keep a Changelog' format. It details additions, deprecations, and removals across different API versions.",
+        "interactions": {
+          "interaction_0": "Informs API consumers (e.g., mobile app developers, internal service developers) about changes to the API.",
+          "interaction_1": "Supports the API versioning strategy by documenting specific changes per version."
+        },
+        "techDebt": [
+          "Ensuring the changelog is consistently updated and accurately reflects all API modifications. [Source: api/CHANGELOG.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "api/CHANGELOG.md"
+          ]
+        }
+      },
+      "PortalApi": {
+        "type": "Rails Module/Namespace",
+        "description": "A dedicated API namespace (`portalapi-beta`) for customer portal interactions, exposing resources like courses, users, and enrollments. It is distinct from the main `Xikolo::API` and has its own authentication and negotiation requirements.",
+        "interactions": {
+          "interaction_0": "Provides `index`, `show` for `courses`, `update`, `destroy` for `users`, and `index`, `create` for `enrollments`. [Source: config/routes.rb]",
+          "interaction_1": "Requires bearer token authentication. [Source: app/controllers/portal_api/base_controller.rb]",
+          "interaction_2": "Utilizes content negotiation for API versioning. [Source: app/controllers/portal_api/base_controller.rb]"
+        },
+        "techDebt": [
+          "The \"beta\" designation suggests it might still be under active development or subject to more frequent changes. [Source: config/routes.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/routes.rb",
+            "app/controllers/portal_api/base_controller.rb"
+          ]
+        }
+      },
+      "Bridges": {
+        "type": "Rails Module/Namespace",
+        "description": "A collection of internal API endpoints designed for integration with various external systems or internal microservices (e.g., `transpipe`, `lanalytics`, `moochub`, `chatbot`, `shop`). These facilitate specialized data exchange and communication.",
+        "interactions": {
+          "interaction_0": "`Transpipe`: Manages courses and video subtitles. [Source: config/routes.rb]",
+          "interaction_1": "`Lanalytics`: Provides course and video statistics. [Source: config/routes.rb]",
+          "interaction_2": "`Moochub`: Lists courses. [Source: config/routes.rb]",
+          "interaction_3": "`Chatbot`: Handles authentication, user courses, achievements, and quizzes. [Source: config/routes.rb]",
+          "interaction_4": "`Shop`: Manages vouchers. [Source: config/routes.rb]"
+        },
+        "techDebt": [
+          "The diverse nature of these bridges suggests potential for inconsistent API design or authentication mechanisms across sub-modules if not carefully managed."
+        ],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 6,
+              "code": "    def self.shared_secret\n      Rails.application.secrets.chatbot_bridge_shared_secret\n    end",
+              "source": "app/controllers/bridges/chatbot/authentications_controller.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 33,
+              "code": "    class BaseController < Abstract::BridgeAPIController\n      before_action :require_authorization_header!\n\n      def require_authorization_header!\n        return if request.headers['HTTP_AUTHORIZATION'].present?\n\n        response.headers['WWW-Authenticate'] = 'Bearer realm=\"chatbot-bridge-api\"'\n\n        problem_details(\n          'You must provide an Authorization header to access this resource.',\n          status: :unauthorized\n        )\n      end\n\n      def require_valid_token!\n        token = TokenSigning.for(:chatbot).decode(request.env.fetch('HTTP_AUTHORIZATION').split('Bearer ')[1])\n\n        if token.valid?\n          @user_id = token.to_s\n        else\n          problem_details(\n            'Invalid Signature',\n            status: :unauthorized\n          )\n        end\n      end",
+              "source": "app/controllers/bridges/chatbot/authentications_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 29,
+              "code": "    class AuthenticationsController < BaseController\n      before_action Xi::Controllers::RequireBearerToken.new(\n        realm: 'chatbot-bridge-api',\n        token: -> { Chatbot.shared_secret }\n      )\n\n      before_action :require_authorization_id!\n\n      def create\n        user = Account::User.with_authorization(params[:uid]).take!\n        token = generate_token(user.id)\n        render json: {token:}\n      rescue ActiveRecord::RecordNotFound\n        problem_details(\n          'There is no user for the provided authorization ID.',\n          status: :not_found\n        )\n      end\n\n      private\n\n      def require_authorization_id!\n        return if params[:uid].present?\n\n        problem_details(\n          'A valid authorization ID must be provided in the request body to generate a token for a user.',\n          status: :not_found\n        )\n      end\n\n      def generate_token(user_id)\n        TokenSigning.for(:chatbot).sign(...",
+              "source": "app/controllers/bridges/chatbot/authentications_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 29,
+              "code": "    class CoursesController < BaseController\n      before_action :require_valid_token!\n\n      def index\n        courses = []\n        Xikolo.paginate(\n          course_api.rel(:courses).get({hidden: false})\n        ) do |course|\n          next if course['invite_only']\n\n          courses << serialize(course)\n        end\n\n        render json: courses\n      end\n\n      private\n\n      def serialize(course)\n        {\n          id: course['id'],\n          title: course['title'],\n          course_code: course['course_code'],\n          start_date: course['start_date'],\n          language: course['lang'],\n          self_paced: course['status'] == 'archive',\n          certificates: {\n            roa: {\n              enabled: course['roa_enabled'],\n              requirement: course['roa_threshold_percentage'],\n            },\n            cop: {\n              enabled: course['cop_enabled'],\n              requirement: course['cop_threshold...",
+              "source": "app/controllers/bridges/chatbot/authentications_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/bridges/chatbot/authentications_controller.rb",
+              "relevance": 22
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/base_controller.rb",
+              "relevance": 22
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Xi::Controllers::RequireBearerToken": {
+        "type": "Concern/Module",
+        "description": "A module or concern intended to be included in Bridge API controllers to enforce bearer token authentication, ensuring that API requests are properly authorized. [Source: lib/xi/controllers/require_bearer_token.rb]",
+        "interactions": {
+          "interaction_0": "Included in Bridge API controllers to secure endpoints requiring bearer token authentication."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "lib/xi/controllers/require_bearer_token.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 23,
+              "code": "      def initialize(token:, realm:)\n        @token = token\n        @realm = realm\n      end\n\n      def before(controller)\n        # Missing Authorization header?\n        if controller.request.headers['HTTP_AUTHORIZATION'].blank?\n          controller.response.headers['WWW-Authenticate'] = \"Bearer realm=\\\"#{@realm}\\\"\n\n          return controller.render problem_details(\n            'https://tools.ietf.org/html/rfc6750#section-3',\n            'You must provide an Authorization header to access this resource.',\n            status: :unauthorized\n          )\n        end\n\n        # Correct shared secret?\n        if controller.request.headers['HTTP_AUTHORIZATION'] != \"Bearer #{@token.call}\"\n          controller.response.headers['WWW-Authenticate'] = \"Bearer realm=\\\"#{@realm}\\\", error=\\\"invalid_token\\\"\"\n\n          controller.render problem_details(\n            'https://tools.ietf.org/html/rfc6750#section-3.1',\n            'You provided an invalid token to access this resource.',\n            status: :unauthorized\n          )\n        end\n      end",
+              "source": "lib/xi/controllers/require_bearer_token.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/xi/controllers/require_bearer_token.rb",
+              "relevance": 38
+            },
+            {
+              "path": "spec/lib/xi/controllers/require_bearer_token_spec.rb",
+              "relevance": 11
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 8
+            }
+          ]
+        }
+      },
+      "Rails.application.routes": {
+        "type": "Routing Configuration",
+        "description": "The central routing configuration for the main Rails application, defining all URL patterns and mapping them to specific controllers and actions. It includes definitions for the main web application, admin interfaces, and various API endpoints.",
+        "interactions": {
+          "interaction_0": "Directs incoming HTTP requests to the appropriate controllers. [Source: config/routes.rb]",
+          "interaction_1": "Mounts the `Xikolo::API` Grape application. [Source: config/routes.rb]",
+          "interaction_2": "Defines scoped routes for `PortalApi` and `Bridges` modules. [Source: config/routes.rb]"
+        },
+        "techDebt": [
+          "The `config/routes.rb` file is very large and contains a mix of public web routes, admin routes, and multiple API definitions. This can make it difficult to manage and understand the routing logic, potentially leading to conflicts or unintended exposures. The use of `pinboard_routes` as a `def` block is a minor attempt at modularity but doesn't fully address the complexity. [Source: config/routes.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        }
+      },
+      "TokenSigning": {
+        "type": "Library/Utility",
+        "description": "A library used for managing Paseto token signing and verification. Specifically configured for the Chatbot API to sign tokens using a private key and verify them against multiple public keys. [Source: config/initializers/chatbot.rb]",
+        "interactions": {
+          "interaction_0": "Used by Chatbot API controllers to issue and validate user-specific Paseto tokens.",
+          "interaction_1": "Utilizes application secrets for private key and configuration for public keys."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/chatbot.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 7,
+              "endLine": 18,
+              "code": "    class Sign\n      def initialize(private_key)\n        @private_key = private_key\n      end\n\n      def sign(raw_string)\n        ::Paseto::V2::Public::SecretKey\n          .decode64(@private_key)\n          .sign(raw_string)\n      end\n    end",
+              "source": "lib/token_signing/paseto.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 31,
+              "code": "    class Verify\n      def initialize(public_key)\n        @public_key = public_key\n      end\n\n      def try_verify(signed_token)\n        decoded_key = ::Paseto::V2::Public::PublicKey.decode64(@public_key)\n        decoded_key.verify(signed_token)\n      rescue ::Paseto::Error\n        nil\n      end\n    end",
+              "source": "lib/token_signing/paseto.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 20,
+              "code": "  class << self\n    def register(name, sign: nil, verify: nil)\n      registry[name] = {sign:, verify:}.compact\n    end\n\n    ##\n    # Use the registered algorithm for signing or verifying tokens.\n    #\n    def for(name)\n      Proxy.new registry.fetch(name)\n    end\n\n    private\n\n    def registry\n      @registry ||= {}\n    end\n  end",
+              "source": "lib/token_signing/paseto.rb"
+            },
+            {
+              "startLine": 28,
+              "endLine": 36,
+              "code": "  class VerifyMultiple\n    def initialize(*verifiers)\n      @verifiers = verifiers\n    end\n\n    def try_verify(signed_token)\n      @verifiers.each do |v|\n        decoded = v.try_verify(signed_token)\n        return decoded if decoded",
+              "source": "lib/token_signing/paseto.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/token_signing/paseto.rb",
+              "relevance": 19
+            },
+            {
+              "path": "lib/token_signing.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Abstract::BridgeAPIController": {
+        "type": "Base Controller",
+        "description": "A foundational controller class designed for API-only applications, providing a minimal set of functionalities. It serves as the base class for all specific Bridge API controllers, promoting consistency. [Source: app/controllers/abstract/bridge_api_controller.rb]",
+        "interactions": {
+          "interaction_0": "Inherited by concrete Bridge API controllers (e.g., Chatbot, Shop, TransPipe controllers)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/abstract/bridge_api_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 17,
+              "code": "# frozen_string_literal: true\n\nmodule Abstract\n  ##\n  # A base class for all controllers serving a \"Bridge API\".\n  #\n  # Bridge APIs are small dedicated interfaces to external services, some of\n  # which are internal, some external. They vary in how they are versioned,\n  # consumed, documented and what formats they offer.\n  #\n  class BridgeAPIController < ActionController::Base # rubocop:disable Rails/ApplicationController\n    ##\n    # We inherit from ActionController::Base (for compatibility with the\n    # responders gem), but have to disable HTML-focused features, in order to\n    # get closer to what ActionController::API would give us.\n\n    skip_forgery_protection\n  end\nend",
+              "source": "app/controllers/abstract/bridge_api_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/abstract/frontend_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "ChatbotBridgeAPI": {
+        "type": "External API Interface",
+        "description": "The external interface for the Chatbot system, providing endpoints for user authentication, course information retrieval, and enrollment management. It is secured using PASETO tokens.",
+        "interactions": {
+          "interaction_0": "Receives authentication requests via `POST /authenticate` (shared secret).",
+          "interaction_1": "Provides user data via `GET /user`.",
+          "interaction_2": "Provides course listings via `GET /courses` and `GET /my_courses`.",
+          "interaction_3": "Manages user enrollments via `POST /my_courses/{id}` and `DELETE /my_courses/{id}`.",
+          "interaction_4": "Retrieves course achievements via `GET /my_courses/{id}/achievements`.",
+          "interaction_5": "Retrieves quizzes via `GET /my_quizzes`.",
+          "interaction_6": "Interacts with `TokenSigning` for token generation and validation."
+        },
+        "techDebt": [
+          "Ensure comprehensive API documentation (OpenAPI) is kept up-to-date with any changes to endpoints or data models.",
+          "Monitor performance and scalability, especially for endpoints that retrieve large lists of courses or achievements."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/chatbot/",
+            "config/initializers/chatbot.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "ShopBridgeAPI": {
+        "type": "External API Interface",
+        "description": "The external interface for third-party shops to manage vouchers for the platform. It allows for bulk creation and listing of various types of vouchers.",
+        "interactions": {
+          "interaction_0": "Receives requests to create vouchers via `POST /vouchers`.",
+          "interaction_1": "Responds to requests for listing vouchers via `GET /vouchers`.",
+          "interaction_2": "Authenticates requests using a shared secret bearer token."
+        },
+        "techDebt": [
+          "Ensure robust validation for voucher creation parameters (e.g., `qty`, `product`, `country`).",
+          "Implement proper logging and monitoring for voucher creation and claiming to track usage and potential abuse."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/shop/",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "MoochubBridgeAPI": {
+        "type": "External API Interface",
+        "description": "The external interface for integration with the MOOChub schema, primarily for exchanging course data. Details are largely deferred to an external GitHub repository.",
+        "interactions": {
+          "interaction_0": "Exposes course data via `/bridges/moochub/courses`."
+        },
+        "techDebt": [
+          "Ensure the external MOOChub Schema repository is actively maintained and its specifications are correctly implemented.",
+          "Clarify internal implementation details and data mapping between Xikolo courses and MOOChub schema."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/moochub/",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "TransPipeBridgeAPI": {
+        "type": "External API Interface",
+        "description": "The external interface for the translation pipeline (TransPipe) to access video information and manage subtitles. It provides detailed course and video structures, including stream URLs and subtitle content.",
+        "interactions": {
+          "interaction_0": "Provides lists of courses via `GET /courses`.",
+          "interaction_1": "Provides detailed course information via `GET /courses/{id}`.",
+          "interaction_2": "Provides video details and stream URLs via `GET /videos/{id}`.",
+          "interaction_3": "Retrieves video subtitles via `GET /videos/{id}/subtitles/{lang}`.",
+          "interaction_4": "Updates video subtitles via `PATCH /videos/{id}/subtitles/{lang}`.",
+          "interaction_5": "Authenticates requests using a bearer token."
+        },
+        "techDebt": [
+          "Ensure subtitle validation is robust to prevent malformed VTT files from being stored.",
+          "Monitor the performance of video and subtitle retrieval, especially for large courses or frequent requests."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/transpipe/courses_controller.rb",
+            "app/controllers/bridges/transpipe/subtitles_controller.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "LanalyticsBridgeAPI": {
+        "type": "External API Interface (Conceptual)",
+        "description": "A conceptual bridge API identified in the routing configuration, intended for integration with an analytics system (Lanalytics). Specific implementation details or OpenAPI documentation were not provided in the given context.",
+        "interactions": {
+          "interaction_0": "Expected to expose data relevant for analytics consumption."
+        },
+        "techDebt": [
+          "Document the purpose, endpoints, and data models for the Lanalytics bridge API.",
+          "Implement the API according to best practices for bridge APIs, including authentication and error handling."
+        ],
+        "provenance": {
+          "sources": [
+            "config/routes.rb"
+          ]
+        }
+      },
+      "PortalApiBeta": {
+        "type": "API",
+        "description": "The primary external API interface for course catalog, user profile, and enrollment management. It acts as an entry point for external systems to interact with the platform's core functionalities.",
+        "interactions": {
+          "interaction_0": "Routes requests to CourseCatalogAPI for course information.",
+          "interaction_1": "Routes requests to UserManagementAPI for user profile operations.",
+          "interaction_2": "Routes requests to EnrollmentManagementAPI for enrollment actions."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "CourseCatalogAPI": {
+        "type": "API Endpoint Group",
+        "description": "Manages the retrieval of public course information, exposing endpoints for listing all courses and fetching details of a specific course.",
+        "interactions": {
+          "interaction_0": "Exposes GET /courses to retrieve a list of courses.",
+          "interaction_1": "Exposes GET /courses/{id} to retrieve a single course.",
+          "interaction_2": "Interacts with the underlying Course model/service to fetch course data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/courses_controller.rb"
+          ]
+        }
+      },
+      "UserManagementAPI": {
+        "type": "API Endpoint Group",
+        "description": "Handles operations related to user profiles, including updating user attributes and deleting user accounts.",
+        "interactions": {
+          "interaction_0": "Exposes PATCH /users/{id} for updating user attributes.",
+          "interaction_1": "Exposes DELETE /users/{id} for deleting user accounts.",
+          "interaction_2": "Interacts with the underlying User model/service to modify user data."
+        },
+        "techDebt": [
+          "The PATCH /users/{id} endpoint returns a 200 OK status even if the user resource was not fully updated due to malformed values or internal errors, requiring the client to explicitly check if changes were applied. This can lead to client-side complexity and potential for unnoticed data inconsistencies."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/users_controller.rb"
+          ]
+        }
+      },
+      "EnrollmentManagementAPI": {
+        "type": "API Endpoint Group",
+        "description": "Manages user enrollments in courses, allowing retrieval of existing enrollments and creation of new ones.",
+        "interactions": {
+          "interaction_0": "Exposes GET /enrollments to retrieve user enrollments.",
+          "interaction_1": "Exposes POST /enrollments to create new enrollments.",
+          "interaction_2": "Interacts with the underlying Enrollment, User, and Course models/services to manage enrollment data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/enrollments_controller.rb"
+          ]
+        }
+      },
+      "Course": {
+        "type": "Model/Entity",
+        "description": "Represents a course within the system, including its metadata such as ID, title, description, and schedule. This model serves as the data source for the Course Catalog API.",
+        "interactions": {
+          "interaction_0": "Provides data to CourseCatalogAPI for course retrieval.",
+          "interaction_1": "Referenced by Enrollment for linking users to courses."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/courses_controller.rb",
+            "db/schema.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Entities\n    class CourseDate < Grape::Entity\n      include Rails.application.routes.url_helpers\n\n      expose def id\n        id = \"#{object.course_id}|#{object.type}|#{object.resource_id}\"\n        Digest::MD5.hexdigest id\n      end\n\n      expose :title\n      expose :date\n      expose :type\n\n      expose def url\n        case type\n          when 'course_start'\n            course_path object.course_code\n          when 'item_submission_deadline'\n            course_item_path object.course_code, UUID(object.resource_id).to_param\n        end\n      end\n\n      expose def course\n        object.course_id\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Model\n    class CourseRepository\n      def courses_for(user, course_id)\n        courses = course_api.rel(:courses).get({\n          per_page: 100,\n          user_id: user.id,\n        }).value!\n        if course_id.present?\n          courses.select {|c| c['id'] == course_id }\n        else\n          courses\n        end\n      end\n\n      private\n\n      def course_api\n        @course_api ||= Xikolo.api(:course).value!\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 19,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2\n    class CourseAPI < Grape::API::Instance\n      namespace 'courses' do\n        route_param :course_id, type: String, desc: 'The course UUID' do\n          namespace 'time_effort' do\n            mount Endpoint::GetCourseTimeEffort\n          end\n        end\n      end\n\n      namespace 'next_dates' do\n        mount Endpoint::ListNextDates\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/course_date.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/model/course_repository.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/v2/course_api.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "User": {
+        "type": "Model/Entity",
+        "description": "Represents a user in the system, storing profile information like email, name, and language. It is identified by a SAML 2.0 protocol UID for external API interactions.",
+        "interactions": {
+          "interaction_0": "Data is updated and deleted via UserManagementAPI.",
+          "interaction_1": "Referenced by Enrollment to associate enrollments with specific users."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/users_controller.rb",
+            "db/schema.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 30,
+              "code": "      entity do         type 'users'          attribute('name') {           description 'The user\\'s display name'           type :string         }          attribute('avatar_url') {           type :string           reading {|user|             Xikolo::V2::URL.avatar_url user['id'], width: 1000, height: 1000           }         }          includable has_one('profile', Xikolo::V2::User::Profile) {           foreign_key 'id'         }          link('self') {|user| \"/api/v2/users/#{user['id']}\" }       end        member do         get 'Load information about a user (use \"me\" as ID if the current user\\'s ID is not available)' do           authenticate!            Xikolo.api(:account).value!.rel(:user).get({             id: id == 'me' ? current_user.id : id,           }).value!         end       end",
+              "source": "api/xikolo/v2/user/users.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 11,
+              "code": "    def initialize(user_id, size:, type: nil)       raise ArgumentError.new('Unknown size') unless SIZE_MAPPING.key? size        @user_id = user_id       @size = size       @type = type     end",
+              "source": "api/xikolo/v2/user/users.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 22,
+              "code": "    SIZE_MAPPING = {       tiny: 20,       small: 30,       medium: 40,       large: 60,       'x-large': 100,     }.stringify_keys.freeze",
+              "source": "api/xikolo/v2/user/users.rb"
+            },
+            {
+              "startLine": 39,
+              "endLine": 39,
+              "code": "    def user_avatar_path       avatar_path(@user_id, width: size, height: size...",
+              "source": "api/xikolo/v2/user/users.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 19,
+              "code": "      def index         users = account_api.rel(:users).get({           query: params[:q],         }).value!          render json: users.map {|u| {id: u['id'], text: \"#{u['name']} (#{u['email']})\"} }       end",
+              "source": "api/xikolo/v2/user/users.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/user/users.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/components/global/user_avatar.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/admin/ajax/users_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Enrollment": {
+        "type": "Model/Entity",
+        "description": "Represents a user's participation in a specific course, tracking status (e.g., completed, deleted) and achievements.",
+        "interactions": {
+          "interaction_0": "Data is retrieved and created via EnrollmentManagementAPI.",
+          "interaction_1": "Links a User to a Course."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/enrollments_controller.rb",
+            "db/schema.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 25,
+              "code": "module Xikolo\n  module Entities\n    class Enrollment < Grape::Entity\n      expose :id\n\n      expose def user\n        object.user_id\n      end\n\n      expose def course\n        object.course_id\n      end\n\n      expose def reactivated\n        object.forced_submission_date.present? && Time.zone.parse(object.forced_submission_date).future?\n      end\n\n      expose :points\n      expose :certificates\n      expose :completed\n      expose :quantile\n      expose :proctored\n    end\n  end\nend",
+              "source": "api/xikolo/entities/enrollment.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 11,
+              "code": "class SmowlConfirmation\n  def self.passed?(enrollment)\n    course = Course::Course.where(deleted: false).find(enrollment['course_id'])\n    Proctoring::SmowlAdapter.new(course).passed?(\n      Struct.new(:id).new(enrollment['user_id'])\n    )\n  end\nend",
+              "source": "api/xikolo/entities/enrollment.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 20,
+              "code": "      CERTIFICATE_TYPE_URL_MAPPING = {\n        'confirmation_of_participation' => ::Certificate::Record::COP,\n        'record_of_achievement' => ::Certificate::Record::ROA,\n        'qualified_certificate' => ::Certificate::Record::CERT,\n      }.freeze",
+              "source": "api/xikolo/entities/enrollment.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 27,
+              "code": "      entity do\n        type 'enrollments'\n\n        attribute('certificates') {\n          description 'A hash with information about the achieved certificates (confirmation_of_participation, record_of_achievement, qualified_certificate): Every value is either a URL pointing to the certificate file, or null'\n          type :hash, of: {",
+              "source": "api/xikolo/entities/enrollment.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/enrollment.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/v2/courses/enrollments.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/components/course/enrollment_policy_form.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Versioning::Version": {
+        "type": "Value Object",
+        "description": "Represents a specific API version, encapsulating its major and minor numbers. Used by `Xikolo::API` to manage and list supported versions.",
+        "interactions": {
+          "interaction_0": "Instantiated and managed by `Xikolo::API` for version tracking."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb",
+            "api/VERSIONING.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 35,
+              "code": "module Versioning\n  class Version\n    def initialize(version, **opts)\n      @version = version\n      @expiry_date = opts[:expire_on]\n    end\n\n    attr_reader :expiry_date\n\n    def compatible?(other_version)\n      if other_version.is_a? String\n        major == other_version.split('.').first\n      else\n        major == other_version.major\n      end\n    end\n\n    def expired?\n      return false unless expires?\n\n      @expiry_date.past?\n    end\n\n    def expires?\n      @expiry_date.present?\n    end\n\n    def to_s\n      @version\n    end\n\n    private\n\n    def parts\n      @parts ||= @version.split('.')\n    end\n\n    def major\n      @major ||= parts.first\n    end\n  end\nend",
+              "source": "api/xikolo/versioning/version.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/versioning/version.rb",
+              "relevance": 37
+            },
+            {
+              "path": "lib/versioning/version.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/versioning/constraint.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "Xikolo::Versioning::Middleware": {
+        "type": "Middleware",
+        "description": "An HTTP middleware responsible for negotiating the API version based on the `Accept` header in incoming requests. It ensures that clients receive responses compatible with their requested version and can add `Sunset` headers for deprecated versions.",
+        "interactions": {
+          "interaction_0": "Used by `Xikolo::API` to process incoming requests.",
+          "interaction_1": "Interacts with API clients by interpreting `Accept` headers and potentially adding `Sunset` headers to responses."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb",
+            "api/VERSIONING.md",
+            "docs/portalapi/docs/negotiation.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 7,
+              "code": "module Xikolo\n  module Versioning\n    class Middleware\n      def initialize(app)\n        @app = app\n      end",
+              "source": "api/xikolo/versioning/middleware.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 19,
+              "code": "      def call(env)\n        env['XIKOLO_API_VERSION'] = version = determine_version(env)\n\n        status, headers, body = @app.call(env).to_a\n\n        [status, response_headers(headers, version), body]\n      rescue VersionMismatch => e\n        [406, {}, [e.message]]\n      end",
+              "source": "api/xikolo/versioning/middleware.rb"
+            },
+            {
+              "startLine": 21,
+              "endLine": 38,
+              "code": "      private\n\n      def determine_version(env)\n        requested_version = extract_version_from_accept(env['HTTP_ACCEPT'])\n\n        return Xikolo::API.latest_version unless requested_version\n\n        matching_version = Xikolo::API.supported_versions\n          .reject(&:expired?)\n          .find do |version|\n          version.compatible? requested_version\n        end\n\n        raise VersionMismatch.new('Unsupported API version requested') unless matching_version\n\n        matching_version\n      end",
+              "source": "api/xikolo/versioning/middleware.rb"
+            },
+            {
+              "startLine": 40,
+              "endLine": 41,
+              "code": "      def extract_version_from_accept(accept_header)\n        matches = /; ?xi...",
+              "source": "api/xikolo/versioning/middleware.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/versioning/middleware.rb",
+              "relevance": 44
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "Auth::Helpers": {
+        "type": "Helper Module",
+        "description": "Provides authentication-related utility methods that can be included in Grape API endpoints to assist with authorization and user context.",
+        "interactions": {
+          "interaction_0": "Included as helpers within `Xikolo::API` and its mounted endpoints."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 35,
+              "code": "module Xikolo   module Auth     module Helpers       def current_user         @current_user ||= _create_user       end        # Sets a global context for permissions       def in_context(context_name)         @context = context_name          # Just in case it has been requested before, we throw away the         # current user object, so that it will be regenerated when         # it is requested again.         @current_user = nil       end        def authenticate!         error!('401 Unauthorized', 401) if current_user.anonymous?       end        def authenticate_as!(user_id)         authenticate!         error!('403 Forbidden', 403) unless current_user.id.eql? user_id       end        def permission!(permission)         error!('401 Unauthorized', 401) unless current_user.allowed?(permission)       end        def _session_id         if env['XIKOLO_SESSION']           env['XIKOLO_SESSION']         elsif env['XIKOLO_LEGACY_TOKEN']           \"token=#{env['XIK...",
+              "source": "api/xikolo/auth/helpers.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/auth/helpers.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/model/helpers.rb",
+              "relevance": 30
+            },
+            {
+              "path": "config/initializers/i18n_translate.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Model::Helpers": {
+        "type": "Helper Module",
+        "description": "Provides utility methods for interacting with backend models or services within Grape API endpoints.",
+        "interactions": {
+          "interaction_0": "Included as helpers within `Xikolo::API` and its mounted endpoints."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 20,
+              "code": "module Xikolo   module Model     module Helpers       def course_repo         @course_repo ||= Xikolo::Model::CourseRepository.new       end        def preference_repo         @preference_repo ||= Xikolo::Model::PreferenceRepository.new       end        # Retrieve all resources, across multiple pages       def get_paged!(cur_page)         all = []         loop do           all += cur_page           break unless cur_page.rel?(:next)            cur_page = cur_page.rel(:next).get.value!         end         all       end     end   end end",
+              "source": "api/xikolo/model/helpers.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/model/helpers.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/auth/helpers.rb",
+              "relevance": 30
+            },
+            {
+              "path": "config/initializers/i18n_translate.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Auth::Middleware::LegacyToken": {
+        "type": "Middleware",
+        "description": "An HTTP middleware responsible for authenticating API requests using a legacy token mechanism. It processes `Authorization` headers to validate access.",
+        "interactions": {
+          "interaction_0": "Used by `Xikolo::API` to authenticate incoming requests.",
+          "interaction_1": "Interacts with API clients by processing `Authorization` headers."
+        },
+        "techDebt": [
+          "The 'Legacy' in its name suggests it might be a candidate for deprecation or replacement with a more modern authentication standard."
+        ],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb",
+            "docs/portalapi/docs/authentication.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 16,
+              "code": "module Xikolo\n  module Auth\n    module Middleware\n      class LegacyToken < Rack::Auth::AbstractHandler\n        TOKEN_AUTH_REGEX = /^(?:Legacy-)?Token token=(?<token>[0-9a-f]+)$/\n\n        def call(env)\n          if (match = TOKEN_AUTH_REGEX.match(env['HTTP_AUTHORIZATION']))\n            env['XIKOLO_LEGACY_TOKEN'] = match[:token]\n          end\n\n          @app.call(env)\n        end\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/auth/middleware/legacy_token.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 33
+            },
+            {
+              "path": "api/xikolo/auth/middleware/session.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Auth::Middleware::Session": {
+        "type": "Middleware",
+        "description": "An HTTP middleware responsible for authenticating API requests using session-based mechanisms, likely for web-based clients or specific internal integrations.",
+        "interactions": {
+          "interaction_0": "Used by `Xikolo::API` to authenticate incoming requests.",
+          "interaction_1": "Interacts with API clients by processing session information."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb",
+            "docs/portalapi/docs/authentication.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 23,
+              "code": "module Xikolo   module Auth     module Middleware       class Session < Rack::Auth::AbstractHandler         def call(env)           env['XIKOLO_SESSION'] = session(env)[:id]            @app.call(env)         end          private          def session(env)           env['rack.session'] || {}         end       end     end   end end",
+              "source": "api/xikolo/auth/middleware/session.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/auth/middleware/session.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/helpers/session_helper.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/account/session.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Error::Base": {
+        "type": "Exception Class",
+        "description": "A base exception class for API-specific errors. It allows for standardized error handling within the API, converting custom exceptions into appropriate HTTP status codes and problem details.",
+        "interactions": {
+          "interaction_0": "Inherited by specific API error classes.",
+          "interaction_1": "Caught by `Xikolo::API`'s `rescue_from` block to generate standardized error responses."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb",
+            "docs/portalapi/docs/errors.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Error\n    class Base < StandardError\n      def status\n        500\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/error/base.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/error/base.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/base.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/admin/base_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "V2::Base": {
+        "type": "API Version Module",
+        "description": "A Grape API module that serves as the base for all endpoints belonging to version 2 of the API. It encapsulates the specific routes and logic for this API version.",
+        "interactions": {
+          "interaction_0": "Mounted by `Xikolo::API` to make its endpoints accessible.",
+          "interaction_1": "Used by `Xikolo::Docs::Generator` for documentation generation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 37,
+              "code": "class Base < Grape::API::Instance\n  version 'v2', using: :path\n\n  get do\n    content_type 'application/vnd.api+json'\n    {\n      data: nil,\n      links: {},\n    }.to_json\n  end\n\n  mount TokenAPI\n\n  mount CourseAPI\n  mount PreferenceAPI\n  mount StatisticsAPI\n  mount NewsStatisticAPI\n  mount LearningInsightsAPI\n\n  def self.json_api_endpoints\n    @json_api_endpoints ||= {}\n  end\n\n  def self.mount_json_api_endpoint(path, klass)\n    namespace path do\n      mount klass\n    end\n\n    json_api_endpoints[path] = klass\n  end\n\n  mount_json_api_endpoint 'announcements', V2::News::Announcements\n  mount_json_api_endpoint 'channels', V2::Courses::Channels\n  mount_json_api_endpoint 'courses', V2::Courses::Courses\n  mount_json_api_endpoint 'course-dates', V2::Courses::Dates\n  mount_json_api_endpoint 'course-features', V2::Features::C...",
+              "source": "api/xikolo/v2/base.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/base.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/error/base.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/admin/base_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Xikolo::Docs::Generator": {
+        "type": "Documentation Tool",
+        "description": "A utility class responsible for generating API documentation, likely in a format like OpenAPI/Swagger, from the Grape API definitions.",
+        "interactions": {
+          "interaction_0": "Called by `Xikolo::API.make_docs!` to generate documentation for `V2::Base`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb",
+            "api/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nrequire 'fileutils'\nrequire 'erb'\n\nmodule Xikolo\n  module Docs\n    class Generator\n      include ERB::Util\n\n      def initialize(directory, root)\n        @target = directory\n        @root = root\n      end\n\n      def generate!\n        ensure_target_directory!\n\n        generate_index!\n      end\n\n      private\n\n      def ensure_target_directory!\n        $stdout.puts \"Ensuring that #{@target} directory exists\"\n        FileUtils.mkpath @target\n      end\n\n      def generate_index!\n        endpoints = sorted_endpoints\n\n        output = template_result 'index.html', binding\n        ::File.write(\"#{@target}/index.html\", output)\n      end\n\n      def template_result(filename, variables)\n        template = ERB.new ::File.read(\"api/xikolo/docs/templates/#{filename}.erb\")\n        template.result variables\n      end\n\n      def sorted_endpoints\n        @root.json_api_endpoints.sort_by {|key, _val| key }.to_h\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/docs/generator.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/docs/generator.rb",
+              "relevance": 44
+            },
+            {
+              "path": "api/xikolo/api.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/helpers.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Format::PrettyJSON": {
+        "type": "Formatter",
+        "description": "A custom formatter for JSON responses, ensuring that the output is pretty-printed for readability.",
+        "interactions": {
+          "interaction_0": "Used by `Xikolo::API` as the formatter for `json` content type."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nrequire 'json' # For the to_json helper\n\nmodule Xikolo\n  module Format\n    module PrettyJSON\n      def self.call(object, _env)\n        JSON.pretty_generate object\n      rescue StandardError\n        '{}'\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/format/pretty_json.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/format/pretty_json.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/assets/util/forms/advanced-settings.ts",
+              "relevance": 5
+            },
+            {
+              "path": "app/assets/util/forms/image-upload.js",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Grape::Parser::Json": {
+        "type": "Parser",
+        "description": "A standard Grape parser for incoming JSON request bodies, used to deserialize JSON data into Ruby objects.",
+        "interactions": {
+          "interaction_0": "Used by `Xikolo::API` as the parser for `json_api` content type."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "api/xikolo/api.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.7,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "module Xikolo\n  module Format\n    module PrettyJSON\n      def self.call(object, _env)\n        JSON.pretty_generate object\n      rescue StandardError\n        '{}'\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/format/pretty_json.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/format/pretty_json.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/account/spec/support/json_helper.rb",
+              "relevance": 11
+            },
+            {
+              "path": "spec/support/json_api_matchers.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Transpipe::URL": {
+        "type": "Utility Module",
+        "description": "A Ruby module providing helper methods to construct external URLs for courses and video items, specifically for integration with the TransPipe service. It leverages `Addressable::Template` for dynamic URL expansion based on application configuration.",
+        "interactions": {
+          "interaction_0": "Reads configuration settings from `Xikolo.config.transpipe` to retrieve URL templates. [Source: app/lib/transpipe.rb]",
+          "interaction_1": "Generates fully qualified URLs for courses and video content, intended for use by the TransPipe service. [Source: app/lib/transpipe.rb]"
+        },
+        "techDebt": [
+          "The generic `rescue TypeError` for template parsing could be made more specific or include logging to provide better diagnostics in case of malformed templates. [Source: app/lib/transpipe.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/lib/transpipe.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 10,
+              "endLine": 35,
+              "code": "class URL\n  require 'addressable/template'\n\n  class << self\n    def for_course(course)\n      course_url_template&.expand(\n        course_id: course.try(:[], 'id') || course.id\n      )&.to_s\n    end\n\n    def course_url_template\n      return unless Xikolo.config.transpipe['course_url_template']\n\n      Addressable::Template.new(\n        Xikolo.config.transpipe['course_url_template']\n      )\n    rescue TypeError\n      # The template cannot be parsed for whatever reason.\n      # This is fine.\n    end\n\n    def for_video(item)\n      course_video_url_template&.expand(\n        course_id: item.try(:[], 'course_id') || item.course_id,\n        video_id: item.try(:[], 'content_id') || item.content_id\n      )&.to_s\n    end\n\n    def course_video_url_template\n      return unless Xikolo.config.transpipe['course_vi...",
+              "source": "api/xikolo/v2/url.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/url.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/lib/transpipe.rb",
+              "relevance": 26
+            },
+            {
+              "path": "gems/xui-form/lib/active_model/type/uri.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "MOOChub Bridge API": {
+        "type": "External API Endpoint",
+        "description": "An API endpoint designed for integration with the MOOChub platform, primarily for facilitating the exchange or synchronization of course-related data.",
+        "interactions": {
+          "interaction_0": "Exposes course data via the `/bridges/moochub/courses` endpoint. [Source: app/controllers/bridges/moochub/courses_controller.rb]",
+          "interaction_1": "Expected to interact with MOOChub for data exchange. [Source: app/controllers/bridges/moochub/courses_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/moochub/courses_controller.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "TransPipe Bridge API": {
+        "type": "External API Endpoint",
+        "description": "An API designed for the translation pipeline project (TransPipe) to access and manage video-related information, including course structure, video streams, and subtitles.",
+        "interactions": {
+          "interaction_0": "Authenticates external systems using a Bearer token. [Source: app/controllers/bridges/transpipe/base_controller.rb]",
+          "interaction_1": "Provides paginated lists of courses and detailed course information, including sections, videos within sections, and teacher details. [Source: app/controllers/bridges/transpipe/courses_controller.rb]",
+          "interaction_2": "Offers detailed video information, including stream URLs (HD, SD, HLS for lecturer, PiP, and slides) and available subtitle languages. [Source: app/controllers/bridges/transpipe/videos_controller.rb]",
+          "interaction_3": "Enables retrieval (GET) and updating (PATCH) of video subtitles in WEBVTT format for specific languages. [Source: app/controllers/bridges/transpipe/subtitles_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/transpipe/courses_controller.rb",
+            "app/controllers/bridges/transpipe/subtitles_controller.rb",
+            "config/routes.rb"
+          ]
+        }
+      },
+      "Chatbot API (Controller/Service Layer)": {
+        "type": "API Gateway/Service",
+        "description": "The API layer responsible for handling requests from external chatbot systems. It provides endpoints for user authentication, retrieving user and course information, and managing course enrollments. [Source: app/controllers/bridges/chatbot/]",
+        "interactions": {
+          "interaction_0": "Interacts with `TokenSigning` for issuing and verifying user-specific Paseto tokens.",
+          "interaction_1": "Likely interacts with the 'Account' microservice for user data and 'Course' microservice for course and enrollment data.",
+          "interaction_2": "Communicates with external chatbot systems."
+        },
+        "techDebt": [
+          "Specific implementation details and potential technical debt cannot be assessed due to the absence of direct code for controllers and services."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/chatbot/authentications_controller.rb",
+            "app/controllers/bridges/chatbot/courses_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.65,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 17,
+              "code": "module Abstract\n  ##\n  # A base class for all controllers serving a \"Bridge API\".\n  #\n  # Bridge APIs are small dedicated interfaces to external services, some of\n  # which are internal, some external. They vary in how they are versioned,\n  # consumed, documented and what formats they offer.\n  #\n  class BridgeAPIController < ActionController::Base # rubocop:disable Rails/ApplicationController\n    ##\n    # We inherit from ActionController::Base (for compatibility with the\n    # responders gem), but have to disable HTML-focused features, in order to\n    # get closer to what ActionController::API would give us.\n\n    skip_forgery_protection\n  end\nend",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/frontend_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "MOOChub API (Controller/Service Layer)": {
+        "type": "API Gateway/Service",
+        "description": "The API layer for integrating with the MOOChub Schema repository, primarily for course synchronization or data exchange. [Source: app/controllers/bridges/moochub/]",
+        "interactions": {
+          "interaction_0": "Likely interacts with the 'Course' microservice for course data.",
+          "interaction_1": "Communicates with external MOOChub systems."
+        },
+        "techDebt": [
+          "Specific implementation details and potential technical debt cannot be assessed due to the absence of direct code for controllers and services."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/moochub/courses_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 35,
+              "code": "module Abstract   ##   # A base class for all controllers handling AJAX requests   class AjaxController < ::ApplicationController     rescue_from Status::Unauthorized do       render status: :forbidden, json: {errors: 'forbidden'}     end      private      def ensure_logged_in       return true if current_user.logged_in?        head :forbidden     end      def fetch_metric(name:, **params)       return lanalytics_api.rel(:metric).get({**params, name:}) if metrics_available?(name)        Restify::Promise.fulfilled(nil)     end      def metrics_available?(*names)       names.map(&:underscore).all? {|name| available_metrics.include?(name) }     end      def available_metrics       @available_metrics ||= begin         metrics_list = lanalytics_api.rel(:metrics).get.value!         metrics_list.select {|metric| metric['available'] }.pluck('name')       end     end      def lanalytics_api       @lanalytics_api ||= Xikolo.api(:learnanalytics).value!     end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 16,
+              "code": "module Abstract   ##   # A base class for all controllers serving a \"Bridge API\".   #   # Bridge APIs are small dedicated interfaces to external services, some of   # which are internal, some external. They vary in how they are versioned,   # consumed, documented and what formats they offer.   #   class BridgeAPIController < ActionController::Base # rubocop:disable Rails/ApplicationController     ##     # We inherit from ActionController::Base (for compatibility with the     # responders gem), but have to disable HTML-focused features, in order to     # get closer to what ActionController::API would give us.      skip_forgery_protection   end end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/frontend_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Shop API (Controller/Service Layer)": {
+        "type": "API Gateway/Service",
+        "description": "The API layer dedicated to managing vouchers for external shops, allowing for bulk creation and listing of vouchers. [Source: app/controllers/bridges/shop/]",
+        "interactions": {
+          "interaction_0": "Likely interacts with a 'Voucher' or 'Payment' domain within the application to manage voucher lifecycle.",
+          "interaction_1": "Communicates with external shop systems."
+        },
+        "techDebt": [
+          "Specific implementation details and potential technical debt cannot be assessed due to the absence of direct code for controllers and services."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/shop/vouchers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 40,
+              "code": "# frozen_string_literal: true\n\nmodule Abstract\n  ##\n  # A base class for all controllers handling AJAX requests\n  class AjaxController < ::ApplicationController\n    rescue_from Status::Unauthorized do\n      render status: :forbidden, json: {errors: 'forbidden'}\n    end\n\n    private\n\n    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end\n\n    def fetch_metric(name:, **params)\n      return lanalytics_api.rel(:metric).get({**params, name:}) if metrics_available?(name)\n\n      Restify::Promise.fulfilled(nil)\n    end\n\n    def metrics_available?(*names)\n      names.map(&:underscore).all? {|name| available_metrics.include?(name) }\n    end\n\n    def available_metrics\n      @available_metrics ||= begin\n        metrics_list = lanalytics_api.rel(:metrics).get.value!\n        metrics_list.select {|metric| metric['available'] }.pluck('name')\n      end\n    end\n\n    def lanalytics_api\n      @lanalytics_api ||= Xikolo.api(:learnanalytics).value!\n    end\n\n    ...\n",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nmodule Abstract\n  ##\n  # A base class for all controllers serving a \"Bridge API\".\n  #\n  # Bridge APIs are small dedicated interfaces to external services, some of\n  # which are internal, some external. They vary in how they are versioned,\n  # consumed, documented and what formats they offer.\n  #\n  class BridgeAPIController < ActionController::Base # rubocop:disable Rails/ApplicationController\n    ##\n    # We inherit from ActionController::Base (for compatibility with the\n    # responders gem), but have to disable HTML-focused features, in order to\n    # get closer to what ActionController::API would give us.\n\n    skip_forgery_protection\n  end\nend\n...",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/frontend_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "TransPipe API (Controller/Service Layer)": {
+        "type": "API Gateway/Service",
+        "description": "The API layer supporting the translation pipeline project by providing access to course and video information, including the ability to retrieve and update video subtitles. [Source: app/controllers/bridges/transpipe/]",
+        "interactions": {
+          "interaction_0": "Likely interacts with 'Course' and 'Video' models/services to fetch and update data.",
+          "interaction_1": "Communicates with external translation pipeline systems."
+        },
+        "techDebt": [
+          "Specific implementation details and potential technical debt cannot be assessed due to the absence of direct code for controllers and services."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/transpipe/courses_controller.rb",
+            "app/controllers/bridges/transpipe/subtitles_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nmodule Abstract\n  ##\n  # A base class for all controllers handling AJAX requests\n  class AjaxController < ::ApplicationController\n    rescue_from Status::Unauthorized do\n      render status: :forbidden, json: {errors: 'forbidden'}\n    end\n\n    private\n\n    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end\n\n    def fetch_metric(name:, **params)\n      return lanalytics_api.rel(:metric).get({**params, name:}) if metrics_available?(name)\n\n      Restify::Promise.fulfilled(nil)\n    end\n\n    def metrics_available?(*names)\n      names.map(&:underscore).all? {|name| available_metrics.include?(name) }\n    end\n\n    def available_metrics\n      @available_metrics ||= begin\n        metrics_list = lanalytics_api.rel(:metrics).get.value!\n        metrics_list.select {|metric| metric['available'] }.pluck('name')\n      end\n    end\n\n    def lanalytics_api\n      @lanalytics_api ||= Xikolo.api(:learnanalytics).value!\n    end\n\n    ...\n",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nmodule Abstract\n  ##\n  # A base class for all controllers serving a \"Bridge API\".\n  #\n  # Bridge APIs are small dedicated interfaces to external services, some of\n  # which are internal, some external. They vary in how they are versioned,\n  # consumed, documented and what formats they offer.\n  #\n  class BridgeAPIController < ActionController::Base # rubocop:disable Rails/ApplicationController\n    ##\n    # We inherit from ActionController::Base (for compatibility with the\n    # responders gem), but have to disable HTML-focused features, in order to\n    # get closer to what ActionController::API would give us.\n\n    skip_forgery_protection\n  end\nend\n...",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/frontend_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Portal API Gateway": {
+        "type": "API Gateway",
+        "description": "Acts as an API gateway for external applications, providing a standardized and versioned interface to access openHPI course catalog data, manage user profiles, and handle course enrollments. It enforces authentication, content negotiation, and provides structured error responses.",
+        "interactions": {
+          "interaction_0": "Receives authenticated HTTP requests from external applications using OAuth 2.0 Bearer Tokens. [Source: app/controllers/portal_api/base_controller.rb]",
+          "interaction_1": "Responds with JSON data, adhering to the HTTP Problem Details specification for errors. [Source: app/controllers/portal_api/base_controller.rb]",
+          "interaction_2": "Performs content negotiation based on the `Accept` header for versioning and media type. [Source: app/controllers/portal_api/base_controller.rb]",
+          "interaction_3": "Routes requests to underlying microservices (e.g., Course Service, Account Service) to fulfill data retrieval and manipulation operations. [Source: app/controllers/portal_api/]"
+        },
+        "techDebt": [
+          "Rate limiting mechanism is currently marked as 'TODO'. [Source: app/controllers/portal_api/base_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/base_controller.rb",
+            "app/controllers/portal_api/courses_controller.rb",
+            "app/controllers/portal_api/users_controller.rb",
+            "app/controllers/portal_api/enrollments_controller.rb"
+          ]
+        }
+      },
+      "Courses API Resource": {
+        "type": "API Endpoint Group",
+        "description": "Provides read-only access to publicly visible course catalog data, allowing external applications to retrieve lists of courses or details of specific courses.",
+        "interactions": {
+          "interaction_0": "Exposes `GET /courses` to retrieve a paginated list of courses. [Source: app/controllers/portal_api/courses_controller.rb]",
+          "interaction_1": "Exposes `GET /courses/{id}` to retrieve a single course by its unique identifier. [Source: app/controllers/portal_api/courses_controller.rb]",
+          "interaction_2": "Requires `Accept` header for versioning (e.g., `application/vnd.openhpi.list+json;v=1.1`). [Source: app/controllers/portal_api/base_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/courses_controller.rb"
+          ]
+        }
+      },
+      "Users API Resource": {
+        "type": "API Endpoint Group",
+        "description": "Enables external applications to update specific user attributes or initiate the deletion of a user, identified by their SAML 2.0 protocol ID.",
+        "interactions": {
+          "interaction_0": "Exposes `PATCH /users/{id}` to update user attributes such as email, full_name, display_name, born_at, language, and avatar. [Source: app/controllers/portal_api/users_controller.rb]",
+          "interaction_1": "Exposes `DELETE /users/{id}` to remove a user account. [Source: app/controllers/portal_api/users_controller.rb]",
+          "interaction_2": "Requires `Accept` header for versioning (e.g., `application/vnd.openhpi.user+json;v=1.0`). [Source: app/controllers/portal_api/base_controller.rb]"
+        },
+        "techDebt": [
+          "The `PATCH /users/{id}` endpoint returns a `200 OK` even if the user resource was not fully updated, requiring the client to explicitly check if changes were applied. [Source: app/controllers/portal_api/users_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/users_controller.rb"
+          ]
+        }
+      },
+      "Enrollments API Resource": {
+        "type": "API Endpoint Group",
+        "description": "Manages user enrollments in courses, allowing external applications to retrieve existing enrollments or create new ones.",
+        "interactions": {
+          "interaction_0": "Exposes `GET /enrollments` to retrieve all enrollments for a given user, with optional filtering by `course_id`. [Source: app/controllers/portal_api/enrollments_controller.rb]",
+          "interaction_1": "Exposes `POST /enrollments` to create a new enrollment for a user in a specified course, requiring `user_id` and `course_id`. [Source: app/controllers/portal_api/enrollments_controller.rb]",
+          "interaction_2": "Returns a `409 Conflict` if an enrollment for the given user and course already exists during a `POST` request. [Source: app/controllers/portal_api/enrollments_controller.rb]",
+          "interaction_3": "Requires `Accept` header for versioning (e.g., `application/vnd.openhpi.enrollments+json;v=1.0`). [Source: app/controllers/portal_api/base_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/portal_api/enrollments_controller.rb",
+            "app/controllers/portal_api/base_controller.rb"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Consumes data from backend microservices (e.g., Account, Course, News, Pinboard, Quiz, TimeEffort services).",
+      "interaction_1": "Provides data to mobile applications and potentially other client-side applications.",
+      "interaction_2": "Receives write requests (POST/PATCH) from clients and forwards them to appropriate backend services.",
+      "interaction_3": "Extended by specific API endpoint classes (e.g., `Users` in documentation example) to define resource-specific logic.",
+      "interaction_4": "Utilized by the `Xikolo::API` to process incoming requests and generate responses.",
+      "interaction_5": "Interacts with backend services to load and store data for the defined resources.",
+      "interaction_6": "Receives all incoming API requests to the main application.",
+      "interaction_7": "Routes requests to the `Xikolo::API` for general mobile app consumption.",
+      "interaction_8": "Routes requests to specific 'bridge' API modules for specialized internal or external integrations.",
+      "interaction_9": "Includes a private `/api/tracking-events` endpoint for frontend-only use.",
+      "interaction_10": "Consumed by external customer portal applications.",
+      "interaction_11": "Interacts with underlying services to manage course, user, and enrollment data.",
+      "interaction_12": "Used by internal services requiring video and subtitle manipulation.",
+      "interaction_13": "Interacts with video storage and processing components.",
+      "interaction_14": "Consumed by internal analytics and reporting tools.",
+      "interaction_15": "Aggregates and exposes statistical data from various learning components.",
+      "interaction_16": "Interacts with external MOOC hub platforms or internal components related to MOOCs.",
+      "interaction_17": "Provides course listings.",
+      "interaction_18": "Consumed by chatbot services to interact with user data and learning progress.",
+      "interaction_19": "Provides endpoints for user authentication, course enrollment/unenrollment, achievement lookup, and quiz information.",
+      "interaction_20": "Used by internal shop systems or related services.",
+      "interaction_21": "Manages voucher data.",
+      "interaction_22": "Informs API consumers (e.g., mobile app developers, internal service developers) about changes to the API.",
+      "interaction_23": "Supports the API versioning strategy by documenting specific changes per version.",
+      "interaction_24": "Exposes resources (e.g., courses, users, items) to mobile clients. [Source: api/xikolo/api.rb]",
+      "interaction_25": "Receives write requests (POST, PATCH) for user events, enrollments, quiz submissions. [Source: api/xikolo/v2/base.rb]",
+      "interaction_26": "Interacts with backend services to fetch and store data. [Source: api/xikolo/endpoint/collection_endpoint.rb]",
+      "interaction_27": "Negotiates API versions via `Accept` and `Content-Type` headers. [Source: api/xikolo/versioning/middleware.rb]",
+      "interaction_28": "Provides `index`, `show` for `courses`, `update`, `destroy` for `users`, and `index`, `create` for `enrollments`. [Source: config/routes.rb]",
+      "interaction_29": "Requires bearer token authentication. [Source: app/controllers/portal_api/base_controller.rb]",
+      "interaction_30": "Utilizes content negotiation for API versioning. [Source: app/controllers/portal_api/base_controller.rb]",
+      "interaction_31": "`Transpipe`: Manages courses and video subtitles. [Source: config/routes.rb]",
+      "interaction_32": "`Lanalytics`: Provides course and video statistics. [Source: config/routes.rb]",
+      "interaction_33": "`Moochub`: Lists courses. [Source: config/routes.rb]",
+      "interaction_34": "`Chatbot`: Handles authentication, user courses, achievements, and quizzes. [Source: config/routes.rb]",
+      "interaction_35": "`Shop`: Manages vouchers. [Source: config/routes.rb]",
+      "interaction_36": "Intercepts HTTP requests before they reach the controller. [Source: lib/xi/controllers/require_bearer_token.rb]",
+      "interaction_37": "Reads `HTTP_AUTHORIZATION` header. [Source: lib/xi/controllers/require_bearer_token.rb]",
+      "interaction_38": "Sets `WWW-Authenticate` header on failure. [Source: lib/xi/controllers/require_bearer_token.rb]",
+      "interaction_39": "Renders `application/problem+json` error responses. [Source: lib/xi/controllers/require_bearer_token.rb, app/controllers/portal_api/base_controller.rb]",
+      "interaction_40": "Directs incoming HTTP requests to the appropriate controllers. [Source: config/routes.rb]",
+      "interaction_41": "Mounts the `Xikolo::API` Grape application. [Source: config/routes.rb]",
+      "interaction_42": "Defines scoped routes for `PortalApi` and `Bridges` modules. [Source: config/routes.rb]",
+      "interaction_43": "Registers a `:chatbot` key for PASETO token operations.",
+      "interaction_44": "Signs tokens using `chatbot_bridge_private_key` from application secrets.",
+      "interaction_45": "Verifies tokens using `chatbot['bridge_public_keys']` from application configuration.",
+      "interaction_46": "Serves as the base class for specific bridge API controllers (e.g., `Bridges::Chatbot::BaseController`).",
+      "interaction_47": "Expected to integrate with authentication mechanisms like `Xi::Controllers::RequireBearerToken`.",
+      "interaction_48": "Authenticates incoming requests to bridge API endpoints.",
+      "interaction_49": "Interacts with `TokenSigning` for token verification (specifically for Chatbot API).",
+      "interaction_50": "Receives authentication requests via `POST /authenticate` (shared secret).",
+      "interaction_51": "Provides user data via `GET /user`.",
+      "interaction_52": "Provides course listings via `GET /courses` and `GET /my_courses`.",
+      "interaction_53": "Manages user enrollments via `POST /my_courses/{id}` and `DELETE /my_courses/{id}`.",
+      "interaction_54": "Retrieves course achievements via `GET /my_courses/{id}/achievements`.",
+      "interaction_55": "Retrieves quizzes via `GET /my_quizzes`.",
+      "interaction_56": "Interacts with `TokenSigning` for token generation and validation.",
+      "interaction_57": "Receives requests to create vouchers via `POST /vouchers`.",
+      "interaction_58": "Responds to requests for listing vouchers via `GET /vouchers`.",
+      "interaction_59": "Authenticates requests using a shared secret bearer token.",
+      "interaction_60": "Exposes course data via `/bridges/moochub/courses`.",
+      "interaction_61": "Provides lists of courses via `GET /courses`.",
+      "interaction_62": "Provides detailed course information via `GET /courses/{id}`.",
+      "interaction_63": "Provides video details and stream URLs via `GET /videos/{id}`.",
+      "interaction_64": "Retrieves video subtitles via `GET /videos/{id}/subtitles/{lang}`.",
+      "interaction_65": "Updates video subtitles via `PATCH /videos/{id}/subtitles/{lang}`.",
+      "interaction_66": "Authenticates requests using a bearer token.",
+      "interaction_67": "Expected to expose data relevant for analytics consumption.",
+      "interaction_68": "Routes requests to CourseCatalogAPI for course information.",
+      "interaction_69": "Routes requests to UserManagementAPI for user profile operations.",
+      "interaction_70": "Routes requests to EnrollmentManagementAPI for enrollment actions.",
+      "interaction_71": "Exposes GET /courses to retrieve a list of courses.",
+      "interaction_72": "Exposes GET /courses/{id} to retrieve a single course.",
+      "interaction_73": "Interacts with the underlying Course model/service to fetch course data.",
+      "interaction_74": "Exposes PATCH /users/{id} for updating user attributes.",
+      "interaction_75": "Exposes DELETE /users/{id} for deleting user accounts.",
+      "interaction_76": "Interacts with the underlying User model/service to modify user data.",
+      "interaction_77": "Exposes GET /enrollments to retrieve user enrollments.",
+      "interaction_78": "Exposes POST /enrollments to create new enrollments.",
+      "interaction_79": "Interacts with the underlying Enrollment, User, and Course models/services to manage enrollment data.",
+      "interaction_80": "Provides data to CourseCatalogAPI for course retrieval.",
+      "interaction_81": "Referenced by Enrollment for linking users to courses.",
+      "interaction_82": "Data is updated and deleted via UserManagementAPI.",
+      "interaction_83": "Referenced by Enrollment to associate enrollments with specific users.",
+      "interaction_84": "Data is retrieved and created via EnrollmentManagementAPI.",
+      "interaction_85": "Links a User to a Course.",
+      "interaction_86": "Uses `Xikolo::Versioning::Middleware` for API version negotiation.",
+      "interaction_87": "Uses `Auth::Middleware::LegacyToken` and `Auth::Middleware::Session` for authentication.",
+      "interaction_88": "Rescues from `Error::Base` exceptions to standardize error responses.",
+      "interaction_89": "Mounts `V2::Base` to expose version 2 API endpoints.",
+      "interaction_90": "Utilizes `Format::PrettyJSON` for JSON formatting and `Grape::Parser::Json` for JSON parsing.",
+      "interaction_91": "Calls `Xikolo::Docs::Generator` to produce API documentation.",
+      "interaction_92": "Instantiated and managed by `Xikolo::API` for version tracking.",
+      "interaction_93": "Used by `Xikolo::API` to process incoming requests.",
+      "interaction_94": "Interacts with API clients by interpreting `Accept` headers and potentially adding `Sunset` headers to responses.",
+      "interaction_95": "Included as helpers within `Xikolo::API` and its mounted endpoints.",
+      "interaction_96": "Included as helpers within `Xikolo::API` and its mounted endpoints.",
+      "interaction_97": "Used by `Xikolo::API` to authenticate incoming requests.",
+      "interaction_98": "Interacts with API clients by processing `Authorization` headers.",
+      "interaction_99": "Used by `Xikolo::API` to authenticate incoming requests.",
+      "interaction_100": "Interacts with API clients by processing session information.",
+      "interaction_101": "Inherited by specific API error classes.",
+      "interaction_102": "Caught by `Xikolo::API`'s `rescue_from` block to generate standardized error responses.",
+      "interaction_103": "Mounted by `Xikolo::API` to make its endpoints accessible.",
+      "interaction_104": "Used by `Xikolo::Docs::Generator` for documentation generation.",
+      "interaction_105": "Called by `Xikolo::API.make_docs!` to generate documentation for `V2::Base`.",
+      "interaction_106": "Used by `Xikolo::API` as the formatter for `json` content type.",
+      "interaction_107": "Used by `Xikolo::API` as the parser for `json_api` content type.",
+      "interaction_108": "Reads configuration settings from `Xikolo.config.transpipe` to retrieve URL templates. [Source: app/lib/transpipe.rb]",
+      "interaction_109": "Generates fully qualified URLs for courses and video content, intended for use by the TransPipe service. [Source: app/lib/transpipe.rb]",
+      "interaction_110": "Authenticates external chatbot systems using a shared secret (Bearer token) for initial access to the authentication endpoint. [Source: app/controllers/bridges/chatbot/authentications_controller.rb]",
+      "interaction_111": "Issues user-specific authentication tokens based on a provided SAML `uid` (NameID). [Source: app/controllers/bridges/chatbot/authentications_controller.rb]",
+      "interaction_112": "Provides endpoints for retrieving user data (internal ID), course listings, user-specific enrolled courses, and course achievement details. [Source: app/controllers/bridges/chatbot/courses_controller.rb]",
+      "interaction_113": "Supports actions such as enrolling and unenrolling users from courses. [Source: app/controllers/bridges/chatbot/courses_controller.rb]",
+      "interaction_114": "Offers access to quiz information for specific courses. [Source: app/controllers/bridges/chatbot/courses_controller.rb]",
+      "interaction_115": "Exposes course data via the `/bridges/moochub/courses` endpoint. [Source: app/controllers/bridges/moochub/courses_controller.rb]",
+      "interaction_116": "Expected to interact with MOOChub for data exchange, with specific details documented externally. [Source: app/controllers/bridges/moochub/courses_controller.rb]",
+      "interaction_117": "Authenticates external shop systems using a shared secret provided as a Bearer token. [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+      "interaction_118": "Allows for the bulk creation of vouchers with specified quantities, product types, countries, and tags via a POST request to `/vouchers`. [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+      "interaction_119": "Provides a mechanism to list existing vouchers, including their claim status and claimant details, via a GET request to `/vouchers`. [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+      "interaction_120": "Authenticates external systems using a Bearer token. [Source: app/controllers/bridges/transpipe/courses_controller.rb]",
+      "interaction_121": "Provides paginated lists of courses and detailed course information, including sections, videos within sections, and teacher details. [Source: app/controllers/bridges/transpipe/courses_controller.rb]",
+      "interaction_122": "Offers detailed video information, including stream URLs (HD, SD, HLS for lecturer, PiP, and slides) and available subtitle languages. [Source: app/controllers/bridges/transpipe/courses_controller.rb]",
+      "interaction_123": "Enables retrieval (GET) and updating (PATCH) of video subtitles in WEBVTT format for specific languages. [Source: app/controllers/bridges/transpipe/subtitles_controller.rb]",
+      "interaction_124": "Used by Chatbot API controllers to issue and validate user-specific Paseto tokens.",
+      "interaction_125": "Utilizes application secrets for private key and configuration for public keys.",
+      "interaction_126": "Inherited by concrete Bridge API controllers (e.g., Chatbot, Shop, TransPipe controllers).",
+      "interaction_127": "Included in Bridge API controllers to secure endpoints requiring bearer token authentication.",
+      "interaction_128": "Interacts with `TokenSigning` for issuing and verifying user-specific Paseto tokens.",
+      "interaction_129": "Likely interacts with the 'Account' microservice for user data and 'Course' microservice for course and enrollment data.",
+      "interaction_130": "Communicates with external chatbot systems.",
+      "interaction_131": "Likely interacts with the 'Course' microservice for course data.",
+      "interaction_132": "Communicates with external MOOChub systems.",
+      "interaction_133": "Likely interacts with a 'Voucher' or 'Payment' domain within the application to manage voucher lifecycle.",
+      "interaction_134": "Communicates with external shop systems.",
+      "interaction_135": "Likely interacts with 'Course' and 'Video' models/services to fetch and update data.",
+      "interaction_136": "Communicates with external translation pipeline systems.",
+      "interaction_137": "Receives authenticated HTTP requests from external applications using OAuth 2.0 Bearer Tokens. [Source: app/controllers/portal_api/base_controller.rb]",
+      "interaction_138": "Responds with JSON data, adhering to the HTTP Problem Details specification for errors. [Source: app/controllers/portal_api/base_controller.rb]",
+      "interaction_139": "Performs content negotiation based on the `Accept` header for versioning and media type. [Source: app/controllers/portal_api/base_controller.rb]",
+      "interaction_140": "Routes requests to underlying microservices (e.g., Course Service, Account Service) to fulfill data retrieval and manipulation operations. [Source: app/controllers/portal_api/base_controller.rb, config/routes.rb]",
+      "interaction_141": "Exposes `GET /courses` to retrieve a paginated list of courses. [Source: app/controllers/portal_api/courses_controller.rb]",
+      "interaction_142": "Exposes `GET /courses/{id}` to retrieve a single course by its unique identifier. [Source: app/controllers/portal_api/courses_controller.rb]",
+      "interaction_143": "Requires `Accept` header for versioning (e.g., `application/vnd.openhpi.list+json;v=1.1`). [Source: app/controllers/portal_api/base_controller.rb]",
+      "interaction_144": "Exposes `PATCH /users/{id}` to update user attributes such as email, full_name, display_name, born_at, language, and avatar. [Source: app/controllers/portal_api/users_controller.rb]",
+      "interaction_145": "Exposes `DELETE /users/{id}` to remove a user account. [Source: app/controllers/portal_api/users_controller.rb]",
+      "interaction_146": "Requires `Accept` header for versioning (e.g., `application/vnd.openhpi.user+json;v=1.0`). [Source: app/controllers/portal_api/base_controller.rb]",
+      "interaction_147": "Exposes `GET /enrollments` to retrieve all enrollments for a given user, with optional filtering by `course_id`. [Source: app/controllers/portal_api/enrollments_controller.rb]",
+      "interaction_148": "Exposes `POST /enrollments` to create a new enrollment for a user in a specified course, requiring `user_id` and `course_id`. [Source: app/controllers/portal_api/enrollments_controller.rb]",
+      "interaction_149": "Returns a `409 Conflict` if an enrollment for the given user and course already exists during a `POST` request. [Source: app/controllers/portal_api/enrollments_controller.rb]",
+      "interaction_150": "Requires `Accept` header for versioning (e.g., `application/vnd.openhpi.enrollments+json;v=1.0`). [Source: app/controllers/portal_api/base_controller.rb]"
+    },
+    "technicalDebt": [
+      "Managing backwards compatibility and deprecation of API versions to ensure smooth transitions for mobile clients. [Source: api/xikolo/versioning/middleware.rb]",
+      "Ensuring consistent data transformation and serialization across numerous endpoints and backend services. [Source: api/xikolo/endpoint/collection_endpoint.rb]",
+      "Complexity in managing `reading` and `writing` transformations for attributes, requiring careful implementation for reversibility and consistency. [Source: api/xikolo/endpoint/collection_endpoint.rb]",
+      "Ensuring that `alias_for` and `map` configurations correctly handle data mapping between API and service representations. [Source: api/xikolo/endpoint/collection_endpoint.rb]",
+      "Managing a growing number of distinct API entry points and ensuring consistent security, logging, and performance monitoring across all of them. [Source: config/routes.rb]",
+      "Potential for route conflicts or overlapping responsibilities if not carefully managed. [Source: config/routes.rb]",
+      "Ensuring the changelog is consistently updated and accurately reflects all API modifications. [Source: api/CHANGELOG.md]",
+      "The `api/CHANGELOG.md` indicates frequent changes, deprecations, and removals, suggesting a need for careful client management and potential for breaking changes if not handled correctly. [Source: api/CHANGELOG.md]",
+      "The \"beta\" designation suggests it might still be under active development or subject to more frequent changes. [Source: config/routes.rb]",
+      "The diverse nature of these bridges suggests potential for inconsistent API design or authentication mechanisms across sub-modules if not carefully managed.",
+      "The current implementation uses a `token.call` which implies a dynamic token, but the comparison `controller.request.headers['HTTP_AUTHORIZATION'] != \"Bearer #{@token.call}\"` suggests a simple string comparison, which might not be robust enough for complex token types (e.g., JWT, PASETO) without further processing. It expects the exact \"Bearer <token>\" string. [Source: lib/xi/controllers/require_bearer_token.rb]",
+      "The `config/routes.rb` file is very large and contains a mix of public web routes, admin routes, and multiple API definitions. This can make it difficult to manage and understand the routing logic, potentially leading to conflicts or unintended exposures. The use of `pinboard_routes` as a `def` block is a minor attempt at modularity but doesn't fully address the complexity. [Source: config/routes.rb]",
+      "Ensure all new bridge API controllers consistently inherit from this base controller and adhere to its conventions.",
+      "Verify consistent application of this concern across all bridge API controllers to maintain a uniform security posture.",
+      "Ensure comprehensive API documentation (OpenAPI) is kept up-to-date with any changes to endpoints or data models.",
+      "Monitor performance and scalability, especially for endpoints that retrieve large lists of courses or achievements.",
+      "Ensure robust validation for voucher creation parameters (e.g., `qty`, `product`, `country`).",
+      "Implement proper logging and monitoring for voucher creation and claiming to track usage and potential abuse.",
+      "Ensure the external MOOChub Schema repository is actively maintained and its specifications are correctly implemented.",
+      "Clarify internal implementation details and data mapping between Xikolo courses and MOOChub schema.",
+      "Ensure subtitle validation is robust to prevent malformed VTT files from being stored.",
+      "Monitor the performance of video and subtitle retrieval, especially for large courses or frequent requests.",
+      "Document the purpose, endpoints, and data models for the Lanalytics bridge API.",
+      "Implement the API according to best practices for bridge APIs, including authentication and error handling.",
+      "The PATCH /users/{id} endpoint returns a 200 OK status even if the user resource was not fully updated due to malformed values or internal errors, requiring the client to explicitly check if changes were applied. This can lead to client-side complexity and potential for unnoticed data inconsistencies.",
+      "The 'Legacy' in its name suggests it might be a candidate for deprecation or replacement with a more modern authentication standard.",
+      "The generic `rescue TypeError` for template parsing could be made more specific or include logging to provide better diagnostics in case of malformed templates. [Source: app/lib/transpipe.rb]",
+      "Specific implementation details and potential technical debt cannot be assessed due to the absence of direct code for controllers and services.",
+      "Rate limiting mechanism is currently marked as 'TODO'. [Source: app/controllers/portal_api/base_controller.rb]",
+      "The `PATCH /users/{id}` endpoint returns a `200 OK` even if the user resource was not fully updated, requiring the client to explicitly check if changes were applied. [Source: app/controllers/portal_api/users_controller.rb]"
+    ]
+  }
+}

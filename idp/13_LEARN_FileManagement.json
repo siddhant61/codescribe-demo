@@ -1,0 +1,416 @@
+{
+  "clusterId": "13_LEARN_FileManagement",
+  "featureFocus": "File Uploads and S3 Integration",
+  "documentationReport": "{\n  \"title\": \"File Uploads & S3 Storage Integration\",\n  \"introduction\": \"This documentation report details the comprehensive file upload mechanism integrated across the software cluster, primarily leveraging direct uploads to Amazon S3 via pre-signed URLs. This architectural choice significantly offloads file transfer from application servers, thereby enhancing performance and scalability. A core principle dictates that 'each service manages its file themselves,' encompassing organization, tracking, metadata, deletion, and providing access URLs. The system unifies frontend components like Dropzone.js with a Ruby on Rails backend and the specialized `xikolo-s3` gem for robust S3 interaction.\",\n  \"sections\": [\n    {\n      \"title\": \"1. System Architecture and Workflow\",\n      \"content\": \"The file upload workflow is designed for efficiency and security. Users initiate uploads from the frontend, which directly sends files to a temporary S3 bucket using pre-signed URLs. Upon successful direct upload, the frontend updates hidden form fields with file references (either an upload ID or an S3 URI) and submits these to the backend. The backend then validates the uploaded file's metadata and, if valid, copies it to its final, permanent S3 location within the service's dedicated storage space. File deletion is handled asynchronously.\"\n    },\n    {\n      \"title\": \"2. Frontend Implementation\",\n      \"content\": \"Client-side file uploads are primarily managed by the `Dropzone.js` library. Specific behaviors for different upload types are provided by dedicated JavaScript modules:\\n\\n*   `image-upload.js`: Handles image-specific uploads, including client-side validation for image dimensions.\\n*   `upload.js`: Manages general file uploads.\\n*   `mdupload.js`: An additional module contributing to the upload functionality within the cluster.\\n\\nThese modules initialize `Dropzone` instances on HTML elements marked with `data-imageupload` or `data-upload` attributes. When a user selects a file, the JavaScript intercepts the upload, appends S3-specific metadata (such as `key`, `Content-Type`, and `x-amz-meta-*` headers) obtained from `data-s3` attributes, and sends the file directly to S3. Upon successful upload, hidden form fields (`upload_id`, `uri`, `deletion`) are updated with the new file's reference, which is then submitted to the backend. The frontend also displays previously uploaded files and provides functionality to remove them. When a file is removed from the `Dropzone` area, a `DELETE` request is sent to the S3 URL to remove the temporary file.\"\n    },\n    {\n      \"title\": \"3. Backend Integration (Ruby on Rails)\",\n      \"content\": \"On the Rails side, `SimpleForm` inputs, specifically `ImageUploadInput` and `UploadInput`, are responsible for rendering the necessary HTML structure and `data` attributes that configure the `Dropzone.js` instances. These inputs utilize an inferred `FileUpload` class (likely from the `xikolo-s3` gem or `xikolo-common`) to generate the S3 pre-signed URL (`value.url`), S3 fields for direct upload (`value.fields`), content type, and size/extension filters. The `data-s3` attribute, crucial for frontend operation, contains a JSON payload with S3 upload parameters, including the `key` (S3 object path prefix) and `content_type`. Hidden fields like `_upload_id` and `_uri` are rendered to pass the file reference back to the Rails controller for processing.\"\n    },\n    {\n      \"title\": \"4. S3 Integration (`xikolo-s3` Gem)\",\n      \"content\": \"The `xikolo-s3` gem provides high-level methods for interacting with S3, abstracting away direct AWS SDK calls and handling S3 client instantiation and configuration. Key principles and features include:\\n\\n*   **File References:** S3 files are referenced as S3 URIs (e.g., `s3://${bucket}/${key}`). Database columns storing these references should consistently end with a `_uri` suffix.\\n*   **Upload Workflow:** Files are initially uploaded to a temporary S3 bucket. The frontend passes a reference (either an upload ID or a file URI) to the backend service. The service then validates the upload (checking metadata like `xikolo-state` and `xikolo-purpose`) and copies the file to its final, permanent location within its dedicated S3 space.\\n*   **Metadata:** Critical metadata fields used for validation and preventing misuse include `xikolo-state` (which must be `accepted` for processing) and `xikolo-purpose` (e.g., `service_identifier/resource_name/field_name`).\\n*   **Upload Contracts:**\\n    *   `SingleFileUpload` (Upload by ID): An older approach where an `upload_id` references a temporary bucket. It searches for accepted files within `uploads/UUID` and returns an `Aws::S3::Object`.\\n    *   `UploadByUri`: The recommended newer approach where the API field directly receives an S3 URI (e.g., `upload://UUID/filename.pdf`).\\n*   **Markup with File References:** The `Xikolo::S3::TextWithUploadsProcessor` class assists services in managing files embedded within rich text fields. It handles diffing file references, committing new files, rolling back unused uploads, and identifying obsolete URIs for deletion.\"\n    },\n    {\n      \"title\": \"5. Asynchronous Deletion\",\n      \"content\": \"File deletion is handled asynchronously by the `S3FileDeletionJob`. This `ApplicationJob` utilizes `Xikolo::S3.object(uri).delete` to remove files from S3. It is queued with `queue_as :default` and `queue_with_priority :eventual`, and includes robust error handling for invalid URIs and S3 service errors, reporting them to Mnemosyne and Sentry.\"\n    },\n    {\n      \"title\": \"6. Technical Debt & Considerations\",\n      \"content\": \"Several areas have been identified for potential improvement or represent technical debt:\\n\\n*   **`SingleFileUpload` vs. `UploadByUri`:** The documentation explicitly states that `SingleFileUpload` has drawbacks and `UploadByUri` should be used for new implementations. This suggests that existing uses of `SingleFileUpload` might represent technical debt or a legacy pattern requiring migration.\\n*   **Frontend Dropzone Import:** The `image-upload.js` file contains a `Todo` comment regarding `Dropzone` import, indicating a potential build or linter configuration inconsistency that should be addressed.\\n*   **Global DOM Lookups:** The `image-upload.js` uses global `document.getElementById` and `document.getElementsByName` for hidden input fields (`upload_id`, `uri`, `deletion`). This approach could lead to conflicts or unexpected behavior if multiple image upload components are present on a single page without careful management of unique IDs.\\n*   **`UploadInput` Field Name Workaround:** The `field_name` method in `UploadInput` mentions a workaround, suggesting an underlying issue or a specific implementation detail that warrants further investigation or clarification.\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "ImageUploadInput": {
+        "type": "SimpleForm Input",
+        "description": "A custom SimpleForm input for rendering the image upload Dropzone UI. It generates the necessary HTML structure, including hidden fields for upload state and `data` attributes for frontend JavaScript configuration.",
+        "interactions": {
+          "interaction_0": "Renders HTML for the image upload `Dropzone` and associated hidden fields (`upload_id`, `uri`, `deletion`).",
+          "interaction_1": "Populates `data` attributes (`imageupload`, `upload_id`, `s3`, `max-filesize`, `error-size`, `error-type`) for `image-upload.js`.",
+          "interaction_2": "Utilizes `FileUpload` to generate S3 presigned post parameters.",
+          "interaction_3": "Retrieves existing image URLs from the associated model."
+        },
+        "techDebt": [
+          "Uses both `_upload_id` and `_uri` suffixes for hidden fields for backward compatibility, which could be simplified if `_uri` was consistently used as the primary identifier. [Source: app/inputs/image_upload_input.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/inputs/image_upload_input.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 25,
+              "code": "class ImageUploadInput < SimpleForm::Inputs::Base   enable :label, :errors, :hint, :required, :placeholder    def input(opts = {})     template.capture do       template.tag.div(class: 'xui-imageupload', data:) do         # For now, we need both params, {attribute_name}_upload_id and {attribute_name}_uri, to be backward compatible         template.concat @builder.hidden_field(           field_name,           opts.merge(value: value.id, id: 'upload_id', autocomplete: 'off', disabled: true)         )         template.concat @builder.hidden_field(           \"#{attribute_name}_uri\",           opts.merge(id: 'uri', value: nil, autocomplete: 'off', disabled: true)         )         template.concat @builder.hidden_field(           \"delete_#{attribute_name}\",           {id: 'deletion', value: true, autocomplete: 'off', disabled: true}         )         template.concat current_image         template.concat dropzone       end     end   end",
+              "source": "app/inputs/image_upload_input.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/inputs/image_upload_input.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "UploadInput": {
+        "type": "SimpleForm Input",
+        "description": "A custom SimpleForm input for rendering a general file upload Dropzone UI. It generates the HTML structure and `data` attributes for frontend JavaScript configuration.",
+        "interactions": {
+          "interaction_0": "Renders HTML for the general file upload `Dropzone` and a hidden field (`attribute_name_upload_id`).",
+          "interaction_1": "Populates `data` attributes (`upload`, `s3`, `max-filesize`, `error-size`, `error-type`) for `upload.js`.",
+          "interaction_2": "Utilizes `FileUpload` to generate S3 presigned post parameters."
+        },
+        "techDebt": [
+          "The `field_name` method includes a workaround for `_uri` suffix to allow error handling, suggesting an inconsistency in how file references are named in models. [Source: app/inputs/upload_input.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/inputs/upload_input.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 14,
+              "code": "class UploadInput < SimpleForm::Inputs::Base\n  enable :label, :errors, :hint, :required, :placeholder\n\n  def input(opts = {})\n    template.capture do\n      template.tag.div(class: 'xui-upload', data:) do\n        template.concat @builder.hidden_field(field_name, opts.merge({value: value.id, id: nil}))\n        template.concat dropzone\n        template.concat input_options.delete(:extra_html) if input_options.key? :extra_html\n      end\n    end\n  end",
+              "source": "app/inputs/upload_input.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 25,
+              "code": "  def value\n    @value ||= options.fetch(:value) do\n      next column.upload if column.respond_to? :upload\n\n      @builder.object.send attribute_name\n    end\n  end",
+              "source": "app/inputs/upload_input.rb"
+            },
+            {
+              "startLine": 27,
+              "endLine": 31,
+              "code": "  def dropzone\n    template.tag.div(class: 'xui-upload-zone xui-upload-target') do\n      template.tag.div(dropzone_placeholder, class: 'dz-message')\n    end\n  end",
+              "source": "app/inputs/upload_input.rb"
+            },
+            {
+              "startLine": 33,
+              "endLine": 37,
+              "code": "  def field_name\n    if attribute_name.to_s.end_with?('_uri')\n      # This is a workaround letting us add errors to the form field\n      # (since the actual attribute on the mod...",
+              "source": "app/inputs/upload_input.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/inputs/upload_input.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "image-upload.js": {
+        "type": "Frontend Module",
+        "description": "Attaches Dropzone.js behavior specifically for single image uploads. It handles client-side image resizing/cropping, displays existing images, and manages the state of image deletion.",
+        "interactions": {
+          "interaction_0": "Initializes `Dropzone.js` on elements with `data-imageupload`.",
+          "interaction_1": "Reads S3 configuration (URL, key, content type, image dimensions) from HTML `data` attributes.",
+          "interaction_2": "Updates hidden form fields (`upload_id`, `uri`, `deletion`) to communicate upload status to the Rails backend.",
+          "interaction_3": "Sends `DELETE` requests to S3 when a file is removed from the dropzone.",
+          "interaction_4": "Uses `util/sanitize` for filenames and `i18n/i18n` for localized messages."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/util/forms/image-upload.js",
+            "app/assets/stylesheets/xui/imageupload.scss"
+          ]
+        }
+      },
+      "upload.js": {
+        "type": "Frontend Module",
+        "description": "Provides general-purpose Dropzone.js behavior for single file uploads, including progress tracking and deletion.",
+        "interactions": {
+          "interaction_0": "Initializes `Dropzone.js` on elements with `data-upload`.",
+          "interaction_1": "Reads S3 configuration from HTML `data` attributes.",
+          "interaction_2": "Updates a hidden form field (`attribute_name_upload_id`) to communicate upload status to the Rails backend.",
+          "interaction_3": "Sends `DELETE` requests to S3 when a file is removed from the dropzone.",
+          "interaction_4": "Uses `util/sanitize` for filenames."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/util/forms/upload.js",
+            "app/assets/stylesheets/xui/upload.scss"
+          ]
+        }
+      },
+      "S3FileDeletionJob": {
+        "type": "ActiveJob",
+        "description": "An asynchronous job responsible for deleting files from S3. It uses the `xikolo-s3` gem to interact with S3 and includes robust error handling.",
+        "interactions": {
+          "interaction_0": "Receives an S3 URI as an argument. [Source: app/jobs/s3_file_deletion_job.rb]",
+          "interaction_1": "Calls `Xikolo::S3.object(uri).delete` to remove the file from S3. [Source: app/jobs/s3_file_deletion_job.rb]",
+          "interaction_2": "Reports errors to Mnemosyne and Sentry. [Source: app/jobs/s3_file_deletion_job.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/jobs/s3_file_deletion_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 14,
+              "code": "class S3FileDeletionJob < ApplicationJob   queue_as :default   queue_with_priority :eventual    def perform(uri)     Xikolo::S3.object(uri).delete if uri.present?   rescue URI::InvalidURIError, ArgumentError     # No valid URI, no deletion   rescue Aws::S3::Errors::ServiceError => e     ::Mnemosyne.attach_error(e)     ::Sentry.capture_exception(e)   end end",
+              "source": "app/jobs/s3_file_deletion_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Xikolo::S3": {
+        "type": "Gem/Library",
+        "description": "A helper gem that provides common S3 file operations, client instantiation, and configuration. It defines principles around file handling, including metadata fields like `xikolo-state` and `xikolo-purpose` for upload validation and processing.",
+        "interactions": {
+          "interaction_0": "Provides `bucket_for(:uploads)` method used by `FileUpload` to get an S3 bucket instance.",
+          "interaction_1": "Defines the `xikolo-purpose` and `xikolo-state` metadata fields, which are set by `FileUpload` during presigning and used by backend services for validation. [Source: gems/xikolo-s3/README.md]",
+          "interaction_2": "Mentions `SingleFileUpload` (upload by ID) and `UploadByUri` as upload contracts, guiding how services should interact with uploaded files. [Source: gems/xikolo-s3/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-s3/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 33,
+              "code": "module Xikolo   module S3     class << self       def bucket_for(name)         configured_name = bucket_config[name.to_s]         if configured_name.blank?           raise ArgumentError.new \\             \"Configure the #{name} bucket in Xikolo.config.s3['buckets']!\"         end         resource.bucket configured_name       end        def object(uri)         parsed = URI.parse uri         unless parsed.scheme == 's3'           raise \"unknown storage schema in uri: #{uri}\"         end          resource.bucket(parsed.host).object(parsed.path[1..].to_s)       end        def resource         @resource ||= Aws::S3::Resource.new \\           client: (Aws::S3::Client.new(client_config).tap do |client|             client.handlers.add(Seahorse::MnemosyneHandler, step: :build) if defined?(::Mnemosyne)           end)       end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 7,
+              "endLine": 14,
+              "code": "  def perform(uri)     Xikolo::S3.object(uri).delete if uri.present?   rescue URI::InvalidURIError, ArgumentError     # No valid URI, no deletion   rescue Aws::S3::Errors::ServiceError => e     ::Mnemosyne.attach_error(e)     ::Sentry.capture_exception(e)   end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 42,
+              "code": "module Xikolo   module S3     class Markup < ActiveModel::Type::Value       attr_reader :uploads        def initialize(uploads: nil)         @uploads = uploads         super()       end        def type         :xikolo_s3_markup       end        def cast_value(value)         Field.new(value)       end        def serialize(value)         value.to_s.presence       end        class Field         def initialize(markup)           @markup = markup         end          def file_refs           S3.extract_file_refs(@markup)         end          def url_mapping           media_refs[:url_mapping]         end          def other_files           media_refs[:other_files]         end          def external           @external ||= Xikolo::S3.externalize_file_refs(@markup, public: true)         end          def to_s           @markup         end          def to_hash           {             'markup' => @markup,             'url_mapping' => url_mapping,...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 30
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "FileUpload": {
+        "type": "Service Object",
+        "description": "Generates presigned URLs and fields for direct file uploads to S3. It encapsulates the logic for configuring S3 upload parameters, including purpose, content type, size, and image dimensions, and adds necessary metadata.",
+        "interactions": {
+          "interaction_0": "Initialized by `ImageUploadInput` and `UploadInput` with upload-specific parameters.",
+          "interaction_1": "Interacts with `Xikolo::S3.bucket_for(:uploads)` to obtain an S3 bucket instance.",
+          "interaction_2": "Generates an `Aws::S3::PresignedPost` with configured `key_starts_with`, `acl`, `signature_expiration`, and metadata (`xikolo-purpose`, `xikolo-state`, `image-target-height/width`).",
+          "interaction_3": "Provides `url` and `fields` methods for frontend consumption.",
+          "interaction_4": "Maps MIME types to file extensions for validation via `extension_filter`."
+        },
+        "techDebt": [
+          "The current implementation aligns with the 'Upload by id (SingleFileUpload)' approach described in `xikolo-s3` documentation, which is noted to have 'drawbacks' and `UploadByUri` is preferred for new implementations. This indicates a potential for future refactoring or migration. [Source: lib/file_upload.rb, gems/xikolo-s3/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "lib/file_upload.rb",
+            "gems/xikolo-s3/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.8,
+          "codeBlocks": [
+            {
+              "startLine": 16,
+              "endLine": 19,
+              "code": "class FileUpload\n  attr_reader :id, :content_type, :size\n\n  de...",
+              "source": "lib/file_upload.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/file_upload.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Dropzone.js": {
+        "type": "Library",
+        "description": "A client-side JavaScript library used for handling drag-and-drop file uploads, displaying file previews, and managing upload progress. It is the foundational UI component for all file upload features.",
+        "interactions": {
+          "interaction_0": "Initialized by `image-upload.js`, `mdupload.js`, and `upload.js` to attach file upload behavior to HTML elements.",
+          "interaction_1": "Sends files directly to S3 using presigned URLs and fields provided by the backend."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/util/forms/image-upload.js",
+            "app/assets/util/forms/mdupload.js",
+            "app/assets/util/forms/upload.js"
+          ]
+        }
+      },
+      "mdupload.js": {
+        "type": "Frontend Module",
+        "description": "Attaches Dropzone.js behavior for file uploads within markdown editors. It dispatches events to the editor to insert links to uploaded files.",
+        "interactions": {
+          "interaction_0": "Initializes `Dropzone.js` on elements with `data-mdupload`.",
+          "interaction_1": "Reads S3 configuration from HTML `data` attributes.",
+          "interaction_2": "On successful upload, dispatches a `markdownEditor::addLink` custom event to the markdown editor widget, providing an internal URI for the uploaded file.",
+          "interaction_3": "For older markdown editors, updates `textArea.xiUrlMapping` with internal to external URL mappings.",
+          "interaction_4": "Uses `util/sanitize` for filenames."
+        },
+        "techDebt": [
+          "Does not explicitly handle file deletion from S3 on `removedfile` event, implying reliance on backend `TextWithUploadsProcessor` for cleanup. This could lead to orphaned files if the backend process fails or is not correctly implemented for all scenarios. [Source: app/assets/util/forms/mdupload.js, gems/xikolo-s3/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/assets/util/forms/mdupload.js",
+            "app/assets/stylesheets/xui/mdupload.scss"
+          ]
+        }
+      },
+      "xui/imageupload.scss": {
+        "type": "Stylesheet",
+        "description": "Provides specific styling for the image upload Dropzone component, including layout, preview dimensions, and clear button positioning.",
+        "interactions": {
+          "interaction_0": "Applies visual styles to the HTML elements rendered by `ImageUploadInput` and manipulated by `image-upload.js`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/stylesheets/xui/imageupload.scss"
+          ]
+        }
+      },
+      "xui/mdupload.scss": {
+        "type": "Stylesheet",
+        "description": "Provides styling for the markdown editor upload Dropzone, defining its layout relative to the editor.",
+        "interactions": {
+          "interaction_0": "Applies visual styles to the HTML elements rendered for markdown uploads and managed by `mdupload.js`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/stylesheets/xui/mdupload.scss"
+          ]
+        }
+      },
+      "xui/upload.scss": {
+        "type": "Stylesheet",
+        "description": "Provides general styling for Dropzone components, including drag-hover effects, progress bars, and action buttons.",
+        "interactions": {
+          "interaction_0": "Applies visual styles to the HTML elements rendered by `UploadInput` and manipulated by `upload.js`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/stylesheets/xui/upload.scss"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Renders HTML for `image-upload.js` to initialize Dropzone.js. [Source: app/inputs/image_upload_input.rb]",
+      "interaction_1": "Uses `FileUpload` to obtain S3 upload parameters (URL, fields, content type, size/extension filters). [Source: app/inputs/image_upload_input.rb]",
+      "interaction_2": "Communicates existing image URLs to the frontend via a hidden input. [Source: app/inputs/image_upload_input.rb]",
+      "interaction_3": "Generates hidden fields (`_upload_id`, `_uri`, `delete_attribute_name`) for backend processing. [Source: app/inputs/image_upload_input.rb]",
+      "interaction_4": "Renders HTML for `upload.js` to initialize Dropzone.js. [Source: app/inputs/upload_input.rb]",
+      "interaction_5": "Uses `FileUpload` to obtain S3 upload parameters (URL, fields, content type, size/extension filters). [Source: app/inputs/upload_input.rb]",
+      "interaction_6": "Generates a hidden field (`_upload_id`) for backend processing. [Source: app/inputs/upload_input.rb]",
+      "interaction_7": "Initializes and configures `Dropzone.js` on elements with `data-imageupload`. [Source: app/assets/util/forms/image-upload.js]",
+      "interaction_8": "Reads S3 upload parameters (URL, key, content type, metadata) from `data-s3` attribute. [Source: app/assets/util/forms/image-upload.js]",
+      "interaction_9": "Directly uploads files to S3 using pre-signed URLs. [Source: app/assets/util/forms/image-upload.js]",
+      "interaction_10": "Performs client-side image dimension validation. [Source: app/assets/util/forms/image-upload.js]",
+      "interaction_11": "Updates hidden input fields (`upload_id`, `uri`, `deletion`) to reflect upload state for backend processing. [Source: app/assets/util/forms/image-upload.js]",
+      "interaction_12": "Sends `DELETE` requests to S3 when a file is removed from the Dropzone. [Source: app/assets/util/forms/image-upload.js]",
+      "interaction_13": "Interacts with `I18n` for localized messages. [Source: app/assets/util/forms/image-upload.js]",
+      "interaction_14": "Initializes and configures `Dropzone.js` on elements with `data-upload`. [Source: app/assets/util/forms/upload.js]",
+      "interaction_15": "Reads S3 upload parameters (URL, key, content type, metadata) from `data-s3` attribute. [Source: app/assets/util/forms/upload.js]",
+      "interaction_16": "Directly uploads files to S3 using pre-signed URLs. [Source: app/assets/util/forms/upload.js]",
+      "interaction_17": "Performs client-side image dimension validation (if applicable). [Source: app/assets/util/forms/upload.js]",
+      "interaction_18": "Sends `DELETE` requests to S3 when a file is removed from the Dropzone. [Source: app/assets/util/forms/upload.js]",
+      "interaction_19": "Receives an S3 URI as an argument. [Source: app/jobs/s3_file_deletion_job.rb]",
+      "interaction_20": "Calls `Xikolo::S3.object(uri).delete` to remove the file from S3. [Source: app/jobs/s3_file_deletion_job.rb]",
+      "interaction_21": "Reports errors to Mnemosyne and Sentry. [Source: app/jobs/s3_file_deletion_job.rb]",
+      "interaction_22": "Provides `Xikolo::S3.bucket_for(purpose)` to get an `Aws::S3::Bucket` instance. [Source: gems/xikolo-s3/README.md]",
+      "interaction_23": "Provides `Xikolo::S3.object(uri)` to get an `Aws::S3::Object` instance. [Source: gems/xikolo-s3/README.md]",
+      "interaction_24": "Defines `SingleFileUpload` and `UploadByUri` contracts for processing uploads. [Source: gems/xikolo-s3/README.md]",
+      "interaction_25": "Offers `Xikolo::S3::TextWithUploadsProcessor` for managing files embedded in markup. [Source: gems/xikolo-s3/README.md]",
+      "interaction_26": "Used by `S3FileDeletionJob` for deleting S3 objects. [Source: app/jobs/s3_file_deletion_job.rb]",
+      "interaction_27": "Instantiated by `ImageUploadInput` and `UploadInput` to prepare S3 upload data. [Source: app/inputs/image_upload_input.rb, Source: app/inputs/upload_input.rb]",
+      "interaction_28": "Provides `url`, `id`, `fields`, `prefix`, `content_type`, `size`, `extension_filter` methods. [Source: app/inputs/image_upload_input.rb, Source: app/inputs/upload_input.rb]",
+      "interaction_29": "Initialized and configured by `image-upload.js` and `upload.js`. [Source: app/assets/util/forms/image-upload.js, Source: app/assets/util/forms/upload.js]",
+      "interaction_30": "Manages file selection, preview, progress, and error display. [Source: app/assets/util/forms/image-upload.js, Source: app/assets/util/forms/upload.js]",
+      "interaction_31": "Performs direct HTTP POST requests to S3 with appended form data. [Source: app/assets/util/forms/image-upload.js, Source: app/assets/util/forms/upload.js]",
+      "interaction_32": "Initialized by `image-upload.js`, `mdupload.js`, and `upload.js` to attach file upload behavior to HTML elements.",
+      "interaction_33": "Sends files directly to S3 using presigned URLs and fields provided by the backend.",
+      "interaction_34": "Initializes `Dropzone.js` on elements with `data-imageupload`.",
+      "interaction_35": "Reads S3 configuration (URL, key, content type, image dimensions) from HTML `data` attributes.",
+      "interaction_36": "Updates hidden form fields (`upload_id`, `uri`, `deletion`) to communicate upload status to the Rails backend.",
+      "interaction_37": "Sends `DELETE` requests to S3 when a file is removed from the dropzone.",
+      "interaction_38": "Uses `util/sanitize` for filenames and `i18n/i18n` for localized messages.",
+      "interaction_39": "Initializes `Dropzone.js` on elements with `data-mdupload`.",
+      "interaction_40": "Reads S3 configuration from HTML `data` attributes.",
+      "interaction_41": "On successful upload, dispatches a `markdownEditor::addLink` custom event to the markdown editor widget, providing an internal URI for the uploaded file.",
+      "interaction_42": "For older markdown editors, updates `textArea.xiUrlMapping` with internal to external URL mappings.",
+      "interaction_43": "Uses `util/sanitize` for filenames.",
+      "interaction_44": "Initializes `Dropzone.js` on elements with `data-upload`.",
+      "interaction_45": "Reads S3 configuration from HTML `data` attributes.",
+      "interaction_46": "Updates a hidden form field (`attribute_name_upload_id`) to communicate upload status to the Rails backend.",
+      "interaction_47": "Sends `DELETE` requests to S3 when a file is removed from the dropzone.",
+      "interaction_48": "Uses `util/sanitize` for filenames.",
+      "interaction_49": "Renders HTML for the image upload `Dropzone` and associated hidden fields (`upload_id`, `uri`, `deletion`).",
+      "interaction_50": "Populates `data` attributes (`imageupload`, `upload_id`, `s3`, `max-filesize`, `error-size`, `error-type`) for `image-upload.js`.",
+      "interaction_51": "Utilizes `FileUpload` to generate S3 presigned post parameters.",
+      "interaction_52": "Retrieves existing image URLs from the associated model.",
+      "interaction_53": "Renders HTML for the general file upload `Dropzone` and a hidden field (`attribute_name_upload_id`).",
+      "interaction_54": "Populates `data` attributes (`upload`, `s3`, `max-filesize`, `error-size`, `error-type`) for `upload.js`.",
+      "interaction_55": "Utilizes `FileUpload` to generate S3 presigned post parameters.",
+      "interaction_56": "Initialized by `ImageUploadInput` and `UploadInput` with upload-specific parameters.",
+      "interaction_57": "Interacts with `Xikolo::S3.bucket_for(:uploads)` to obtain an S3 bucket instance.",
+      "interaction_58": "Generates an `Aws::S3::PresignedPost` with configured `key_starts_with`, `acl`, `signature_expiration`, and metadata (`xikolo-purpose`, `xikolo-state`, `image-target-height/width`).",
+      "interaction_59": "Provides `url` and `fields` methods for frontend consumption.",
+      "interaction_60": "Maps MIME types to file extensions for validation via `extension_filter`.",
+      "interaction_61": "Provides `bucket_for(:uploads)` method used by `FileUpload` to get an S3 bucket instance.",
+      "interaction_62": "Defines the `xikolo-purpose` and `xikolo-state` metadata fields, which are set by `FileUpload` during presigning and used by backend services for validation. [Source: gems/xikolo-s3/README.md]",
+      "interaction_63": "Mentions `SingleFileUpload` (upload by ID) and `UploadByUri` as upload contracts, guiding how services should interact with uploaded files. [Source: gems/xikolo-s3/README.md]",
+      "interaction_64": "Applies visual styles to the HTML elements rendered by `ImageUploadInput` and manipulated by `image-upload.js`.",
+      "interaction_65": "Applies visual styles to the HTML elements rendered for markdown uploads and managed by `mdupload.js`.",
+      "interaction_66": "Applies visual styles to the HTML elements rendered by `UploadInput` and manipulated by `upload.js`."
+    },
+    "technicalDebt": [
+      "The `field_name` method includes a 'workaround' for adding errors to the form field, suggesting a less-than-ideal solution for form error handling. [Source: app/inputs/upload_input.rb]",
+      "Contains a `Todo` comment about `Dropzone` import, indicating a potential build/linter configuration issue. [Source: app/assets/util/forms/image-upload.js]",
+      "Uses global `document.getElementById` and `document.getElementsByName` for hidden input fields, which can lead to conflicts if multiple components are on the same page without unique IDs. [Source: app/assets/util/forms/image-upload.js]",
+      "The `SingleFileUpload` approach is noted as having drawbacks, with `UploadByUri` recommended for new implementations, indicating potential legacy code. [Source: gems/xikolo-s3/README.md]",
+      "Does not explicitly handle file deletion from S3 on `removedfile` event, implying reliance on backend `TextWithUploadsProcessor` for cleanup. This could lead to orphaned files if the backend process fails or is not correctly implemented for all scenarios. [Source: app/assets/util/forms/mdupload.js, gems/xikolo-s3/README.md]",
+      "Uses both `_upload_id` and `_uri` suffixes for hidden fields for backward compatibility, which could be simplified if `_uri` was consistently used as the primary identifier. [Source: app/inputs/image_upload_input.rb]",
+      "The `field_name` method includes a workaround for `_uri` suffix to allow error handling, suggesting an inconsistency in how file references are named in models. [Source: app/inputs/upload_input.rb]",
+      "The current implementation aligns with the 'Upload by id (SingleFileUpload)' approach described in `xikolo-s3` documentation, which is noted to have 'drawbacks' and `UploadByUri` is preferred for new implementations. This indicates a potential for future refactoring or migration. [Source: lib/file_upload.rb, gems/xikolo-s3/README.md]"
+    ]
+  }
+}

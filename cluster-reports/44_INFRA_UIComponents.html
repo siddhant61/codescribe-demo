@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UIComponents standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for UIComponents standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#infra" class="breadcrumb-link">INFRA</a></li>
+            <li class="breadcrumb-item active">UIComponents standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-user-request-and-ui-rendering-workflow" class="sidebar-nav-link">1. User Request and UI Rendering Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-cookie-consent-management-workflow" class="sidebar-nav-link">2. Cookie Consent Management Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-infra">INFRA</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="general-application-logic%2C-shared-helpers%2C-layouts%2C-and-global-ui-elements---technical-documentation" tabindex="-1"><a class="header-anchor" href="#general-application-logic%2C-shared-helpers%2C-layouts%2C-and-global-ui-elements---technical-documentation"><span>General Application Logic, Shared Helpers, Layouts, and Global UI Elements - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the <code>44_INFRA_UIComponents</code> cluster, a foundational domain encompassing the core structure, shared functionalities, and standardized user interface elements for the Xikolo platform. It integrates a hybrid frontend asset management pipeline, robust server-side UI components built with ViewComponent, and essential core application logic housed within various controllers and helpers. The cluster ensures a consistent, maintainable, and extensible user experience by providing a unified approach to styling, form handling, navigation, and client-side interactions, underpinned by strict development tooling and internationalization capabilities.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The architecture of the Xikolo UIComponents cluster is designed for modularity and maintainability, blending Ruby on Rails server-side rendering with modern client-side asset management. At its core, <code>ApplicationController</code> acts as the central hub for all incoming user requests, enforcing global concerns like authentication, authorization, and locale management. User interface elements are primarily composed of <code>ViewComponent</code>s, which encapsulate presentation logic and HTML, rendered by the Rails application. These components are then enhanced and styled by a sophisticated frontend asset pipeline, managed by <code>Webpack</code> and <code>Sprockets</code>, compiling <code>TypeScript</code> and <code>Sass</code> into deployable assets for the <code>UserBrowser</code>. Critical helper modules like <code>ApplicationHelper</code> and <code>MarkdownHelper</code> provide common utilities across the application, interacting with external services and internal models. The entire system communicates with various <code>Xikolo.api</code> microservices for core data and business logic.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph LR
+  userBrowser["User Browser"]
+  railsApp["Rails Application (Controllers, ViewComponents)"]
+  xikoloAPIs["Xikolo Microservices (e.g., Account, Course)"]
+  frontendAssets["Frontend Assets (JS, CSS, Images)"]
+  buildPipeline["Build Pipeline (Webpack, Sprockets)"]
+  dataStore["Data Store (DB, S3)"]
+
+  userBrowser -->|"HTTP Request"| railsApp
+  railsApp -->|"renders HTML + JS/CSS links"| userBrowser
+  userBrowser --o|"fetches assets"| frontendAssets
+  frontendAssets --o|"generated by"| buildPipeline
+  railsApp -->|"calls API"| xikoloAPIs
+  xikoloAPIs -->|"reads/writes"| dataStore
+  railsApp -->|"uses helpers/models"| dataStore
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>ApplicationController:</strong> Includes <code>FeatureTogglesHelper</code> for feature flag checks. [Source: app/controllers/application_controller.rb]</li>
+<li><strong>ApplicationController:</strong> Includes <code>Login</code> module for authentication logic. [Source: app/controllers/application_controller.rb]</li>
+<li><strong>CookieConsentController:</strong> Interacts with <code>ConsentCookie</code> to manage cookie preferences [Source: app/controllers/cookie_consent_controller.rb]</li>
+<li><strong>ErrorsController:</strong> Logs exceptions to <code>::Mnemosyne</code> [Source: app/controllers/errors_controller.rb]</li>
+<li><strong>ErrorsController:</strong> Captures exceptions with <code>Sentry</code> [Source: app/controllers/errors_controller.rb]</li>
+<li><strong>FilesController:</strong> Fetches user data from <code>Xikolo::Account::User</code> [Source: app/controllers/files_controller.rb]</li>
+<li><strong>FilesController:</strong> Uses <code>Imagecrop.transform</code> for image manipulation [Source: app/controllers/files_controller.rb]</li>
+<li><strong>Home::GoController:</strong> Uses <code>Xikolo::Common::Tracking::ExternalLink</code> for safe external redirects [Source: app/controllers/home/go_controller.rb]</li>
+<li><strong>Home::GoController:</strong> Interacts with <code>Xikolo.api(:course)</code> and <code>Xikolo.api(:pinboard)</code> for deep linking [Source: app/controllers/home/go_controller.rb]</li>
+<li><strong>Home::HomeController:</strong> Checks <code>feature?('announcements')</code> and <code>Xikolo.api?(:news)</code> for news integration [Source: app/controllers/home/home_controller.rb]</li>
+<li><strong>Home::HomeController:</strong> Uses <code>Rails.application.config.homepage_course_loader</code>, <code>homepage_topics_loader</code>, <code>homepage_video_loader</code> for dynamic content loading [Source: app/controllers/home/home_controller.rb, RAG: docs/app/development/branding/homepage.md]</li>
+<li><strong>Home::PagesController:</strong> Interacts with the <code>Page</code> model to retrieve page content and translations [Source: app/controllers/home/pages_controller.rb, app/models/page.rb]</li>
+<li><strong>Home::PagesController:</strong> Uses <code>PagePresenter</code> to format page data for views [Source: app/controllers/home/pages_controller.rb]</li>
+<li><strong>IcalController:</strong> Requires <code>ical_feed</code> feature [Source: app/controllers/ical_controller.rb]</li>
+<li><strong>IcalController:</strong> Fetches <code>next_dates</code> from <code>Xikolo.api(:course)</code> [Source: app/controllers/ical_controller.rb]</li>
+<li><strong>LearningModeController:</strong> Requires <code>quiz_recap</code> feature [Source: app/controllers/learning_mode_controller.rb]</li>
+<li><strong>LearningModeController:</strong> Uses <code>CourseContextHelper</code> for course-specific context [Source: app/controllers/learning_mode_controller.rb]</li>
+<li><strong>PagesController:</strong> Requires <code>helpdesk.page.store</code> permission [Source: app/controllers/pages_controller.rb]</li>
+<li><strong>PagesController:</strong> Interacts with the <code>Page</code> model for content management [Source: app/controllers/pages_controller.rb, app/models/page.rb]</li>
+<li><strong>UsersController:</strong> Requires <code>ensure_logged_in</code> before actions [Source: app/controllers/users_controller.rb]</li>
+<li><strong>UsersController:</strong> Authorizes <code>account.user.delete</code> and <code>account.user.change_password</code> permissions [Source: app/controllers/users_controller.rb]</li>
+<li><strong>WebManifestController:</strong> Checks <code>WebManifest.configured?</code> before rendering [Source: app/controllers/web_manifest_controller.rb]</li>
+<li><strong>WebManifestController:</strong> Uses <code>Xikolo.config.site_name</code> for manifest name [Source: app/controllers/web_manifest_controller.rb]</li>
+<li><strong>ApplicationHelper:</strong> Uses <code>BrowserSupport</code> to determine browser compatibility. [Source: app/helpers/application_helper.rb]</li>
+<li><strong>ApplicationHelper:</strong> Interacts with <code>Imagecrop</code> for image URL transformations. [Source: app/helpers/application_helper.rb]</li>
+<li><strong>IcalHelper:</strong> Interacts with <code>Xikolo::Account::Token</code> to create user tokens [Source: app/helpers/ical_helper.rb]</li>
+<li><strong>IcalHelper:</strong> Uses <code>Digest::SHA256</code> for hash generation [Source: app/helpers/ical_helper.rb]</li>
+<li><strong>MarkdownHelper:</strong> Uses <code>Redcarpet::Markdown</code> for Markdown rendering [Source: app/helpers/markdown_helper.rb]</li>
+<li><strong>MarkdownHelper:</strong> Uses <code>Sanitize.fragment</code> with <code>SANITIZE_CONFIG</code> for HTML sanitization [Source: app/helpers/markdown_helper.rb]</li>
+<li><strong>SessionHelper:</strong> Interacts with <code>Xikolo.api(:account)</code> to delete user sessions [Source: app/helpers/session_helper.rb]</li>
+<li><strong>SessionHelper:</strong> Captures exceptions with <code>Sentry</code> and <code>Mnemosyne</code> for API errors during logout [Source: app/helpers/session_helper.rb]</li>
+<li><strong>UUIDHelper:</strong> Uses <code>UUID4</code> for UUID conversion and parameterization [Source: app/helpers/uuid_helper.rb]</li>
+<li><strong>ViewMethodsHelper:</strong> Includes <code>ActionView::Helpers</code> [Source: app/helpers/view_methods_helper.rb]</li>
+<li><strong>ViewMethodsHelper:</strong> Extends <code>SanitizeHelper::ClassMethods</code> [Source: app/helpers/view_methods_helper.rb]</li>
+<li><strong>Page:</strong> Uses <code>Xikolo::S3::Markup</code> for the <code>text</code> attribute, integrating with S3 for file uploads [Source: app/models/page.rb, Foundational Context]</li>
+<li><strong>Page:</strong> Manages <code>has_many</code> associations for <code>translations</code> and <code>other_translations</code> [Source: app/models/page.rb]</li>
+<li><strong>Breadcrumbs:</strong> Used by views or layouts to render the breadcrumb navigation.</li>
+<li><strong>MenuWithPermissions:</strong> Includes <code>Rails.application.routes.url_helpers</code> and <code>ActionView::Helpers::UrlHelper</code> for link generation [Source: app/presenters/menu_with_permissions.rb]</li>
+<li><strong>MenuWithPermissions:</strong> Checks user permissions via <code>user.allowed?</code> [Source: app/presenters/menu_with_permissions.rb]</li>
+<li><strong>PlatformDashboardNav:</strong> Extends <code>MenuWithPermissions</code> [Source: app/presenters/platform_dashboard_nav.rb]</li>
+<li><strong>PlatformDashboardNav:</strong> Defines menu items for ‘Dashboard’ and ‘News’ with <code>user.allowed?('global.dashboard.show')</code> permission checks [Source: app/presenters/platform_dashboard_nav.rb]</li>
+<li><strong>Presenter:</strong> Inherited by <code>PrivatePresenter</code> and other presenter classes.</li>
+<li><strong>AjaxPaginationRenderer:</strong> Extends <code>PaginationRenderer</code> [Source: lib/ajax_pagination_renderer.rb]</li>
+<li><strong>PaginationRenderer:</strong> Includes <code>ActionView::Helpers::OutputSafetyHelper</code> [Source: lib/pagination_renderer.rb]</li>
+<li><strong>PaginationRenderer:</strong> Uses <code>I18n.t</code> for localized pagination texts [Source: lib/pagination_renderer.rb, RAG: config/locales/en.yml, RAG: config/locales/de.yml]</li>
+<li><strong>RedirectURL:</strong> Uses <code>Addressable::URI</code> for URL parsing and normalization [Source: lib/redirect_url.rb]</li>
+<li><strong>app/assets/javascripts/application.js:</strong> Requires <code>xfn/ready</code> for DOM readiness [Source: app/assets/javascripts/application.js]</li>
+<li><strong>app/assets/javascripts/application.js:</strong> Requires <code>jquery2</code> for DOM manipulation [Source: app/assets/javascripts/application.js]</li>
+<li><strong>app/assets/javascripts/xfn/ready.js:</strong> Interacts with <code>document.readyState</code> and <code>document.addEventListener('DOMContentLoaded')</code> [Source: app/assets/javascripts/xfn/ready.js]</li>
+<li><strong>app/assets/main.js:</strong> Imports <code>form-request-submit-polyfill</code> [Source: app/assets/main.js]</li>
+<li><strong>app/assets/main.js:</strong> Initializes <code>Rails</code> UJS [Source: app/assets/main.js]</li>
+<li><strong>app/assets/main.scss:</strong> Imports <code>stylesheets/theme</code> for brand-specific styling [Source: app/assets/main.scss, RAG: docs/app/development/branding/stylesheets.md]</li>
+<li><strong>app/assets/main.scss:</strong> Imports <code>stylesheets/global</code> for general application styles [Source: app/assets/main.scss, RAG: docs/app/development/branding/stylesheets.md]</li>
+<li><strong>Global::Accordion:</strong> Renders <code>Global::AccordionSection</code> components as its sections [Source: app/components/global/accordion.rb, app/components/global/accordion_section.rb]</li>
+<li><strong>Global::Accordion:</strong> Uses <code>data-controller='accordion'</code> for JavaScript interaction [Source: app/components/global/accordion.html.slim]</li>
+<li><strong>Global::AccordionSection:</strong> Renders <code>Global::FaIcon</code> for the expand/collapse indicators [Source: app/components/global/accordion_section.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::AccordionSection:</strong> Uses <code>data-accordion-target='toggle-button'</code> for JavaScript interaction [Source: app/components/global/accordion_section.html.slim]</li>
+<li><strong>Global::ActionsDropdown:</strong> Renders <code>Global::FaIcon</code> for the dropdown control icon [Source: app/components/global/actions_dropdown.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::ActionsDropdown:</strong> Uses <code>data-behaviour='dropdown'</code> and <code>data-behaviour='menu-dropdown'</code> for JavaScript interaction [Source: app/components/global/actions_dropdown.html.slim]</li>
+<li><strong>Global::Callout:</strong> Renders <code>Global::FaIcon</code> for the message indicator [Source: app/components/global/callout.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::CookieConsentBanner:</strong> Interacts with <code>ConsentCookie</code> to get current consent status [Source: app/components/global/cookie_consent_banner.rb]</li>
+<li><strong>Global::CookieConsentBanner:</strong> Uses <code>Translations</code> to render consent text [Source: app/components/global/cookie_consent_banner.rb]</li>
+<li><strong>Global::CopyToClipboard:</strong> Uses <code>data-behavior='copy-to-clipboard'</code> for JavaScript interaction [Source: app/components/global/copy_to_clipboard.html.slim]</li>
+<li><strong>Global::CopyToClipboard:</strong> Renders <code>Global::FaIcon</code> for the copy icon [Source: app/components/global/copy_to_clipboard.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::CourseListBanner:</strong> Fetches <code>Banner.current</code> from the database [Source: app/components/global/course_list_banner.rb]</li>
+<li><strong>Global::CourseListBanner:</strong> Uses <code>Rails.cache.fetch</code> for server-side caching of banner data [Source: app/components/global/course_list_banner.rb, RAG: docs/app/features/course_list_banner.md]</li>
+<li><strong>Global::CustomHeadSnippets:</strong> Reads custom HTML snippets from <code>Xikolo.config.custom_html</code> [Source: app/components/global/custom_head_snippets.rb]</li>
+<li><strong>Global::CustomHeadSnippets:</strong> Uses <code>Global::CustomHeadSnippets::Requirements</code> to evaluate snippet conditions, including <code>CookieConsent</code> [Source: app/components/global/custom_head_snippets.rb]</li>
+<li><strong>Global::DisclosureWidget:</strong> Renders <code>Global::FaIcon</code> for the open/closed state indicators [Source: app/components/global/disclosure_widget.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::DownloadButton:</strong> Renders <code>Global::FaIcon</code> if the button type is <code>:download</code> [Source: app/components/global/download_button.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::FilterBar::Controls:</strong> Renders <code>Global::FaIcon</code> for filter and reset icons [Source: app/components/global/filter_bar/controls.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::FilterBar::Controls:</strong> Renders <code>Global::Pill</code> for displaying the results count [Source: app/components/global/filter_bar/controls.html.slim, app/components/global/pill.rb]</li>
+<li><strong>Global::FilterBar::Filter:</strong> Uses <code>select_tag</code> and <code>hidden_field_tag</code> for form elements [Source: app/components/global/filter_bar/filter.html.slim]</li>
+<li><strong>Global::FilterBar::Filter:</strong> Uses <code>I18n.t</code> for localization of blank options and disabled text [Source: app/components/global/filter_bar/filter.rb, RAG: config/locales/en.yml, RAG: config/locales/de.yml]</li>
+<li><strong>Global::FilterBar::Search:</strong> Uses <code>text_field_tag</code> for the search input [Source: app/components/global/filter_bar/search.html.slim]</li>
+<li><strong>Global::FilterBar::Search:</strong> Renders <code>Global::FaIcon</code> for search and clear buttons [Source: app/components/global/filter_bar/search.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::FlashBlock:</strong> Renders <code>Global::FlashMessage</code> for standard flash messages [Source: app/components/global/flash_block.html.slim, app/components/global/flash_message.rb]</li>
+<li><strong>Global::FlashBlock:</strong> Renders <code>Global::FlashLayer</code> for SweetAlert2-style flash layers [Source: app/components/global/flash_block.html.slim, app/components/global/flash_layer.rb]</li>
+<li><strong>Global::FlashLayer:</strong> Injects JavaScript to call <code>xuiSwal.fire</code> (SweetAlert2) [Source: app/components/global/flash_layer.html.slim]</li>
+<li><strong>Global::FlashLayer:</strong> Uses <code>ready</code> function for DOM readiness [Source: app/components/global/flash_layer.html.slim, app/assets/javascripts/xfn/ready.js]</li>
+<li><strong>Global::FlashMessage:</strong> Renders <code>Global::FaIcon</code> for the message icon and close button [Source: app/components/global/flash_message.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::FlashMessage:</strong> Uses <code>data-hide-on-click</code> for JavaScript interaction to dismiss the message [Source: app/components/global/flash_message.html.slim]</li>
+<li><strong>Global::HeadlineTooltip:</strong> Renders <code>Global::BasicTooltip</code> [Source: app/components/global/headline_tooltip.html.slim, app/components/global/basic_tooltip.rb]</li>
+<li><strong>Global::HelpdeskButton:</strong> Renders <code>Global::FaIcon</code> for the button icon [Source: app/components/global/helpdesk_button.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::HelpdeskButton:</strong> Renders <code>State::Loading</code> while the helpdesk panel content loads [Source: app/components/global/helpdesk_button.html.slim]</li>
+<li><strong>Global::ItemStatus:</strong> Renders <code>Global::FaIcon</code> for the status icon [Source: app/components/global/item_status.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::LabeledCopyButton:</strong> Uses <code>data-behavior='copy-to-clipboard'</code> for JavaScript interaction [Source: app/components/global/labeled_copy_button.html.slim]</li>
+<li><strong>Global::LinkItem:</strong> Renders <code>Global::FaIcon</code> if an icon class is provided [Source: app/components/global/link_item.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::PageHeader:</strong> Renders <code>Global::Pill</code> if a pill is provided [Source: app/components/global/page_header.rb, app/components/global/pill.rb]</li>
+<li><strong>Global::Slider:</strong> Renders <code>Global::FaIcon</code> for scroll buttons [Source: app/components/global/slider.html.slim, app/components/global/fa_icon.rb]</li>
+<li><strong>Global::Slider:</strong> Uses <code>data-controller='slider'</code> and <code>data-slider-target</code> for JavaScript interaction [Source: app/components/global/slider.html.slim]</li>
+<li><strong>Global::SvgIcon:</strong> Reads SVG content from a file path [Source: app/components/global/svg_icon.rb]</li>
+<li><strong>Global::Table:</strong> Renders <code>State::Empty</code> if no data is provided [Source: app/components/global/table.html.slim]</li>
+<li><strong>Global::Table:</strong> Uses <code>I18n.t</code> for the ‘no data’ message [Source: app/components/global/table.html.slim, RAG: config/locales/en.yml, RAG: config/locales/de.yml]</li>
+<li><strong>Global::UserAvatar:</strong> Uses <code>avatar_path</code> helper to construct the image URL [Source: app/components/global/user_avatar.rb]</li>
+<li><strong>Webpack:</strong> Processes JavaScript/TypeScript files from <code>app/assets/</code>.</li>
+<li><strong>Webpack:</strong> Processes Sass files from <code>app/assets/</code> and <code>brand/*/assets</code>.</li>
+<li><strong>Yarn:</strong> Installs dependencies listed in <code>package.json</code>.</li>
+<li><strong>Yarn:</strong> Used for running build, start, format, and lint scripts.</li>
+<li><strong>ViewComponent:</strong> Components are rendered within Rails views (e.g., <code>.html.slim</code> templates) using the <code>render</code> helper.</li>
+<li><strong>ViewComponent:</strong> Integrates with <code>lookbook</code> for cataloging, documenting, and previewing component variants.</li>
+<li><strong>React:</strong> Components are bundled by Webpack and transpiled by Babel.</li>
+<li><strong>TypeScript:</strong> Transpiled by Babel.</li>
+<li><strong>TypeScript:</strong> Configuration defined in <code>tsconfig.json</code>.</li>
+<li><strong>Sass:</strong> Sass files are compiled by <code>sass-embedded</code> via <code>sass-loader</code> within the Webpack pipeline.</li>
+<li><strong>Sass:</strong> Compiled CSS is then processed by <code>PostCSS</code>.</li>
+<li><strong>PostCSS:</strong> Integrated into Webpack via <code>postcss-loader</code>.</li>
+<li><strong>PostCSS:</strong> Processes output from Sass.</li>
+<li><strong>ESLint:</strong> Analyzes <code>**/*.{js,mjs,cjs,ts}</code> files.</li>
+<li><strong>ESLint:</strong> Integrated into the pre-commit hook via <code>lint-staged</code>.</li>
+<li><strong>Stylelint:</strong> Analyzes <code>app/assets/**/*.{css,scss}</code> and <code>brand/*/assets/**/*.{css,scss}</code>.</li>
+<li><strong>Stylelint:</strong> Integrated into the pre-commit hook via <code>lint-staged</code>.</li>
+<li><strong>Prettier:</strong> Formats various file types on commit via <code>lint-staged</code>.</li>
+<li><strong>Prettier:</strong> Ignores specific auto-generated or vendored directories and files.</li>
+<li><strong>I18n-js:</strong> Used in client-side JavaScript code for displaying localized text.</li>
+<li><strong>I18n-js:</strong> The <code>I18n</code> global variable is exposed and marked as <code>readonly</code> in ESLint configuration.</li>
+<li><strong>XikoloVideoPlayer:</strong> Used within the application to embed and manage video playback.</li>
+<li><strong>XikoloVideoPlayer:</strong> Managed as a Node.js dependency via <code>Yarn</code>.</li>
+<li><strong>SimpleForm:</strong> Interacts with ApplicationComponent (implicitly, as custom inputs are rendered within views).</li>
+<li><strong>SimpleForm:</strong> Uses I18n for internationalization of labels, hints, and errors.</li>
+<li><strong>Form::DynamicSortableList:</strong> Renders Global::FaIcon for UI elements.</li>
+<li><strong>Form::DynamicSortableList:</strong> Emits JavaScript events (via data-behavior attributes) for client-side sorting, adding, and deleting.</li>
+<li><strong>SimpleFormTranslateWithVariables:</strong> Prepends to SimpleForm::Inputs::Base.</li>
+<li><strong>SimpleFormTranslateWithVariables:</strong> Uses I18n for translation and interpolation.</li>
+<li><strong>SubmitButtonPrimary:</strong> Includes into SimpleForm::FormBuilder.</li>
+<li><strong>SimpleForm::Components::Pattern:</strong> Integrated into SimpleForm’s wrapper configuration.</li>
+<li><strong>SimpleFormDynamicDefaultFormClass:</strong> Included into ActionView.</li>
+<li><strong>SimpleFormDynamicDefaultFormClass:</strong> Inspects SimpleForm’s default wrapper configuration.</li>
+<li><strong>AdvancedOptionsHelpers:</strong> Included into ActionView.</li>
+<li><strong>AdvancedOptionsHelpers:</strong> Uses SecureRandom.uuid for unique element IDs.</li>
+<li><strong>FrontendFormHandler:</strong> Reads content_type and other input values from the DOM.</li>
+<li><strong>FrontendFormHandler:</strong> Modifies DOM elements to show/hide form sections.</li>
+<li><strong>PrivatePresenter:</strong> Inherits from <code>Presenter</code>.</li>
+<li><strong>PrivatePresenter:</strong> Extends child classes with <code>Preloading</code> module.</li>
+<li><strong>Preloading::Preloader:</strong> Used by <code>PrivatePresenter</code> and its descendants via the <code>load</code> method to fetch associated data efficiently.</li>
+<li><strong>IconNavigationPresenter:</strong> Inherits from <code>PrivatePresenter</code>.</li>
+<li><strong>IconNavigationPresenter:</strong> Used by views or layouts to render dynamic icon navigation menus.</li>
+<li><strong>CoursePresenter:</strong> Delegates to the <code>course</code> object for core data.</li>
+<li><strong>CoursePresenter:</strong> Uses <code>ActionView::Helpers::TagHelper</code> and <code>ActionView::Context</code> for HTML generation within the presenter.</li>
+<li><strong>_piwik.html.slim:</strong> Reads configuration from <code>Xikolo.config</code>.</li>
+<li><strong>_piwik.html.slim:</strong> Intended to be included in the main application layout for site-wide tracking.</li>
+<li><strong>browser-warning.js:</strong> Interacts with the DOM to find and hide the warning alert element (<code>[data-browser-warning=&quot;alert&quot;]</code>). [Source: app/assets/components/global/browser-warning.js]</li>
+<li><strong>browser-warning.js:</strong> Uses <code>js-cookie</code> to set a cookie (<code>_browser_warning</code>) with a 365-day expiration. [Source: app/assets/components/global/browser-warning.js]</li>
+<li><strong>BrowserSupport:</strong> Receives a <code>browser</code> object (likely from the <code>browser</code> gem) upon initialization and queries its properties (e.g., <code>bot?</code>, <code>ie?</code>, <code>edge?</code>, <code>version</code>, <code>platform.mac?</code>, <code>webkit?</code>, <code>firefox?</code>) to perform compatibility checks. [Source: lib/browser_support.rb]</li>
+<li><strong>Babel:</strong> Used by Webpack via <code>babel-loader</code>.</li>
+<li><strong>Babel:</strong> Applies <code>@babel/preset-env</code> and <code>@babel/plugin-transform-runtime</code>.</li>
+<li><strong>Sass (sass-embedded):</strong> Integrated into Webpack via <code>sass-loader</code>.</li>
+<li><strong>Sass (sass-embedded):</strong> Output is further processed by PostCSS.</li>
+<li><strong>Sprockets:</strong> Coexists with Webpack for asset management.</li>
+<li><strong>jQuery:</strong> Can still be used for existing jQuery plugins, but new code should avoid it.</li>
+<li><strong>gon:</strong> Receives data from Rails controllers/views.</li>
+<li><strong>gon:</strong> Provides <code>user_id</code>, <code>in_app</code>, <code>env</code>, <code>build_version</code>, <code>item_id</code>, <code>section_id</code>, <code>course_id</code> to frontend JavaScript.</li>
+<li><strong>Husky &amp; lint-staged:</strong> Runs Prettier for formatting.</li>
+<li><strong>Husky &amp; lint-staged:</strong> Executes ESLint for JavaScript/TypeScript.</li>
+<li><strong>application.js:</strong> Requires <code>xfn/ready</code> for document ready events. [Source: app/assets/javascripts/application.js]</li>
+<li><strong>application.js:</strong> Requires <code>jquery2</code> for DOM manipulation and AJAX. [Source: app/assets/javascripts/application.js]</li>
+<li><strong>main.js:</strong> Imports <code>form-request-submit-polyfill</code> for browser compatibility. [Source: app/assets/main.js]</li>
+<li><strong>main.js:</strong> Initializes <code>@rails/ujs</code> for unobtrusive JavaScript features. [Source: app/assets/main.js]</li>
+<li><strong>main.scss:</strong> Imports <code>stylesheets/theme</code> to load theme-specific variables and styles first. [Source: app/assets/main.scss, RAG: docs/app/development/branding/stylesheets.md]</li>
+<li><strong>main.scss:</strong> Imports <code>stylesheets/global</code> to load general application styles. [Source: app/assets/main.scss, RAG: docs/app/development/branding/stylesheets.md]</li>
+<li><strong>_theme.scss:</strong> Imports <code>theme/color_schema</code> for color definitions. [Source: app/assets/stylesheets/_theme.scss, RAG: docs/app/development/branding/stylesheets.md]</li>
+<li><strong>_theme.scss:</strong> Imports <code>theme/common/variables</code> for shared SCSS variables. [Source: app/assets/stylesheets/_theme.scss, RAG: docs/app/development/branding/stylesheets.md]</li>
+<li><strong>_global.scss:</strong> Imports <code>bs-variables</code> for Bootstrap 3 variable overrides. [Source: app/assets/stylesheets/_global.scss]</li>
+<li><strong>_global.scss:</strong> Imports <code>libs</code> for external library styles. [Source: app/assets/stylesheets/_global.scss]</li>
+<li><strong>_bs-variables.scss:</strong> Defines and overrides Bootstrap 3.4.1 variables, influencing the styling of elements that still rely on Bootstrap. [Source: app/assets/stylesheets/_bs-variables.scss]</li>
+<li><strong>_bs-variables.scss:</strong> Uses <code>sass:color</code> and <code>sass:math</code> functions for color adjustments and calculations. [Source: app/assets/stylesheets/_bs-variables.scss]</li>
+<li><strong>_components.scss:</strong> Imports styles for various global components (e.g., <code>accordion</code>, <code>tooltip</code>, <code>cookie_consent_banner</code>). [Source: app/assets/stylesheets/_components.scss]</li>
+<li><strong>_components.scss:</strong> Imports styles for navigation components (e.g., <code>navigation_bar</code>, <code>navigation_tabs</code>). [Source: app/assets/stylesheets/_components.scss]</li>
+<li><strong>_partials.scss:</strong> Imports styles for various legacy UI elements (e.g., <code>grid</code>, <code>typography</code>, <code>forms</code>, <code>navigation</code>, <code>quiz</code>, <code>dashboard</code>). [Source: app/assets/stylesheets/_partials.scss]</li>
+<li><strong>_partials.scss:</strong> Imports styles for XUI components (<code>upload</code>, <code>mdupload</code>, <code>imageupload</code>). [Source: app/assets/stylesheets/_partials.scss]</li>
+<li><strong>_grid-settings.scss:</strong> Defines <code>$column</code>, <code>$gutter</code>, <code>$grid-columns</code>, <code>$max-width</code> for the grid system. [Source: app/assets/stylesheets/_grid-settings.scss]</li>
+<li><strong>_grid-settings.scss:</strong> Defines various breakpoints (<code>$xs-to-sm</code>, <code>$sm-to-md</code>, <code>$md-to-lg</code>, <code>$breakpoint-s</code>, etc.) and corresponding mixins (<code>@mixin small</code>, <code>@mixin medium</code>, <code>@mixin large</code>). [Source: app/assets/stylesheets/_grid-settings.scss]</li>
+<li><strong>application.html.slim:</strong> Uses <code>ApplicationHelper#sentry_meta_tags</code> for Sentry integration. [Source: app/views/layouts/application.html.slim]</li>
+<li><strong>application.html.slim:</strong> Includes <code>include_gon</code> for passing data to JavaScript. [Source: app/views/layouts/application.html.slim]</li>
+<li><strong>simple.html.slim:</strong> Includes <code>include_gon</code> for passing data to JavaScript. [Source: app/views/layouts/simple.html.slim]</li>
+<li><strong>simple.html.slim:</strong> Links <code>bootstrap</code>, <code>fontawesome</code>, and <code>styles</code> stylesheets. [Source: app/views/layouts/simple.html.slim]</li>
+<li><strong>Rails Asset Pipeline:</strong> Links image directories (<code>../images</code>).</li>
+<li><strong>Rails Asset Pipeline:</strong> Includes legacy JavaScript files like <code>application.js</code>, <code>m.e.i.n.e.l.js</code>, <code>moment.js</code>.</li>
+<li><strong>Husky:</strong> Triggers <code>lint-staged</code> and <code>tsc --skipLibCheck --noEmit</code> on <code>pre-commit</code>.</li>
+<li><strong>lint-staged:</strong> Receives staged files from Husky.</li>
+<li><strong>lint-staged:</strong> Executes <code>prettier</code>, <code>editorconfig-checker</code>, <code>rubocop</code>, <code>slim-lint</code>, <code>eslint</code>, <code>stylelint</code>, and <code>markdownlint</code> on respective file types.</li>
+<li><strong>TypeScript Compiler (tsc):</strong> Executed with <code>--skipLibCheck --noEmit</code> during the pre-commit hook to ensure type correctness without generating output files.</li>
+<li><strong>Sass (dartsass-sprockets):</strong> Processes <code>.scss</code> files, including imports from <code>stylesheets/theme</code> and <code>stylesheets/global</code>.</li>
+<li><strong>Sass (dartsass-sprockets):</strong> Used for both Webpack and potentially Rails Asset Pipeline managed styles.</li>
+<li><strong>Node.js:</strong> Executes Webpack build and dev server commands.</li>
+<li><strong>Node.js:</strong> Runs Yarn for dependency management.</li>
+<li><strong>Markdownlint:</strong> Analyzes <code>**/*.{md,md.erb}</code> files.</li>
+<li><strong>Markdownlint:</strong> Integrated into the pre-commit hook via <code>lint-staged</code>.</li>
+<li><strong>Accordion (JS):</strong> User clicks a button (<code>data-accordion-target='toggle-button'</code>) to toggle the expanded state of a section.</li>
+<li><strong>Accordion (JS):</strong> Automatically collapses other expanded sections when a new one is opened.</li>
+<li><strong>Accordion (Ruby ViewComponent):</strong> Renders <code>AccordionSection</code> components, which are then controlled by the client-side <code>Accordion (JS)</code>.</li>
+<li><strong>ActionsDropdown:</strong> Renders a button that, when clicked, triggers the client-side <code>Dropdown (JS)</code> to show/hide the menu.</li>
+<li><strong>ActionsDropdown:</strong> Accepts <code>actions</code> and <code>destructive_actions</code> as blocks for menu items.</li>
+<li><strong>BasicTooltip:</strong> Used by <code>HeadlineTooltip</code> to display contextual information.</li>
+<li><strong>Browser Warning:</strong> User clicks a button (<code>data-browser-warning=&quot;dismiss&quot;</code>) to hide the alert.</li>
+<li><strong>Browser Warning:</strong> Interacts with <code>js-cookie</code> library to set a cookie.</li>
+<li><strong>Clear Button:</strong> User clicks a button (<code>data-id='clear-button'</code>).</li>
+<li><strong>Clear Button:</strong> Resets the value of the input specified by <code>data-clear-target</code>.</li>
+<li><strong>Cookie Consent Banner (JS):</strong> User clicks the close button to hide the banner.</li>
+<li><strong>Cookie Consent Banner (Ruby ViewComponent):</strong> Interacts with <code>ConsentCookie</code> to determine if a banner should be shown and what text to display.</li>
+<li><strong>Cookie Consent Banner (Ruby ViewComponent):</strong> Renders a form for accepting or declining cookies.</li>
+<li><strong>Copy to Clipboard (JS):</strong> User clicks an element (<code>data-behavior='copy-to-clipboard'</code>).</li>
+<li><strong>Copy to Clipboard (JS):</strong> Accesses <code>navigator.clipboard.writeText()</code> to copy content.</li>
+<li><strong>Copy to Clipboard (Ruby ViewComponent):</strong> Renders HTML elements with <code>data-behavior='copy-to-clipboard'</code> for client-side interaction.</li>
+<li><strong>CourseListBanner:</strong> Fetches banner data from <code>Banner.current</code> (cached).</li>
+<li><strong>CustomHeadSnippets:</strong> Reads configuration from <code>Xikolo.config.custom_html</code>.</li>
+<li><strong>CustomHeadSnippets:</strong> Evaluates <code>Requirements</code> (e.g., <code>ConsentCookie</code>) to determine if a snippet should be rendered.</li>
+<li><strong>Custom Select (TomSelect):</strong> Initializes <code>TomSelect</code> on elements with <code>data-behavior='custom-select'</code>.</li>
+<li><strong>Custom Select (TomSelect):</strong> Uses <code>classifiers-select.js</code> to load classifier data from <code>/admin/find_classifiers</code>.</li>
+<li><strong>DisclosureWidget:</strong> Toggles content visibility based on user interaction with the summary element.</li>
+<li><strong>Dropdown (JS):</strong> User clicks an element (<code>data-behaviour='dropdown'</code>) to toggle its <code>aria-expanded</code> state.</li>
+<li><strong>Dropdown (JS):</strong> Closes other dropdowns when a new one is opened, unless it’s a nested parent.</li>
+<li><strong>Expand Course Card:</strong> User hovers over a course card (<code>data-behavior='expandable'</code>).</li>
+<li><strong>Expand Course Card:</strong> Clones the card and adds <code>course-card--expanded</code> class to display extended information.</li>
+<li><strong>FilterBar::Controls:</strong> Renders a ‘Reset’ link that, when clicked, triggers client-side <code>hide-on-click</code> and <code>show-on-click</code> to manage content visibility.</li>
+<li><strong>FilterBar::Controls:</strong> Can be configured to use <code>data-behavior='fixed'</code> for sticky positioning.</li>
+<li><strong>FilterBar::Filter:</strong> Renders a <code>select_tag</code> that, when changed, triggers a form submission (via <code>data-change='submit'</code>).</li>
+<li><strong>FilterBar::Filter:</strong> Can integrate with client-side <code>Custom Select (TomSelect)</code> for enhanced multi-select functionality.</li>
+<li><strong>FilterBar::Search:</strong> Renders a <code>text_field_tag</code> for search input.</li>
+<li><strong>FilterBar::Search:</strong> Includes a button (<code>data-id='clear-button'</code>) that interacts with the client-side <code>Clear Button</code> to clear the input and submit the form.</li>
+<li><strong>Fixed Bar:</strong> Observes an element’s intersection with the viewport using <code>IntersectionObserver</code>.</li>
+<li><strong>Fixed Bar:</strong> Clones the element and appends it to the body with <code>js-fixed</code> class when the original element is no longer intersecting at the top threshold.</li>
+<li><strong>Flatpickr (JS):</strong> Initializes <code>flatpickr</code> on elements with <code>data-behaviour~=datepicker</code>.</li>
+<li><strong>Flatpickr (JS):</strong> Uses <code>luxon</code> for ISO date parsing and formatting.</li>
+<li><strong>FlashBlock:</strong> Renders <code>FlashMessage</code> for standard flash messages.</li>
+<li><strong>FlashBlock:</strong> Renders <code>FlashLayer</code> for messages displayed as <code>SweetAlert2</code> dialogs.</li>
+<li><strong>FlashLayer:</strong> Generates JavaScript to call <code>xuiSwal.fire()</code> on the client-side.</li>
+<li><strong>FlashMessage:</strong> Renders a button with <code>data-hide-on-click</code> attribute to hide the message via client-side JavaScript.</li>
+<li><strong>HeadlineTooltip:</strong> Renders <code>Global::BasicTooltip</code>.</li>
+<li><strong>Helpdesk Button (JS):</strong> Observes the footer copyright element (<code>data-id=&quot;footer-copyright&quot;</code>) using <code>IntersectionObserver</code>.</li>
+<li><strong>Helpdesk Button (JS):</strong> Adds/removes <code>helpdesk-button--bottom-reached</code> class to the helpdesk button based on intersection state.</li>
+<li><strong>Helpdesk Button (Ruby ViewComponent):</strong> Checks user feature flags (<code>@user.feature?</code>) to determine the appropriate chatbot version and icon.</li>
+<li><strong>Helpdesk Button (Ruby ViewComponent):</strong> Renders a button that, when clicked, likely toggles the visibility of the helpdesk panel (client-side interaction).</li>
+<li><strong>Hide/Show on Click:</strong> User clicks an element with <code>data-hide-on-click</code> or <code>data-show-on-click</code>.</li>
+<li><strong>Hide/Show on Click:</strong> Sets the <code>hidden</code> attribute of the target element to <code>true</code> or <code>false</code>.</li>
+<li><strong>LabeledCopyButton:</strong> Renders a button with <code>data-behavior='copy-to-clipboard'</code> and <code>data-text</code> attributes for client-side copy functionality.</li>
+<li><strong>PageHeader:</strong> Can render a <code>Global::Pill</code> component within its structure.</li>
+<li><strong>Slider (JS):</strong> User clicks scroll buttons (<code>data-slider-target='scroll-button-left/right'</code>) to scroll content.</li>
+<li><strong>Slider (JS):</strong> Uses <code>IntersectionObserver</code> to monitor visibility of <code>intersector-left/right</code> elements within the slider content.</li>
+<li><strong>Slider (Ruby ViewComponent):</strong> Renders HTML elements with <code>data-controller='slider'</code> and <code>data-slider-target</code> attributes for client-side control.</li>
+<li><strong>SvgIcon:</strong> Reads SVG content directly from the file system.</li>
+<li><strong>System Alerts:</strong> User clicks the alerts container to expand the toggle button (<code>aria-expanded=true</code>).</li>
+<li><strong>System Alerts:</strong> User clicks the close button (<code>data-id='system-alerts__close-btn'</code>) to collapse the toggle button (<code>aria-expanded=false</code>).</li>
+<li><strong>Table:</strong> Renders <code>State::Empty</code> if <code>data</code> is empty.</li>
+<li><strong>Toggle Menu:</strong> User clicks an element (<code>data-behaviour='toggle-menu'</code>) to toggle its <code>aria-expanded</code> state.</li>
+<li><strong>Toggle Menu:</strong> Dynamically sets <code>style.left</code> or <code>style.right</code> property based on <code>data-follow-menu</code> and the controlled menu’s <code>offsetWidth</code>.</li>
+<li><strong>Tooltip (JS):</strong> User hovers over an element with <code>data-tooltip</code> attribute.</li>
+<li><strong>Tooltip (JS):</strong> Dynamically creates and inserts tooltip content into a container (<code>data-id='tooltip'</code>).</li>
+<li><strong>Transcript:</strong> Receives cues data to <code>fill()</code> the transcript.</li>
+<li><strong>Transcript:</strong> Updates active cues (<code>updateActiveCues()</code>) based on video playback.</li>
+<li><strong>UserAvatar:</strong> Generates avatar image URL using <code>avatar_path</code> helper.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-user-request-and-ui-rendering-workflow" tabindex="-1"><a class="header-anchor" href="#1.-user-request-and-ui-rendering-workflow"><span>1. User Request and UI Rendering Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRequest["User HTTP Request"]
+  applicationController["ApplicationController"]
+  authMiddleware["Authentication Middleware (Login)"]
+  featureToggleCheck["Feature Toggle Evaluation"]
+  localeHandler["Locale Handling (I18n.locale)"]
+  renderViewComponent["Render ViewComponent (e.g., Global::Accordion)"]
+  applicationHelper["ApplicationHelper (BrowserSupport, Imagecrop)"]
+  clientSideRender["Client-Side UI Rendering"]
+
+  userRequest -->|"receives"| applicationController
+  applicationController -->|"applies"| authMiddleware
+  authMiddleware -->|"checks features"| featureToggleCheck
+  featureToggleCheck -->|"sets context"| localeHandler
+  localeHandler -->|"prepares data & views"| renderViewComponent
+  renderViewComponent -->|"utilizes"| applicationHelper
+  applicationHelper --o|"influences component output"| renderViewComponent
+  renderViewComponent -->|"sends HTML + assets"| clientSideRender
+</pre></div>
+<p>This workflow describes how a user’s request is processed by the Xikolo application, leading to the rendering of a dynamic user interface. The process begins when a user’s browser sends a request to the Xikolo application. This request is first handled by the <code>ApplicationController</code>, which acts as the central entry point for web requests. The controller applies various cross-cutting concerns, including <code>Login</code> module for authentication checks, <code>Locale</code> module for internationalization, and <code>FeatureTogglesHelper</code> to determine feature flag-driven behaviors. After these initial processing steps, the controller prepares data and selects the appropriate view or <code>ViewComponent</code> for rendering. <code>ViewComponent</code>s, such as <code>Global::Accordion</code>, encapsulate UI logic and structure. During rendering, these components might utilize <code>ApplicationHelper</code> for tasks like browser compatibility checks or image transformations. The final HTML, along with the necessary JavaScript and CSS assets, is served to the <code>UserBrowser</code>. Frontend assets, including <code>application.js</code> (for legacy jQuery/Bootstrap) and <code>main.js</code> (for modern Webpack-bundled TypeScript/React components), are managed by the hybrid asset pipeline (<code>Webpack</code> and <code>Sprockets</code>) and then executed client-side, bringing the UI to life.</p>
+<h3 id="2.-cookie-consent-management-workflow" tabindex="-1"><a class="header-anchor" href="#2.-cookie-consent-management-workflow"><span>2. Cookie Consent Management Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userVisitsSite["User Visits Site"]
+  renderConsentBanner["Render Global::CookieConsentBanner"]
+  userAction["User Accepts/Declines Cookies"]
+  cookieConsentController["CookieConsentController"]
+  consentCookie["ConsentCookie Utility"]
+  updateClientSide["Update Client-Side UI (e.g., Hide Banner)"]
+  experienceFinal["Personalized User Experience"]
+
+  userVisitsSite -->|"triggers"| renderConsentBanner
+  renderConsentBanner -->|"user interaction"| userAction
+  userAction -->|"sends form to"| cookieConsentController
+  cookieConsentController -->|"manages preferences with"| consentCookie
+  consentCookie -->|"sets/reads cookie"| updateClientSide
+  updateClientSide -->|"results in"| experienceFinal
+</pre></div>
+<p>This workflow details how user cookie consent is managed within the Xikolo platform, ensuring compliance and a personalized user experience. When a <code>UserVisitsSite</code>, the system first checks for existing cookie preferences. If no consent is found or a new consent is required, the <code>Global::CookieConsentBanner</code> ViewComponent is rendered on the page. This component is responsible for displaying the consent message and options to <code>Accept</code> or <code>Decline</code> cookies. When the <code>UserAction</code> of accepting or declining is triggered (e.g., by clicking a button on the banner), the request is routed to the <code>CookieConsentController</code>. This controller then interacts with the <code>ConsentCookie</code> utility to persist the user’s preferences. It calls methods like <code>accept()</code> or <code>decline()</code> on the <code>ConsentCookie</code> object, updating the client-side cookie status. Following this interaction, the application can <code>UpdateClientSide</code> elements (e.g., hiding the banner) and ensure the <code>ExperienceFinal</code> is tailored to the user’s consent, potentially affecting features that rely on specific cookies, such as <code>Global::CustomHeadSnippets</code> which evaluates <code>CookieConsent</code> requirements before injecting HTML.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The <code>44_INFRA_UIComponents</code> cluster leverages a blend of modern and legacy technologies, indicating a phased migration strategy. On the <strong>frontend</strong>, a hybrid asset pipeline is in place: <code>Sprockets</code> handles legacy JavaScript (<code>application.js</code> requiring <code>jquery2</code>, <code>bootstrap-sprockets.js</code>) and images, while <code>Webpack</code> is the primary bundler for modern <code>TypeScript</code>, <code>React</code>, and <code>Sass</code> files (<code>app/assets/main.js</code>, <code>app/assets/main.scss</code>). This setup ensures wide browser compatibility through <code>Babel</code> transpilation and CSS processing via <code>PostCSS</code>. Code quality is rigorously enforced by <code>Husky &amp; lint-staged</code> running <code>ESLint</code> for JavaScript/TypeScript, <code>Stylelint</code> for CSS/Sass, <code>Prettier</code> for formatting, and <code>Markdownlint</code> for documentation. <code>I18n-js</code> facilitates client-side internationalization, synchronizing with Rails’ <code>I18n</code> system.</p>
+<p><strong>Server-side UI</strong> is primarily built with <code>ViewComponent</code>, using <code>ApplicationComponent</code> as a base class. Components like <code>Global::Accordion</code>, <code>Global::ActionsDropdown</code>, and <code>Global::FilterBar</code> (with its sub-components <code>Controls</code>, <code>Filter</code>, <code>Search</code>) provide reusable, encapsulated UI patterns. These components frequently render <code>Global::FaIcon</code> for iconography and utilize <code>I18n.t</code> for localization. <code>SimpleForm</code> is extensively customized for rich form inputs, integrating custom input types and dynamic behaviors via <code>FrontendFormHandler</code> and <code>Form::DynamicSortableList</code>.</p>
+<p><strong>Core application logic</strong> resides in <code>ApplicationController</code> and specialized controllers. <code>ApplicationController</code> centralizes <code>Login</code>, <code>Locale</code>, <code>FeatureTogglesHelper</code>, and integrates with <code>Acfs</code> and <code>Xikolo::Common::Auth::Middleware</code>. Specific controllers like <code>CookieConsentController</code> interact with <code>ConsentCookie</code>, <code>ErrorsController</code> logs to <code>Sentry</code> and <code>::Mnemosyne</code>, and <code>PagesController</code> manages <code>Page</code> model content with <code>Xikolo::S3::TextWithUploadsProcessor</code> for S3 uploads. <code>Home::GoController</code> handles safe external redirects using <code>Xikolo::Common::Tracking::ExternalLink</code> and deep linking via <code>Xikolo.api(:course)</code> and <code>Xikolo.api(:pinboard)</code>. Presenters like <code>MenuWithPermissions</code> and <code>PlatformDashboardNav</code> abstract view logic, checking <code>user.allowed?</code> for permission-based navigation.</p>
+<p><strong>Dependencies and integrations</strong> include several internal <code>Xikolo.api</code> services (e.g., <code>:account</code>, <code>:course</code>, <code>:news</code>, <code>:pinboard</code>) for microservice communication. External tools and libraries like <code>Sentry</code> and <code>Mnemosyne</code> are used for error tracking and performance monitoring, <code>Imagecrop</code> for image transformations, and <code>XikoloVideoPlayer</code> for video playback. <code>gon</code> is used to bridge backend Ruby data to frontend JavaScript.</p>
+<p><strong>Configuration requirements</strong> are driven by <code>Xikolo.config</code>, which provides site-wide settings such as <code>site_name</code> for <code>WebManifestController</code>, <code>piwik</code> settings for analytics via <code>_piwik.html.slim</code>, and <code>custom_html</code> for <code>Global::CustomHeadSnippets</code> to inject dynamic HTML based on <code>CookieConsent</code> requirements. <code>WebManifest</code> settings define PWA capabilities. Most configurations are loaded through <code>Xikolo.config</code>, with specific localization files (<code>config/locales/en.yml</code>, <code>config/locales/de.yml</code>) providing translated strings for <code>I18n.t</code> usage across the application and its components.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>ApplicationController</strong> <code>app/controllers/application_controller.rb</code></li>
+<li>📄 <strong>CookieConsentController</strong> <code>app/controllers/cookie_consent_controller.rb</code></li>
+<li>📄 <strong>ErrorsController</strong> <code>app/controllers/errors_controller.rb</code></li>
+<li>📄 <strong>FilesController</strong> <code>app/controllers/files_controller.rb</code></li>
+<li>📄 <strong>FilesController</strong> <code>app/helpers/application_helper.rb</code></li>
+<li>📄 <strong>Home::GoController</strong> <code>app/controllers/home/go_controller.rb</code></li>
+<li>📄 <strong>Home::HomeController</strong> <code>app/controllers/home/home_controller.rb</code></li>
+<li>📄 <strong>Home::HomeController</strong> <code>app/presenters/announcement_presenter.rb</code></li>
+<li>📄 <strong>Home::PagesController</strong> <code>app/controllers/home/pages_controller.rb</code></li>
+<li>📄 <strong>Home::PagesController</strong> <code>app/models/page.rb</code></li>
+<li>📄 <strong>IcalController</strong> <code>app/controllers/ical_controller.rb</code></li>
+<li>📄 <strong>IcalController</strong> <code>app/helpers/ical_helper.rb</code></li>
+<li>📄 <strong>LearningModeController</strong> <code>app/controllers/learning_mode_controller.rb</code></li>
+<li>📄 <strong>PagesController</strong> <code>app/controllers/pages_controller.rb</code></li>
+<li>📄 <strong>PagesController</strong> <code>app/models/page.rb</code></li>
+<li>📄 <strong>PingController</strong> <code>app/controllers/ping_controller.rb</code></li>
+<li>📄 <strong>UsersController</strong> <code>app/controllers/users_controller.rb</code></li>
+<li>📄 <strong>UsersController</strong> <code>app/helpers/session_helper.rb</code></li>
+<li>📄 <strong>WebManifestController</strong> <code>app/controllers/web_manifest_controller.rb</code></li>
+<li>📄 <strong>Presenter</strong> <code>app/presenters/presenter.rb</code></li>
+<li>📄 <strong>PrivatePresenter</strong> <code>app/presenters/private_presenter.rb</code></li>
+<li>📄 <strong>IconNavigationPresenter</strong> <code>app/presenters/icon_navigation_presenter.rb</code></li>
+<li>📄 <strong>CoursePresenter</strong> <code>app/presenters/course_presenter.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>ApplicationHelper</strong> <code>app/helpers/application_helper.rb</code></li>
+<li>📄 <strong>IcalHelper</strong> <code>app/helpers/ical_helper.rb</code></li>
+<li>📄 <strong>MarkdownHelper</strong> <code>app/helpers/markdown_helper.rb</code></li>
+<li>📄 <strong>SessionHelper</strong> <code>app/helpers/session_helper.rb</code></li>
+<li>📄 <strong>UUIDHelper</strong> <code>app/helpers/uuid_helper.rb</code></li>
+<li>📄 <strong>ViewMethodsHelper</strong> <code>app/helpers/view_methods_helper.rb</code></li>
+<li>📄 <strong>Page</strong> <code>app/models/page.rb</code></li>
+<li>📄 <strong>Page</strong> <code>app/models/application_record.rb</code></li>
+<li>📄 <strong>WellKnownFile</strong> <code>app/models/well_known_file.rb</code></li>
+<li>📄 <strong>WellKnownFile</strong> <code>app/models/application_record.rb</code></li>
+<li>📄 <strong>ApplicationOperation</strong> <code>app/operations/application_operation.rb</code></li>
+<li>📄 <strong>Breadcrumbs</strong> <code>app/presenters/breadcrumbs.rb</code></li>
+<li>📄 <strong>MenuWithPermissions</strong> <code>app/presenters/menu_with_permissions.rb</code></li>
+<li>📄 <strong>PlatformDashboardNav</strong> <code>app/presenters/platform_dashboard_nav.rb</code></li>
+<li>📄 <strong>PlatformDashboardNav</strong> <code>app/presenters/menu_with_permissions.rb</code></li>
+<li>📄 <strong>AjaxPaginationRenderer</strong> <code>lib/ajax_pagination_renderer.rb</code></li>
+<li>📄 <strong>AjaxPaginationRenderer</strong> <code>lib/pagination_renderer.rb</code></li>
+<li>📄 <strong>PaginationRenderer</strong> <code>lib/pagination_renderer.rb</code></li>
+<li>📄 <strong>RedirectURL</strong> <code>lib/redirect_url.rb</code></li>
+<li>📄 <strong>Global::Accordion</strong> <code>app/components/global/accordion.rb</code></li>
+<li>📄 <strong>Global::AccordionSection</strong> <code>app/components/global/accordion_section.rb</code></li>
+<li>📄 <strong>Global::ActionsDropdown</strong> <code>app/components/global/actions_dropdown.rb</code></li>
+<li>📄 <strong>Global::BasicTooltip</strong> <code>app/components/global/basic_tooltip.rb</code></li>
+<li>📄 <strong>Global::Callout</strong> <code>app/components/global/callout.rb</code></li>
+<li>📄 <strong>Global::CookieConsentBanner</strong> <code>app/components/global/cookie_consent_banner.rb</code></li>
+<li>📄 <strong>Global::CopyToClipboard</strong> <code>app/components/global/copy_to_clipboard.rb</code></li>
+<li>📄 <strong>Global::CourseListBanner</strong> <code>app/components/global/course_list_banner.rb</code></li>
+<li>📄 <strong>Global::CustomHeadSnippets</strong> <code>app/components/global/custom_head_snippets.rb</code></li>
+<li>📄 <strong>Global::DisclosureWidget</strong> <code>app/components/global/disclosure_widget.rb</code></li>
+<li>📄 <strong>Global::DownloadButton</strong> <code>app/components/global/download_button.rb</code></li>
+<li>📄 <strong>Global::FaIcon</strong> <code>app/components/global/fa_icon.rb</code></li>
+<li>📄 <strong>Global::FilterBar::Controls</strong> <code>app/components/global/filter_bar/controls.rb</code></li>
+<li>📄 <strong>Global::FilterBar::Filter</strong> <code>app/components/global/filter_bar/filter.rb</code></li>
+<li>📄 <strong>Global::FilterBar::Search</strong> <code>app/components/global/filter_bar/search.rb</code></li>
+<li>📄 <strong>Global::FlashBlock</strong> <code>app/components/global/flash_block.rb</code></li>
+<li>📄 <strong>Global::FlashLayer</strong> <code>app/components/global/flash_layer.rb</code></li>
+<li>📄 <strong>Global::FlashMessage</strong> <code>app/components/global/flash_message.rb</code></li>
+<li>📄 <strong>Global::HeadlineTooltip</strong> <code>app/components/global/headline_tooltip.rb</code></li>
+<li>📄 <strong>Global::HelpdeskButton</strong> <code>app/components/global/helpdesk_button.rb</code></li>
+<li>📄 <strong>Global::ItemStatus</strong> <code>app/components/global/item_status.rb</code></li>
+<li>📄 <strong>Global::LabeledCopyButton</strong> <code>app/components/global/labeled_copy_button.rb</code></li>
+<li>📄 <strong>Global::LinkItem</strong> <code>app/components/global/link_item.rb</code></li>
+<li>📄 <strong>Global::Meter</strong> <code>app/components/global/meter.rb</code></li>
+<li>📄 <strong>Global::PageHeader</strong> <code>app/components/global/page_header.rb</code></li>
+<li>📄 <strong>Global::Pill</strong> <code>app/components/global/pill.rb</code></li>
+<li>📄 <strong>Global::Pill</strong> <code>app/components/global/pill_preview.rb</code></li>
+<li>📄 <strong>Global::Slider</strong> <code>app/components/global/slider.rb</code></li>
+<li>📄 <strong>Global::SvgIcon</strong> <code>app/components/global/svg_icon.rb</code></li>
+<li>📄 <strong>Global::Table</strong> <code>app/components/global/table.rb</code></li>
+<li>📄 <strong>Global::UserAvatar</strong> <code>app/components/global/user_avatar.rb</code></li>
+<li>📄 <strong>ViewComponent</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Sass</strong> <code>Gemfile</code></li>
+<li>📄 <strong>SimpleForm</strong> <code>config/initializers/simple_form.rb</code></li>
+<li>📄 <strong>SimpleForm</strong> <code>RAG: config/locales/simple_form.en.yml</code></li>
+<li>📄 <strong>Form::DynamicSortableList</strong> <code>app/components/form/dynamic_sortable_list.rb</code></li>
+<li>📄 <strong>SimpleFormTranslateWithVariables</strong> <code>config/initializers/simple_form.rb</code></li>
+<li>📄 <strong>SubmitButtonPrimary</strong> <code>config/initializers/simple_form.rb</code></li>
+<li>📄 <strong>SimpleForm::Components::Pattern</strong> <code>config/initializers/simple_form.rb</code></li>
+<li>📄 <strong>SimpleFormDynamicDefaultFormClass</strong> <code>config/initializers/simple_form.rb</code></li>
+<li>📄 <strong>AdvancedOptionsHelpers</strong> <code>config/initializers/simple_form.rb</code></li>
+<li>📄 <strong>Preloading::Preloader</strong> <code>app/presenters/private_presenter.rb</code></li>
+<li>📄 <strong>BrowserSupport</strong> <code>lib/browser_support.rb</code></li>
+<li>📄 <strong>ApplicationComponent</strong> <code>app/components/application_component.rb</code></li>
+<li>📄 <strong>application.html.slim</strong> <code>app/helpers/application_helper.rb</code></li>
+<li>📄 <strong>Accordion (Ruby ViewComponent)</strong> <code>app/components/global/accordion.rb</code></li>
+<li>📄 <strong>ActionsDropdown</strong> <code>app/components/global/actions_dropdown.rb</code></li>
+<li>📄 <strong>BasicTooltip</strong> <code>app/components/global/basic_tooltip.rb</code></li>
+<li>📄 <strong>Callout</strong> <code>app/components/global/callout.rb</code></li>
+<li>📄 <strong>Cookie Consent Banner (Ruby ViewComponent)</strong> <code>app/components/global/cookie_consent_banner.rb</code></li>
+<li>📄 <strong>Copy to Clipboard (Ruby ViewComponent)</strong> <code>app/components/global/copy_to_clipboard.rb</code></li>
+<li>📄 <strong>CourseListBanner</strong> <code>app/components/global/course_list_banner.rb</code></li>
+<li>📄 <strong>CustomHeadSnippets</strong> <code>app/components/global/custom_head_snippets.rb</code></li>
+<li>📄 <strong>DisclosureWidget</strong> <code>app/components/global/disclosure_widget.rb</code></li>
+<li>📄 <strong>DownloadButton</strong> <code>app/components/global/download_button.rb</code></li>
+<li>📄 <strong>FaIcon</strong> <code>app/components/global/fa_icon.rb</code></li>
+<li>📄 <strong>FilterBar::Controls</strong> <code>app/components/global/filter_bar/controls.rb</code></li>
+<li>📄 <strong>FilterBar::Filter</strong> <code>app/components/global/filter_bar/filter.rb</code></li>
+<li>📄 <strong>FilterBar::Search</strong> <code>app/components/global/filter_bar/search.rb</code></li>
+<li>📄 <strong>FlashBlock</strong> <code>app/components/global/flash_block.rb</code></li>
+<li>📄 <strong>FlashLayer</strong> <code>app/components/global/flash_layer.rb</code></li>
+<li>📄 <strong>FlashMessage</strong> <code>app/components/global/flash_message.rb</code></li>
+<li>📄 <strong>HeadlineTooltip</strong> <code>app/components/global/headline_tooltip.rb</code></li>
+<li>📄 <strong>Helpdesk Button (Ruby ViewComponent)</strong> <code>app/components/global/helpdesk_button.rb</code></li>
+<li>📄 <strong>ItemStatus</strong> <code>app/components/global/item_status.rb</code></li>
+<li>📄 <strong>LabeledCopyButton</strong> <code>app/components/global/labeled_copy_button.rb</code></li>
+<li>📄 <strong>LinkItem</strong> <code>app/components/global/link_item.rb</code></li>
+<li>📄 <strong>Meter</strong> <code>app/components/global/meter.rb</code></li>
+<li>📄 <strong>PageHeader</strong> <code>app/components/global/page_header.rb</code></li>
+<li>📄 <strong>Pill</strong> <code>app/components/global/pill.rb</code></li>
+<li>📄 <strong>Slider (Ruby ViewComponent)</strong> <code>app/components/global/slider.rb</code></li>
+<li>📄 <strong>SvgIcon</strong> <code>app/components/global/svg_icon.rb</code></li>
+<li>📄 <strong>Table</strong> <code>app/components/global/table.rb</code></li>
+<li>📄 <strong>UserAvatar</strong> <code>app/components/global/user_avatar.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Yarn</strong> <code>RAG: docs/app/development/frontend/webpack_bundles.md</code></li>
+<li>📄 <strong>ViewComponent</strong> <code>RAG: docs/app/development/frontend/components/index.md</code></li>
+<li>📄 <strong>React</strong> <code>RAG: foundational_context</code></li>
+<li>📄 <strong>XikoloVideoPlayer</strong> <code>RAG: docs/app/development/frontend/video-player.md</code></li>
+<li>📄 <strong>FrontendFormHandler</strong> <code>RAG: docs/app/development/implementation/course_items_form.md</code></li>
+<li>📄 <strong>Sass (sass-embedded)</strong> <code>RAG: docs/app/development/frontend/CSS/css_styleguide.md</code></li>
+<li>📄 <strong>Sprockets</strong> <code>RAG: foundational_context</code></li>
+<li>📄 <strong>jQuery</strong> <code>RAG: docs/app/development/frontend/js_styleguide.md</code></li>
+<li>📄 <strong>main.scss</strong> <code>RAG: docs/app/development/branding/stylesheets.md</code></li>
+<li>📄 <strong>_theme.scss</strong> <code>RAG: docs/app/development/branding/stylesheets.md</code></li>
+<li>📄 <strong>_global.scss</strong> <code>RAG: docs/app/development/frontend/CSS/index.md</code></li>
+<li>📄 <strong>_bs-variables.scss</strong> <code>RAG: docs/app/development/frontend/CSS/index.md</code></li>
+<li>📄 <strong>_components.scss</strong> <code>RAG: docs/app/development/frontend/CSS/index.md</code></li>
+<li>📄 <strong>_partials.scss</strong> <code>RAG: docs/app/development/frontend/CSS/index.md</code></li>
+<li>📄 <strong>_grid-settings.scss</strong> <code>RAG: docs/app/development/frontend/CSS/css_styleguide.md</code></li>
+<li>📄 <strong>Node.js</strong> <code>RAG: docs/app/development/local_setup/update_node.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>app/assets/javascripts/application.js</strong> <code>app/assets/javascripts/application.js</code></li>
+<li>📄 <strong>app/assets/javascripts/xfn/ready.js</strong> <code>app/assets/javascripts/xfn/ready.js</code></li>
+<li>📄 <strong>app/assets/main.js</strong> <code>app/assets/main.js</code></li>
+<li>📄 <strong>app/assets/main.scss</strong> <code>app/assets/main.scss</code></li>
+<li>📄 <strong>Global::Accordion</strong> <code>app/components/global/accordion.html.slim</code></li>
+<li>📄 <strong>Global::AccordionSection</strong> <code>app/components/global/accordion_section.html.slim</code></li>
+<li>📄 <strong>Global::ActionsDropdown</strong> <code>app/components/global/actions_dropdown.html.slim</code></li>
+<li>📄 <strong>Global::BasicTooltip</strong> <code>app/components/global/basic_tooltip.html.slim</code></li>
+<li>📄 <strong>Global::Callout</strong> <code>app/components/global/callout.html.slim</code></li>
+<li>📄 <strong>Global::CookieConsentBanner</strong> <code>app/components/global/cookie_consent_banner.html.slim</code></li>
+<li>📄 <strong>Global::CopyToClipboard</strong> <code>app/components/global/copy_to_clipboard.html.slim</code></li>
+<li>📄 <strong>Global::CourseListBanner</strong> <code>app/components/global/course_list_banner.html.slim</code></li>
+<li>📄 <strong>Global::CustomHeadSnippets</strong> <code>app/components/global/custom_head_snippets.html.slim</code></li>
+<li>📄 <strong>Global::DisclosureWidget</strong> <code>app/components/global/disclosure_widget.html.slim</code></li>
+<li>📄 <strong>Global::DownloadButton</strong> <code>app/components/global/download_button.html.slim</code></li>
+<li>📄 <strong>Global::FaIcon</strong> <code>app/components/global/fa_icon.html.slim</code></li>
+<li>📄 <strong>Global::FilterBar::Controls</strong> <code>app/components/global/filter_bar/controls.html.slim</code></li>
+<li>📄 <strong>Global::FilterBar::Filter</strong> <code>app/components/global/filter_bar/filter.html.slim</code></li>
+<li>📄 <strong>Global::FilterBar::Search</strong> <code>app/components/global/filter_bar/search.html.slim</code></li>
+<li>📄 <strong>Global::FlashBlock</strong> <code>app/components/global/flash_block.html.slim</code></li>
+<li>📄 <strong>Global::FlashLayer</strong> <code>app/components/global/flash_layer.html.slim</code></li>
+<li>📄 <strong>Global::FlashMessage</strong> <code>app/components/global/flash_message.html.slim</code></li>
+<li>📄 <strong>Global::HeadlineTooltip</strong> <code>app/components/global/headline_tooltip.html.slim</code></li>
+<li>📄 <strong>Global::HelpdeskButton</strong> <code>app/components/global/helpdesk_button.html.slim</code></li>
+<li>📄 <strong>Global::ItemStatus</strong> <code>app/components/global/item_status.html.slim</code></li>
+<li>📄 <strong>Global::LabeledCopyButton</strong> <code>app/components/global/labeled_copy_button.html.slim</code></li>
+<li>📄 <strong>Global::LinkItem</strong> <code>app/components/global/link_item.html.slim</code></li>
+<li>📄 <strong>Global::Meter</strong> <code>app/components/global/meter.html.slim</code></li>
+<li>📄 <strong>Global::PageHeader</strong> <code>app/components/global/page_header.html.slim</code></li>
+<li>📄 <strong>Global::Slider</strong> <code>app/components/global/slider.html.slim</code></li>
+<li>📄 <strong>Global::SvgIcon</strong> <code>app/components/global/svg_icon.html.slim</code></li>
+<li>📄 <strong>Global::Table</strong> <code>app/components/global/table.html.slim</code></li>
+<li>📄 <strong>Global::UserAvatar</strong> <code>app/components/global/user_avatar.html.slim</code></li>
+<li>📄 <strong>Webpack</strong> <code>package.json</code></li>
+<li>📄 <strong>Webpack</strong> <code>config/assets/webpack.config.mjs</code></li>
+<li>📄 <strong>Yarn</strong> <code>package.json</code></li>
+<li>📄 <strong>React</strong> <code>package.json</code></li>
+<li>📄 <strong>TypeScript</strong> <code>package.json</code></li>
+<li>📄 <strong>TypeScript</strong> <code>tsconfig.json</code></li>
+<li>📄 <strong>Sass</strong> <code>package.json</code></li>
+<li>📄 <strong>PostCSS</strong> <code>package.json</code></li>
+<li>📄 <strong>ESLint</strong> <code>package.json</code></li>
+<li>📄 <strong>ESLint</strong> <code>eslint.config.mjs</code></li>
+<li>📄 <strong>Stylelint</strong> <code>package.json</code></li>
+<li>📄 <strong>Stylelint</strong> <code>.stylelintrc.js</code></li>
+<li>📄 <strong>Prettier</strong> <code>package.json</code></li>
+<li>📄 <strong>Prettier</strong> <code>.prettierignore</code></li>
+<li>📄 <strong>I18n-js</strong> <code>package.json</code></li>
+<li>📄 <strong>I18n-js</strong> <code>eslint.config.mjs</code></li>
+<li>📄 <strong>XikoloVideoPlayer</strong> <code>package.json</code></li>
+<li>📄 <strong>Form::DynamicSortableList</strong> <code>app/components/form/dynamic_sortable_list.html.slim</code></li>
+<li>📄 <strong>_piwik.html.slim</strong> <code>app/views/shared/_piwik.html.slim</code></li>
+<li>📄 <strong>browser-warning.js</strong> <code>app/assets/components/global/browser-warning.js</code></li>
+<li>📄 <strong>Babel</strong> <code>package.json</code></li>
+<li>📄 <strong>Babel</strong> <code>foundational_context</code></li>
+<li>📄 <strong>Sass (sass-embedded)</strong> <code>package.json</code></li>
+<li>📄 <strong>Sprockets</strong> <code>app/assets/config/manifest.js</code></li>
+<li>📄 <strong>jQuery</strong> <code>package.json</code></li>
+<li>📄 <strong>gon</strong> <code>app/assets/global.d.ts</code></li>
+<li>📄 <strong>gon</strong> <code>foundational_context</code></li>
+<li>📄 <strong>Husky &amp; lint-staged</strong> <code>package.json</code></li>
+<li>📄 <strong>application.js</strong> <code>app/assets/javascripts/application.js</code></li>
+<li>📄 <strong>application.js</strong> <code>foundational_context</code></li>
+<li>📄 <strong>main.js</strong> <code>app/assets/main.js</code></li>
+<li>📄 <strong>main.js</strong> <code>foundational_context</code></li>
+<li>📄 <strong>main.scss</strong> <code>app/assets/main.scss</code></li>
+<li>📄 <strong>_theme.scss</strong> <code>app/assets/stylesheets/_theme.scss</code></li>
+<li>📄 <strong>_global.scss</strong> <code>app/assets/stylesheets/_global.scss</code></li>
+<li>📄 <strong>_bs-variables.scss</strong> <code>app/assets/stylesheets/_bs-variables.scss</code></li>
+<li>📄 <strong>_components.scss</strong> <code>app/assets/stylesheets/_components.scss</code></li>
+<li>📄 <strong>_partials.scss</strong> <code>app/assets/stylesheets/_partials.scss</code></li>
+<li>📄 <strong>_grid-settings.scss</strong> <code>app/assets/stylesheets/_grid-settings.scss</code></li>
+<li>📄 <strong>application.html.slim</strong> <code>app/views/layouts/application.html.slim</code></li>
+<li>📄 <strong>simple.html.slim</strong> <code>app/views/layouts/simple.html.slim</code></li>
+<li>📄 <strong>simple.html.slim</strong> <code>foundational_context</code></li>
+<li>📄 <strong>plain.html.slim</strong> <code>app/views/layouts/plain.html.slim</code></li>
+<li>📄 <strong>Rails Asset Pipeline</strong> <code>app/assets/config/manifest.js</code></li>
+<li>📄 <strong>Rails Asset Pipeline</strong> <code>eslint.config.mjs</code></li>
+<li>📄 <strong>Husky</strong> <code>package.json</code></li>
+<li>📄 <strong>Husky</strong> <code>.husky/pre-commit</code></li>
+<li>📄 <strong>lint-staged</strong> <code>package.json</code></li>
+<li>📄 <strong>lint-staged</strong> <code>.husky/pre-commit</code></li>
+<li>📄 <strong>TypeScript Compiler (tsc)</strong> <code>tsconfig.json</code></li>
+<li>📄 <strong>TypeScript Compiler (tsc)</strong> <code>.husky/pre-commit</code></li>
+<li>📄 <strong>Sass (dartsass-sprockets)</strong> <code>foundational_context</code></li>
+<li>📄 <strong>Sass (dartsass-sprockets)</strong> <code>app/assets/main.scss</code></li>
+<li>📄 <strong>Node.js</strong> <code>package.json</code></li>
+<li>📄 <strong>Markdownlint</strong> <code>package.json</code></li>
+<li>📄 <strong>Markdownlint</strong> <code>.husky/pre-commit</code></li>
+<li>📄 <strong>Accordion (JS)</strong> <code>app/assets/components/global/accordion.js</code></li>
+<li>📄 <strong>Accordion (Ruby ViewComponent)</strong> <code>app/components/global/accordion.html.slim</code></li>
+<li>📄 <strong>ActionsDropdown</strong> <code>app/components/global/actions_dropdown.html.slim</code></li>
+<li>📄 <strong>BasicTooltip</strong> <code>app/components/global/basic_tooltip.html.slim</code></li>
+<li>📄 <strong>Browser Warning</strong> <code>app/assets/components/global/browser-warning.js</code></li>
+<li>📄 <strong>Callout</strong> <code>app/components/global/callout.html.slim</code></li>
+<li>📄 <strong>Clear Button</strong> <code>app/assets/components/global/clear-button.js</code></li>
+<li>📄 <strong>Cookie Consent Banner (JS)</strong> <code>app/assets/components/global/cookie-consent-banner.js</code></li>
+<li>📄 <strong>Cookie Consent Banner (Ruby ViewComponent)</strong> <code>app/components/global/cookie_consent_banner.html.slim</code></li>
+<li>📄 <strong>Copy to Clipboard (JS)</strong> <code>app/assets/components/global/copy-to-clipboard.ts</code></li>
+<li>📄 <strong>Copy to Clipboard (Ruby ViewComponent)</strong> <code>app/components/global/copy_to_clipboard.html.slim</code></li>
+<li>📄 <strong>CourseListBanner</strong> <code>app/components/global/course_list_banner.html.slim</code></li>
+<li>📄 <strong>CustomHeadSnippets</strong> <code>app/components/global/custom_head_snippets.html.slim</code></li>
+<li>📄 <strong>Custom Select (TomSelect)</strong> <code>app/assets/components/global/custom-select.ts</code></li>
+<li>📄 <strong>Custom Select (TomSelect)</strong> <code>app/assets/components/global/custom-select/classifiers-select.js</code></li>
+<li>📄 <strong>DisclosureWidget</strong> <code>app/components/global/disclosure_widget.html.slim</code></li>
+<li>📄 <strong>DownloadButton</strong> <code>app/components/global/download_button.html.slim</code></li>
+<li>📄 <strong>Dropdown (JS)</strong> <code>app/assets/components/global/dropdown.js</code></li>
+<li>📄 <strong>Expand Course Card</strong> <code>app/assets/components/global/expand-course-card.js</code></li>
+<li>📄 <strong>FaIcon</strong> <code>app/components/global/fa_icon.html.slim</code></li>
+<li>📄 <strong>FilterBar::Controls</strong> <code>app/components/global/filter_bar/controls.html.slim</code></li>
+<li>📄 <strong>FilterBar::Filter</strong> <code>app/components/global/filter_bar/filter.html.slim</code></li>
+<li>📄 <strong>FilterBar::Search</strong> <code>app/components/global/filter_bar/search.html.slim</code></li>
+<li>📄 <strong>Fixed Bar</strong> <code>app/assets/components/global/fixed-bar.js</code></li>
+<li>📄 <strong>Flatpickr (JS)</strong> <code>app/assets/components/global/flatpickr.js</code></li>
+<li>📄 <strong>Flatpickr (JS)</strong> <code>app/assets/components/global/flatpickr/customButtonsPlugin.js</code></li>
+<li>📄 <strong>FlashBlock</strong> <code>app/components/global/flash_block.html.slim</code></li>
+<li>📄 <strong>FlashLayer</strong> <code>app/components/global/flash_layer.html.slim</code></li>
+<li>📄 <strong>FlashMessage</strong> <code>app/components/global/flash_message.html.slim</code></li>
+<li>📄 <strong>HeadlineTooltip</strong> <code>app/components/global/headline_tooltip.html.slim</code></li>
+<li>📄 <strong>Helpdesk Button (JS)</strong> <code>app/assets/components/global/helpdesk-button.js</code></li>
+<li>📄 <strong>Helpdesk Button (Ruby ViewComponent)</strong> <code>app/components/global/helpdesk_button.html.slim</code></li>
+<li>📄 <strong>Hide/Show on Click</strong> <code>app/assets/components/global/hide-on-click.js</code></li>
+<li>📄 <strong>Hide/Show on Click</strong> <code>app/assets/components/global/show-on-click.js</code></li>
+<li>📄 <strong>ItemStatus</strong> <code>app/components/global/item_status.html.slim</code></li>
+<li>📄 <strong>LabeledCopyButton</strong> <code>app/components/global/labeled_copy_button.html.slim</code></li>
+<li>📄 <strong>LinkItem</strong> <code>app/components/global/link_item.html.slim</code></li>
+<li>📄 <strong>Meter</strong> <code>app/components/global/meter.html.slim</code></li>
+<li>📄 <strong>PageHeader</strong> <code>app/components/global/page_header.html.slim</code></li>
+<li>📄 <strong>Slider (JS)</strong> <code>app/assets/components/global/slider.js</code></li>
+<li>📄 <strong>Slider (Ruby ViewComponent)</strong> <code>app/components/global/slider.html.slim</code></li>
+<li>📄 <strong>SvgIcon</strong> <code>app/components/global/svg_icon.html.slim</code></li>
+<li>📄 <strong>System Alerts</strong> <code>app/assets/components/global/system-alerts.js</code></li>
+<li>📄 <strong>Table</strong> <code>app/components/global/table.html.slim</code></li>
+<li>📄 <strong>Toggle Menu</strong> <code>app/assets/components/global/toggle-menu.js</code></li>
+<li>📄 <strong>Tooltip (JS)</strong> <code>app/assets/components/global/tooltip.js</code></li>
+<li>📄 <strong>Transcript</strong> <code>app/assets/components/global/transcript.js</code></li>
+<li>📄 <strong>UserAvatar</strong> <code>app/components/global/user_avatar.html.slim</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294656"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcements standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Announcements standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#comm" class="breadcrumb-link">COMM</a></li>
+            <li class="breadcrumb-item active">Announcements standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-admin-announcement-creation-%26-email-distribution" class="sidebar-nav-link">1. Admin Announcement Creation & Email Distribution</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-public-announcement-display-%26-read-tracking" class="sidebar-nav-link">2. Public Announcement Display & Read Tracking</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-comm">COMM</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="global-and-course-specific-announcements-and-news-management---technical-documentation" tabindex="-1"><a class="header-anchor" href="#global-and-course-specific-announcements-and-news-management---technical-documentation"><span>Global and Course-Specific Announcements and News Management - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the Xikolo cluster 20_COMM_Announcements, a comprehensive system for managing and disseminating global and course-specific announcements and news. The system integrates a Ruby on Rails web frontend with the dedicated Xikolo News Service microservice, alongside Xikolo Account and Course Services. Its primary purpose is to facilitate the creation, management, email distribution, public display, and read tracking of announcements across the platform, supporting administrative operations and public content consumption.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The architecture for Xikolo’s Announcement and News Management system is designed as a distributed microservice-oriented setup, with the main Ruby on Rails application acting as the user-facing frontend. This frontend orchestrates interactions with several specialized microservices to manage content, user data, and course information. The core components include the primary Xikolo Rails Application, the dedicated Xikolo News Service for all announcement data, and supporting microservices for user and course information. Data persistence for announcements is handled by dedicated stores, primarily PostgreSQL, with Redis and S3 supporting caching and asset management. Asynchronous communication patterns, via RabbitMQ, are also central to the News Service’s operations, particularly for email distribution and background processing.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUser["Admin / Public User"]
+  xikoloMainApp["Xikolo Rails Application"]
+  xikoloNewsService["Xikolo News Service"]
+  xikoloAccountService["Xikolo Account Service"]
+  xikoloCourseService["Xikolo Course Service"]
+  newsDataStores["News Persistence (PG, Redis, S3)"]
+
+  adminUser -->|"Manages/Views Announcements"| xikoloMainApp
+  xikoloMainApp -->|"CRUD Announce/News, Send Emails"| xikoloNewsService
+  xikoloMainApp -->|"Fetches User/Group Data"| xikoloAccountService
+  xikoloMainApp -->|"Fetches Course Data"| xikoloCourseService
+  xikoloNewsService -->|"Stores/Retrieves Content"| newsDataStores
+  xikoloNewsService -->|"Enriches with User Info"| xikoloAccountService
+  xikoloNewsService -->|"Associates with Courses"| xikoloCourseService
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Admin::Announcement::RecipientsController:</strong> Authorizes ‘news.announcement.send’ permission.</li>
+<li><strong>Admin::Announcement::RecipientsController:</strong> Fetches user data from Xikolo::Account service via <code>account_api.rel(:users).get</code>.</li>
+<li><strong>Admin::AnnouncementEmailsController:</strong> Requires ‘admin_announcements’ feature.</li>
+<li><strong>Admin::AnnouncementEmailsController:</strong> Interacts with Xikolo::NewsService via <code>news_service</code> to get announcement and message details.</li>
+<li><strong>Admin::AnnouncementsController:</strong> Requires ‘admin_announcements’ feature.</li>
+<li><strong>Admin::AnnouncementsController:</strong> Authorizes ‘news.announcement.create’ and ‘news.announcement.update’ permissions.</li>
+<li><strong>AnnouncementsController:</strong> Authorizes actions using <code>authorize!</code> and <code>current_user.allowed?</code> based on permissions like <code>news.announcement.create</code>, <code>news.announcement.update</code>, <code>news.announcement.delete</code>, <code>news.announcement.send</code>, <code>news.announcement.send_test</code> [Source: app/controllers/announcements_controller.rb, RAG: services/account/lib/tasks/permissions/news.yml].</li>
+<li><strong>AnnouncementsController:</strong> Uses <code>Admin::NewsForm</code> for data binding and validation of announcement attributes [Source: app/controllers/announcements_controller.rb, app/forms/admin/news_form.rb].</li>
+<li><strong>Home::AnnouncementsController:</strong> Checks for the ‘announcements’ feature flag [Source: app/controllers/home/announcements_controller.rb].</li>
+<li><strong>Home::AnnouncementsController:</strong> Fetches announcement posts from the <code>news</code> microservice (<code>Xikolo.api(:news).rel(:posts).get</code>) [Source: app/controllers/home/announcements_controller.rb].</li>
+<li><strong>Admin::AnnouncementEmailForm:</strong> Contains nested <code>Translation</code> subforms for subject and content in different languages.</li>
+<li><strong>Admin::AnnouncementEmailForm:</strong> Uses <code>RecipientsArray</code> processor to transform recipient IDs to URNs for the NewsService.</li>
+<li><strong>Admin::AnnouncementEmailForm::RecipientsArray:</strong> Processes <code>recipients</code> attribute for <code>Admin::AnnouncementEmailForm</code>.</li>
+<li><strong>Admin::AnnouncementEmailForm::TranslationsArray:</strong> Processes <code>translations</code> attribute for <code>Admin::AnnouncementEmailForm</code>.</li>
+<li><strong>Admin::AnnouncementForm:</strong> Contains nested <code>Translation</code> subforms for subject and content in different languages.</li>
+<li><strong>Admin::AnnouncementForm:</strong> Uses <code>TranslationsArray</code> processor to manage default and additional language translations.</li>
+<li><strong>Admin::AnnouncementForm::TranslationsArray:</strong> Processes <code>translations</code> attribute for <code>Admin::AnnouncementForm</code>.</li>
+<li><strong>Admin::NewsForm:</strong> Inherits from <code>XUI::Form</code> [Source: app/forms/admin/news_form.rb].</li>
+<li><strong>Admin::NewsForm:</strong> Defines attributes for announcement properties like <code>title</code>, <code>text</code>, <code>publish_at</code>, <code>language</code>, <code>visual_url</code>, <code>audience</code>, and <code>translations</code> [Source: app/forms/admin/news_form.rb].</li>
+<li><strong>Admin::NewsForm::Translation:</strong> Defines attributes for <code>title</code>, <code>text</code>, and <code>language</code> of a translation [Source: app/forms/admin/news_form.rb].</li>
+<li><strong>Admin::NewsForm::Translation:</strong> Used as a <code>subtype</code> for the <code>translations</code> attribute in <code>Admin::NewsForm</code> [Source: app/forms/admin/news_form.rb].</li>
+<li><strong>Admin::NewsForm::TranslationsArray:</strong> Processes <code>translations</code> attribute for <code>Admin::NewsForm</code>.</li>
+<li><strong>Alert:</strong> Uses <code>translations</code> (likely a JSONB or hstore column) to store multi-language content.</li>
+<li><strong>Alert:</strong> Defines scopes <code>by_publication_date</code> and <code>published</code> for filtering.</li>
+<li><strong>Alert::Translation:</strong> Initializes with a locale and data hash, providing <code>title</code> and <code>text</code> methods.</li>
+<li><strong>Admin::AnnouncementEmailPresenter:</strong> Initializes with announcement and email resources [Source: app/presenters/admin/announcement_email_presenter.rb].</li>
+<li><strong>Admin::AnnouncementEmailPresenter:</strong> Asynchronously fetches author and sender user details from the <code>account</code> microservice (<code>Xikolo.api(:account)</code>) [Source: app/presenters/admin/announcement_email_presenter.rb].</li>
+<li><strong>Admin::AnnouncementPresenter:</strong> Initializes with an announcement resource [Source: app/presenters/admin/announcement_presenter.rb].</li>
+<li><strong>Admin::AnnouncementPresenter:</strong> Provides formatted <code>created_at</code> and <code>title</code> [Source: app/presenters/admin/announcement_presenter.rb].</li>
+<li><strong>Admin::AnnouncementsListPresenter:</strong> Delegates iteration methods (<code>each</code>, <code>any?</code>) to the underlying collection [Source: app/presenters/admin/announcements_list_presenter.rb].</li>
+<li><strong>Admin::AnnouncementsListPresenter:</strong> Uses <code>RestifyPaginationCollection</code> for handling pagination metadata from the <code>news</code> service [Source: app/presenters/admin/announcements_list_presenter.rb].</li>
+<li><strong>AnnouncementPresenter:</strong> Initializes with a news resource [Source: app/presenters/announcement_presenter.rb].</li>
+<li><strong>AnnouncementPresenter:</strong> Includes <code>MarkdownHelper</code> to render markdown content [Source: app/presenters/announcement_presenter.rb].</li>
+<li><strong>Middleware::NewsTracker:</strong> Intercepts HTTP requests to check for ‘news’ tracking parameters (<code>tracking_type</code>, <code>tracking_id</code>, <code>tracking_user</code>).</li>
+<li><strong>Middleware::NewsTracker:</strong> Sends an asynchronous POST request to <code>Xikolo.api(:news).value!.rel(:visits)</code> to mark an announcement as read, without blocking the main request-response cycle.</li>
+<li><strong>Xikolo::NewsService:</strong> Communicates with <code>Xikolo::Account</code> service to potentially retrieve user or account-related information. [Source: RAG: services/news/config/services.yml]</li>
+<li><strong>Xikolo::NewsService:</strong> Communicates with <code>Xikolo::CourseService</code> to associate news with specific courses or retrieve course details. [Source: RAG: services/news/config/services.yml]</li>
+<li><strong>Xikolo::Account:</strong> Provides user data (name, email) for announcement recipient selection.</li>
+<li><strong>Xikolo::Account:</strong> Provides group data (access, content_test, custom_recipients) for recipient selection.</li>
+<li><strong>Xikolo::CourseService:</strong> Provides course data (title, course_code) for announcement recipient selection.</li>
+<li><strong>News (Data Entity):</strong> Created, read, updated, and deleted via the <code>Xikolo::NewsService</code> API. [Source: RAG: services/news/README.md]</li>
+<li><strong>News (Data Entity):</strong> Potentially associated with <code>Course</code> entities from <code>Xikolo::CourseService</code>. [Source: RAG: services/news/config/services.yml]</li>
+<li><strong>Email Notification Component:</strong> Receives news content and recipient information from other parts of <code>Xikolo::NewsService</code>.</li>
+<li><strong>Email Notification Component:</strong> Utilizes custom templates and stylesheets located in <code>services/news/brand/&lt;name&gt;/assets/views/layouts</code> and <code>services/news/brand/&lt;name&gt;/assets/stylesheets</code> for branding. [Source: RAG: docs/app/development/branding/email.md]</li>
+<li><strong>News Service (Microservice):</strong> Interacts with PostgreSQL for data persistence. [Source: services/news/config/database.yml]</li>
+<li><strong>News Service (Microservice):</strong> Communicates with RabbitMQ for asynchronous messaging (both consuming and publishing). [Source: docker/compose.news.yml, services/news/config/rabbitmq.yml]</li>
+<li><strong>News Msgr Consumer:</strong> Consumes messages from RabbitMQ. [Source: docker/compose.news.yml, services/news/config/rabbitmq.yml]</li>
+<li><strong>News Msgr Consumer:</strong> Interacts with the News Service’s PostgreSQL database for data operations.</li>
+<li><strong>News API Server:</strong> Exposes an HTTP API (debug port 4300). [Source: docker/compose.news.yml]</li>
+<li><strong>News API Server:</strong> Interacts with the News Service’s PostgreSQL database for data operations.</li>
+<li><strong>News Sidekiq Worker:</strong> Processes jobs from the Redis-backed Sidekiq queue. [Source: docker/compose.news.yml]</li>
+<li><strong>News Sidekiq Worker:</strong> Interacts with the News Service’s PostgreSQL database.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-admin-announcement-creation-%26-email-distribution" tabindex="-1"><a class="header-anchor" href="#1.-admin-announcement-creation-%26-email-distribution"><span>1. Admin Announcement Creation &amp; Email Distribution</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUI["Admin Interface (Web)"]
+  mainAppControllers["Admin::AnnouncementsController / Admin::AnnouncementEmailsController"]
+  forms["Admin::AnnouncementForm / Admin::AnnouncementEmailForm"]
+  xikoloNewsService["Xikolo News Service"]
+  emailProcess["Email Notification Component (via Sidekiq)"]
+  complete["Announcement Created & Emails Sent"]
+
+  adminUI -->|"Initiates Announcement/Email Create"| mainAppControllers
+  mainAppControllers -->|"Uses Forms for Input/Validation"| forms
+  forms -->|"Submits Data to"| xikoloNewsService
+  xikoloNewsService -->|"Initiates Asynchronous Email Send"| emailProcess
+  emailProcess -->|"Dispatches Notifications"| complete
+  mainAppControllers -->|"Confirms Action Completion"| complete
+</pre></div>
+<p>This workflow details the process for administrators to create new announcements, including the option for email distribution. The process begins when an administrator accesses the dedicated user interface to initiate the creation of either a general announcement or a specific announcement email. The <code>Admin::AnnouncementsController</code> or <code>Admin::AnnouncementEmailsController</code> handles these initial requests. Data input is facilitated by form objects like <code>Admin::AnnouncementForm</code> for general content or <code>Admin::AnnouncementEmailForm</code> for email-specific details, which manage multi-language translations and recipient selection. For recipient selection, <code>Admin::Announcement::RecipientsController</code> dynamically fetches user and course data from the <code>Xikolo::Account</code> and <code>Xikolo::CourseService</code> microservices, caching these responses for performance. Once validated, the announcement data is submitted to the <code>Xikolo News Service</code> via its API. The News Service then takes over the responsibility for persisting the announcement and, if configured, initiating the email distribution process. Email sending is typically an asynchronous operation, leveraging the <code>Email Notification Component</code> within the News Service, which dispatches jobs to the <code>News Sidekiq Worker</code> for background processing. The main application receives confirmation of the announcement’s creation and display status.</p>
+<h3 id="2.-public-announcement-display-%26-read-tracking" tabindex="-1"><a class="header-anchor" href="#2.-public-announcement-display-%26-read-tracking"><span>2. Public Announcement Display &amp; Read Tracking</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  publicUser["Public User Browser"]
+  homeAnnounceController["Home::AnnouncementsController"]
+  xikoloNewsService["Xikolo News Service"]
+  announcementPresenter["AnnouncementPresenter"]
+  newsTrackerMiddleware["Middleware::NewsTracker"]
+  readComplete["Announcement Read Event Stored"]
+
+  publicUser -->|"Requests Homepage/Announcements"| homeAnnounceController
+  homeAnnounceController -->|"Fetches Published Posts"| xikoloNewsService
+  xikoloNewsService -->|"Returns News Content"| announcementPresenter
+  announcementPresenter -->|"Renders Content to"| publicUser
+  publicUser -->|"User Views Post (Triggers)"| newsTrackerMiddleware
+  newsTrackerMiddleware -->|"Asynchronously Records Visit"| xikoloNewsService
+  xikoloNewsService -->|"Persists Read Status"| readComplete
+</pre></div>
+<p>This workflow outlines how announcements are displayed to end-users and how user engagement (read events) is tracked. A public user’s request for the application’s homepage or a specific announcement page is initially handled by the <code>Home::AnnouncementsController</code>. This controller checks for the ‘announcements’ feature flag and then queries the <code>Xikolo News Service</code> API to fetch relevant announcement posts. Crucially, it adjusts query parameters, such as <code>published</code> status, <code>user_id</code>, and <code>language</code>, based on the current user’s login status and permissions (e.g., <code>news.announcement.show</code> permission allows viewing drafts). The raw news resources returned by the News Service are then mapped to <code>AnnouncementPresenter</code> instances. The <code>AnnouncementPresenter</code> is responsible for formatting the content, including rendering markdown and generating a <code>teaser</code> from the full text, for display in the user interface. To track user engagement, the <code>Middleware::NewsTracker</code> intercepts HTTP requests. When it detects specific ‘news’ tracking parameters, it asynchronously sends a POST request to the <code>Xikolo News Service</code>’s <code>/visits</code> endpoint to mark the announcement as read by the user. This read tracking occurs without blocking the user’s main request, ensuring a responsive user experience.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo 20_COMM_Announcements cluster is implemented with a clear separation of concerns, leveraging a Ruby on Rails monolith as the frontend interacting with dedicated microservices. Technical considerations include robust authorization and feature flag integration. Controllers such as <code>Admin::AnnouncementsController</code> and <code>Home::AnnouncementsController</code> rely on feature flags like <code>admin_announcements</code> and <code>announcements</code> respectively, ensuring functionality is only available when enabled. Permissions, including <code>news.announcement.create</code>, <code>news.announcement.update</code>, <code>news.announcement.send</code>, and <code>news.announcement.show</code>, are strictly enforced using <code>authorize!</code> and <code>current_user.allowed?</code> checks. Error handling for interactions with microservices, particularly <code>Restify::UnprocessableEntity</code> errors, is implemented in controllers to provide user feedback on remote validation failures.</p>
+<p>Dependencies and integrations are central to the system’s operation. The main Rails application heavily integrates with <code>Xikolo.api(:news)</code> for all core announcement and news data management, including CRUD operations, email sending, and visit tracking. It also depends on <code>Xikolo.api(:account)</code> to fetch user and group information for recipient selection and to resolve author/sender names for email displays. Similarly, <code>Xikolo.api(:course)</code> provides course details for targeted announcements. Within the <code>Xikolo News Service</code> itself, core dependencies include PostgreSQL for persistent data storage, RabbitMQ for asynchronous messaging and inter-service communication, Redis for caching and Sidekiq job management, and S3 for storing news-related assets. Form objects like <code>Admin::AnnouncementEmailForm</code>, <code>Admin::AnnouncementForm</code>, and <code>Admin::NewsForm</code> inherit from <code>XUI::Form</code>, providing a standardized approach to data binding and validation, including nested <code>Translation</code> subforms for multilingual content. Presenters such as <code>AnnouncementPresenter</code> utilize utilities like <code>MarkdownHelper</code> and <code>HtmlTruncator</code> for content rendering and <code>Admin::AnnouncementsListPresenter</code> leverages <code>RestifyPaginationCollection</code> for handling pagination metadata.</p>
+<p>Configuration requirements involve application-wide settings for internationalization, specified via <code>Xikolo.config.locales['available']</code> and <code>Xikolo.config.locales['default']</code> to manage multiple language versions of content. Audience selection in <code>Admin::NewsForm</code> is derived from <code>Xikolo.config.access_groups</code>. Specific configuration values (e.g., database connection strings, RabbitMQ credentials, S3 bucket names) are sourced from <code>services/news/config/database.yml</code>, <code>services/news/config/rabbitmq.yml</code>, and <code>docker/config/xikolo/news.yml</code> respectively, but are not specified in the provided cluster data.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Admin::Announcement::RecipientsController</strong> <code>app/controllers/admin/announcement/recipients_controller.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementEmailsController</strong> <code>app/controllers/admin/announcement_emails_controller.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementsController</strong> <code>app/controllers/admin/announcements_controller.rb</code></li>
+<li>📄 <strong>AnnouncementsController</strong> <code>app/controllers/announcements_controller.rb</code></li>
+<li>📄 <strong>AnnouncementsController</strong> <code>RAG: services/account/lib/tasks/permissions/news.yml</code></li>
+<li>📄 <strong>Home::AnnouncementsController</strong> <code>app/controllers/home/announcements_controller.rb</code></li>
+<li>📄 <strong>Home::AnnouncementsController</strong> <code>spec/requests/announcements/index_spec.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementEmailPresenter</strong> <code>app/presenters/admin/announcement_email_presenter.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementPresenter</strong> <code>app/presenters/admin/announcement_presenter.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementsListPresenter</strong> <code>app/presenters/admin/announcements_list_presenter.rb</code></li>
+<li>📄 <strong>AnnouncementPresenter</strong> <code>app/presenters/announcement_presenter.rb</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::NewsService</strong> <code>foundational_context</code></li>
+<li>📄 <strong>Xikolo::NewsService</strong> <code>RAG: services/news/README.md</code></li>
+<li>📄 <strong>Xikolo::CourseService</strong> <code>app/controllers/admin/announcement/recipients_controller.rb</code></li>
+<li>📄 <strong>News Service (Microservice)</strong> <code>services/news/README.md</code></li>
+<li>📄 <strong>News Service (Microservice)</strong> <code>docker/compose.news.yml</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Admin::AnnouncementEmailForm</strong> <code>app/forms/admin/announcement_email_form.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementEmailForm::Translation</strong> <code>app/forms/admin/announcement_email_form.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementEmailForm::RecipientsArray</strong> <code>app/forms/admin/announcement_email_form.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementEmailForm::TranslationsArray</strong> <code>app/forms/admin/announcement_email_form.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementForm</strong> <code>app/forms/admin/announcement_form.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementForm::Translation</strong> <code>app/forms/admin/announcement_form.rb</code></li>
+<li>📄 <strong>Admin::AnnouncementForm::TranslationsArray</strong> <code>app/forms/admin/announcement_form.rb</code></li>
+<li>📄 <strong>Admin::NewsForm</strong> <code>app/forms/admin/news_form.rb</code></li>
+<li>📄 <strong>Admin::NewsForm::Translation</strong> <code>app/forms/admin/news_form.rb</code></li>
+<li>📄 <strong>Admin::NewsForm::TranslationsArray</strong> <code>app/forms/admin/news_form.rb</code></li>
+<li>📄 <strong>Alert</strong> <code>app/models/alert.rb</code></li>
+<li>📄 <strong>Alert::Translation</strong> <code>app/models/alert.rb</code></li>
+<li>📄 <strong>Middleware::NewsTracker</strong> <code>lib/middleware/news_tracker.rb</code></li>
+<li>📄 <strong>Xikolo::Account</strong> <code>app/controllers/admin/announcement/recipients_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Account</strong> <code>app/forms/admin/announcement_email_form.rb</code></li>
+<li>📄 <strong>News Msgr Consumer</strong> <code>docker/compose.news.yml</code></li>
+<li>📄 <strong>News Msgr Consumer</strong> <code>services/news/config/rabbitmq.yml</code></li>
+<li>📄 <strong>News API Server</strong> <code>docker/compose.news.yml</code></li>
+<li>📄 <strong>News Sidekiq Worker</strong> <code>docker/compose.news.yml</code></li>
+<li>📄 <strong>News Sidekiq Worker</strong> <code>services/news/config/locales/en.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>News (Data Entity)</strong> <code>RAG: services/news/README.md</code></li>
+<li>📄 <strong>Email Notification Component</strong> <code>RAG: docs/app/development/branding/email.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>News (Data Entity)</strong> <code>foundational_context</code></li>
+<li>📄 <strong>Email Notification Component</strong> <code>foundational_context</code></li>
+<li>📄 <strong>announcements.scss</strong> <code>app/assets/admin/announcements/announcements.scss</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295836"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

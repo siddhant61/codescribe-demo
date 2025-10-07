@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReferralTracking standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for ReferralTracking standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#comm" class="breadcrumb-link">COMM</a></li>
+            <li class="breadcrumb-item active">ReferralTracking standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-external-referrer-tracking" class="sidebar-nav-link">1. External Referrer Tracking</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-safe-external-redirect" class="sidebar-nav-link">2. Safe External Redirect</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-course%2Fitem%2Fpinboard-deep-linking" class="sidebar-nav-link">3. Course/Item/Pinboard Deep Linking</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#4.-limesurvey-integration" class="sidebar-nav-link">4. LimeSurvey Integration</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-comm">COMM</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="user-referral-%26-redirect-tracking---technical-documentation" tabindex="-1"><a class="header-anchor" href="#user-referral-%26-redirect-tracking---technical-documentation"><span>User Referral &amp; Redirect Tracking - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The 22_COMM_ReferralTracking feature cluster is fundamental for gaining insights into user acquisition and ensuring secure navigation within the Xikolo platform. Its core function is to meticulously record how users arrive via external links and to orchestrate various redirection scenarios, encompassing both internal and external destinations. The scope spans referrer detection, asynchronous analytics reporting, secure deep linking for internal resources (such as courses and pinboards), and validated redirects to external services like LimeSurvey. Key components, including the <code>TracksReferrers</code> concern and <code>Home::GoController</code>, work collaboratively with utility classes like <code>RedirectURL</code> and <code>Xikolo::Common::Tracking::ExternalLink</code>, alongside messaging and API clients, to deliver a robust, secure, and insightful user routing experience.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The User Referral &amp; Redirect Tracking architecture provides a robust and secure framework for managing user entry points and dynamic content redirection. This system is centered around a frontend controller that integrates tracking capabilities and relies on specialized utility classes and asynchronous messaging for efficient and secure operations. It emphasizes URL validation and decoupled analytics data processing.</p>
+<ul>
+<li><strong><code>Home::GoController</code></strong>: This frontend controller (<code>app/controllers/home/go_controller.rb</code>) acts as the central hub for managing all redirection logic. It is responsible for handling safe external redirects, various deep linking functionalities for internal resources (courses, items, pinboards), and integrating with external survey platforms like LimeSurvey. It meticulously validates target URLs and constructs appropriate redirect paths.</li>
+<li><strong><code>TracksReferrers</code></strong>: Implemented as an <code>ActiveSupport::Concern</code> (<code>app/controllers/concerns/tracks_referrers.rb</code>), this component is included in public-facing controllers. Its primary function is to passively capture incoming HTTP referrer information. It intelligently filters out invalid or internal referrers and enriches the collected data with pertinent user and contextual details before preparing it for asynchronous transmission.</li>
+<li><strong><code>Msgr</code></strong>: This component serves as an <code>External Service Client</code> for the RabbitMQ message broker. It is strategically utilized by <code>TracksReferrers</code> to publish enriched JSON referrer tracking payloads to the <code>xikolo.web.referrer</code> topic. This ensures that analytics data is processed asynchronously by services like <code>lanalytics</code>, minimizing impact on the user’s immediate request-response cycle.</li>
+<li><strong><code>Link Validation &amp; Utils</code> (comprising <code>RedirectURL</code> and <code>Xikolo::Common::Tracking::ExternalLink</code>)</strong>: This conceptual grouping represents crucial utility classes that collectively ensure URL safety. <code>RedirectURL</code> (<code>lib/redirect_url.rb</code>) parses URL strings and determines if a URL is internal or shares the same origin as the platform’s base. <code>Xikolo::Common::Tracking::ExternalLink</code> (<code>gems/xikolo-common/lib/xikolo/common/tracking/external_link.rb</code>) is used by <code>Home::GoController</code> specifically for validating external URLs, including a checksum mechanism to ensure data integrity and prevent tampering.</li>
+<li><strong><code>Xikolo API Clients</code> (comprising <code>Xikolo.api(:course)</code> and <code>Xikolo.api(:pinboard)</code>)</strong>: These are internal API clients that facilitate communication with respective Xikolo microservices (<code>Xikolo::CourseService</code> and <code>Xikolo::PinboardService</code>). <code>Home::GoController</code> uses these clients to fetch essential resource details (e.g., <code>course_id</code>, <code>course_code</code>, implicit tags) necessary for deep linking directly to specific courses, items, or pinboard entries.</li>
+</ul>
+<p>The system’s integration points are designed for efficiency and security: <code>TracksReferrers</code> hooks into controller lifecycles via <code>after_action</code>, ensuring referrer data is captured post-request. <code>Home::GoController</code> leverages both <code>Xikolo::Common::Tracking::ExternalLink</code> and <code>RedirectURL</code> for rigorous URL validation before any redirect. Direct interactions with <code>Msgr</code> for asynchronous analytics publishing and with the <code>Xikolo API Clients</code> for fetching dynamic resource data are integral to enabling robust tracking and flexible, secure redirection capabilities.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph LR
+  clientRequest["User/Client Request"]
+  homeGoController["Home::GoController"]
+  tracksReferrers["TracksReferrers Concern"]
+  externalLinkTools["Link Validation & Utils"]
+  xikoloAPIProxies["Xikolo API Clients"]
+  msgrService["Msgr Messaging System"]
+
+  clientRequest -->|"initiates request"| homeGoController
+  homeGoController --o|"includes & triggers after_action"| tracksReferrers
+  tracksReferrers -->|"publishes JSON payload"| msgrService
+  homeGoController -->|"validates URLs"| externalLinkTools
+  homeGoController -->|"fetches resource details"| xikoloAPIProxies
+  externalLinkTools -->|"returns validation status"| homeGoController
+  xikoloAPIProxies -->|"returns data (course, pinboard)"| homeGoController
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>TracksReferrers:</strong> Includes <code>ActiveSupport::Concern</code> for mixin functionality. [Source: app/controllers/concerns/tracks_referrers.rb]</li>
+<li><strong>TracksReferrers:</strong> Hooks into the controller lifecycle via <code>after_action :track_referrer</code>. [Source: app/controllers/concerns/tracks_referrers.rb]</li>
+<li><strong>Home::GoController:</strong> Includes the <code>TracksReferrers</code> concern for referrer tracking. [Source: app/controllers/home/go_controller.rb]</li>
+<li><strong>Home::GoController:</strong> Inherits from <code>Abstract::FrontendController</code>. [Source: app/controllers/home/go_controller.rb]</li>
+<li><strong>RedirectURL:</strong> Initializes with a URL string, parsing it using <code>Addressable::URI</code>. [Source: lib/redirect_url.rb]</li>
+<li><strong>RedirectURL:</strong> Provides <code>internal?(base)</code> method to check if the URL is relative or shares the same origin as the <code>base</code> URL. [Source: lib/redirect_url.rb]</li>
+<li><strong>Msgr:</strong> Receives JSON payloads from <code>TracksReferrers</code> and publishes them to the <code>xikolo.web.referrer</code> topic. [Source: app/controllers/concerns/tracks_referrers.rb]</li>
+<li><strong>Xikolo.api(:course):</strong> Used by <code>Home::GoController</code> to fetch item details (e.g., <code>course_id</code>) and course details (e.g., <code>course_code</code>) for deep linking. [Source: app/controllers/home/go_controller.rb]</li>
+<li><strong>Xikolo.api(:pinboard):</strong> Used by <code>Home::GoController</code> to fetch implicit tags associated with items for pinboard deep linking. [Source: app/controllers/home/go_controller.rb]</li>
+<li><strong>Xikolo::Common::Tracking::ExternalLink:</strong> Used by <code>Home::GoController#redirect</code> to validate the target URL and its <code>checksum</code> before performing an external redirect. [Source: app/controllers/home/go_controller.rb]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-external-referrer-tracking" tabindex="-1"><a class="header-anchor" href="#1.-external-referrer-tracking"><span>1. External Referrer Tracking</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userArrives["User Arrives via Referrer"]
+  captureReferrer["TracksReferrers.track_referrer()"]
+  enrichPayload["Enrich Tracking Payload"]
+  publishToMsgr["Msgr.publish(xikolo.web.referrer)"]
+  receiveByAnalytics["Lanalytics Service Receives"]
+  dataProcessed["Data Aggregated & Reported"]
+
+  userArrives -->|"HTTP request with referer"| captureReferrer
+  captureReferrer -->|"filters & collects params"| enrichPayload
+  enrichPayload -->|"adds user/context data"| publishToMsgr
+  publishToMsgr -->|"sends message"| receiveByAnalytics
+  receiveByAnalytics -->|"processes & stores"| dataProcessed
+</pre></div>
+<p>This workflow captures and processes information about external websites that refer users to the Xikolo platform, providing crucial data for user acquisition analysis. The process begins when a user’s web browser makes an HTTP request to a public-facing Xikolo page, including an <code>HTTP Referer</code> header. The <code>TracksReferrers</code> concern, active in the handling controller, intercepts this request post-action. It first filters out specific requests, such as those with a <code>logo: 'true'</code> parameter or those originating from the Xikolo domain itself (identified by comparing <code>request.referer</code> host with <code>Xikolo.base_url.host</code>). If the referrer is deemed valid and external, a <code>tracking_payload</code> is generated from request parameters like <code>tracking_campaign</code> or <code>tracking_id</code>. This payload is then enriched with server-side metadata, incorporating <code>user_id</code> (from <code>current_user</code> or validated <code>tracking_user</code>), contextual <code>course_id</code>, the <code>request.original_url</code> as <code>referrer_page</code>, and a <code>created_at</code> timestamp. Finally, <code>Msgr</code> publishes this comprehensive JSON payload to the <code>xikolo.web.referrer</code> topic, ensuring asynchronous processing by an analytics service like <code>lanalytics</code> for aggregation and reporting, thereby completing the tracking lifecycle without impacting user experience.</p>
+<h3 id="2.-safe-external-redirect" tabindex="-1"><a class="header-anchor" href="#2.-safe-external-redirect"><span>2. Safe External Redirect</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userClicksExternalLink["User Clicks External Link"]
+  homeGoControllerRedirect["Home::GoController#redirect"]
+  validateExternalLink["Xikolo::Common::Tracking::ExternalLink.valid?"]
+  checkRedirectURL["RedirectURL.internal?(base)"]
+  optionalNoticePage["Display Interstitial Notice"]
+  redirectExternal["Redirect to External URL"]
+
+  userClicksExternalLink -->|"requests /go/link?url=..."| homeGoControllerRedirect
+  homeGoControllerRedirect -->|"calls validation"| validateExternalLink
+  validateExternalLink -->|"uses for origin check"| checkRedirectURL
+  checkRedirectURL -->|"returns URL safety"| validateExternalLink
+  validateExternalLink -- "if valid & !skip_notice" --> optionalNoticePage
+  homeGoControllerRedirect -- "if valid & skip_notice" --> redirectExternal
+  optionalNoticePage -->|"after 5s refresh"| redirectExternal
+</pre></div>
+<p>This workflow manages secure redirects to external URLs, proactively mitigating open redirect vulnerabilities and providing an optional user-friendly interstitial notice page before navigation.</p>
+<p>Upon a user clicking an external link that routes through <code>Home::GoController#redirect</code>, the controller initiates a stringent validation process. It primarily utilizes <code>Xikolo::Common::Tracking::ExternalLink</code>, in conjunction with a <code>params[:checksum]</code>, to verify the target URL’s integrity and security. This validation class internally leverages <code>RedirectURL</code> to determine if the URL is relative or shares the same origin, ensuring it is not a malicious redirect. Based on the <code>show_notice</code> parameter or the <code>skip_redirect_notice</code> cookie, <code>Home::GoController</code> decides whether to perform an immediate redirect or to display an interstitial notice page. If the notice is displayed, the actual redirection is delayed for 5 seconds using an HTTP <code>Refresh</code> header, allowing the user to be informed. Once the URL is validated and any notice period concludes, <code>Home::GoController</code> executes the final redirect to the verified external URL, securely guiding the user to their destination.</p>
+<h3 id="3.-course%2Fitem%2Fpinboard-deep-linking" tabindex="-1"><a class="header-anchor" href="#3.-course%2Fitem%2Fpinboard-deep-linking"><span>3. Course/Item/Pinboard Deep Linking</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userAccessesDeepLink["User Accesses Deep Link"]
+  homeGoControllerAction["Home::GoController#course/#item/#pinboard"]
+  identifyResourceType["Identify Resource Type & Params"]
+  fetchResourceDetails["Query Xikolo.api(:course/pinboard)"]
+  buildTargetURL["Construct Internal Resource URL"]
+  performInternalRedirect["Perform Internal Redirect"]
+
+  userAccessesDeepLink -->|"requests /go/course/item/pinboard"| homeGoControllerAction
+  homeGoControllerAction -->|"parses request params"| identifyResourceType
+  identifyResourceType -->|"based on type"| fetchResourceDetails
+  fetchResourceDetails -->|"returns course/item/tag data"| buildTargetURL
+  buildTargetURL -->|"generates final URL"| performInternalRedirect
+</pre></div>
+<p>This workflow provides direct access points for users to specific internal resources within the Xikolo platform, such as courses, individual course items, or pinboard entries, utilizing unique identifiers or codes.</p>
+<p>When a user accesses a deep link (e.g., via <code>/go/course</code>, <code>/go/item</code>, or <code>/go/pinboard</code> endpoints), <code>Home::GoController</code> receives the request. Its initial step is to identify the specific resource type and extract relevant parameters (e.g., <code>course_id</code>, <code>item_id</code>, or pinboard tags) from the URL. For course- and item-related deep links, <code>Home::GoController</code> interacts with <code>Xikolo.api(:course)</code> to fetch necessary details such as <code>course_code</code> and specific item information. For pinboard deep links, it queries <code>Xikolo.api(:pinboard)</code> to retrieve implicit tags associated with items, which are crucial for constructing the precise pinboard view. After successfully fetching all required resource details from these respective microservices, <code>Home::GoController</code> then constructs the canonical internal URL for the resource. Finally, it performs an internal redirect, ensuring the user lands directly on the intended content page within the Xikolo platform.</p>
+<h3 id="4.-limesurvey-integration" tabindex="-1"><a class="header-anchor" href="#4.-limesurvey-integration"><span>4. LimeSurvey Integration</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userInitiatesSurvey["User Initiates LimeSurvey Redirect"]
+  homeGoControllerSurvey["Home::GoController#survey"]
+  sanitizeQueryParams["Sanitize Tracking Query Params"]
+  prepareSurveyParams["Add Brand, Required Params & Hashed ID"]
+  constructFinalURL["Construct Final LimeSurvey URL"]
+  redirectToLimeSurvey["Redirect to LimeSurvey Instance"]
+
+  userInitiatesSurvey -->|"requests /go/survey?"| homeGoControllerSurvey
+  homeGoControllerSurvey -->|"extracts & filters params"| sanitizeQueryParams
+  sanitizeQueryParams -->|"adds xi_platform, r, sid, newtest, xi_pseudo_id"| prepareSurveyParams
+  prepareSurveyParams -->|"uses Xikolo.config.limesurvey_url"| constructFinalURL
+  constructFinalURL -->|"uses Addressable::URI"| redirectToLimeSurvey
+</pre></div>
+<p>This workflow facilitates the secure and controlled redirection of users from the Xikolo platform to an external LimeSurvey instance, ensuring meticulous parameter handling and privacy-preserving user identification for survey participation.</p>
+<p>When a user initiates a redirect to LimeSurvey, typically through an action handled by <code>Home::GoController#survey</code>, the controller begins by sanitizing the incoming query parameters. It explicitly removes sensitive tracking and user-related parameters (e.g., <code>tracking</code>, <code>referrer</code>, <code>user_id</code>) to uphold user privacy. Subsequently, the controller adds mandatory LimeSurvey-specific parameters, including <code>r</code>, <code>sid</code>, <code>newtest</code>, and a platform identifier <code>xi_platform</code> (derived from <code>Xikolo.config.brand</code>). For authenticated users, <code>Home::GoController</code> securely hashes <code>current_user.id</code> using <code>Digest::SHA256.hexdigest</code> and adds this as <code>xi_pseudo_id</code> to the URL. The final LimeSurvey target URL is meticulously constructed using <code>Addressable::URI</code> and <code>Xikolo.config.limesurvey_url</code>, ensuring all necessary and sanitized parameters are correctly appended. Once the URL is complete, <code>Home::GoController</code> performs an immediate redirect to the external LimeSurvey instance, allowing for seamless and secure survey participation.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Referral Tracking and Redirection Management cluster is implemented with a focus on functional correctness, security, and efficient integration into the broader Xikolo ecosystem, leveraging several technical considerations and explicit dependencies.</p>
+<p><strong>Technical Considerations:</strong>
+The <code>TracksReferrers</code> concern actively prevents the capture of irrelevant or internal referrer data. It explicitly ignores requests containing a <code>logo: 'true'</code> parameter, commonly associated with email tracking pixels. Furthermore, it validates referrers against <code>Xikolo.base_url.host</code> to ensure only external sources are recorded, preventing self-referencing data. The tracking payload itself is an aggregation of request parameters and enriched server-side metadata, including <code>user_id</code> (derived from <code>current_user</code> or a validated <code>tracking_user</code> UUID using <code>UUID4.try_convert</code>), <code>course_id</code> (if contextually available), and the <code>referrer_page</code> (<code>request.original_url</code>). For redirection, <code>Home::GoController</code> manages two distinct redirect behaviors: immediate or delayed (5-second interstitial notice) based on <code>show_notice</code> parameters or the presence of a <code>skip_redirect_notice</code> cookie. The LimeSurvey integration incorporates critical privacy safeguards, removing raw <code>user_id</code> and tracking parameters, and instead appending a SHA256 hashed <code>current_user.id</code> as <code>xi_pseudo_id</code> to external survey URLs, preserving user anonymity while allowing for aggregated insights.</p>
+<p><strong>Dependencies and Integrations:</strong>
+This cluster’s functionality is deeply intertwined with several key dependencies. <code>TracksReferrers</code> is built as an <code>ActiveSupport::Concern</code>, allowing its mixin functionality into controllers, and relies on <code>URI.parse</code> for robust URL parsing. For asynchronous analytics, it integrates with <code>Msgr</code>, which acts as a client to a RabbitMQ message broker, publishing data to the <code>xikolo.web.referrer</code> topic. <code>Home::GoController</code> extends <code>Abstract::FrontendController</code> and incorporates <code>TracksReferrers</code>. Its deep linking capabilities are achieved through integration with <code>Xikolo.api(:course)</code> and <code>Xikolo.api(:pinboard)</code>, which are API clients for internal microservices. For URL safety and validation, <code>Home::GoController</code> uses <code>Xikolo::Common::Tracking::ExternalLink</code>, which itself utilizes the <code>RedirectURL</code> utility class for internal/same-origin checks. The LimeSurvey redirection mechanism depends on <code>Addressable::URI</code> for meticulous URL construction and manipulation, and <code>Digest::SHA256</code> for secure hashing of user identifiers.</p>
+<p><strong>Configuration Requirements:</strong>
+Critical operational parameters for this cluster are sourced from the global <code>Xikolo</code> configuration. <code>TracksReferrers</code> relies on <code>Xikolo.base_url.host</code> to accurately distinguish between internal and external referrer origins. For LimeSurvey integration, <code>Home::GoController</code> requires <code>Xikolo.config.limesurvey_url</code> to construct the base URL for external surveys, and <code>Xikolo.config.brand</code> to supply the platform identifier (<code>xi_platform</code>) within the survey parameters. While other components like <code>Msgr</code> or the <code>Xikolo.api</code> clients have their own broader configuration, specific details pertinent to this cluster’s direct functionality are not specified in cluster data.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Home::GoController</strong> <code>app/controllers/home/go_controller.rb</code></li>
+<li>📄 <strong>Home::GoController</strong> <code>spec/requests/go/survey_spec.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>TracksReferrers</strong> <code>app/controllers/concerns/tracks_referrers.rb</code></li>
+<li>📄 <strong>TracksReferrers</strong> <code>spec/requests/tracking/referrer_spec.rb</code></li>
+<li>📄 <strong>RedirectURL</strong> <code>lib/redirect_url.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>app/controllers/concerns/tracks_referrers.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Xikolo.api(:course)</strong> <code>app/controllers/home/go_controller.rb</code></li>
+<li>📄 <strong>Xikolo.api(:course)</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Xikolo.api(:pinboard)</strong> <code>app/controllers/home/go_controller.rb</code></li>
+<li>📄 <strong>Xikolo.api(:pinboard)</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Xikolo::Common::Tracking::ExternalLink</strong> <code>app/controllers/home/go_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Common::Tracking::ExternalLink</strong> <code>gems/xikolo-common/Gemfile</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295632"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

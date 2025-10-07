@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Database standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Database standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#infra" class="breadcrumb-link">INFRA</a></li>
+            <li class="breadcrumb-item active">Database standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-schema-migration-workflow" class="sidebar-nav-link">1. Schema Migration Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-new-record-creation-workflow-with-custom-uuid" class="sidebar-nav-link">2. New Record Creation Workflow with Custom UUID</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-database-seeding-workflow" class="sidebar-nav-link">3. Database Seeding Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-infra">INFRA</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="database-schema%2C-migrations%2C-and-seed-data---technical-documentation" tabindex="-1"><a class="header-anchor" href="#database-schema%2C-migrations%2C-and-seed-data---technical-documentation"><span>Database Schema, Migrations, and Seed Data - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo project utilizes PostgreSQL as its central data store, underpinning both the main application and its array of microservices. This report delivers a detailed overview of the database architecture, emphasizing its configuration, sophisticated schema design, robust migration strategies, and structured data seeding processes. Core components like the PostgreSQL Database, ActiveRecord ORM, and specialized gems such as Fx for functions and Scenic for views, are integrated to form a resilient and extensible data layer. The primary purpose is to document how data is managed, evolved, and populated, ensuring consistency and performance across the entire Xikolo ecosystem, with a clear focus on leveraging PostgreSQL’s advanced features for data integrity and efficient querying.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo database architecture is designed for scalability and maintainability, primarily centered around a PostgreSQL database managed by ActiveRecord within the Rails application environment. The system’s robustness stems from a clear separation of concerns, where configuration drives connectivity, ActiveRecord handles data interactions and schema definitions, and a dedicated migration system ensures controlled evolution of the database structure. This setup allows for dynamic adjustment to various deployment environments while maintaining a consistent data interaction model. The architecture supports complex data structures and advanced PostgreSQL features, providing a solid foundation for the application’s evolving data requirements. The interplay between these core components ensures that data persistence is not only efficient but also adaptable to future changes and operational demands.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="database-architecture-overview" tabindex="-1"><a class="header-anchor" href="#database-architecture-overview"><span>Database Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  railsApp["Rails Application"]
+  dbConfig["Database Configuration"]
+  activeRecord["ActiveRecord ORM"]
+  pgDb["PostgreSQL Database"]
+  dbSchema["Database Schema"]
+  migrationSys["Migration System"]
+
+  railsApp -->|"reads settings"| dbConfig
+  dbConfig -->|"establishes connection"| pgDb
+  railsApp -->|"utilizes for data access"| activeRecord
+  activeRecord -->|"defines & interacts with"| dbSchema
+  activeRecord -->|"performs CRUD on"| pgDb
+  migrationSys -->|"applies changes to"| dbSchema
+  dbSchema -->|"implemented by"| pgDb
+  railsApp -->|"executes during deployment"| migrationSys
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Database Configuration:</strong> Rails Application: Reads configuration to establish database connections.</li>
+<li><strong>Database Configuration:</strong> Deployment Tooling: Overrides production settings during deployment.</li>
+<li><strong>Database Schema:</strong> Active Record ORM: Provides the Ruby interface for interacting with the database tables and views.</li>
+<li><strong>Database Schema:</strong> PostgreSQL Database: Implements the defined schema, extensions, enums, and functions.</li>
+<li><strong>Migration System (Active Record Migrations):</strong> Database Schema: Applies structural and data changes to the database.</li>
+<li><strong>Migration System (Active Record Migrations):</strong> Rails Application: Executes migrations during deployment and development cycles.</li>
+<li><strong>Seed Data Loader:</strong> Rails Environment: Determines which environment-specific seed files to load.</li>
+<li><strong>Seed Data Loader:</strong> Database: Inserts initial data based on the loaded seed files.</li>
+<li><strong>Custom UUID Generator (uuid_generate_v7ms):</strong> Database Schema: Set as the default value for <code>id</code> columns in many tables.</li>
+<li><strong>Custom UUID Generator (uuid_generate_v7ms):</strong> Active Record: Automatically invoked when new records are created without an explicit UUID.</li>
+<li><strong>PostgreSQL Database:</strong> ActiveRecord interacts with PostgreSQL for all data operations.</li>
+<li><strong>PostgreSQL Database:</strong> Fx gem interacts with PostgreSQL to manage functions.</li>
+<li><strong>ActiveRecord:</strong> Manages schema migrations and definitions.</li>
+<li><strong>ActiveRecord:</strong> Interacts with PostgreSQL for CRUD operations.</li>
+<li><strong>Fx Gem:</strong> Configures schema dumping behavior for PostgreSQL functions.</li>
+<li><strong>Fx Gem:</strong> Integrates with ActiveRecord’s migration process.</li>
+<li><strong>Scenic Gem:</strong> Defines and manages the <code>embed_courses</code> view.</li>
+<li><strong>Scenic Gem:</strong> Integrates with ActiveRecord’s migration process.</li>
+<li><strong>PostgreSQL Extensions:</strong> Provide underlying functionality for data types, search, and custom functions.</li>
+<li><strong>uuid_generate_v7ms Function:</strong> Called by ActiveRecord during record creation to assign primary keys.</li>
+<li><strong>Custom Enum Types:</strong> Enforce data constraints on various table columns.</li>
+<li><strong>embed_courses View:</strong> Provides a consolidated data source for course information.</li>
+<li><strong>embed_courses View:</strong> Used by application logic to retrieve complex course details.</li>
+<li><strong>Database Seeding Mechanism:</strong> Loads seed data into the PostgreSQL database via ActiveRecord.</li>
+<li><strong>PaperTrail Gem:</strong> Records changes to tracked models in the <code>versions</code> table.</li>
+<li><strong>DelayedJob Gem:</strong> Stores and manages asynchronous tasks for background processing.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-schema-migration-workflow" tabindex="-1"><a class="header-anchor" href="#1.-schema-migration-workflow"><span>1. Schema Migration Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  devCreatesMigration["Developer Creates Migration"]
+  railsAppExecutes["Rails Application Executes Migration"]
+  migrationSysApplies["Migration System Applies Changes"]
+  dbSchemaUpdates["Database Schema Updated"]
+  pgDbImplements["PostgreSQL Database Implements"]
+  activeRecordAdapts["ActiveRecord ORM Adapts"]
+
+  devCreatesMigration -->|"initiates"| railsAppExecutes
+  railsAppExecutes -->|"delegates to"| migrationSysApplies
+  migrationSysApplies -->|"modifies structure of"| dbSchemaUpdates
+  dbSchemaUpdates -->|"reflected in"| pgDbImplements
+  pgDbImplements -->|"provides updated structure to"| activeRecordAdapts
+  activeRecordAdapts -->|"application ready for use"| completeWorkflow["Migration Workflow Complete"]
+</pre></div>
+<p>This workflow details the process of evolving the database schema, including structural and data alterations, using Active Record Migrations. It is a crucial process for maintaining a consistent and up-to-date database schema across different environments and during application deployments. The workflow emphasizes best practices such as ensuring reversibility, utilizing performance optimizations, and mocking models within migrations to prevent future issues due to model refactoring. The Migration System (Active Record Migrations) orchestrates these changes, applying them systematically to the Database Schema, which is then implemented by the PostgreSQL Database. This structured approach ensures that all changes are tracked, auditable, and can be rolled back if necessary, providing a stable foundation for continuous development and deployment.</p>
+<h3 id="2.-new-record-creation-workflow-with-custom-uuid" tabindex="-1"><a class="header-anchor" href="#2.-new-record-creation-workflow-with-custom-uuid"><span>2. New Record Creation Workflow with Custom UUID</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appInitiatesCreation["Rails Application Initiates Record Creation"]
+  activeRecordPrepares["ActiveRecord ORM Prepares Record"]
+  dbSchemaDefault["Database Schema (ID default uuid_generate_v7ms)"]
+  uuidGenInvoked["Custom UUID Generator (uuid_generate_v7ms) Invoked"]
+  pgDbInserts["PostgreSQL Database Inserts Record"]
+  recordCreationComplete["Record Creation Complete"]
+
+  appInitiatesCreation -->|"requests"| activeRecordPrepares
+  activeRecordPrepares -->|"consults"| dbSchemaDefault
+  dbSchemaDefault -->|"triggers"| uuidGenInvoked
+  uuidGenInvoked -->|"returns UUID to"| activeRecordPrepares
+  activeRecordPrepares -->|"sends INSERT to"| pgDbInserts
+  pgDbInserts -->|"stores new record"| recordCreationComplete
+</pre></div>
+<p>This workflow illustrates how new records are created in the database, highlighting the integration of the custom <code>uuid_generate_v7ms</code> function for primary key generation. The Xikolo project mandates UUIDs as primary keys for most tables, ensuring global uniqueness and simplifying data merging or distribution scenarios. When the Rails Application initiates the creation of a new record through ActiveRecord, the ORM automatically leverages the predefined default value in the Database Schema, which points to the custom PostgreSQL function. This ensures that every new record is assigned a unique, time-ordered UUID v7 without explicit application-level generation, offloading this responsibility to the highly optimized database layer. This automation streamlines development and guarantees data consistency.</p>
+<h3 id="3.-database-seeding-workflow" tabindex="-1"><a class="header-anchor" href="#3.-database-seeding-workflow"><span>3. Database Seeding Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  railsEnvDetermines["Rails Environment Determines Scope"]
+  seedDataLoaderIdentifies["Seed Data Loader Identifies Files"]
+  seedingMechanism["Database Seeding Mechanism (via ActiveRecord)"]
+  activeRecordLoads["ActiveRecord ORM Loads Data"]
+  pgDbInsertsData["PostgreSQL Database Inserts Data"]
+  seedingComplete["Database Seeding Complete"]
+
+  railsEnvDetermines -->|"provides context to"| seedDataLoaderIdentifies
+  seedDataLoaderIdentifies -->|"invokes"| seedingMechanism
+  seedingMechanism -->|"uses"| activeRecordLoads
+  activeRecordLoads -->|"performs batch INSERTs to"| pgDbInsertsData
+  pgDbInsertsData -->|"data available for use"| seedingComplete
+</pre></div>
+<p>The Database Seeding Workflow is responsible for populating the PostgreSQL Database with initial or sample data, essential for setting up development, test, and sometimes production environments. This process is highly structured and environment-aware, allowing for different data sets to be loaded based on the specific context. The Seed Data Loader, invoked through <code>db/seeds.rb</code>, intelligently scans and executes Ruby files containing data definitions, first loading common data from a global directory, then environment-specific data. This mechanism ensures that initial data is consistently applied, enabling developers and automated tests to work with a predictable and relevant dataset. The use of ActiveRecord during the seeding process ensures that data insertion adheres to the defined schema and ORM conventions.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo database implementation leverages several advanced PostgreSQL features and Ruby gem integrations to establish a robust and flexible data layer. Database configurations are centrally managed via <code>config/database.yml</code> across all services (account, course, news, notification, pinboard, quiz, timeeffort). These configurations, including <code>postgresql</code> adapter, connection pool size, and a 10-second statement timeout, are dynamically driven by environment variables such as <code>DATABASE_URL</code>, <code>CONCURRENCY</code>, and <code>RAILS_MAX_THREADS</code>, which allows for flexible deployment and scaling. If an environment variable is not explicitly set, default values are applied as indicated in cluster data, often dictating production settings during deployment.</p>
+<p>The database schema, defined in <code>db/schema.rb</code>, extensively utilizes PostgreSQL-specific capabilities. Enabled extensions include <code>hstore</code> for key-value storage, <code>pg_trgm</code> for trigram-based full-text search, <code>pgcrypto</code> for cryptographic functions, <code>plpgsql</code> for procedural language, <code>unaccent</code> for accent removal, and <code>uuid-ossp</code> for UUID generation. Most tables employ UUIDs as primary keys, with a custom <code>uuid_generate_v7ms()</code> function—managed by the Fx Gem—providing UUID v7 generation with millisecond precision as the default. Data types like <code>jsonb</code> are widely used for structured JSON data (e.g., <code>translations</code>, <code>recipients</code>), and array columns store lists of values. For efficient searching, the <code>questions</code> table features a <code>tsvector</code> column with a <code>gin_trgm_ops</code> index for full-text search.</p>
+<p>Furthermore, the Scenic Gem manages the <code>embed_courses</code> materialized view, which denormalizes course data for optimized querying. Custom enum types, such as <code>link_target</code>, <code>node_type</code>, <code>offer_category</code>, <code>payment_frequency</code>, and <code>sort_mode</code>, enforce data integrity by constraining column values. The Migration System (Active Record Migrations) governs schema evolution, supporting both structural and data changes, with best practices documented for performance (e.g., bulk operations, batch processing) and reversibility. The Seed Data Loader, through <code>db/seeds.rb</code>, enables environment-specific data population by loading files alphabetically from <code>db/seeds/all/**/*.rb</code> and <code>db/seeds//**/*.rb</code>, with the `` parameter configurable via <code>SEED_ENV</code>. The PaperTrail Gem is integrated for auditing model changes, and DelayedJob Gem handles asynchronous tasks, both evidenced by their respective tables in the schema, contributing to the application’s overall resilience and operational capabilities.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Database Configuration</strong> <code>config/database.yml</code></li>
+<li>📄 <strong>Database Configuration</strong> <code>RAG: services/account/config/database.yml</code></li>
+<li>📄 <strong>Database Schema</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Migration System (Active Record Migrations)</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Seed Data Loader</strong> <code>db/seeds.rb</code></li>
+<li>📄 <strong>Custom UUID Generator (uuid_generate_v7ms)</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>PostgreSQL Database</strong> <code>Gemfile</code></li>
+<li>📄 <strong>PostgreSQL Database</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>ActiveRecord</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Fx Gem</strong> <code>config/initializers/fx.rb</code></li>
+<li>📄 <strong>Fx Gem</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Scenic Gem</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>PostgreSQL Extensions</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>uuid_generate_v7ms Function</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Custom Enum Types</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>embed_courses View</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Database Seeding Mechanism</strong> <code>db/seeds.rb</code></li>
+<li>📄 <strong>PaperTrail Gem</strong> <code>Gemfile</code></li>
+<li>📄 <strong>PaperTrail Gem</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>DelayedJob Gem</strong> <code>Gemfile</code></li>
+<li>📄 <strong>DelayedJob Gem</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Migration System (Active Record Migrations)</strong> <code>RAG: docs/app/development/best_practices/database_migrations.md</code></li>
+<li>📄 <strong>ActiveRecord</strong> <code>RAG: docs/app/development/best_practices/database_migrations.md</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294970"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

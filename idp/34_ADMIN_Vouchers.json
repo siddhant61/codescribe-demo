@@ -1,0 +1,672 @@
+{
+  "clusterId": "34_ADMIN_Vouchers",
+  "featureFocus": "Voucher Management and Redemption",
+  "documentationReport": "## Voucher Management and Redemption\n\nThe Xikolo platform implements a comprehensive voucher management and redemption system, allowing users to activate paid features for courses without direct payment handling within the application. This system supports both administrative creation of vouchers and programmatic creation via a dedicated API for external shops. [Source: docs/app/features/vouchers.md]\n\n### Voucher Products\nVouchers are designed to activate specific product types within courses. Currently, two primary products are supported: [Source: docs/app/features/vouchers.md]\n\n1.  **Proctoring:** Enables webcam-monitored homeworks/exams, leading to a Certificate. [Source: docs/app/features/vouchers.md]\n2.  **Reactivation:** Unlocks graded assignments for self-paced courses whose regular runtime has ended, allowing users to achieve a Record of Achievement. [Source: docs/app/features/vouchers.md]\n\n`Voucher::ProductTypes` is responsible for resolving and managing these product types. [Source: app/controllers/course/voucher_redemptions_controller.rb]\n\n### Voucher Creation\nVouchers can be generated through two main channels:\n\n#### 1. Administrative UI\nAdministrators can create vouchers using a self-service UI. The `Admin::VouchersController` handles this process, allowing the creation of multiple vouchers in a batch. It requires the `course.vouchers.issue` permission. [Source: app/controllers/admin/vouchers_controller.rb]\n\n#### 2. Shop Bridge API\nFor integration with external shops, a \"Bridge API\" is provided. The `Bridges::Shop::VouchersController` exposes endpoints for shops to programmatically create and list vouchers. This API handles the creation of multiple vouchers with consistent attributes and includes mechanisms for backward compatibility with older service APIs. [Source: app/controllers/bridges/shop/vouchers_controller.rb, docs/app/features/vouchers.md, docs/bridges/shop/reference/shop-api.v1.yaml]\n\nBoth creation methods delegate the actual voucher generation to the `Voucher::BatchCreateVouchers` operation. [Source: app/controllers/admin/vouchers_controller.rb, app/controllers/bridges/shop/vouchers_controller.rb]\n\n### Voucher Redemption\nUsers can redeem vouchers to activate course features. The redemption process is managed by the `Course::VoucherRedemptionsController`. [Source: app/controllers/course/voucher_redemptions_controller.rb]\n\n*   **User Interface:** A dedicated form, `Course::VoucherRedemptionForm`, is used to capture the voucher code. [Source: app/forms/course/voucher_redemption_form.rb]\n*   **Process:** Upon submission, the `Voucher::Claim` operation is invoked with the voucher code, product type, course, current user, and claimant's IP address. [Source: app/controllers/course/voucher_redemptions_controller.rb]\n*   **Prerequisites:** The system ensures that product prerequisites are met and the requested product type is enabled for the specific course before allowing redemption. [Source: app/controllers/course/voucher_redemptions_controller.rb]\n*   **Redemption Locations:** Vouchers can be redeemed from the course details page, course list, or user's personal dashboard, depending on the product type. [Source: docs/app/features/vouchers.md]\n\n### Voucher Query and Statistics\n*   **Admin Query:** Administrators can query individual vouchers by code via the `Admin::VouchersController`, which uses `VoucherPresenter` to display detailed information, including fetching claimant and course details from respective microservices (`account` and `course`). [Source: app/controllers/admin/vouchers_controller.rb, app/presenters/voucher_presenter.rb]\n*   **Admin Statistics:** The `Admin::VouchersController` also provides a `stats` action, utilizing `Voucher::Stats` to present an overview of voucher usage. [Source: app/controllers/admin/vouchers_controller.rb]\n*   **Shop API Listing:** The `Bridges::Shop::VouchersController` allows external shops to list existing vouchers, with filtering options by tag, claimed status, and claim date range. [Source: app/controllers/bridges/shop/vouchers_controller.rb, docs/bridges/shop/reference/shop-api.v1.yaml]\n\n### Data Privacy (Claimant IP Deletion)\nTo comply with data privacy regulations, the system includes a mechanism to automatically delete claimant IP addresses. The `Voucher::DeleteClaimantIPJob` is a daily cron job that clears the `claimant_ip` field for all vouchers that were claimed more than one year ago. This is achieved through a direct SQL update for efficiency. [Source: app/jobs/voucher/delete_claimant_ip_job.rb, spec/jobs/voucher/delete_claimant_ip_job_spec.rb]\n\n### Configuration\nThe entire voucher feature is controlled by a feature flag in the application configuration (`xikolo.yml`). The `voucher['enabled']` setting must be `true` for the feature to be active. [Source: app/controllers/admin/vouchers_controller.rb, app/controllers/course/voucher_redemptions_controller.rb, docs/app/features/vouchers.md]\n\n### Core Components\nAt the heart of the system is the `Voucher::Voucher` model (inferred), which represents individual vouchers and their attributes such as `id`, `tag`, `country`, `product_type`, `claimed_at`, `claimant_ip`, `claimant_id`, `course_id`, `created_at`, and `expires_at`. [Source: app/controllers/admin/vouchers_controller.rb, app/controllers/bridges/shop/vouchers_controller.rb, app/jobs/voucher/delete_claimant_ip_job.rb, app/presenters/voucher_presenter.rb, spec/jobs/voucher/delete_claimant_ip_job_spec.rb]\n",
+  "componentMapPatch": {
+    "components": {
+      "Admin::VouchersController": {
+        "type": "Controller",
+        "description": "Handles administrative tasks related to vouchers, including creation, querying individual vouchers, and displaying statistics. Requires `course.vouchers.issue` permission. [Source: app/controllers/admin/vouchers_controller.rb]",
+        "interactions": {
+          "interaction_0": "Calls `Voucher::BatchCreateVouchers` to create new vouchers. [Source: app/controllers/admin/vouchers_controller.rb]",
+          "interaction_1": "Finds `Voucher::Voucher` records by code. [Source: app/controllers/admin/vouchers_controller.rb]",
+          "interaction_2": "Uses `VoucherPresenter` to decorate voucher data for display. [Source: app/controllers/admin/vouchers_controller.rb]",
+          "interaction_3": "Instantiates `Voucher::Stats` to retrieve voucher statistics. [Source: app/controllers/admin/vouchers_controller.rb]",
+          "interaction_4": "Loads `Course::Course` records for selection in voucher creation. [Source: app/controllers/admin/vouchers_controller.rb]",
+          "interaction_5": "Checks `Xikolo.config.voucher['enabled']` to ensure the feature is active. [Source: app/controllers/admin/vouchers_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/vouchers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.85,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Bridges\n  module Shop\n    class VouchersController < BaseController\n      responders Responders::DecorateResponder,\n        Responders::PaginateResponder\n\n      respond_to :json\n\n      def index\n        vouchers = Voucher::Voucher.all\n\n        vouchers = vouchers.where(tag: params[:tag]) if params[:tag].present?\n        if params[:claimed].present?\n          vouchers = vouchers.claimed_in_period(params[:start_date], params[:end_date])\n        end\n\n        respond_with(vouchers)\n      end\n\n      def create\n        Voucher::BatchCreateVouchers.call(\n          params[:qty], correct_in(params).permit(:product_type, :tag, :country)\n        ).on do |result|\n          result.success {|success| render json: decorate(success.records) }\n          result.errors {|errors| render json: {errors: correct_out(errors.as_json)}, status: :unprocessable_entity }\n        end\n      end\n\n      def decorate(voucher)\n        return voucher.map {|v| decorate(v) } if voucher...",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/bridges/shop/vouchers_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Bridges::Shop::VouchersController": {
+        "type": "API Controller (Bridge)",
+        "description": "Provides API endpoints for external shop systems to create and list vouchers. It handles JSON requests and responses, including data transformation for backward compatibility with older API versions. [Source: app/controllers/bridges/shop/vouchers_controller.rb, docs/app/features/vouchers.md, docs/bridges/shop/reference/shop-api.v1.yaml]",
+        "interactions": {
+          "interaction_0": "Calls `Voucher::BatchCreateVouchers` to create new vouchers based on API requests. [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+          "interaction_1": "Queries `Voucher::Voucher` records based on various filters (tag, claimed status, date ranges). [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+          "interaction_2": "Decorates voucher objects for API responses. [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+          "interaction_3": "Uses `Responders::DecorateResponder` and `Responders::PaginateResponder` for response formatting. [Source: app/controllers/bridges/shop/vouchers_controller.rb]"
+        },
+        "techDebt": [
+          "The `correct_in` and `correct_out` methods indicate a need for backward compatibility with an older service API, which could be removed or refactored if the old API is deprecated. [Source: app/controllers/bridges/shop/vouchers_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/shop/vouchers_controller.rb",
+            "docs/app/features/vouchers.md",
+            "docs/bridges/shop/reference/shop-api.v1.yaml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nmodule Bridges\n  module Shop\n    class VouchersController < BaseController\n      responders Responders::DecorateResponder,\n        Responders::PaginateResponder\n\n      respond_to :json\n\n      def index\n        vouchers = Voucher::Voucher.all\n\n        vouchers = vouchers.where(tag: params[:tag]) if params[:tag].present?\n        if params[:claimed].present?\n          vouchers = vouchers.claimed_in_period(params[:start_date], params[:end_date])\n        end\n\n        respond_with(vouchers)\n      end\n\n      def create\n        Voucher::BatchCreateVouchers.call(\n          params[:qty], correct_in(params).permit(:product_type, :tag, :country)\n        ).on do |result|\n          result.success {|success| render json: decorate(success.records) }\n          result.errors {|errors| render json: {errors: correct_out(errors.as_json)}, status: :unprocessable_entity }\n        end\n      end\n\n      def decorate(voucher)\n        return voucher.map {|v| decorate(v) } if voucher...\n",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 23,
+              "code": "module Bridges\n  module Shop\n    def self.shared_secret\n      Rails.application.secrets.bridge_shop\n    end\n\n    def self.configured?\n      Xikolo.config.voucher['enabled'] && shared_secret.present?\n    end\n\n    class BaseController < Abstract::BridgeAPIController\n      before_action do\n        raise AbstractController::ActionNotFound unless Shop.configured?\n      end\n\n      before_action Xi::Controllers::RequireBearerToken.new(\n        realm: 'shop-bridge-api',\n        token: -> { Shop.shared_secret }\n      )\n    end\n  end\nend",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/bridges/shop/vouchers_controller.rb",
+              "relevance": 38
+            },
+            {
+              "path": "app/controllers/bridges/shop/base_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/authentications_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Course::VoucherRedemptionsController": {
+        "type": "Controller",
+        "description": "Manages the user-facing process of redeeming a voucher for a specific course product. It ensures user login, product prerequisites, and handles the voucher claiming logic. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+        "interactions": {
+          "interaction_0": "Instantiates `VoucherRedemptionForm` for user input. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+          "interaction_1": "Calls `Voucher::Claim` to process the voucher redemption. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+          "interaction_2": "Uses `Voucher::ProductTypes` to resolve the product associated with the voucher. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+          "interaction_3": "Retrieves `Course::Course` details using `by_identifier`. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+          "interaction_4": "Accesses `current_user` for the claiming user. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+          "interaction_5": "Checks `Xikolo.config.voucher['enabled']` to ensure the feature is active. [Source: app/controllers/course/voucher_redemptions_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/voucher_redemptions_controller.rb",
+            "docs/app/features/vouchers.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class VoucherRedemptionsController < Abstract::FrontendController\n    before_action do\n      raise AbstractController::ActionNotFound unless Xikolo.config.voucher['enabled']\n    end\n\n    before_action :ensure_logged_in\n    before_action :ensure_product_prerequisites\n    before_action :set_no_cache_headers\n\n    layout 'simple'\n\n    def new\n      render locals: {\n        form: VoucherRedemptionForm.new,\n        course:,\n        product: product_type,\n      }\n    end\n\n    def create\n      Voucher::Claim.call(\n        params[:voucher_redemption][:code].strip,\n        product_type,\n        course,\n        current_user,\n        claimant_ip: request.remote_ip\n      ).on do |result|\n        result.success do |s|\n          add_flash_message :success, s.message\n          redirect_to course_path(course.course_code)\n        end\n        result.error do |e|\n          add_flash_message :error, e.message\n          render action: :new, locals: {\n          ...\n",
+              "source": "app/controllers/course/voucher_redemptions_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/course/voucher_redemptions_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Course::VoucherRedemptionForm": {
+        "type": "Form Object",
+        "description": "A form object used to encapsulate and validate the voucher code input during the redemption process. [Source: app/forms/course/voucher_redemption_form.rb]",
+        "interactions": {
+          "interaction_0": "Used by `Course::VoucherRedemptionsController` to handle user input for voucher codes. [Source: app/controllers/course/voucher_redemptions_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/course/voucher_redemption_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class VoucherRedemptionForm < XUI::Form\n    self.form_name = 'voucher_redemption'\n\n    attribute :code, :string\n\n    validates :code, presence: true\n  end\nend",
+              "source": "app/forms/course/voucher_redemption_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/course/voucher_redemption_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/course/admin/announcement_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/forms/course/admin/lti_provider_form.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Voucher::DeleteClaimantIPJob": {
+        "type": "Background Job",
+        "description": "A daily cron job responsible for data privacy by clearing `claimant_ip` fields for vouchers claimed more than one year ago. It directly executes a PostgreSQL `UPDATE` statement. [Source: app/jobs/voucher/delete_claimant_ip_job.rb, spec/jobs/voucher/delete_claimant_ip_job_spec.rb]",
+        "interactions": {
+          "interaction_0": "Directly updates the `vouchers` table in the PostgreSQL database. [Source: app/jobs/voucher/delete_claimant_ip_job.rb]"
+        },
+        "techDebt": [
+          "Uses raw SQL for updating the `claimant_ip` field. While efficient for this specific task, it bypasses ActiveRecord's ORM layer, potentially making it less maintainable or harder to track changes if the schema evolves. [Source: app/jobs/voucher/delete_claimant_ip_job.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/jobs/voucher/delete_claimant_ip_job.rb",
+            "spec/jobs/voucher/delete_claimant_ip_job_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 25,
+              "code": "# frozen_string_literal: true\n\n##\n# Delete all claimant IPs for data privacy reasons after\n# one year.\n# This job is executed by a cronjob each day.\n#\nmodule Voucher\n  class DeleteClaimantIPJob < ApplicationJob\n    queue_as :default\n    queue_with_priority :reporting\n\n    def perform\n      # Clear all `claimant_ip` fields where it is not yet cleared\n      # and where the voucher has been claimed more than a year ago.\n      #\n      # age() is a PostgreSQL function that returns the interval between two\n      # timestamps.\n      # See https://www.postgresql.org/docs/current/functions-datetime.html.\n      ActiveRecord::Base.connection.execute(\n        <<~SQL.squish\n          UPDATE vouchers\n          SET claimant_ip = NULL\n          WHERE claimant_ip IS NOT NULL\n            AND age(now(), claimed_at) > '1 year';\n        SQL\n      )\n    end\n  end\nend",
+              "source": "app/jobs/voucher/delete_claimant_ip_job.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 34,
+              "code": "describe Voucher::DeleteClaimantIPJob, type: :job do\n  subject(:enqueue_job) { described_class.perform_later }\n\n  let!(:applicable_voucher) do\n    create(:voucher, :reactivation, :claimed,\n      claimed_at: 5.years.ago,\n      claimant_ip: '127.0.0.1')\n  end\n  let!(:recent_voucher) do\n    create(:voucher, :reactivation, :claimed,\n      claimed_at: 6.days.ago,\n      claimant_ip: '127.0.0.1')\n  end\n  let!(:no_ip_voucher) do\n    create(:voucher, :reactivation, :claimed,\n      claimed_at: 5.years.ago,\n      claimant_ip: nil)\n  end\n  let!(:unclaimed_voucher) { create(:voucher, :reactivation) }\n\n  it 'enqueues a new job' do\n    expect { enqueue_job }.to have_enqueued_job(described_class).on_queue('default')\n  end\n\n  describe '#perform' do\n    around {|example| perform_enqueued_jobs(&example) }\n\n    it 'affects applicable voucher' do\n      expect { enqueue_job }.to change { applicable_voucher.reload.claimant_ip }.to(nil)\n    end\n\n    it 'ig...",
+              "source": "app/jobs/voucher/delete_claimant_ip_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/voucher/delete_claimant_ip_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "spec/jobs/voucher/delete_claimant_ip_job_spec.rb",
+              "relevance": 8
+            },
+            {
+              "path": "app/controllers/bridges/shop/vouchers_controller.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "VoucherPresenter": {
+        "type": "Presenter",
+        "description": "Decorates `Voucher::Voucher` objects for display in the UI, enriching them with details about the claimant and associated course by fetching data from external microservices. [Source: app/presenters/voucher_presenter.rb]",
+        "interactions": {
+          "interaction_0": "Receives a `Voucher::Voucher` object. [Source: app/presenters/voucher_presenter.rb]",
+          "interaction_1": "Communicates with the `account` microservice via `Xikolo.api(:account)` to fetch claimant details. [Source: app/presenters/voucher_presenter.rb]",
+          "interaction_2": "Communicates with the `course` microservice via `Xikolo.api(:course)` to fetch course details. [Source: app/presenters/voucher_presenter.rb]",
+          "interaction_3": "Used by `Admin::VouchersController` for displaying voucher information. [Source: app/controllers/admin/vouchers_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/voucher_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nclass VoucherPresenter < PrivatePresenter\n  attr_reader :claimant, :course\n\n  def self.build(voucher)\n    new(voucher:).tap do |presenter|\n      presenter.load_claimant!\n      presenter.load_course!\n    end\n  end\n\n  def claimed?\n    @voucher.claimed_at.present?\n  end\n\n  def code\n    @voucher.id\n  end\n\n  def tag\n    @voucher.tag\n  end\n\n  def country\n    @voucher.country\n  end\n\n  def claimed_at\n    @voucher.claimed_at\n  end\n\n  def created_at\n    @voucher.created_at\n  end\n\n  def expires_at\n    @voucher.expires_at\n  end\n\n  def load_claimant!\n    @claimant = if @voucher.claimant_id\n                  Xikolo.api(:account).value!.rel(:user).get({id: @voucher.claimant_id}).value!\n                end\n  end\n\n  def load_course!\n    @course = if @voucher.course_id\n                Xikolo.api(:course).value!.rel(:course).get({id: @voucher.course_id}).value!\n              end\n  end\nend",
+              "source": "app/presenters/voucher_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/voucher_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Voucher::BatchCreateVouchers": {
+        "type": "Service Object/Operation",
+        "description": "An operation that encapsulates the business logic for creating multiple vouchers simultaneously. It returns a `Result` object indicating success or errors. [Source: app/controllers/admin/vouchers_controller.rb, app/controllers/bridges/shop/vouchers_controller.rb]",
+        "interactions": {
+          "interaction_0": "Called by `Admin::VouchersController` for administrative voucher creation. [Source: app/controllers/admin/vouchers_controller.rb]",
+          "interaction_1": "Called by `Bridges::Shop::VouchersController` for API-driven voucher creation. [Source: app/controllers/bridges/shop/vouchers_controller.rb]",
+          "interaction_2": "Likely interacts with the `Voucher::Voucher` model to persist new voucher records."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/vouchers_controller.rb",
+            "app/controllers/bridges/shop/vouchers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 13,
+              "code": "module Voucher   ##   # Generate multiple new product vouchers at once.   #   # This could be used by admins to create a batch of vouchers for a specific   # product that could be handed out at marketing events. Another use-case may   # be automatic retrieval of a voucher that is to be sold by a shop system.   #   class BatchCreateVouchers < ApplicationOperation     MAX_VOUCHERS = 500",
+              "source": "app/operations/voucher/batch_create_vouchers.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 23,
+              "code": "    def initialize(count, params)       super()        @count = count.to_i       @params = params     end",
+              "source": "app/operations/voucher/batch_create_vouchers.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 36,
+              "code": "    Success = Struct.new(:records)      def call       if @count < 1         return result error(I18n.t(:'vouchers.create.count_error'))       elsif @count > MAX_VOUCHERS         return result error(I18n.t(:'vouchers.create.too_many_vouchers_requested'))       end        ::Voucher::Voucher.transaction do         vouchers = Array.new(...",
+              "source": "app/operations/voucher/batch_create_vouchers.rb"
+            },
+            {
+              "startLine": 26,
+              "endLine": 31,
+              "code": "      def create         Voucher::BatchCreateVouchers.call(           params[:qty], correct_in(params).permit(:product_type, :tag, :country)         ).on do |result|           result.success {|success| render json: decorate(success.records) }           result.errors {|errors| render json: {errors: correct_out(errors.as_json)}, status: :unprocessable_entity }         end       end",
+              "source": "app/operations/voucher/batch_create_vouchers.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/operations/voucher/batch_create_vouchers.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/controllers/bridges/shop/vouchers_controller.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/controllers/course/voucher_redemptions_controller.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Voucher::Claim": {
+        "type": "Service Object/Operation",
+        "description": "An operation that encapsulates the business logic for a user claiming a single voucher. It handles the redemption process and returns a `Result` object. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+        "interactions": {
+          "interaction_0": "Called by `Course::VoucherRedemptionsController` when a user attempts to redeem a voucher. [Source: app/controllers/course/voucher_redemptions_controller.rb]",
+          "interaction_1": "Likely interacts with the `Voucher::Voucher` model to mark a voucher as claimed and update claimant details.",
+          "interaction_2": "Likely interacts with `Course::Course` and `User` models to apply the voucher's benefits."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/voucher_redemptions_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nmodule Voucher\n  class Claim < ApplicationOperation\n    # @param course [Course::Course]\n    def initialize(voucher, product_type, course, user, **opts)\n      super()\n\n      @voucher = ::Voucher::Voucher.find_by(id: voucher)\n      @product_type = product_type\n      @course = course\n      @user = user\n      @opts = opts\n    end\n\n    Success = Struct.new(:message)\n    Error = Struct.new(:message)\n\n    ##\n    # Validate the preconditions for the voucher and product type,\n    # and try claiming the voucher if they are fulfilled.\n    #\n    def call\n      # Anonymous users are not allowed to redeem vouchers. This should be\n      # prevented by the caller of this operation, i.e. the controller.\n      # Therefore, respond with a general error (which is not displayed).\n      return error('general') if @user.anonymous?\n\n      # Early return if the voucher does not exist.\n      return error('not_found') if @voucher.blank?\n\n      # Is the voucher claimed for the corr...",
+              "source": "app/operations/voucher/claim.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/operations/voucher/claim.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/jobs/voucher/delete_claimant_ip_job.rb",
+              "relevance": 18
+            },
+            {
+              "path": "app/models/voucher/errors/already_claimed.rb",
+              "relevance": 18
+            }
+          ]
+        }
+      },
+      "Voucher::Voucher": {
+        "type": "Model",
+        "description": "Represents a voucher in the system. Stores attributes such as a unique ID (code), tag, country, product type, creation timestamp, expiration timestamp, and details about its claim status (claimed_at, claimant_id, claimant_ip, course_id). [Source: app/controllers/admin/vouchers_controller.rb, app/controllers/bridges/shop/vouchers_controller.rb, app/presenters/voucher_presenter.rb, app/jobs/voucher/delete_claimant_ip_job.rb, spec/jobs/voucher/delete_claimant_ip_job_spec.rb]",
+        "interactions": {
+          "interaction_0": "Created by `Voucher::BatchCreateVouchers`. [Source: app/controllers/admin/vouchers_controller.rb, app/controllers/bridges/shop/vouchers_controller.rb]",
+          "interaction_1": "Queried by `Admin::VouchersController` and `Bridges::Shop::VouchersController`. [Source: app/controllers/admin/vouchers_controller.rb, app/controllers/bridges/shop/vouchers_controller.rb]",
+          "interaction_2": "Decorated by `VoucherPresenter`. [Source: app/presenters/voucher_presenter.rb]",
+          "interaction_3": "Updated by `Voucher::Claim` (to mark as claimed) and `Voucher::DeleteClaimantIPJob` (to clear IP). [Source: app/controllers/course/voucher_redemptions_controller.rb, app/jobs/voucher/delete_claimant_ip_job.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/vouchers_controller.rb",
+            "app/controllers/bridges/shop/vouchers_controller.rb",
+            "app/presenters/voucher_presenter.rb",
+            "app/jobs/voucher/delete_claimant_ip_job.rb",
+            "spec/jobs/voucher/delete_claimant_ip_job_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 11,
+              "endLine": 20,
+              "code": "      def index\n        vouchers = Voucher::Voucher.all\n\n        vouchers = vouchers.where(tag: params[:tag]) if params[:tag].present?\n        if params[:claimed].present?\n          vouchers = vouchers.claimed_in_period(params[:start_date], params[:end_date])\n        end\n\n        respond_with(vouchers)\n      end",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 29,
+              "code": "      def create\n        Voucher::BatchCreateVouchers.call(\n          params[:qty], correct_in(params).permit(:product_type, :tag, :country)\n        ).on do |result|\n          result.success {|success| render json: decorate(success.records) }\n          result.errors {|errors| render json: {errors: correct_out(errors.as_json)}, status: :unprocessable_entity }\n        end\n      end",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 22,
+              "code": "    def new\n      render locals: {\n        form: VoucherRedemptionForm.new,\n        course:,\n        product: product_type,\n      }\n    end",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 36,
+              "code": "    def create\n      Voucher::Claim.call(\n        params[:voucher_redemption][:code].strip,\n        product_type,\n        course,\n        current_user,\n        claimant_ip: request.remote_ip\n      ).on do |result|\n        result.success do |s|\n          add_flash_message :success, s.message\n          redirect_to course_path(course.course_code)\n        end",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "  class VoucherRedemptionForm < XUI::Form\n    self.form_name = 'voucher_redemption'\n\n    attribute :code, :string\n\n    validates :code, presence: true\n  end",
+              "source": "app/controllers/bridges/shop/vouchers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/bridges/shop/vouchers_controller.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/controllers/course/voucher_redemptions_controller.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/forms/course/voucher_redemption_form.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Voucher::Stats": {
+        "type": "Service/Model",
+        "description": "A component responsible for aggregating and providing statistical data related to vouchers. [Source: app/controllers/admin/vouchers_controller.rb]",
+        "interactions": {
+          "interaction_0": "Instantiated and used by `Admin::VouchersController` to display voucher statistics. [Source: app/controllers/admin/vouchers_controller.rb]",
+          "interaction_1": "Likely queries the `Voucher::Voucher` model to gather data."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/vouchers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Voucher\n  class Stats\n    GroupedStats = Struct.new(:issued, :claimed) do\n      def percentage\n        (claimed.to_f / issued * 100).round(2)\n      end\n    end",
+              "source": "app/models/voucher/stats.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 18,
+              "code": "    def global\n      @global ||= GroupedStats.new(\n        ::Voucher::Voucher.count,\n        ::Voucher::Voucher.claimed.count\n      )\n    end",
+              "source": "app/models/voucher/stats.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 27,
+              "code": "    def by_product\n      @by_product ||= grouped(\n        ::Voucher::Voucher.group(:product_type).order(:product_type),\n        transform_keys: lambda do |types|\n          types.to_h {|type| [type, type] }\n        end\n      )\n    end",
+              "source": "app/models/voucher/stats.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 35,
+              "code": "    def by_tag\n      @by_tag ||= grouped(\n        ::Voucher::Voucher.group(:tag).order(:tag),\n        transform_keys: lambda do |tags|\n          tags.to_h {|tag| [tag, tag] }\n        end\n      )\n    end",
+              "source": "app/models/voucher/stats.rb"
+            },
+            {
+              "startLine": 37,
+              "endLine": 45,
+              "code": "    def by_course\n      @by_course ||= grouped(\n        ::Voucher::Voucher\n          .where.not(course_id: nil)\n          .joins(:course)\n          .group(:course_id)\n          .order(count_all: :desc),\n        transfor...",
+              "source": "app/models/voucher/stats.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/voucher/stats.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/poll/stats.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/course/app/controllers/stats_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Voucher::ProductTypes": {
+        "type": "Module/Class",
+        "description": "Manages and resolves the different types of products that can be activated by vouchers (e.g., Proctoring, Reactivation). It also checks if a product type is enabled for a given course. [Source: app/controllers/course/voucher_redemptions_controller.rb, docs/app/features/vouchers.md, docs/bridges/shop/reference/shop-api.v1.yaml]",
+        "interactions": {
+          "interaction_0": "Used by `Course::VoucherRedemptionsController` to validate and resolve product types during redemption. [Source: app/controllers/course/voucher_redemptions_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/voucher_redemptions_controller.rb",
+            "docs/app/features/vouchers.md",
+            "docs/bridges/shop/reference/shop-api.v1.yaml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 18,
+              "code": "module Voucher   module ProductTypes     VALID_PRODUCT_TYPES = {       'course_reactivation' => ProductTypes::Reactivation,       'proctoring_smowl' => ProductTypes::Proctoring,     }.freeze      class << self       def enabled         VALID_PRODUCT_TYPES.select {|_key, cls| cls.enabled? }       end        def resolve(type)         VALID_PRODUCT_TYPES.fetch(type)       end     end   end end",
+              "source": "app/models/voucher/product_types/proctoring.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 38,
+              "code": "      class << self         def enabled?           ::Proctoring.enabled?         end          # Check platform and course settings: Is proctoring enabled?         # @param course [Course::Course]         def enabled_in?(course)           return false unless enabled?           return false unless course.proctored?            true         end          def type           'proctoring_smowl'         end          def text           I18n.t(:'course.redeem_voucher.proctoring_smowl.text')         end          def info_text           I18n.t(             :'course.redeem_voucher.proctoring_smowl.info_text',             link: ::Proctoring.store_url,             brand: Xikolo.config.site_name           )         end          def unavailable_message           I18n.t(:'flash.error.proctoring.booking_failed')         end       end",
+              "source": "app/models/voucher/product_types/proctoring.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 33,
+              "code": "      class << self         def enabled?           ::CourseReactivation.enabled?         end          # Check platform and course settings: Is reactivation enabled?         # @param course [Course::Course]         def enabled_in?(course)           return false unless enabled?           return false unless course.offers_reactivation?           # Is it too early for reactivation?           return false if course.start_date&.future? ||                           course.end_date&.future? ||                           course.status == 'preparation'            true         end          def type           'course_reactivation'         end          def text           I18n.t(:'course.redeem_voucher.course_reactivation.text',             weeks: ::CourseReactivation.config('period'),             link: ::CourseReactivation.store_url)         end          def info_text           I18n.t(:'course.redeem_voucher.c...",
+              "source": "app/models/voucher/product_types/proctoring.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/voucher/product_types/proctoring.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/models/voucher/product_types/reactivation.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/models/voucher/product_types.rb",
+              "relevance": 26
+            }
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "Admin Voucher Creation",
+        "description": "Administrators create multiple vouchers through a web interface, specifying details like count, tag, associated course, and product type. [Source: app/controllers/admin/vouchers_controller.rb, docs/app/features/vouchers.md]",
+        "involvedComponents": [
+          "Admin::VouchersController",
+          "Voucher::BatchCreateVouchers",
+          "Voucher::Voucher",
+          "Course::Course"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/vouchers_controller.rb",
+            "docs/app/features/vouchers.md"
+          ]
+        }
+      },
+      {
+        "workflowName": "Shop API Voucher Creation",
+        "description": "External shop systems programmatically create batches of vouchers by sending requests to the Bridge API, specifying quantity, product type, country, and tag. [Source: app/controllers/bridges/shop/vouchers_controller.rb, docs/app/features/vouchers.md, docs/bridges/shop/reference/shop-api.v1.yaml]",
+        "involvedComponents": [
+          "Bridges::Shop::VouchersController",
+          "Voucher::BatchCreateVouchers",
+          "Voucher::Voucher"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/shop/vouchers_controller.rb",
+            "docs/app/features/vouchers.md",
+            "docs/bridges/shop/reference/shop-api.v1.yaml"
+          ]
+        }
+      },
+      {
+        "workflowName": "User Voucher Redemption",
+        "description": "A logged-in user redeems a voucher code for a specific course product. The system validates the code, checks product prerequisites, and applies the voucher's benefits. [Source: app/controllers/course/voucher_redemptions_controller.rb, app/forms/course/voucher_redemption_form.rb, docs/app/features/vouchers.md]",
+        "involvedComponents": [
+          "Course::VoucherRedemptionsController",
+          "Course::VoucherRedemptionForm",
+          "Voucher::Claim",
+          "Voucher::ProductTypes",
+          "Course::Course",
+          "Voucher::Voucher"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/voucher_redemptions_controller.rb",
+            "app/forms/course/voucher_redemption_form.rb",
+            "docs/app/features/vouchers.md"
+          ]
+        }
+      },
+      {
+        "workflowName": "Voucher Claimant IP Deletion",
+        "description": "A daily scheduled background job automatically clears the `claimant_ip` field for vouchers that were claimed over a year ago, ensuring compliance with data privacy regulations. [Source: app/jobs/voucher/delete_claimant_ip_job.rb, spec/jobs/voucher/delete_claimant_ip_job_spec.rb]",
+        "involvedComponents": [
+          "Voucher::DeleteClaimantIPJob",
+          "Voucher::Voucher"
+        ],
+        "provenance": {
+          "sources": [
+            "app/jobs/voucher/delete_claimant_ip_job.rb",
+            "spec/jobs/voucher/delete_claimant_ip_job_spec.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Voucher Query and Statistics (Admin)",
+        "description": "Administrators can query individual voucher details by code and view aggregated statistics about voucher usage through the admin interface. [Source: app/controllers/admin/vouchers_controller.rb]",
+        "involvedComponents": [
+          "Admin::VouchersController",
+          "Voucher::Voucher",
+          "VoucherPresenter",
+          "Voucher::Stats"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/vouchers_controller.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Voucher Listing (Shop API)",
+        "description": "External shops can retrieve a list of existing vouchers, with options to filter by tag, claimed status, and claim date ranges, via the Bridge API. [Source: app/controllers/bridges/shop/vouchers_controller.rb, docs/bridges/shop/reference/shop-api.v1.yaml]",
+        "involvedComponents": [
+          "Bridges::Shop::VouchersController",
+          "Voucher::Voucher"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/bridges/shop/vouchers_controller.rb",
+            "docs/bridges/shop/reference/shop-api.v1.yaml"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [
+    {
+      "title": "Voucher Management and Redemption - Architecture Overview",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 2400\" width=\"100%\">\n  <title>Voucher Management and Redemption Architecture</title>\n  <desc>\n    An SVG infographic detailing the architecture, component relationships, and key workflows for the Voucher Management and Redemption feature cluster.\n    It includes a component interaction diagram and four sequence diagrams illustrating core business processes.\n  </desc>\n\n  <defs>\n    <marker id=\"arrow\" markerWidth=\"10\" markerHeight=\"10\" refX=\"8\" refY=\"5\" orient=\"auto\" markerUnits=\"strokeWidth\">\n      <path d=\"M0,0 L10,5 L0,10 L2,5 Z\" fill=\"#343A40\" />\n    </marker>\n    <marker id=\"arrow-reverse\" markerWidth=\"10\" markerHeight=\"10\" refX=\"2\" refY=\"5\" orient=\"auto\" markerUnits=\"strokeWidth\">\n      <path d=\"M10,0 L0,5 L10,10 L8,5 Z\" fill=\"#343A40\" />\n    </marker>\n  </defs>\n\n  <!-- Main Title -->\n  <text x=\"800\" y=\"50\" font-family=\"Arial, sans-serif\" font-size=\"36\" font-weight=\"bold\" fill=\"#343A40\" text-anchor=\"middle\">\n    Voucher Management and Redemption Architecture\n  </text>\n\n  <!-- Component Interaction Diagram Section -->\n  <text x=\"800\" y=\"100\" font-family=\"Arial, sans-serif\" font-size=\"28\" font-weight=\"bold\" fill=\"#343A40\" text-anchor=\"middle\">\n    Component Interaction Diagram\n  </text>\n\n  <!-- Common Styles -->\n  <style>\n    .component-box {\n      stroke: #343A40;\n      stroke-width: 1.5;\n      rx: 8;\n      ry: 8;\n    }\n    .component-text {\n      font-family: 'Arial, sans-serif';\n      font-size: 14px;\n      fill: #343A40;\n      text-anchor: middle;\n    }\n    .component-title {\n      font-weight: bold;\n      font-size: 16px;\n    }\n    .arrow-line {\n      stroke: #343A40;\n      stroke-width: 1.5;\n      marker-end: url(#arrow);\n      fill: none;\n    }\n    .arrow-line-reverse {\n      stroke: #343A40;\n      stroke-width: 1.5;\n      marker-end: url(#arrow-reverse);\n      fill: none;\n    }\n    .workflow-title {\n      font-family: 'Arial, sans-serif';\n      font-size: 22px;\n      font-weight: bold;\n      fill: #343A40;\n      text-anchor: middle;\n    }\n    .lifeline-box {\n      stroke: #343A40;\n      stroke-width: 1;\n      fill: #F8F9FA;\n      rx: 5;\n      ry: 5;\n    }\n    .lifeline-text {\n      font-family: 'Arial, sans-serif';\n      font-size: 12px;\n      fill: #343A40;\n      text-anchor: middle;\n    }\n    .message-line {\n      stroke: #343A40;\n      stroke-width: 1;\n      marker-end: url(#arrow);\n      fill: none;\n    }\n    .message-text {\n      font-family: 'Arial, sans-serif';\n      font-size: 11px;\n      fill: #343A40;\n    }\n  </style>\n\n  <!-- Component Interaction Diagram -->\n  <g transform=\"translate(0, 150)\">\n    <!-- Admin::VouchersController -->\n    <rect x=\"50\" y=\"0\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#9b59b6\"/>\n    <text x=\"150\" y=\"25\" class=\"component-text component-title\">Admin::VouchersController</text>\n    <text x=\"150\" y=\"50\" class=\"component-text\">Handles admin tasks:</text>\n    <text x=\"150\" y=\"65\" class=\"component-text\">create, query, stats.</text>\n    <text x=\"150\" y=\"80\" class=\"component-text\">Requires permission.</text>\n\n    <!-- Voucher::BatchCreateVouchers -->\n    <rect x=\"350\" y=\"0\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#FFC107\"/>\n    <text x=\"450\" y=\"25\" class=\"component-text component-title\">Voucher::BatchCreateVouchers</text>\n    <text x=\"450\" y=\"50\" class=\"component-text\">Operation for creating</text>\n    <text x=\"450\" y=\"65\" class=\"component-text\">multiple vouchers.</text>\n    <text x=\"450\" y=\"80\" class=\"component-text\">Returns Result object.</text>\n\n    <!-- Bridges::Shop::VouchersController -->\n    <rect x=\"650\" y=\"0\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#9b59b6\"/>\n    <text x=\"750\" y=\"25\" class=\"component-text component-title\">Bridges::Shop::VouchersController</text>\n    <text x=\"750\" y=\"50\" class=\"component-text\">API for external shops:</text>\n    <text x=\"750\" y=\"65\" class=\"component-text\">create, list vouchers.</text>\n    <text x=\"750\" y=\"80\" class=\"component-text\">Handles JSON requests.</text>\n\n    <!-- External Shop System (Actor) -->\n    <rect x=\"950\" y=\"0\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#17A2B8\"/>\n    <text x=\"1050\" y=\"40\" class=\"component-text component-title\">External Shop System</text>\n    <text x=\"1050\" y=\"65\" class=\"component-text\">Integrates via Shop API.</text>\n\n    <!-- Voucher::Voucher (Central Model) -->\n    <rect x=\"450\" y=\"250\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#6C757D\"/>\n    <text x=\"550\" y=\"275\" class=\"component-text component-title\">Voucher::Voucher</text>\n    <text x=\"550\" y=\"300\" class=\"component-text\">Core data model for a voucher.</text>\n    <text x=\"550\" y=\"315\" class=\"component-text\">Stores code, tag, claim status, etc.</text>\n    <text x=\"550\" y=\"330\" class=\"component-text\">Direct DB interaction.</text>\n\n    <!-- VoucherPresenter -->\n    <rect x=\"50\" y=\"150\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#FFC107\"/>\n    <text x=\"150\" y=\"175\" class=\"component-text component-title\">VoucherPresenter</text>\n    <text x=\"150\" y=\"200\" class=\"component-text\">Decorates Voucher objects</text>\n    <text x=\"150\" y=\"215\" class=\"component-text\">for UI display.</text>\n\n    <!-- Voucher::Stats -->\n    <rect x=\"50\" y=\"300\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#FFC107\"/>\n    <text x=\"150\" y=\"325\" class=\"component-text component-title\">Voucher::Stats</text>\n    <text x=\"150\" y=\"350\" class=\"component-text\">Aggregates statistical</text>\n    <text x=\"150\" y=\"365\" class=\"component-text\">data on vouchers.</text>\n\n    <!-- Course::VoucherRedemptionsController -->\n    <rect x=\"650\" y=\"150\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#9b59b6\"/>\n    <text x=\"750\" y=\"175\" class=\"component-text component-title\">Course::VoucherRedemptionsController</text>\n    <text x=\"750\" y=\"200\" class=\"component-text\">Manages user voucher</text>\n    <text x=\"750\" y=\"215\" class=\"component-text\">redemption process.</text>\n\n    <!-- Course::VoucherRedemptionForm -->\n    <rect x=\"650\" y=\"300\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#FFC107\"/>\n    <text x=\"750\" y=\"325\" class=\"component-text component-title\">Course::VoucherRedemptionForm</text>\n    <text x=\"750\" y=\"350\" class=\"component-text\">Form object for voucher</text>\n    <text x=\"750\" y=\"365\" class=\"component-text\">code input validation.</text>\n\n    <!-- Voucher::Claim -->\n    <rect x=\"650\" y=\"450\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#FFC107\"/>\n    <text x=\"750\" y=\"475\" class=\"component-text component-title\">Voucher::Claim</text>\n    <text x=\"750\" y=\"500\" class=\"component-text\">Operation for claiming</text>\n    <text x=\"750\" y=\"515\" class=\"component-text\">a single voucher.</text>\n\n    <!-- Voucher::ProductTypes -->\n    <rect x=\"950\" y=\"150\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#FFC107\"/>\n    <text x=\"1050\" y=\"175\" class=\"component-text component-title\">Voucher::ProductTypes</text>\n    <text x=\"1050\" y=\"200\" class=\"component-text\">Manages product types</text>\n    <text x=\"1050\" y=\"215\" class=\"component-text\">activated by vouchers.</text>\n\n    <!-- Voucher::DeleteClaimantIPJob -->\n    <rect x=\"50\" y=\"450\" width=\"200\" height=\"100\" class=\"component-box\" fill=\"#FFC107\"/>\n    <text x=\"150\" y=\"475\" class=\"component-text component-title\">Voucher::DeleteClaimantIPJob</text>\n    <text x=\"150\" y=\"500\" class=\"component-text\">Daily cron job to clear</text>\n    <text x=\"150\" y=\"515\" class=\"component-text\">old claimant IPs.</text>\n\n    <!-- Relationships -->\n    <!-- Admin::VouchersController -->\n    <path d=\"M250,50 H350\" class=\"arrow-line\"/> <!-- to BatchCreateVouchers -->\n    <path d=\"M150,100 V150\" class=\"arrow-line\"/> <!-- to VoucherPresenter -->\n    <path d=\"M150,100 V300\" class=\"arrow-line\"/> <!-- to Voucher::Stats -->\n    <path d=\"M250,350 H400 V275 H450\" class=\"arrow-line\"/> <!-- Voucher::Stats to Voucher::Voucher -->\n    <path d=\"M250,200 H400 V275 H450\" class=\"arrow-line\"/> <!-- VoucherPresenter to Voucher::Voucher -->\n    <path d=\"M150,50 V275 H450\" class=\"arrow-line\"/> <!-- Admin::VouchersController to Voucher::Voucher (query) -->\n\n    <!-- Voucher::BatchCreateVouchers to Voucher::Voucher -->\n    <path d=\"M450,100 V250\" class=\"arrow-line\"/>\n\n    <!-- Bridges::Shop::VouchersController -->\n    <path d=\"M950,50 H850\" class=\"arrow-line-reverse\"/> <!-- from External Shop System -->\n    <path d=\"M650,50 H550\" class=\"arrow-line-reverse\"/> <!-- to BatchCreateVouchers -->\n    <path d=\"M750,100 V150\" class=\"arrow-line\"/> <!-- to Voucher::ProductTypes -->\n    <path d=\"M950,200 H850\" class=\"arrow-line-reverse\"/> <!-- Voucher::ProductTypes to Bridges::Shop::VouchersController -->\n    <path d=\"M650,50 H550 V275 H450\" class=\"arrow-line-reverse\"/> <!-- Bridges::Shop::VouchersController to Voucher::Voucher (listing) -->\n\n    <!-- Course::VoucherRedemptionsController -->\n    <path d=\"M750,250 V300\" class=\"arrow-line\"/> <!-- to VoucherRedemptionForm -->\n    <path d=\"M850,200 H950\" class=\"arrow-line\"/> <!-- to Voucher::ProductTypes -->\n    <path d=\"M750,400 V450\" class=\"arrow-line\"/> <!-- to Voucher::Claim -->\n    <path d=\"M650,200 H550 V275 H450\" class=\"arrow-line\"/> <!-- to Voucher::Voucher (initial check) -->\n    <path d=\"M750,400 V300\" class=\"arrow-line-reverse\"/> <!-- VoucherRedemptionForm back to Controller -->\n\n    <!-- Voucher::Claim -->\n    <path d=\"M650,500 H550 V350\" class=\"arrow-line\"/> <!-- to Voucher::Voucher (updates) -->\n    <path d=\"M550,350 H650 V500\" class=\"arrow-line-reverse\"/> <!-- Voucher::Voucher back to Voucher::Claim (result) -->\n\n    <!-- Voucher::DeleteClaimantIPJob -->\n    <path d=\"M150,550 V350 H450\" class=\"arrow-line\"/> <!-- to Voucher::Voucher (direct DB update) -->\n  </g>\n\n  <!-- Workflow Sequence Diagrams Section -->\n  <text x=\"800\" y=\"750\" class=\"workflow-title\">\n    Workflow Sequence Diagrams\n  </text>\n\n  <!-- Workflow 1: Admin Voucher Creation -->\n  <g transform=\"translate(0, 800)\">\n    <text x=\"800\" y=\"0\" class=\"workflow-title\">1. Admin Voucher Creation</text>\n    <!-- Lifelines -->\n    <rect x=\"50\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#007BFF\"/>\n    <text x=\"140\" y=\"75\" class=\"lifeline-text\">Admin User (UI)</text>\n    <line x1=\"140\" y1=\"90\" x2=\"140\" y2=\"280\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"300\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#9b59b6\"/>\n    <text x=\"390\" y=\"75\" class=\"lifeline-text\">Admin::VouchersController</text>\n    <line x1=\"390\" y1=\"90\" x2=\"390\" y2=\"280\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"550\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#FFC107\"/>\n    <text x=\"640\" y=\"75\" class=\"lifeline-text\">Voucher::BatchCreateVouchers</text>\n    <line x1=\"640\" y1=\"90\" x2=\"640\" y2=\"280\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"800\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#6C757D\"/>\n    <text x=\"890\" y=\"75\" class=\"lifeline-text\">Voucher::Voucher (DB)</text>\n    <line x1=\"890\" y1=\"90\" x2=\"890\" y2=\"280\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <!-- Messages -->\n    <line x1=\"140\" y1=\"120\" x2=\"390\" y2=\"120\" class=\"message-line\"/>\n    <text x=\"150\" y=\"115\" class=\"message-text\">1. POST /admin/vouchers (count, tag, product_type)</text>\n\n    <line x1=\"390\" y1=\"150\" x2=\"640\" y2=\"150\" class=\"message-line\"/>\n    <text x=\"400\" y=\"145\" class=\"message-text\">2. call(params)</text>\n\n    <line x1=\"640\" y1=\"180\" x2=\"890\" y2=\"180\" class=\"message-line\"/>\n    <text x=\"650\" y=\"175\" class=\"message-text\">3. create!(...)</text>\n\n    <line x1=\"890\" y1=\"210\" x2=\"640\" y2=\"210\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"650\" y=\"205\" class=\"message-text\">4. Voucher created</text>\n\n    <line x1=\"640\" y1=\"240\" x2=\"390\" y2=\"240\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"400\" y=\"235\" class=\"message-text\">5. Result (success/errors)</text>\n\n    <line x1=\"390\" y1=\"270\" x2=\"140\" y2=\"270\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"150\" y=\"265\" class=\"message-text\">6. Render success/error view</text>\n  </g>\n\n  <!-- Workflow 2: Shop API Voucher Creation -->\n  <g transform=\"translate(0, 1150)\">\n    <text x=\"800\" y=\"0\" class=\"workflow-title\">2. Shop API Voucher Creation</text>\n    <!-- Lifelines -->\n    <rect x=\"50\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#17A2B8\"/>\n    <text x=\"140\" y=\"75\" class=\"lifeline-text\">External Shop System</text>\n    <line x1=\"140\" y1=\"90\" x2=\"140\" y2=\"340\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"300\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#9b59b6\"/>\n    <text x=\"390\" y=\"75\" class=\"lifeline-text\">Bridges::Shop::VouchersController</text>\n    <line x1=\"390\" y1=\"90\" x2=\"390\" y2=\"340\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"550\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#FFC107\"/>\n    <text x=\"640\" y=\"75\" class=\"lifeline-text\">Voucher::ProductTypes</text>\n    <line x1=\"640\" y1=\"90\" x2=\"640\" y2=\"340\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"800\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#FFC107\"/>\n    <text x=\"890\" y=\"75\" class=\"lifeline-text\">Voucher::BatchCreateVouchers</text>\n    <line x1=\"890\" y1=\"90\" x2=\"890\" y2=\"340\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"1050\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#6C757D\"/>\n    <text x=\"1140\" y=\"75\" class=\"lifeline-text\">Voucher::Voucher (DB)</text>\n    <line x1=\"1140\" y1=\"90\" x2=\"1140\" y2=\"340\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <!-- Messages -->\n    <line x1=\"140\" y1=\"120\" x2=\"390\" y2=\"120\" class=\"message-line\"/>\n    <text x=\"150\" y=\"115\" class=\"message-text\">1. POST /api/v1/shop/vouchers (JSON: quantity, product_type, country)</text>\n\n    <line x1=\"390\" y1=\"150\" x2=\"640\" y2=\"150\" class=\"message-line\"/>\n    <text x=\"400\" y=\"145\" class=\"message-text\">2. find_by_name(product_type)</text>\n\n    <line x1=\"640\" y1=\"180\" x2=\"390\" y2=\"180\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"400\" y=\"175\" class=\"message-text\">3. ProductType object</text>\n\n    <line x1=\"390\" y1=\"210\" x2=\"890\" y2=\"210\" class=\"message-line\"/>\n    <text x=\"400\" y=\"205\" class=\"message-text\">4. call(params)</text>\n\n    <line x1=\"890\" y1=\"240\" x2=\"1140\" y2=\"240\" class=\"message-line\"/>\n    <text x=\"900\" y=\"235\" class=\"message-text\">5. create!(...)</text>\n\n    <line x1=\"1140\" y1=\"270\" x2=\"890\" y2=\"270\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"900\" y=\"265\" class=\"message-text\">6. Voucher created</text>\n\n    <line x1=\"890\" y1=\"300\" x2=\"390\" y2=\"300\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"400\" y=\"295\" class=\"message-text\">7. Result (success/errors)</text>\n\n    <line x1=\"390\" y1=\"330\" x2=\"140\" y2=\"330\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"150\" y=\"325\" class=\"message-text\">8. JSON Response</text>\n  </g>\n\n  <!-- Workflow 3: User Voucher Redemption -->\n  <g transform=\"translate(0, 1550)\">\n    <text x=\"800\" y=\"0\" class=\"workflow-title\">3. User Voucher Redemption</text>\n    <!-- Lifelines -->\n    <rect x=\"50\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#007BFF\"/>\n    <text x=\"140\" y=\"75\" class=\"lifeline-text\">User (UI)</text>\n    <line x1=\"140\" y1=\"90\" x2=\"140\" y2=\"460\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"300\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#9b59b6\"/>\n    <text x=\"390\" y=\"75\" class=\"lifeline-text\">Course::VoucherRedemptionsController</text>\n    <line x1=\"390\" y1=\"90\" x2=\"390\" y2=\"460\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"550\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#FFC107\"/>\n    <text x=\"640\" y=\"75\" class=\"lifeline-text\">Course::VoucherRedemptionForm</text>\n    <line x1=\"640\" y1=\"90\" x2=\"640\" y2=\"460\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"800\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#FFC107\"/>\n    <text x=\"890\" y=\"75\" class=\"lifeline-text\">Voucher::ProductTypes</text>\n    <line x1=\"890\" y1=\"90\" x2=\"890\" y2=\"460\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"1050\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#FFC107\"/>\n    <text x=\"1140\" y=\"75\" class=\"lifeline-text\">Voucher::Claim</text>\n    <line x1=\"1140\" y1=\"90\" x2=\"1140\" y2=\"460\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"1300\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#6C757D\"/>\n    <text x=\"1390\" y=\"75\" class=\"lifeline-text\">Voucher::Voucher (DB)</text>\n    <line x1=\"1390\" y1=\"90\" x2=\"1390\" y2=\"460\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <!-- Messages -->\n    <line x1=\"140\" y1=\"120\" x2=\"390\" y2=\"120\" class=\"message-line\"/>\n    <text x=\"150\" y=\"115\" class=\"message-text\">1. POST /course/:id/redeem_voucher (voucher_code)</text>\n\n    <line x1=\"390\" y1=\"150\" x2=\"640\" y2=\"150\" class=\"message-line\"/>\n    <text x=\"400\" y=\"145\" class=\"message-text\">2. new(params).validate</text>\n\n    <line x1=\"640\" y1=\"180\" x2=\"390\" y2=\"180\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"400\" y=\"175\" class=\"message-text\">3. Validation result</text>\n\n    <line x1=\"390\" y1=\"210\" x2=\"890\" y2=\"210\" class=\"message-line\"/>\n    <text x=\"400\" y=\"205\" class=\"message-text\">4. enabled_for_course?(product_type, course)</text>\n\n    <line x1=\"890\" y1=\"240\" x2=\"390\" y2=\"240\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"400\" y=\"235\" class=\"message-text\">5. Product type enabled?</text>\n\n    <line x1=\"390\" y1=\"270\" x2=\"1140\" y2=\"270\" class=\"message-line\"/>\n    <text x=\"400\" y=\"265\" class=\"message-text\">6. call(voucher_code, user, course)</text>\n\n    <line x1=\"1140\" y1=\"300\" x2=\"1390\" y2=\"300\" class=\"message-line\"/>\n    <text x=\"1150\" y=\"295\" class=\"message-text\">7. find_by(code: voucher_code)</text>\n\n    <line x1=\"1390\" y1=\"330\" x2=\"1140\" y2=\"330\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"1150\" y=\"325\" class=\"message-text\">8. Voucher object</text>\n\n    <line x1=\"1140\" y1=\"360\" x2=\"1390\" y2=\"360\" class=\"message-line\"/>\n    <text x=\"1150\" y=\"355\" class=\"message-text\">9. update!(claimed_at, claimant_id, claimant_ip, course_id)</text>\n\n    <line x1=\"1390\" y1=\"390\" x2=\"1140\" y2=\"390\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"1150\" y=\"385\" class=\"message-text\">10. Update success</text>\n\n    <line x1=\"1140\" y1=\"420\" x2=\"390\" y2=\"420\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"400\" y=\"415\" class=\"message-text\">11. Result (success/errors)</text>\n\n    <line x1=\"390\" y1=\"450\" x2=\"140\" y2=\"450\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"150\" y=\"445\" class=\"message-text\">12. Redirect/Render</text>\n  </g>\n\n  <!-- Workflow 4: Voucher Claimant IP Deletion -->\n  <g transform=\"translate(0, 2050)\">\n    <text x=\"800\" y=\"0\" class=\"workflow-title\">4. Voucher Claimant IP Deletion</text>\n    <!-- Lifelines -->\n    <rect x=\"50\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#28A745\"/>\n    <text x=\"140\" y=\"75\" class=\"lifeline-text\">Cron Job Scheduler</text>\n    <line x1=\"140\" y1=\"90\" x2=\"140\" y2=\"210\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"300\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#FFC107\"/>\n    <text x=\"390\" y=\"75\" class=\"lifeline-text\">Voucher::DeleteClaimantIPJob</text>\n    <line x1=\"390\" y1=\"90\" x2=\"390\" y2=\"210\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <rect x=\"550\" y=\"50\" width=\"180\" height=\"40\" class=\"lifeline-box\" fill=\"#6C757D\"/>\n    <text x=\"640\" y=\"75\" class=\"lifeline-text\">PostgreSQL DB</text>\n    <line x1=\"640\" y1=\"90\" x2=\"640\" y2=\"210\" stroke=\"#343A40\" stroke-dasharray=\"4 2\"/>\n\n    <!-- Messages -->\n    <line x1=\"140\" y1=\"120\" x2=\"390\" y2=\"120\" class=\"message-line\"/>\n    <text x=\"150\" y=\"115\" class=\"message-text\">1. Daily trigger</text>\n\n    <line x1=\"390\" y1=\"150\" x2=\"640\" y2=\"150\" class=\"message-line\"/>\n    <text x=\"400\" y=\"145\" class=\"message-text\">2. UPDATE vouchers SET claimant_ip = NULL WHERE claimed_at &lt; (NOW() - INTERVAL '1 year')</text>\n\n    <line x1=\"640\" y1=\"180\" x2=\"390\" y2=\"180\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"400\" y=\"175\" class=\"message-text\">3. Update successful</text>\n\n    <line x1=\"390\" y1=\"210\" x2=\"140\" y2=\"210\" class=\"message-line\" marker-end=\"url(#arrow-reverse)\"/>\n    <text x=\"150\" y=\"205\" class=\"message-text\">4. Job completed</text>\n  </g>\n</svg>\n```"
+    }
+  ],
+  "success": true,
+  "sourceFile": "cluster_C33_Vouchers_2025-09-16T13-34-02.json",
+  "runId": "run_5",
+  "filePath": "run_5/clusters/cluster_C33_Vouchers_2025-09-16T13-34-02.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "C33_Vouchers",
+      "runId": "run_5"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:16:08.651Z"
+  }
+}

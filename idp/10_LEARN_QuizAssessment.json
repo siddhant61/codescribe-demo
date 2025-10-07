@@ -1,0 +1,1586 @@
+{
+  "clusterId": "10_LEARN_QuizAssessment",
+  "featureFocus": "Quiz Creation, Question Management, User Submissions, and Grading",
+  "documentationReport": "{\n  \"title\": \"Xikolo Quiz Management and Assessment System\",\n  \"functional_domain\": \"Quiz Creation, Question Management, User Submissions, Grading, and Proctoring\",\n  \"overview\": \"The Xikolo Quiz Management and Assessment System is a critical feature cluster enabling instructors to create, manage, and grade quizzes, while providing students with a robust platform for quiz submission and review. This functionality is distributed across the main Ruby on Rails application and dedicated microservices, including the `Quiz Service`, `Course Service`, and `Submission Service`.\",\n  \"core_functionality\": [\n    {\n      \"name\": \"Quiz Creation and Management\",\n      \"description\": \"Instructors can create and manage quizzes, questions, and answers.\",\n      \"frontend_components\": [\n        {\n          \"name\": \"app/assets/teacher/items/quiz.ts\",\n          \"role\": \"Orchestrates overall quiz item setup, including proctoring settings.\"\n        },\n        {\n          \"name\": \"app/assets/teacher/items/quiz-item.ts\",\n          \"role\": \"Manages quiz properties (exercise type, time limits, allowed attempts) and dynamically adjusts UI.\"\n        },\n        {\n          \"name\": \"app/assets/teacher/items/quiz-questions.ts\",\n          \"role\": \"Dynamically loads and switches question forms, initializes markdown editors (`initMarkdownEditorOnSelector`) and upload dropzones (`mdupload.scan`, `upload.scan`).\"\n        },\n        {\n          \"name\": \"app/assets/teacher/items/quiz-edit.ts\",\n          \"role\": \"Provides AJAX loading for question and answer editing forms using `fetch`.\"\n        }\n      ],\n      \"backend_components\": [\n        {\n          \"name\": \"QuizQuestionsController\",\n          \"role\": \"Handles CRUD operations for quiz questions (MultipleChoice, MultipleAnswer, FreeText, Essay), manages positions, and ensures `plausible_question_type` (e.g., single correct answer for MCQs). Interacts with `Quiz Service` via `Xikolo::Quiz::Question` ACFS client models and `quiz_api` (Restify).\"\n        },\n        {\n          \"name\": \"QuizAnswersController\",\n          \"role\": \"Manages CRUD operations for quiz answers (TextAnswer, FreeTextAnswer) and their positioning.\"\n        }\n      ],\n      \"common_backend_logic\": \"Both `QuizQuestionsController` and `QuizAnswersController` enforce content editor permissions via `ensure_content_editor`.\"\n    },\n    {\n      \"name\": \"User Quiz Submissions\",\n      \"description\": \"Students can start, submit, and review their quiz attempts.\",\n      \"frontend_components\": [\n        {\n          \"name\": \"app/assets/course/items/quiz.ts\",\n          \"role\": \"Facilitates navigation between different quiz submissions for a user. Also referred to as `QuizSubmissionNavigator`.\"\n        }\n      ],\n      \"backend_components\": [\n        {\n          \"name\": \"QuizSubmissionController\",\n          \"role\": \"Handles starting new attempts (`new`), processing submitted answers (`create`), and displaying past submissions (`show`). Manages deadlines, time limits, allowed attempts, and proctoring. Interacts with `Quiz Service` (`Xikolo::Quiz::Quiz`) and `Submission Service` (`Xikolo::Submission::QuizSubmission`, `Xikolo::Submission::UserQuizAttempts`) via ACFS client models. Publishes `xikolo.submission.submission.create` event via `Msgr` (RabbitMQ) upon successful submission.\"\n        },\n        {\n          \"name\": \"QuizSubmissionSnapshotController\",\n          \"role\": \"Provides an AJAX endpoint for saving partial quiz submissions.\"\n        }\n      ],\n      \"models_and_presenters\": [\n        {\n          \"name\": \"Quiz::Submission\",\n          \"role\": \"Acts as a wrapper around responses from the `Quiz Service`, providing methods to access submission data and proctoring information. (Identified technical debt: should become a real ActiveRecord model).\"\n        },\n        {\n          \"name\": \"Quiz::Submission::Proctoring\",\n          \"role\": \"Integrates with `Proctoring::SmowlAdapter` to interpret and present proctoring results.\"\n        },\n        {\n          \"name\": \"QuizItemPresenter\",\n          \"role\": \"Prepares data for the quiz item's introductory page, determining if a user can start, resume, or view results, and handles redirects based on quiz state and user permissions, considering proctoring status. (Identified technical debt: `TODO` for redirect logic).\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Quiz Result and Recap Display\",\n      \"description\": \"Provides a comprehensive overview of quiz results and submitted answers.\",\n      \"frontend_components\": [\n        {\n          \"name\": \"app/assets/quiz-recap/quiz-recap.ts\",\n          \"role\": \"Responsible for fetching and rendering a comprehensive recap of quiz questions and answers, utilizing the `@openhpi/quiz-recap` external component. This is part of the `Course::QuizRecap` functionality.\"\n        }\n      ],\n      \"backend_components\": [\n        {\n          \"name\": \"QuizRecapController\",\n          \"role\": \"Serves data for the quiz recap, retrieving questions and associated answers from the `Quiz Service` and enriching them with reference links from the `Course Service`.\"\n        }\n      ],\n      \"presenters\": [\n        {\n          \"name\": \"QuizResultPresenter\",\n          \"role\": \"Formats submission data for display, including calculating percentages, generating historical submission graphs, and providing navigation labels for different attempts.\"\n        },\n        {\n          \"name\": \"QuizSubmissionProctoringPresenter\",\n          \"role\": \"Translates raw proctoring results into user-friendly callout messages.\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Proctoring Integration\",\n      \"description\": \"Integrates external proctoring services into the quiz submission and review process.\",\n      \"components_involved\": [\n        \"`QuizSubmissionController` (checks enablement, handles `vendor_data`)\",\n        \"`QuizItemPresenter` (considers proctoring status for quiz availability and redirects)\",\n        \"`Quiz::Submission::Proctoring` model (processes results)\",\n        \"`QuizSubmissionProctoringPresenter` (displays results)\",\n        \"`Proctoring::SmowlAdapter` (specific proctoring service adapter)\"\n      ],\n      \"status_note\": \"Proctoring is currently unavailable for new quizzes.\"\n    },\n    {\n      \"name\": \"Regrading Capabilities\",\n      \"description\": \"Administrative functionality for regrading quizzes.\",\n      \"implementation\": \"Supported through `rake` tasks executed directly on the `xi-quiz` service (part of the `Quiz Service`).\",\n      \"regrading_scenarios\": [\n        \"`jackpot` (giving max points for a question)\",\n        \"`remove_answer`\",\n        \"`update_question` (recalculating points for a question)\",\n        \"`update_all_questions` (for an entire quiz)\",\n        \"`select_answer_for_all` (forcing a specific answer for all submissions)\"\n      ],\n      \"post_regrading_step\": \"A separate `rake regrading:just_update_course` task is required to update overall course results.\"\n    }\n  ],\n  \"architecture_and_inter_service_communication\": {\n    \"description\": \"The system leverages a microservice architecture for distributed functionality.\",\n    \"components\": [\n      {\n        \"name\": \"Main Ruby on Rails Application\",\n        \"role\": \"Hosts frontend assets, controllers, models, and presenters.\"\n      },\n      {\n        \"name\": \"Quiz Service (Microservice)\",\n        \"role\": \"A dedicated service managing core quiz entities (`Quiz`, `Question`, `Answer`, `QuizSubmission`) and providing APIs. Also hosts `Regrading Rake Tasks`.\"\n      },\n      {\n        \"name\": \"Course Service (Microservice)\",\n        \"role\": \"Provides course-related data, including reference links for quiz recaps.\"\n      },\n      {\n        \"name\": \"Submission Service (Microservice)\",\n        \"role\": \"Handles submission-related logic and persistence.\"\n      }\n    ],\n    \"key_interactions\": [\n      {\n        \"type\": \"Synchronous (HTTP/REST)\",\n        \"details\": \"Main application communicates with `Quiz Service` and `Course Service` using `Restify` via `Xikolo.api(:quiz)` and `Xikolo.api(:course)` calls, abstracted through `Acfs` client models (e.g., `Xikolo::Quiz::Question`, `Xikolo::Quiz::Quiz`, `Xikolo::Submission::QuizSubmission`, `Xikolo::Submission::UserQuizAttempts`).\"\n      },\n      {\n        \"type\": \"Asynchronous (Message Queue)\",\n        \"details\": \"New quiz submissions trigger an `xikolo.submission.submission.create` event published via `Msgr` (RabbitMQ) to the `Submission Service`.\"\n      },\n      {\n        \"type\": \"Direct Service Interaction\",\n        \"details\": \"Regrading `rake` tasks are executed directly on the `xi-quiz` service.\"\n      }\n    ]\n  },\n  \"key_components\": {\n    \"frontend_typescript\": [\n      \"app/assets/teacher/items/quiz.ts\",\n      \"app/assets/teacher/items/quiz-item.ts\",\n      \"app/assets/teacher/items/quiz-questions.ts\",\n      \"app/assets/teacher/items/quiz-edit.ts\",\n      \"app/assets/course/items/quiz.ts (QuizSubmissionNavigator)\",\n      \"app/assets/quiz-recap/quiz-recap.ts (integrates @openhpi/quiz-recap, part of Course::QuizRecap)\"\n    ],\n    \"backend_ruby_on_rails_controllers\": [\n      \"QuizQuestionsController\",\n      \"QuizAnswersController\",\n      \"QuizSubmissionController\",\n      \"QuizSubmissionSnapshotController\",\n      \"QuizRecapController\"\n    ],\n    \"microservices\": [\n      \"Quiz Service (manages Quiz, Question, Answer, QuizSubmission entities, hosts Regrading Rake Tasks)\",\n      \"Course Service\",\n      \"Submission Service\"\n    ],\n    \"models_and_presenters_ruby\": [\n      \"Quiz::Submission\",\n      \"Quiz::Submission::Proctoring\",\n      \"QuizItemPresenter\",\n      \"QuizResultPresenter\",\n      \"QuizSubmissionProctoringPresenter\",\n      \"Proctoring::SmowlAdapter\"\n    ]\n  },\n  \"identified_technical_debt\": [\n    {\n      \"component\": \"Quiz::Submission model\",\n      \"issue\": \"Currently a wrapper for microservice responses; explicitly noted to 'become a real ActiveRecord model in the future'.\"\n    },\n    {\n      \"component\": \"QuizItemPresenter#submission!\",\n      \"issue\": \"A `TODO` suggests that certain redirect logic might be better placed in the controller.\"\n    },\n    {\n      \"component\": \"QuizQuestionsController#move\",\n      \"issue\": \"An 'Ugly hotfix' exists where `question.type` is explicitly set to prevent overwriting the model in the service, indicating a potential issue in question type handling during move operations.\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "QuizAnswersController": {
+        "type": "Controller",
+        "description": "Manages CRUD operations for quiz answers within the frontend application. It allows content editors to create, edit, update, move, and delete answers for various question types, distinguishing between `TextAnswer` and `FreeTextAnswer`. It ensures content editor permissions and sets no-cache headers.",
+        "interactions": {
+          "interaction_0": "Interacts with `Xikolo::Quiz::Question` and `Xikolo::Quiz::Answer` ACFS models to fetch and persist data from the `quiz` microservice.",
+          "interaction_1": "Uses `Acfs.run` to execute asynchronous data fetching requests.",
+          "interaction_2": "Performs direct `DELETE` API calls to the `quiz` microservice via `Xikolo.api(:quiz)`.",
+          "interaction_3": "Redirects to course item editing paths after actions.",
+          "interaction_4": "Includes `CourseContextHelper` for context-specific authorization."
+        },
+        "techDebt": [
+          "The `answer_type` method relies on checking `params[:xikolo_quiz_text_answer].nil?` which can be brittle and less explicit than other methods for determining parameter presence."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_answers_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass QuizAnswersController < Abstract::FrontendController\n  include CourseContextHelper\n\n  respond_to :json\n  before_action :ensure_content_editor\n  before_action :set_no_cache_headers",
+              "source": "app/controllers/quiz_answers_controller.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 23,
+              "code": "  def new\n    @quiz_question = Xikolo::Quiz::Question.find params[:quiz_question_id], &:enqueue_acfs_request_for_answers\n    Acfs.run\n\n    @quiz_answer = Xikolo::Quiz::Answer.new\n    if @quiz_question.is_a? Xikolo::Quiz::FreeTextQuestion\n      @text_quiz_answer = Xikolo::Quiz::FreeTextAnswer.new\n    else\n      @text_quiz_answer = Xikolo::Quiz::TextAnswer.new\n    end\n    render layout: false\n  end",
+              "source": "app/controllers/quiz_answers_controller.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 29,
+              "code": "  def edit\n    @quiz_answer = Xikolo::Quiz::Answer.find params[:id], params: {raw: 1}\n    Acfs.run\n    @text_quiz_answer = @quiz_answer\n    render layout: false\n  end",
+              "source": "app/controllers/quiz_answers_controller.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 35,
+              "code": "  def create\n    case answer_type\n      when :text_answer\n        answer = Xikolo::Quiz::TextAnswer.new text_quiz_answer_params\n      when :free_text_answer\n        answer = Xikolo::Quiz::FreeTextAnswer.new free_t...",
+              "source": "app/controllers/quiz_answers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/quiz_answers_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuizQuestionsController": {
+        "type": "Controller",
+        "description": "Manages CRUD operations for quiz questions within the frontend application. It enables content editors to create, edit, update, move, and delete questions of different types: `MultipleChoiceQuestion`, `MultipleAnswerQuestion`, `FreeTextQuestion`, and `EssayQuestion`. It enforces content editor permissions and sets no-cache headers.",
+        "interactions": {
+          "interaction_0": "Interacts with `Xikolo::Course::Item` and `Xikolo::Quiz::Quiz` ACFS models to retrieve course and quiz context.",
+          "interaction_1": "Interacts with various `Xikolo::Quiz::Question` ACFS models to fetch and persist question data from the `quiz` microservice.",
+          "interaction_2": "Uses `Acfs.run` to execute asynchronous data fetching requests.",
+          "interaction_3": "Performs direct `PATCH` and `GET` API calls to the `quiz` microservice via `Xikolo.api(:quiz)` for updates and type plausibility checks.",
+          "interaction_4": "Redirects to course item editing paths or `root_url` after actions.",
+          "interaction_5": "Includes `CourseContextHelper` for context-specific authorization."
+        },
+        "techDebt": [
+          "Commented as an \"Ugly hotfix\" for `question.type` being nil during move operations, indicating a potential issue in how question types are handled or persisted.",
+          "The `question_type` method relies on checking `params[:xikolo_quiz_multiple_choice_question].nil?` which can be brittle and less explicit than other methods for determining parameter presence."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_questions_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nclass QuizQuestionsController < Abstract::FrontendController\n  include CourseContextHelper\n\n  respond_to :json\n  before_action :ensure_content_editor\n  before_action :set_no_cache_headers\n\n  def edit\n    @item = Xikolo::Course::Item.find params[:item_id] do |i|\n      raise NoMethodError unless i.content_type == 'quiz'\n\n      @quiz = Xikolo::Quiz::Quiz.find i.content_id\n    end\n\n    @quiz_question = Xikolo::Quiz::Question.find params[:id], params: {raw: 1}\n    Acfs.run\n\n    case @quiz_question.class.name\n      when 'Xikolo::Quiz::MultipleChoiceQuestion'\n        @multiple_choice_question = @quiz_question\n      when 'Xikolo::Quiz::MultipleAnswerQuestion'\n        @multiple_answer_question = @quiz_question\n      when 'Xikolo::Quiz::FreeTextQuestion'\n        @free_text_question = @quiz_question\n      when 'Xikolo::Quiz::EssayQuestion'\n        @essay_question = @quiz_question\n    end\n    @quiz_question.type = @quiz_question.class.to_s.split('::').last\n\n    rende...",
+              "source": "app/controllers/quiz_questions_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 8,
+              "code": "  ##\n  # A base class for all controllers handling AJAX requests\n  class AjaxController < ::ApplicationController\n    rescue_from Status::Unauthorized do\n      render status: :forbidden, json: {errors: 'forbidden'}\n    end",
+              "source": "app/controllers/quiz_questions_controller.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 18,
+              "code": "module Abstract\n  ##\n  # A base class for all controllers serving a \"Bridge API\".\n  #\n  # Bridge APIs are small dedicated interfaces to external services, some of\n  # which are internal, some external. They vary in how they are versioned,\n  # consumed, documented and what formats they offer.\n  #\n  class BridgeAPIController < ActionController::Base # rubocop:disable Rails/ApplicationController\n    ##\n    # We inherit from ActionController::Base (for compatibility with the\n    # responders gem), but have to disable HTML-focused features, in order to\n    # get closer to what ActionController::API would give us.\n\n    skip_forgery_protection\n  end\nend",
+              "source": "app/controllers/quiz_questions_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/quiz_questions_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuizSubmissionController": {
+        "type": "Controller",
+        "description": "Manages the entire lifecycle of a user's quiz submission. This includes starting new attempts, viewing past submissions, enforcing time limits and deadlines, handling proctoring, and processing submitted answers. It also publishes events to RabbitMQ upon submission.",
+        "interactions": {
+          "interaction_0": "Includes `CourseContextHelper` and `ItemContextHelper` for contextual data.",
+          "interaction_1": "Authenticates users via `ensure_logged_in`.",
+          "interaction_2": "Interacts extensively with ACFS models: `Xikolo::Quiz::Quiz`, `Xikolo::Submission::QuizSubmission`, `Xikolo::Submission::UserQuizAttempts`, `Xikolo::Submission::QuizSubmissionSnapshot` to fetch and persist data from `quiz` and `submission` microservices.",
+          "interaction_3": "Uses `Acfs.run` for concurrent data fetching.",
+          "interaction_4": "Performs direct API calls to `quiz` and `course` microservices via `Xikolo.api(:quiz)` and `Xikolo.api(:course)`.",
+          "interaction_5": "Publishes a `xikolo.submission.submission.create` event to RabbitMQ via `Msgr` upon successful submission.",
+          "interaction_6": "Utilizes `QuizResultPresenter` and `QuizSubmissionProctoringPresenter` for data presentation.",
+          "interaction_7": "Manages redirection logic based on quiz type, attempts, and deadlines.",
+          "interaction_8": "Interacts with `Proctoring::ItemContext` for proctoring-related logic."
+        },
+        "techDebt": [
+          "TODO comment: \"Use the Restify response wrapped in a presenter everywhere\" suggests inconsistent data handling.",
+          "Comments like \"Temporary: We do not offer proctoring anymore\" indicate features that are either deprecated or temporarily disabled, requiring review."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nclass QuizSubmissionController < Abstract::FrontendController\n  include CourseContextHelper\n  include ItemContextHelper\n\n  before_action :ensure_logged_in\n  before_action :set_no_cache_headers\n\n  inside_course\n  inside_item\n\n  respond_to :json\n\n  def request_section\n    course_api.rel(:section).get({id: UUID(item['section_id'])})\n  end\n\n  def show\n    the_quiz\n    Acfs.run # Load shared promises\n\n    raise TypeError unless item['content_type'] == 'quiz'\n    raise Status::NotFound if (uuid = UUID4.try_convert(params[:id])).nil?\n\n    # Retrieve the submission from the url\n    submission_from_url = Xikolo.api(:quiz).value!.rel(:quiz_submission).get({id: uuid.to_s}).value!\n    # Access submission only if owner or course admin\n    unless submission_from_url['user_id'] == current_user.id || current_user.allowed?('quiz.submission.manage')\n      add_flash_message :error, t(:'flash.error.not_authorized')\n      return redirect_to root_url\n    end\n\n    create_visit!...",
+              "source": "app/controllers/quiz_submission_controller.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 19,
+              "code": "    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end",
+              "source": "app/controllers/quiz_submission_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/quiz_submission_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuizSubmissionSnapshotController": {
+        "type": "API Controller",
+        "description": "Handles the creation of quiz submission snapshots. This controller is likely used for auto-saving a user's progress during a quiz attempt, ensuring data is not lost due to browser closures or network issues.",
+        "interactions": {
+          "interaction_0": "Authenticates users via `ensure_logged_in`.",
+          "interaction_1": "Posts snapshot data to the `quiz` microservice via `Xikolo.api(:quiz)`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_snapshot_controller.rb",
+            "spec/controllers/quiz_submission_snapshot_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 12,
+              "code": "# frozen_string_literal: true\n\nclass QuizSubmissionSnapshotController < Abstract::AjaxController\n  before_action :ensure_logged_in\n\n  def create\n    snapshot = quiz_api.rel(:quiz_submission_snapshots).post(snapshot_params.to_unsafe_h).value!\n\n    render json: {success: true, timestamp: snapshot['updated_at']}\n  rescue Restify::ResponseError\n    render json: {success: false}, status: :service_unavailable\n  end",
+              "source": "app/controllers/quiz_submission_snapshot_controller.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 21,
+              "code": "  private\n\n  def snapshot_params\n    # Allow strong parameters permit hashes with dynamic keys\n    params.permit(:quiz_submission_id).tap do |whitelisted|\n      whitelisted[:submission] = params[:submission]\n    end\n  end",
+              "source": "app/controllers/quiz_submission_snapshot_controller.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 25,
+              "code": "  def quiz_api\n    @quiz_api ||= Xikolo.api(:quiz).value!\n  end",
+              "source": "app/controllers/quiz_submission_snapshot_controller.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 15,
+              "code": "    private\n\n    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end",
+              "source": "app/controllers/quiz_submission_snapshot_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/quiz_submission_snapshot_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuizRecapController": {
+        "type": "API Controller",
+        "description": "Provides a JSON API endpoint for retrieving quiz recap data for a specific course. It fetches relevant questions and their answers, enriching the data with reference links to the corresponding course items.",
+        "interactions": {
+          "interaction_0": "Authenticates users via `ensure_logged_in`.",
+          "interaction_1": "Fetches questions from the `quiz` microservice using `Xikolo.api(:quiz)`.",
+          "interaction_2": "Fetches course items from the `course` microservice using `Xikolo.api(:course)` to generate `referenceLink`.",
+          "interaction_3": "Serializes fetched data into a structured JSON response."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_recap_controller.rb",
+            "spec/requests/app/quiz-recap/show_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class QuizRecapController < ApplicationController\n  before_action :ensure_logged_in\n\n  def show\n    course_id = params[:course_id]\n    return render json: {error: 'course_id is required'}, status: :bad_request if course_id.blank?\n\n    render json: {questions: fetch_questions(course_id)}, status: :ok\n  end",
+              "source": "app/controllers/quiz_recap_controller.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 17,
+              "code": "  def ensure_logged_in\n    return true if current_user.logged_in?\n\n    head :unauthorized\n  end",
+              "source": "app/controllers/quiz_recap_controller.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 29,
+              "code": "  def fetch_questions(course_id)\n    quiz_api.rel(:questions).get({course_id:, selftests: true, exclude_from_recap: false, eligible_for_recap: true})\n      .then do |questions|\n        Restify::Promise.new(questions.map do |question|\n          course_api.rel(:items).get({content_id: question['quiz_id']}).then do |items|\n            if items.first.present?\n              question['reference_link'] = course_item_url(course_id: course_id, id: items.first['id'])\n            end\n            serialize_question(question)\n          end\n        end)",
+              "source": "app/controllers/quiz_recap_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/quiz_recap_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Quiz::Submission": {
+        "type": "Application Model (Wrapper)",
+        "description": "A Ruby class that acts as a wrapper around a `Restify` resource from the Quiz Service, representing a quiz submission. It provides methods to access submission attributes and proctoring details.",
+        "interactions": {
+          "interaction_0": "Initializes with a hash of submission attributes, typically from a Restify response or ACFS client object [Source: app/models/quiz/submission.rb]",
+          "interaction_1": "Delegates proctoring-related logic to `Quiz::Submission::Proctoring` [Source: app/models/quiz/submission.rb]"
+        },
+        "techDebt": [
+          "Explicitly noted as: \"This should become a real ActiveRecord model in the future.\" [Source: app/models/quiz/submission.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/quiz/submission.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nmodule Quiz\n  class Submission\n    # This should become a real ActiveRecord model in the future.\n\n    class << self\n      def find(id)\n        from_restify(\n          Xikolo.api(:quiz).value!\n            .rel(:quiz_submission).get({id:}).value!\n        )\n      end\n\n      def from_restify(resource)\n        new resource\n      end\n\n      # @param resource [Xikolo::Submission::QuizSubmission]\n      def from_acfs(resource)\n        new resource.attributes\n      end\n    end\n\n    def initialize(hash)\n      @submission = hash\n    end\n\n    def proctoring\n      @proctoring ||= Proctoring.new(@submission)\n    end\n\n    def proctored?\n      @submission['vendor_data'].key?('proctoring') || @submission['vendor_data'].key?('proctoring_smowl')\n    end\n  end\nend",
+              "source": "app/models/quiz/submission.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/quiz/submission.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/quiz/submissions.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/quiz/app/controllers/submission_question_statistics_controller.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Quiz::Submission::Proctoring": {
+        "type": "Application Model",
+        "description": "Handles the processing and interpretation of proctoring data associated with a quiz submission. It uses a vendor-specific adapter to extract results.",
+        "interactions": {
+          "interaction_0": "Initializes with a quiz submission hash [Source: app/models/quiz/submission/proctoring.rb]",
+          "interaction_1": "Utilizes `Proctoring::SmowlAdapter` to process `vendor_data` and retrieve proctoring results [Source: app/models/quiz/submission/proctoring.rb]",
+          "interaction_2": "Interacts with `Course::Course` to find the associated course [Source: app/models/quiz/submission/proctoring.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/quiz/submission/proctoring.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 20,
+              "code": "# frozen_string_literal: true\n\nmodule Quiz\n  class Submission\n    class Proctoring\n      def initialize(submission)\n        @submission = submission\n      end\n\n      def results\n        @results ||= vendor.results_from_data(@submission['vendor_data'])\n      end\n\n      private\n\n      def vendor\n        @vendor ||= ::Proctoring::SmowlAdapter.new(course)\n      end\n\n      def course\n        @course ||= Course::Course.find(@submission['course_id'])\n      end\n    end\n  end\nend",
+              "source": "app/models/quiz/submission/proctoring.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/quiz/submission/proctoring.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/lib/proctoring.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/course/enrollment/proctoring.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "QuizItemPresenter": {
+        "type": "Presenter",
+        "description": "Decorates a `Course::Item` when its content type is a quiz, providing methods for displaying quiz-specific information. This includes instructions, basic quiz properties (time limits, attempts), submission status, and complex redirection logic based on user state, deadlines, and proctoring status. It determines if a quiz is graded, a survey, or a selftest.",
+        "interactions": {
+          "interaction_0": "Delegates properties to `@quiz` (Xikolo::Quiz::Quiz) and `@attempts` (Xikolo::Submission::UserQuizAttempts) ACFS models.",
+          "interaction_1": "Interacts with `Xikolo::Course::Enrollment`, `Xikolo::Submission::QuizSubmission` ACFS models.",
+          "interaction_2": "Uses `Acfs.run` for concurrent data fetching.",
+          "interaction_3": "Utilizes `Proctoring::ItemContext` and `Proctoring::SmowlAdapter` for proctoring-related logic.",
+          "interaction_4": "Generates URLs using `Rails.application.routes.url_helpers`."
+        },
+        "techDebt": [
+          "TODO comment: \"remove it -> generate urls without section\" indicates a potential routing or URL generation issue.",
+          "TODO comment: \"move to correct possition -> feed back to controller\" suggests a responsibility mismatch or tight coupling.",
+          "Comments like \"Temporary: Proctoring is not offered anymore\" indicate features that are either deprecated or temporarily disabled, requiring review."
+        ],
+        "provenance": {
+          "sources": [
+            "app/presenters/quiz_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 11,
+              "code": "# frozen_string_literal: true\n\nrequire 'addressable'\n\nclass QuizItemPresenter < ItemPresenter\n  include Rails.application.routes.url_helpers\n  include UUIDHelper\n\n  # TODO: remove it -> generate urls without section\n  def_delegators :@quiz, :current_unlimited_attempts, :max_points,\n    :current_allowed_attempts, :current_time_limit_seconds,\n    :current_unlimited_time\n  def_delegator :@attempts, :attempts",
+              "source": "app/presenters/quiz_item_presenter.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 13,
+              "code": "  attr_reader :course, :submission, :error",
+              "source": "app/presenters/quiz_item_presenter.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 24,
+              "code": "  def self.build(item, course, user, quiz = nil, **)\n    if quiz.nil?\n      quiz = Xikolo::Quiz::Quiz.find UUID(item['content_id']), &:enqueue_acfs_request_for_questions\n    end\n    Acfs.run\n    Acfs.run\n\n    presenter = new(item:, quiz:, course:, user:)\n    presenter.enrollment!\n    presenter.submission!\n    presenter\n  end",
+              "source": "app/presenters/quiz_item_presenter.rb"
+            },
+            {
+              "startLine": 26,
+              "endLine": 27,
+              "code": "  def enrollment!\n    @enrollment = Xikolo::Course::Enrollment.find_by(course_id: @course.id, user_id: @user.id)\n  end",
+              "source": "app/presenters/quiz_item_presenter.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 30,
+              "code": "  def submission!\n    Acfs.on @quiz, @enrollment do |quiz, enrollment|\n      if enrollment.nil?",
+              "source": "app/presenters/quiz_item_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/quiz_item_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuizResultPresenter": {
+        "type": "Presenter",
+        "description": "Formats and calculates data related to a user's quiz results for display. This includes determining the achieved percentage, assembling historical submission data for charting, and generating labels for selecting past submissions.",
+        "interactions": {
+          "interaction_0": "Receives `quiz`, `submission`, and `all_submissions` data as input.",
+          "interaction_1": "Uses `ProgressHelper` for percentage calculation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/quiz_result_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class QuizResultPresenter   include ProgressHelper    def initialize(quiz, submission, all_submissions)     @quiz = quiz     @submission = submission     @all_submissions = all_submissions   end",
+              "source": "app/presenters/quiz_result_presenter.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 16,
+              "code": "  def percentage     calc_progress(@submission['points'], @quiz['max_points'])   end",
+              "source": "app/presenters/quiz_result_presenter.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 24,
+              "code": "  def history_graph_data     @all_submissions.each_with_object({}) do |submission, hash|       key = DateTime.iso8601(submission['quiz_submission_time']).as_json       hash[key] = submission['points']     end   end",
+              "source": "app/presenters/quiz_result_presenter.rb"
+            },
+            {
+              "startLine": 28,
+              "endLine": 33,
+              "code": "  def submission_labels     @all_submissions.map do |submission|       [         I18n.l(DateTime.iso8601(submission['quiz_submission_time']), format: :quiz_submission),         UUID(submission['id']).to_param,    ...",
+              "source": "app/presenters/quiz_result_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/quiz_result_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "QuizSubmissionProctoringPresenter": {
+        "type": "Presenter",
+        "description": "Presents the results of quiz proctoring, generating appropriate callout messages (success, warning, error) based on the proctoring outcome.",
+        "interactions": {
+          "interaction_0": "Receives a `Quiz::Submission::Proctoring` object in its constructor."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/quiz_submission_proctoring_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 28,
+              "code": "class QuizSubmissionProctoringPresenter   # @param proctoring [Quiz::Submission::Proctoring]   def initialize(proctoring)     @proctoring = proctoring   end    def status_callout     if result.empty?       Global::Callout.new(         I18n.t(:'quiz_submission.proctoring.data_currently_unavailable'),         icon: Global::FaIcon.new('gears', style: :solid),         type: :warning       )     elsif result.perfect?       Global::Callout.new(I18n.t(:'quiz_submission.proctoring.no_issues'), type: :success)     elsif result.valid?       Global::Callout.new(I18n.t(:'quiz_submission.proctoring.passed_with_issues'), type: :success)     else       Global::Callout.new(I18n.t(:'quiz_submission.proctoring.not_passed'), type: :error)     end   end    def result     @proctoring.results   end end",
+              "source": "app/presenters/quiz_submission_proctoring_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/quiz_submission_proctoring_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "app/assets/course/items/quiz.ts": {
+        "type": "Frontend JavaScript",
+        "description": "Handles client-side navigation for quiz submissions. It listens for changes on a select element with `data-behavior='navigate-to-submission'` and redirects the browser to the selected URL.",
+        "interactions": {
+          "interaction_0": "Interacts with the DOM to attach an event listener to a select element.",
+          "interaction_1": "Triggers a browser redirect (`window.location.replace`) based on user selection."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/course/items/quiz.ts"
+          ]
+        }
+      },
+      "app/assets/quiz-recap/quiz-recap.ts": {
+        "type": "Frontend TypeScript",
+        "description": "Responsible for fetching quiz recap data and rendering the quiz recap component. It uses the `@openhpi/quiz-recap` library for UI rendering and maps Xikolo's internal question types to the component's expected types.",
+        "interactions": {
+          "interaction_0": "Fetches quiz question data from the `/app/quiz-recap` endpoint using `fetch`.",
+          "interaction_1": "Uses `I18n` for internationalization.",
+          "interaction_2": "Renders the quiz recap UI using the `@openhpi/quiz-recap` library.",
+          "interaction_3": "Interacts with `handleError` utility for error reporting."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/quiz-recap/quiz-recap.ts"
+          ]
+        }
+      },
+      "app/assets/teacher/items/quiz-edit.ts": {
+        "type": "Frontend Component",
+        "description": "A TypeScript module that dynamically loads and initializes quiz question and answer editing forms via AJAX. It integrates markdown editors and upload dropzones into the loaded forms.",
+        "interactions": {
+          "interaction_0": "Fetches HTML content for question/answer forms from specified URLs using `fetch` [Source: app/assets/teacher/items/quiz-edit.ts]",
+          "interaction_1": "Initializes markdown editors (`initMarkdownEditorOnSelector`) and markdown upload dropzones (`mdupload.scan`) on the loaded content [Source: app/assets/teacher/items/quiz-edit.ts]",
+          "interaction_2": "Handles loading indicators (`showLoading`, `hideLoading`) and errors (`handleError`) [Source: app/assets/teacher/items/quiz-edit.ts]",
+          "interaction_3": "Attaches event listeners to 'edit-quiz-question', 'edit-quiz-answer', and 'add-quiz-answer' buttons [Source: app/assets/teacher/items/quiz-edit.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/quiz-edit.ts"
+          ]
+        }
+      },
+      "app/assets/teacher/items/quiz-item.ts": {
+        "type": "Frontend Component",
+        "description": "A TypeScript module that manages the UI for configuring quiz-specific properties, such as exercise type (main, bonus, survey), time limits, and allowed attempts. It dynamically shows/hides related input fields.",
+        "interactions": {
+          "interaction_0": "Handles changes to quiz exercise type to adjust visibility and default values of instructions, time limits, and allowed attempts [Source: app/assets/teacher/items/quiz-item.ts]",
+          "interaction_1": "Manages 'unlimited-time-switch' and 'unlimited-attempts-switch' to toggle visibility of corresponding input fields [Source: app/assets/teacher/items/quiz-item.ts]",
+          "interaction_2": "Uses `I18n` for localized text [Source: app/assets/teacher/items/quiz-item.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/quiz-item.ts"
+          ]
+        }
+      },
+      "app/assets/teacher/items/quiz-questions.ts": {
+        "type": "Frontend Component",
+        "description": "A TypeScript module responsible for dynamically rendering and managing the correct question form based on the selected question type (e.g., multiple choice, free text). It initializes markdown editors and upload functionalities for questions.",
+        "interactions": {
+          "interaction_0": "Dynamically appends the appropriate question form (multiple choice, multiple answer, free text, essay) to the UI based on a selector's value [Source: app/assets/teacher/items/quiz-questions.ts]",
+          "interaction_1": "Initializes markdown editors (`initMarkdownEditorOnSelector`), upload dropzones (`upload.scan`, `mdupload.scan`), and dropdowns (`initDropdownsOnSelector`) within the question forms [Source: app/assets/teacher/items/quiz-questions.ts]",
+          "interaction_2": "Toggles visibility of generic question fields [Source: app/assets/teacher/items/quiz-questions.ts]",
+          "interaction_3": "Uses `toggleUuids` for UUID display [Source: app/assets/teacher/items/quiz-questions.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/quiz-questions.ts"
+          ]
+        }
+      },
+      "app/assets/teacher/items/quiz.ts": {
+        "type": "Frontend Component",
+        "description": "The main TypeScript module for the teacher's quiz item editing page. It orchestrates the initialization of quiz properties, question management, and proctoring settings.",
+        "interactions": {
+          "interaction_0": "Calls `handleQuizExerciseTypes` and `setTimeAndAttemptsSwitches` from `quiz-item.ts` to configure quiz properties [Source: app/assets/teacher/items/quiz.ts]",
+          "interaction_1": "Calls `setQuizQuestions` from `quiz-questions.ts` to manage question forms [Source: app/assets/teacher/items/quiz.ts]",
+          "interaction_2": "Handles the visibility and state of the proctoring switch based on exercise type and initial state [Source: app/assets/teacher/items/quiz.ts]",
+          "interaction_3": "Listens to changes in exercise type to update quiz properties and proctoring settings [Source: app/assets/teacher/items/quiz.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/quiz.ts"
+          ]
+        }
+      },
+      "Xikolo::Quiz::Quiz": {
+        "type": "ACFS Client Model",
+        "description": "An ACFS client model representing a quiz, used by the main application to interact with the Quiz Service. It provides access to quiz properties like instructions, attempts, time limits, and questions.",
+        "interactions": {
+          "interaction_0": "Used by `QuizQuestionsController` to find the associated quiz for question management [Source: app/controllers/quiz_questions_controller.rb]",
+          "interaction_1": "Used by `QuizSubmissionController` to retrieve quiz details, questions, and answers for submissions [Source: app/controllers/quiz_submission_controller.rb]",
+          "interaction_2": "Used by `QuizItemPresenter` to build quiz item views and determine submission logic [Source: app/presenters/quiz_item_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_questions_controller.rb",
+            "app/controllers/quiz_submission_controller.rb",
+            "app/presenters/quiz_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nrequire 'acfs'\n\nmodule Xikolo\n  module Quiz\n    require 'xikolo/quiz/client'\n  end\nend",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 37,
+              "code": "      entity do\n        type 'quizzes'\n\n        attribute('instructions') {\n          description 'Textual instructions for the quiz taker in Markdown format'\n          type :string\n        }\n\n        attribute('time_limit') {\n          description 'The time (in seconds) that the user can take to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_time'] ? 0 : quiz['time_limit_seconds']\n          }\n        }\n\n        attribute('allowed_attempts') {\n          description 'The number of allowed attempts the user has to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_attempts'] ? 0 : quiz['allowed_attempts']\n          }\n        }\n\n        link('self') {|quiz| \"/api/v2/quizzes/#{quiz['id']}\" }\n\n        includable has_many('...",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/quiz/quizzes.rb",
+              "relevance": 44
+            },
+            {
+              "path": "clients/xikolo-quiz/lib/xikolo/quiz.rb",
+              "relevance": 44
+            },
+            {
+              "path": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission.rb",
+              "relevance": 44
+            }
+          ]
+        }
+      },
+      "Xikolo::Quiz::Question": {
+        "type": "ACFS Client Model",
+        "description": "An ACFS client model representing a quiz question, used by the main application to interact with the Quiz Service. It serves as a base for different question types.",
+        "interactions": {
+          "interaction_0": "Used by `QuizAnswersController` to find the question for which answers are being managed [Source: app/controllers/quiz_answers_controller.rb]",
+          "interaction_1": "Used by `QuizQuestionsController` for finding, creating, updating, and moving questions [Source: app/controllers/quiz_questions_controller.rb]",
+          "interaction_2": "Used by `QuizSubmissionController` to retrieve questions for a quiz submission [Source: app/controllers/quiz_submission_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_answers_controller.rb",
+            "app/controllers/quiz_questions_controller.rb",
+            "app/controllers/quiz_submission_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 29,
+              "code": "module Xikolo\n  module Entities\n    class Question < Grape::Entity\n      expose def id\n        object['id']\n      end\n\n      expose def points\n        object['points']\n      end\n\n      expose def type\n        object['type']\n      end\n\n      expose def text\n        object['text']\n      end\n\n      expose def courseId\n        object['course_id']\n      end\n\n      expose def quizId\n        object['quiz_id']\n      end\n\n      expose def referenceLink\n        object['reference_link']\n      end\n\n      expose def answers\n        object['answers'].pluck('id')\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/v2/quiz/questions.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 24,
+              "code": "    class Questions < Xikolo::Endpoint::CollectionEndpoint\n      load_related_objects = proc {|question|\n        promise = Xikolo.api(:course).value.rel(:items).get({content_id: question['quiz_id']})\n\n        question['expose_secret_attrs'] = promise.then {|items|\n          item = items.first\n          !item['submission_deadline'] || (item['submission_publishing_date'] && Time.zone.parse(item['submission_publishing_date']).past?)\n        }\n\n        Xikolo.api(:quiz).value\n          .rel(:answers).get({question_id: question['id']})\n          .then {|answers|\n          question['options'] = answers.map {|answer|\n            secret_attrs = if question['expose_secret_attrs'].value\n                             {\n                               'correct' => answer['correct'],\n                               'explanation' => answer['comment'],\n                             }\n                           else\n                           ...",
+              "source": "api/xikolo/v2/quiz/questions.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 30,
+              "code": "  def index\n    questions = Question.all\n    questions.where! quiz_id: params[:quiz_id] if params[:quiz_id]\n    questions.where! type: params[:type] if params[:type]\n    if params[:version_at]\n      questions = questions.map {|question| question.paper_trail.version_at(DateTime.parse(params[:version_at])) }\n      questions = questions.select {|question| question unless question.nil? }\n    end\n    if params[:selftests]\n      questions = selftests_for(params[:course_id])\n    end\n    respond_with questions\n  end\n\n  def show\n    question = Question.find(params[:id])\n    question = question.paper_trail.version_at(DateTime.parse(params[:version_at])) if params[:version_at]\n    # TODO: Error 404 if question nil ('cause of wrong timestamp)\n    question = {}...",
+              "source": "api/xikolo/v2/quiz/questions.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/quiz/questions.rb",
+              "relevance": 40
+            },
+            {
+              "path": "api/xikolo/entities/question.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/quiz/app/controllers/questions_controller.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Xikolo::Quiz::Answer": {
+        "type": "ACFS Client Model",
+        "description": "An ACFS client model representing a quiz answer, used by the main application to interact with the Quiz Service. It serves as a base for different answer types.",
+        "interactions": {
+          "interaction_0": "Used by `QuizAnswersController` for finding, creating, updating, moving, and deleting answers [Source: app/controllers/quiz_answers_controller.rb]",
+          "interaction_1": "Used by `QuizSubmissionController` to retrieve answers for quiz questions during submission [Source: app/controllers/quiz_submission_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_answers_controller.rb",
+            "app/controllers/quiz_submission_controller.rb"
+          ]
+        }
+      },
+      "Xikolo::Submission::QuizSubmission": {
+        "type": "ACFS Client Model",
+        "description": "An ACFS client model representing a user's submission to a quiz, used by the main application to interact with the Quiz Service (and implicitly, the Submission Service). It holds submission data, points, and proctoring information.",
+        "interactions": {
+          "interaction_0": "Used by `QuizSubmissionController` for finding, creating, and updating quiz submissions [Source: app/controllers/quiz_submission_controller.rb]",
+          "interaction_1": "Used by `QuizItemPresenter` to determine the user's submission status and redirect logic [Source: app/presenters/quiz_item_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb",
+            "app/presenters/quiz_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 31,
+              "code": "class QuizSubmission < Acfs::Resource\n    service Xikolo::Submission::Client, path: 'quiz_submissions'\n\n    attribute :id, :uuid\n    attribute :course_id, :uuid\n    attribute :quiz_id, :uuid\n    attribute :quiz_access_time, :date_time\n    attribute :quiz_submission_time, :date_time\n    attribute :quiz_version_at, :date_time\n    attribute :user_id, :uuid\n    attribute :submitted, :boolean\n    attribute :points, :float\n    attribute :snapshot_id, :uuid\n    attribute :fudge_points, :float\n    attribute :question_count, :integer\n    attribute :vendor_data, :dict\n\n    def enqueue_acfs_request_for_quiz_submissions_questions(&)\n      @quiz_submission_questions = Xikolo::Submission::QuizSubmissionQuestion.where(\n        quiz_submission_id: id,\n        per_page: 250,\n        &\n      )\n    end\n\n    def get_user_submission_question_for(quiz_question_id)\n      @quiz_submission_questions.find {|question| question.quiz_question_id == quiz_qu...\n",
+              "source": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission.rb",
+              "relevance": 29
+            },
+            {
+              "path": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission_answer.rb",
+              "relevance": 29
+            },
+            {
+              "path": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission_free_text_answer.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "Xikolo::Submission::QuizSubmissionSnapshot": {
+        "type": "ACFS Client Model",
+        "description": "An ACFS client model representing a snapshot of a quiz submission, used by the main application to interact with the Quiz Service for saving partial submission data.",
+        "interactions": {
+          "interaction_0": "Used by `QuizSubmissionController` to find and load submission snapshots [Source: app/controllers/quiz_submission_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::Submission\n  class QuizSubmissionSnapshot < Acfs::Resource\n    service Xikolo::Submission::Client, path: 'quiz_submission_snapshots'\n\n    attribute :id, :uuid\n    attribute :quiz_submission_id, :uuid\n    attribute :data, :string\n    attribute :loaded_data, :dict\n    attribute :updated_at, :string\n  end\nend",
+              "source": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission_snapshot.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 17,
+              "code": "  def create\n    snapshot = quiz_api.rel(:quiz_submission_snapshots).post(snapshot_params.to_unsafe_h).value!\n\n    render json: {success: true, timestamp: snapshot['updated_at']}\n  rescue Restify::ResponseError\n    render json: {success: false}, status: :service_unavailable\n  end\n\n  private\n\n  def snapshot_params\n    # Allow strong parameters permit hashes with dynamic keys\n    params.permit(:quiz_submission_id).tap do |whitelisted|\n      whitelisted[:submission] = params[:submission]\n    end\n  end",
+              "source": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission_snapshot.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 25,
+              "code": "  def create\n    respond_with submission.snapshot! params[:submission]&.to_unsafe_h\n  end\n\n  def update\n    respond_with QuizSubmissionSnapshot.find(params[:id]).update_attributes submission_snapshot_params\n  end\n\n  def destroy\n    respond_with QuizSubmissionSnapshot.find(params[:id]).destroy\n  end\n\n  private\n\n  def submission\n    @submission ||= QuizSubmission.find params[:quiz_submission_id]\n  end",
+              "source": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission_snapshot.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-submission/lib/xikolo/submission/quiz_submission_snapshot.rb",
+              "relevance": 29
+            },
+            {
+              "path": "app/controllers/quiz_submission_snapshot_controller.rb",
+              "relevance": 22
+            },
+            {
+              "path": "services/quiz/app/controllers/quiz_submission_snapshots_controller.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Xikolo::Submission::UserQuizAttempts": {
+        "type": "ACFS Client Model",
+        "description": "An ACFS client model used by the main application to track and manage the number of attempts a user has made for a specific quiz, interacting with the Quiz Service.",
+        "interactions": {
+          "interaction_0": "Used by `QuizSubmissionController` to check remaining attempts before allowing a new submission [Source: app/controllers/quiz_submission_controller.rb]",
+          "interaction_1": "Used by `QuizItemPresenter` to determine if further attempts are allowed [Source: app/presenters/quiz_item_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb",
+            "app/presenters/quiz_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 17,
+              "code": "module Xikolo::Submission   class UserQuizAttempts < Acfs::SingletonResource     service Xikolo::Submission::Client, path: 'user_quiz_attempts'      attribute :user_id, :uuid     attribute :quiz_id, :uuid     attribute :additional_attempts, :integer     attribute :attempts, :integer      def remaining_attempts_for_quiz(quiz)       quiz.current_allowed_attempts + additional_attempts - attempts     end      def attempts_for_quiz_remaining?(quiz)       remaining_attempts_for_quiz(quiz).positive?     end   end end",
+              "source": "clients/xikolo-submission/lib/xikolo/submission/user_quiz_attempts.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 26,
+              "code": "  def show     if params[:user_id].present? && params[:quiz_id].present?       # TODO: Use singleton for not having to wrap single item into collection       respond_with UserQuizAttempts.new(user_id: params[:user_id], quiz_id: params[:quiz_id])     else       error 422, json: {}     end   end",
+              "source": "clients/xikolo-submission/lib/xikolo/submission/user_quiz_attempts.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 13,
+              "code": "  def as_json(opts = {})     {       user_id:,       quiz_id:,       additional_attempts: additional_attempts || 0,       attempts:,     }.as_json(opts)   end",
+              "source": "clients/xikolo-submission/lib/xikolo/submission/user_quiz_attempts.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-submission/lib/xikolo/submission/user_quiz_attempts.rb",
+              "relevance": 29
+            },
+            {
+              "path": "services/quiz/app/controllers/user_quiz_attempts_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/quiz/app/decorators/user_quiz_attempts_decorator.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Quiz Service": {
+        "type": "Microservice",
+        "description": "The core microservice responsible for managing all quiz-related data and user submissions. It exposes an API for quiz management and submission, and processes background jobs via Sidekiq.",
+        "interactions": {
+          "interaction_0": "Communicates with PostgreSQL for data persistence.",
+          "interaction_1": "Uses RabbitMQ for asynchronous inter-service communication.",
+          "interaction_2": "Relies on Redis for caching and Sidekiq job queueing.",
+          "interaction_3": "Interacts with the Account Service for user authentication and authorization contexts.",
+          "interaction_4": "Interacts with the Course Service for course-related data and associations.",
+          "interaction_5": "Stores quiz-related assets in S3 buckets."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/quiz/README.md",
+            "services/quiz/config/routes.rb",
+            "services/quiz/config/database.yml",
+            "services/quiz/config/rabbitmq.yml",
+            "services/quiz/config/services.yml",
+            "services/quiz/config/storage.yml"
+          ]
+        }
+      },
+      "Course Service": {
+        "type": "Microservice",
+        "description": "A dedicated API-only Rails microservice responsible for managing course-related data, including course items and enrollments. It provides information necessary for context and linking within the quiz feature.",
+        "interactions": {
+          "interaction_0": "Provides API endpoints consumed by `QuizSubmissionController` to retrieve item and section details [Source: app/controllers/quiz_submission_controller.rb]",
+          "interaction_1": "Provides API endpoints consumed by `QuizRecapController` to find course items for generating reference links [Source: app/controllers/quiz_recap_controller.rb]",
+          "interaction_2": "Used by `QuizItemPresenter` to retrieve course enrollment information [Source: app/presenters/quiz_item_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb",
+            "app/controllers/quiz_recap_controller.rb",
+            "app/presenters/quiz_item_presenter.rb"
+          ]
+        }
+      },
+      "Submission Service": {
+        "type": "Microservice",
+        "description": "A microservice that processes and stores submission-related events. It receives notifications about new quiz submissions from the main application.",
+        "interactions": {
+          "interaction_0": "Receives `xikolo.submission.submission.create` events via Msgr from `QuizSubmissionController` [Source: app/controllers/quiz_submission_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb"
+          ]
+        }
+      },
+      "Course::QuizRecap": {
+        "type": "ViewComponent",
+        "description": "A Rails ViewComponent intended for rendering quiz recap information. The provided code shows an empty component, suggesting its primary logic or data fetching is handled by a presenter or controller, or it's a placeholder for future UI elements.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/components/course/quiz_recap.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 6,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class QuizRecap < ApplicationComponent\n  end\nend",
+              "source": "app/components/course/quiz_recap.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nclass QuizRecapController < ApplicationController\n  before_action :ensure_logged_in\n\n  def show\n    course_id = params[:course_id]\n    return render json: {error: 'course_id is required'}, status: :bad_request if course_id.blank?\n\n    render json: {questions: fetch_questions(course_id)}, status: :ok\n  end\n\n  private\n\n  def ensure_logged_in\n    return true if current_user.logged_in?\n\n    head :unauthorized\n  end\n\n  def fetch_questions(course_id)\n    quiz_api.rel(:questions).get({course_id:, selftests: true, exclude_from_recap: false, eligible_for_recap: true})\n      .then do |questions|\n        Restify::Promise.new(questions.map do |question|\n          course_api.rel(:items).get({content_id: question['quiz_id']}).then do |items|\n            if items.first.present?\n              question['reference_link'] = course_item_url(course_id: course_id, id: items.first['id'])\n            end\n            serialize_question(question)\n          end\n        end)\n      e...",
+              "source": "app/components/course/quiz_recap.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/course/quiz_recap.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/controllers/quiz_recap_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "integration/features/steps/quiz/quiz_recap.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Regrading Rake Tasks": {
+        "type": "Operational Toolset",
+        "description": "A collection of `rake` tasks providing administrative capabilities to modify quiz submission data and recalculate scores. These tasks are essential for correcting quiz results after changes to questions or answers.",
+        "interactions": {
+          "interaction_0": "Directly manipulates internal data models of the Quiz Service (e.g., questions, answers, submissions). [Source: services/quiz/lib/tasks/regrading.rake]",
+          "interaction_1": "Triggers updates to course results, likely through an interaction with the Course Service, via the `regrading:just_update_course` task. [Source: services/quiz/lib/tasks/regrading.rake]"
+        },
+        "techDebt": [
+          "Manual execution via shell commands increases the risk of human error and requires direct access to the production environment. [Source: services/quiz/lib/tasks/regrading.rake]",
+          "Lack of an integrated UI for these operations could hinder usability and auditability for non-technical administrators. [Source: services/quiz/lib/tasks/regrading.rake]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/quiz/lib/tasks/regrading.rake"
+          ]
+        }
+      },
+      "QuizSubmissionNavigator": {
+        "type": "Frontend Script",
+        "description": "A client-side JavaScript module responsible for handling navigation to different quiz submissions. It listens for changes in a dropdown (`[data-behavior='navigate-to-submission']`) and redirects the browser to the selected submission's URL.",
+        "interactions": {
+          "interaction_0": "Interacts with the DOM to find the submission selection element.",
+          "interaction_1": "Modifies `window.location.replace` to navigate the user."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/course/items/quiz.ts"
+          ]
+        }
+      },
+      "ACFS Client Models (e.g., Xikolo::Quiz::Question)": {
+        "type": "ACFS Client Model",
+        "description": "Client-side representations of resources managed by the `quiz` and `submission` microservices. These models provide an ActiveRecord-like interface for the frontend application to interact with the microservices' APIs, abstracting away direct HTTP calls.",
+        "interactions": {
+          "interaction_0": "Perform `find`, `where`, `new`, `save!`, `update_attributes`, `delete!` operations, which translate into API calls to the respective microservices.",
+          "interaction_1": "Enqueue further ACFS requests for associated resources (e.g., questions enqueue answers) to facilitate concurrent data fetching."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_answers_controller.rb",
+            "app/controllers/quiz_questions_controller.rb",
+            "app/controllers/quiz_submission_controller.rb",
+            "app/presenters/quiz_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 8,
+              "endLine": 35,
+              "code": "      entity do\n        type 'quizzes'\n\n        attribute('instructions') {\n          description 'Textual instructions for the quiz taker in Markdown format'\n          type :string\n        }\n\n        attribute('time_limit') {\n          description 'The time (in seconds) that the user can take to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_time'] ? 0 : quiz['time_limit_seconds']\n          }\n        }\n\n        attribute('allowed_attempts') {\n          description 'The number of allowed attempts the user has to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_attempts'] ? 0 : quiz['allowed_attempts']\n          }\n        }\n\n        link('self') {|quiz| \"/api/v2/quizzes/#{quiz['id']}\" }\n\n        includable has_many('...",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 36,
+              "code": "  class CheckBoxes < ApplicationComponent\n    def initialize(question, lang:, submission: nil, snapshot: nil, show_solution: false)\n      @question = question\n      @lang = lang\n      @submission = submission\n      @snapshot = snapshot\n      @show_solution = show_solution\n    end\n\n    private\n\n    def answers\n      user_answers = if @show_solution && @submission\n                       @submission.quiz_submission_answers.map(&:quiz_answer_id)\n                     elsif !@snapshot.nil? && !@snapshot.loaded_data.nil? && !@snapshot.loaded_data[@question.id].nil?\n                       @snapshot.loaded_data[@question.id]\n                     else\n                       []\n                     end\n\n      @question.answers.map do |a|\n        AnswerWrapper.new a, show_solution: @show_solution, selected: user_answers.include?(a.id)\n      end\n    end\n\n    class AnswerWrapper\n      def initialize(answer, show_solution:, selected:)\n        @answer = answe...",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/quiz/quizzes.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/course/quiz_recap.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/quiz/check_boxes.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Microservice API Clients (Xikolo.api(:quiz), Xikolo.api(:course))": {
+        "type": "API Client",
+        "description": "Instances of `Restify` clients used for direct, low-level interaction with the `quiz` and `course` microservices. They allow making specific HTTP requests (`get`, `post`, `patch`, `delete`) to defined relations (`rel`) within the microservices' APIs.",
+        "interactions": {
+          "interaction_0": "Send HTTP requests to the `quiz` and `course` microservices for data retrieval and manipulation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_answers_controller.rb",
+            "app/controllers/quiz_questions_controller.rb",
+            "app/controllers/quiz_recap_controller.rb",
+            "app/controllers/quiz_submission_controller.rb",
+            "app/controllers/quiz_submission_snapshot_controller.rb"
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "Messaging Client",
+        "description": "The `Msgr` client is used to publish asynchronous messages (events) to RabbitMQ, facilitating inter-service communication. In this context, it publishes submission creation events.",
+        "interactions": {
+          "interaction_0": "Publishes `xikolo.submission.submission.create` events to the RabbitMQ message queue."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": "module MsgrSentryIntegration\n  def dispatch(*)\n    Sentry.with_scope do\n      super\n    rescue Sentry::Error\n      raise # Don't capture Sentry errors\n    rescue Exception => e # rubocop:disable Lint/RescueException\n      Sentry.capture_exception(e)\n      raise\n    end\n  end\nend\n\nMsgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Proctoring::ItemContext": {
+        "type": "Service/Context Object",
+        "description": "Encapsulates logic and context specific to proctoring for a given quiz item. It determines if proctoring is enabled and available for the item and course.",
+        "interactions": {
+          "interaction_0": "Receives `course`, `item`, and `enrollment` objects to establish proctoring context.",
+          "interaction_1": "Interacts with `Proctoring::SmowlAdapter` to check service availability."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/quiz_submission_controller.rb",
+            "app/presenters/quiz_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 25,
+              "code": "# frozen_string_literal: true\n\nmodule Proctoring\n  class ItemContext < CourseContext\n    # @param course [Xikolo::Course::Course]\n    # @param item [Xikolo::Course::Item]\n    # @param enrollment [Xikolo::Course::Enrollment|Course::Enrollment]\n    def initialize(course, item, enrollment)\n      super(course, enrollment)\n\n      @item = item\n    end\n\n    def enabled?\n      @enabled ||= super && item_proctored?\n    end\n\n    def can_enable?\n      @can_enable ||= super && item_proctored?\n    end\n\n    private\n\n    def item_proctored?\n      @item.present? && @item['proctored']\n    end\n  end\nend",
+              "source": "app/lib/proctoring/item_context.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/proctoring/item_context.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/helpers/item_context_helper.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/jobs/proctoring/store_submission_results_job.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Quiz": {
+        "type": "Model/Entity",
+        "description": "Represents a single quiz instance, encapsulating its metadata such as name, instructions, attempt limits, time limits, due dates, and publishing status. It can be associated with courses and sections.",
+        "interactions": {
+          "interaction_0": "Contains multiple 'Question' entities.",
+          "interaction_1": "Associated with 'QuizSubmission' entities for user attempts.",
+          "interaction_2": "Linked to 'Course' and 'Section' entities (via Course Service)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/quiz/app/assets/quiz_import_schema.xml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 31,
+              "code": "      entity do\n        type 'quizzes'\n\n        attribute('instructions') {\n          description 'Textual instructions for the quiz taker in Markdown format'\n          type :string\n        }\n\n        attribute('time_limit') {\n          description 'The time (in seconds) that the user can take to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_time'] ? 0 : quiz['time_limit_seconds']\n          }\n        }\n\n        attribute('allowed_attempts') {\n          description 'The number of allowed attempts the user has to finish the quiz, or zero if unlimited'\n          type :integer\n          reading {|quiz|\n            quiz['unlimited_attempts'] ? 0 : quiz['allowed_attempts']\n          }\n        }\n\n        link('self') {|quiz| \"/api/v2/quizzes/#{quiz['id']}\" }\n\n        includable has_many('...",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 23,
+              "code": "  def new\n    @quiz_question = Xikolo::Quiz::Question.find params[:quiz_question_id], &:enqueue_acfs_request_for_answers\n    Acfs.run\n\n    @quiz_answer = Xikolo::Quiz::Answer.new\n    if @quiz_question.is_a? Xikolo::Quiz::FreeTextQuestion\n      @text_quiz_answer = Xikolo::Quiz::FreeTextAnswer.new\n    else\n      @text_quiz_answer = Xikolo::Quiz::TextAnswer.new\n    end\n    render layout: false\n  end",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 30,
+              "code": "  def edit\n    @quiz_answer = Xikolo::Quiz::Answer.find params[:id], params: {raw: 1}\n    Acfs.run\n    @text_quiz_answer = @quiz_answer\n    render layout: false\n  end",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 37,
+              "code": "  def create\n    case answer_type\n      when :text_answer\n        answer = Xikolo::Quiz::TextAnswer.new text_quiz_answer_params\n      when :free_text_answer\n        answer = Xikolo::Quiz::FreeTextAnswer.new free_t...",
+              "source": "api/xikolo/v2/quiz/quizzes.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/quiz/quizzes.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/components/course/quiz_recap.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/quiz_answers_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Question": {
+        "type": "Model/Entity",
+        "description": "Represents a question within a quiz, including its text, explanation, point value, and type (e.g., MultipleChoice, FreeText).",
+        "interactions": {
+          "interaction_0": "Belongs to a 'Quiz'.",
+          "interaction_1": "Contains multiple 'Answer' entities."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/quiz/app/assets/quiz_import_schema.xml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Entities\n    class Question < Grape::Entity\n      expose def id\n        object['id']\n      end\n\n      expose def points\n        object['points']\n      end\n\n      expose def type\n        object['type']\n      end\n\n      expose def text\n        object['text']\n      end\n\n      expose def courseId\n        object['course_id']\n      end\n\n      expose def quizId\n        object['quiz_id']\n      end\n\n      expose def referenceLink\n        object['reference_link']\n      end\n\n      expose def answers\n        object['answers'].pluck('id')\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/question.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 44,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  module Poll\n    class Question < ApplicationComponent\n      def self.vote(poll)\n        new(poll, mode: :voting)\n      end\n\n      def self.results(poll, stats:, choices: [])\n        new(poll, mode: :results, stats:, choices:)\n      end\n\n      private\n\n      def initialize(poll, mode:, **opts)\n        @poll = poll\n        @mode = mode\n        @choices = []\n\n        if mode == :results\n          @stats = opts.fetch(:stats)\n          @choices = opts[:choices] || []\n        end\n      end\n\n      def voting?\n        @mode == :voting\n      end\n\n      def results?\n        @mode == :results\n      end\n\n      def chosen?(option)\n        @choices.include?(option.id)\n      end\n\n      def percentage(option)\n        @percentages ||= Hash.new do |h, k|\n          h[k] = if @stats.participants.zero?\n                   0\n                 else\n                   (@stats.responses[k].to_f / @stats.participants * 100).round\n                 end\n        end\n",
+              "source": "api/xikolo/entities/question.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/question.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/v2/quiz/questions.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/components/dashboard/poll/question.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Answer": {
+        "type": "Model/Entity",
+        "description": "Represents a possible answer option for a 'Question', including its text, explanation, and a flag indicating if it's correct. Supports different answer types.",
+        "interactions": {
+          "interaction_0": "Belongs to a 'Question'."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/quiz/app/assets/quiz_import_schema.xml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Entities\n    class Answer < Grape::Entity\n      expose def id\n        object['id']\n      end\n\n      expose def correct\n        object['correct']\n      end\n\n      expose def text\n        object['text']\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/answer.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nclass AnswerController < Abstract::FrontendController\n  include CourseContextHelper\n  include PinboardRoutesHelper\n\n  def edit\n    @answer = Xikolo::Pinboard::Answer.find(\n      params[:id],\n      params: {text_purpose: 'input'}\n    )\n    Acfs.run\n    render layout: false\n  end\n\n  def create\n    if current_user.anonymous? || answer_params_with_user[:question_id].nil?\n      add_flash_message :error, t(:'flash.error.login_to_proceed')\n      redirect_to course_question_path(id: answer_params_with_user[:question_id])\n    else\n      Xikolo::Pinboard::Answer.create answer_params_with_user.merge(notification: notification_params)\n      redirect_to question_path(id: answer_params_with_user[:question_id])\n    end\n  end\n\n  def update\n    pinboard_answer = answer\n    pinboard_answer.update_attributes(answer_params)\n\n    redirect_to question_path id: answer.question_id\n  end\n\n  def upvote\n    # TODO: Refactor up- & downvote methods into one method\n    # only answer i...\n",
+              "source": "api/xikolo/entities/answer.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nmodule Gamification\n  module Rules\n    module Pinboard\n      class AnsweredQuestion < Gamification::Rules::Base\n        def create_score!\n          # Do not award points for answers in the \"Technical issues\" sections\n          return if @payload.fetch(:technical)\n\n          super\n        end\n\n        private\n\n        def name\n          :answered_question\n        end\n\n        def checksum\n          @payload.fetch :id\n        end\n\n        def data\n          {answer_id: @payload.fetch(:id)}\n        end\n\n        def required_keys\n          %i[course_id id user_id]\n        end\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/answer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/answer.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/answer_controller.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/gamification/rules/pinboard/answered_question.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "QuizSubmission": {
+        "type": "Model/Entity",
+        "description": "Represents a user's attempt and submitted responses for a specific quiz. This entity tracks the state and results of a user's interaction with a quiz.",
+        "interactions": {
+          "interaction_0": "Associated with a 'Quiz'.",
+          "interaction_1": "Associated with a 'User' (from Account Service)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/quiz/README.md",
+            "services/quiz/config/services.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 15,
+              "endLine": 28,
+              "code": "  def show     the_quiz     Acfs.run # Load shared promises      raise TypeError unless item['content_type'] == 'quiz'     raise Status::NotFound if (uuid = UUID4.try_convert(params[:id])).nil?      # Retrieve the submission from the url     submission_from_url = Xikolo.api(:quiz).value!.rel(:quiz_submission).get({id: uuid.to_s}).value!     # Access submission only if owner or course admin     unless submission_from_url['user_id'] == current_user.id || current_user.allowed?('quiz.submission.manage')       add_flash_message :error, t(:'flash.error.not_authorized')       return redirect_to root_url     end      create_visit!...",
+              "source": "app/controllers/quiz_submission_controller.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 10,
+              "code": "  def create     snapshot = quiz_api.rel(:quiz_submission_snapshots).post(snapshot_params.to_unsafe_h).value!      render json: {success: true, timestamp: snapshot['updated_at']}   rescue Restify::ResponseError",
+              "source": "app/controllers/quiz_submission_controller.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 18,
+              "code": "  def snapshot_params     # Allow strong parameters permit hashes with dynamic keys     params.permit(:quiz_submission_id).tap do |whitelisted|       whitelisted[:submission] = params[:submission]     end",
+              "source": "app/controllers/quiz_submission_controller.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 26,
+              "code": "  def status_callout     if result.empty?       Global::Callout.new(         I18n.t(:'quiz_submission.proctoring.data_currently_unavailable'),         icon: Global::FaIcon.new('gears', style: :solid),         type: :warning       )     elsif result.perfect?       Global::Callout.new(I18n.t(:'quiz_submission.proctoring.no_issues'), type: :success)     elsif result.valid?       Global::Callout.new(I18n.t(:'quiz_submission.proctoring.passed_with_issues'), type: :success)     else       Global::Callout.new(I18n.t(:'quiz_submission.proctoring.not_passed'), type: :error)     end",
+              "source": "app/controllers/quiz_submission_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/quiz_submission_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/quiz_submission_snapshot_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/presenters/quiz_submission_proctoring_presenter.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "QuizImporter": {
+        "type": "Service/Utility",
+        "description": "A conceptual component responsible for parsing and processing XML files that conform to the `quiz_import_schema.xml` to create or update 'Quiz', 'Question', and 'Answer' entities within the system.",
+        "interactions": {
+          "interaction_0": "Reads and validates XML data.",
+          "interaction_1": "Creates/updates 'Quiz' entities.",
+          "interaction_2": "Creates/updates 'Question' entities.",
+          "interaction_3": "Creates/updates 'Answer' entities."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/quiz/app/assets/quiz_import_schema.xml"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Interacts with Xikolo::Quiz::Question to find questions for new answers [Source: app/controllers/quiz_answers_controller.rb]",
+      "interaction_1": "Interacts with Xikolo::Quiz::Answer (ACFS client model) for finding, creating, updating, and moving answers [Source: app/controllers/quiz_answers_controller.rb]",
+      "interaction_2": "Interacts with Xikolo::Quiz::FreeTextAnswer and Xikolo::Quiz::TextAnswer for specific answer types [Source: app/controllers/quiz_answers_controller.rb]",
+      "interaction_3": "Communicates with the Quiz Service via `quiz_api` (Restify) for answer deletion [Source: app/controllers/quiz_answers_controller.rb]",
+      "interaction_4": "Redirects to `edit_course_section_item_path` after operations [Source: app/controllers/quiz_answers_controller.rb]",
+      "interaction_5": "Interacts with Xikolo::Course::Item to verify content type is 'quiz' and retrieve quiz ID [Source: app/controllers/quiz_questions_controller.rb]",
+      "interaction_6": "Interacts with Xikolo::Quiz::Quiz (ACFS client model) to find the associated quiz [Source: app/controllers/quiz_questions_controller.rb]",
+      "interaction_7": "Interacts with Xikolo::Quiz::Question (ACFS client model) for finding, creating, updating, and moving questions [Source: app/controllers/quiz_questions_controller.rb]",
+      "interaction_8": "Communicates with the Quiz Service via `quiz_api` (Restify) for question updates and type validation [Source: app/controllers/quiz_questions_controller.rb]",
+      "interaction_9": "Redirects to `edit_course_section_item_path` after operations [Source: app/controllers/quiz_questions_controller.rb]",
+      "interaction_10": "Interacts with Xikolo::Quiz::Quiz (ACFS client model) to retrieve quiz details, questions, and answers [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_11": "Interacts with Xikolo::Submission::QuizSubmission (ACFS client model) for finding, creating, and updating submissions [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_12": "Interacts with Xikolo::Submission::UserQuizAttempts (ACFS client model) to track user attempts [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_13": "Communicates with the Quiz Service via `quiz_api` (Restify) to create new submissions and retrieve existing ones [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_14": "Communicates with the Course Service via `course_api` (Restify) to retrieve item and section details [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_15": "Publishes `xikolo.submission.submission.create` event to the Submission Service via Msgr after submission [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_16": "Utilizes `QuizResultPresenter` and `QuizSubmissionProctoringPresenter` for rendering submission results [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_17": "Integrates with `Proctoring::ItemContext` for proctoring logic [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_18": "Communicates with the Quiz Service via `quiz_api` (Restify) to create quiz submission snapshots [Source: app/controllers/quiz_submission_snapshot_controller.rb]",
+      "interaction_19": "Communicates with the Quiz Service via `quiz_api` (Restify) to fetch quiz questions and answers [Source: app/controllers/quiz_recap_controller.rb]",
+      "interaction_20": "Communicates with the Course Service via `course_api` (Restify) to find course items and generate reference links [Source: app/controllers/quiz_recap_controller.rb]",
+      "interaction_21": "Initializes with a hash of submission attributes, typically from a Restify response or ACFS client object [Source: app/models/quiz/submission.rb]",
+      "interaction_22": "Delegates proctoring-related logic to `Quiz::Submission::Proctoring` [Source: app/models/quiz/submission.rb]",
+      "interaction_23": "Initializes with a quiz submission hash [Source: app/models/quiz/submission/proctoring.rb]",
+      "interaction_24": "Utilizes `Proctoring::SmowlAdapter` to process `vendor_data` and retrieve proctoring results [Source: app/models/quiz/submission/proctoring.rb]",
+      "interaction_25": "Interacts with `Course::Course` to find the associated course [Source: app/models/quiz/submission/proctoring.rb]",
+      "interaction_26": "Builds itself using `Xikolo::Quiz::Quiz` and `Xikolo::Course::Enrollment` ACFS client models [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_27": "Interacts with `Xikolo::Submission::QuizSubmission` and `Xikolo::Submission::UserQuizAttempts` to fetch submission and attempt data [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_28": "Delegates to `Proctoring::ItemContext` for proctoring logic [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_29": "Generates URLs using Rails route helpers [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_30": "Initializes with quiz, current submission, and all submissions data [Source: app/presenters/quiz_result_presenter.rb]",
+      "interaction_31": "Uses `ProgressHelper` to calculate progress percentages [Source: app/presenters/quiz_result_presenter.rb]",
+      "interaction_32": "Initializes with a `Quiz::Submission::Proctoring` object [Source: app/presenters/quiz_submission_proctoring_presenter.rb]",
+      "interaction_33": "Generates `Global::Callout` objects based on proctoring results [Source: app/presenters/quiz_submission_proctoring_presenter.rb]",
+      "interaction_34": "Listens for 'change' events on a `[data-behavior='navigate-to-submission']` HTML select element [Source: app/assets/course/items/quiz.ts]",
+      "interaction_35": "Redirects the browser to the URL selected in the dropdown [Source: app/assets/course/items/quiz.ts]",
+      "interaction_36": "Fetches quiz recap data from the `app/quiz-recap` endpoint using `fetch` [Source: app/assets/quiz-recap/quiz-recap.ts]",
+      "interaction_37": "Renders the quiz recap using `renderQuizRecap` from `@openhpi/quiz-recap` [Source: app/assets/quiz-recap/quiz-recap.ts]",
+      "interaction_38": "Uses `I18n` for localization [Source: app/assets/quiz-recap/quiz-recap.ts]",
+      "interaction_39": "Handles errors using `handleError` utility [Source: app/assets/quiz-recap/quiz-recap.ts]",
+      "interaction_40": "Fetches HTML content for question/answer forms from specified URLs using `fetch` [Source: app/assets/teacher/items/quiz-edit.ts]",
+      "interaction_41": "Initializes markdown editors (`initMarkdownEditorOnSelector`) and markdown upload dropzones (`mdupload.scan`) on the loaded content [Source: app/assets/teacher/items/quiz-edit.ts]",
+      "interaction_42": "Handles loading indicators (`showLoading`, `hideLoading`) and errors (`handleError`) [Source: app/assets/teacher/items/quiz-edit.ts]",
+      "interaction_43": "Attaches event listeners to 'edit-quiz-question', 'edit-quiz-answer', and 'add-quiz-answer' buttons [Source: app/assets/teacher/items/quiz-edit.ts]",
+      "interaction_44": "Handles changes to quiz exercise type to adjust visibility and default values of instructions, time limits, and allowed attempts [Source: app/assets/teacher/items/quiz-item.ts]",
+      "interaction_45": "Manages 'unlimited-time-switch' and 'unlimited-attempts-switch' to toggle visibility of corresponding input fields [Source: app/assets/teacher/items/quiz-item.ts]",
+      "interaction_46": "Uses `I18n` for localized text [Source: app/assets/teacher/items/quiz-item.ts]",
+      "interaction_47": "Dynamically appends the appropriate question form (multiple choice, multiple answer, free text, essay) to the UI based on a selector's value [Source: app/assets/teacher/items/quiz-questions.ts]",
+      "interaction_48": "Initializes markdown editors (`initMarkdownEditorOnSelector`), upload dropzones (`upload.scan`, `mdupload.scan`), and dropdowns (`initDropdownsOnSelector`) within the question forms [Source: app/assets/teacher/items/quiz-questions.ts]",
+      "interaction_49": "Toggles visibility of generic question fields [Source: app/assets/teacher/items/quiz-questions.ts]",
+      "interaction_50": "Uses `toggleUuids` for UUID display [Source: app/assets/teacher/items/quiz-questions.ts]",
+      "interaction_51": "Calls `handleQuizExerciseTypes` and `setTimeAndAttemptsSwitches` from `quiz-item.ts` to configure quiz properties [Source: app/assets/teacher/items/quiz.ts]",
+      "interaction_52": "Calls `setQuizQuestions` from `quiz-questions.ts` to manage question forms [Source: app/assets/teacher/items/quiz.ts]",
+      "interaction_53": "Handles the visibility and state of the proctoring switch based on exercise type and initial state [Source: app/assets/teacher/items/quiz.ts]",
+      "interaction_54": "Listens to changes in exercise type to update quiz properties and proctoring settings [Source: app/assets/teacher/items/quiz.ts]",
+      "interaction_55": "Used by `QuizQuestionsController` to find the associated quiz for question management [Source: app/controllers/quiz_questions_controller.rb]",
+      "interaction_56": "Used by `QuizSubmissionController` to retrieve quiz details, questions, and answers for submissions [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_57": "Used by `QuizItemPresenter` to build quiz item views and determine submission logic [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_58": "Used by `QuizAnswersController` to find the question for which answers are being managed [Source: app/controllers/quiz_answers_controller.rb]",
+      "interaction_59": "Used by `QuizQuestionsController` for finding, creating, updating, and moving questions [Source: app/controllers/quiz_questions_controller.rb]",
+      "interaction_60": "Used by `QuizSubmissionController` to retrieve questions for a quiz submission [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_61": "Used by `QuizAnswersController` for finding, creating, updating, moving, and deleting answers [Source: app/controllers/quiz_answers_controller.rb]",
+      "interaction_62": "Used by `QuizSubmissionController` to retrieve answers for quiz questions during submission [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_63": "Used by `QuizSubmissionController` for finding, creating, and updating quiz submissions [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_64": "Used by `QuizItemPresenter` to determine the user's submission status and redirect logic [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_65": "Used by `QuizSubmissionController` to find and load submission snapshots [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_66": "Used by `QuizSubmissionController` to check remaining attempts before allowing a new submission [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_67": "Used by `QuizItemPresenter` to determine if further attempts are allowed [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_68": "Provides API endpoints consumed by `QuizAnswersController`, `QuizQuestionsController`, `QuizSubmissionController`, `QuizSubmissionSnapshotController`, and `QuizRecapController` [Source: app/controllers/quiz_answers_controller.rb, app/controllers/quiz_questions_controller.rb, app/controllers/quiz_submission_controller.rb, app/controllers/quiz_submission_snapshot_controller.rb, app/controllers/quiz_recap_controller.rb]",
+      "interaction_69": "Stores quiz data, user submissions, and snapshots [Source: services/quiz/README.md]",
+      "interaction_70": "Supports administrative regrading tasks via `rake` [Source: services/quiz/lib/tasks/regrading.rake]",
+      "interaction_71": "Provides API endpoints consumed by `QuizSubmissionController` to retrieve item and section details [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_72": "Provides API endpoints consumed by `QuizRecapController` to find course items for generating reference links [Source: app/controllers/quiz_recap_controller.rb]",
+      "interaction_73": "Used by `QuizItemPresenter` to retrieve course enrollment information [Source: app/presenters/quiz_item_presenter.rb]",
+      "interaction_74": "Receives `xikolo.submission.submission.create` events via Msgr from `QuizSubmissionController` [Source: app/controllers/quiz_submission_controller.rb]",
+      "interaction_75": "Interacts with the DOM to attach an event listener to a select element.",
+      "interaction_76": "Triggers a browser redirect (`window.location.replace`) based on user selection.",
+      "interaction_77": "Fetches quiz question data from the `/app/quiz-recap` endpoint using `fetch`.",
+      "interaction_78": "Uses `I18n` for internationalization.",
+      "interaction_79": "Renders the quiz recap UI using the `@openhpi/quiz-recap` library.",
+      "interaction_80": "Interacts with `handleError` utility for error reporting.",
+      "interaction_81": "Interacts with `Xikolo::Quiz::Question` to find parent questions (via ACFS).",
+      "interaction_82": "Interacts with `Xikolo::Quiz::Answer`, `Xikolo::Quiz::FreeTextAnswer`, `Xikolo::Quiz::TextAnswer` for answer data management (via ACFS).",
+      "interaction_83": "Communicates with the `Xikolo::QuizService` microservice via `quiz_api` for answer deletion.",
+      "interaction_84": "Redirects to `edit_course_section_item_path` after operations.",
+      "interaction_85": "Interacts with `Xikolo::Course::Item` to find the associated course item (via ACFS).",
+      "interaction_86": "Interacts with `Xikolo::Quiz::Quiz` to find the associated quiz (via ACFS).",
+      "interaction_87": "Interacts with `Xikolo::Quiz::Question` and its subclasses (`MultipleChoiceQuestion`, `MultipleAnswerQuestion`, `FreeTextQuestion`, `EssayQuestion`) for question data management (via ACFS).",
+      "interaction_88": "Communicates with the `Xikolo::QuizService` microservice via `quiz_api` for question updates and deletion.",
+      "interaction_89": "Redirects to `edit_course_section_item_path` or `new_course_section_item_quiz_question_quiz_answer_path` after operations.",
+      "interaction_90": "Communicates with the `Xikolo::QuizService` microservice via `quiz_api` to fetch questions.",
+      "interaction_91": "Communicates with the `Xikolo::CourseService` microservice via `course_api` to fetch course items and generate reference links.",
+      "interaction_92": "Requires user to be logged in (`ensure_logged_in`).",
+      "interaction_93": "Interacts with `Xikolo::Course::Item` and `Xikolo::Quiz::Quiz` to retrieve quiz context (via ACFS).",
+      "interaction_94": "Interacts with `Xikolo::Submission::QuizSubmission` and `Xikolo::Submission::UserQuizAttempts` for submission and attempt tracking (via ACFS).",
+      "interaction_95": "Communicates with the `Xikolo::QuizService` microservice via `quiz_api` for creating new submissions and retrieving submission details.",
+      "interaction_96": "Communicates with the `Xikolo::CourseService` microservice via `course_api` for course and item details.",
+      "interaction_97": "Uses `QuizResultPresenter` to format results.",
+      "interaction_98": "Uses `QuizSubmissionProctoringPresenter` for proctoring display.",
+      "interaction_99": "Publishes submission events to RabbitMQ via `Msgr` (`xikolo.submission.submission.create`).",
+      "interaction_100": "Interacts with `Proctoring::ItemContext` for proctoring logic.",
+      "interaction_101": "Communicates with the `Xikolo::QuizService` microservice via `quiz_api` to create `quiz_submission_snapshots`.",
+      "interaction_102": "Requires user to be logged in (`ensure_logged_in`).",
+      "interaction_103": "Fetches `Xikolo::Quiz::Quiz`, `Xikolo::Course::Enrollment`, `Xikolo::Submission::QuizSubmission`, and `Xikolo::Submission::UserQuizAttempts` (via ACFS).",
+      "interaction_104": "Interacts with `Proctoring::ItemContext` for proctoring-related logic.",
+      "interaction_105": "Generates URLs using `Rails.application.routes.url_helpers`.",
+      "interaction_106": "Receives `quiz`, `submission`, and `all_submissions` data in its constructor.",
+      "interaction_107": "Receives a `Quiz::Submission::Proctoring` object in its constructor.",
+      "interaction_108": "Interacts with the Account Service to retrieve user information for submissions and grading. [Source: services/quiz/config/services.yml]",
+      "interaction_109": "Communicates with the Course Service to integrate quizzes into course structures and update course results after regrading. [Source: services/quiz/config/services.yml, services/quiz/lib/tasks/regrading.rake]",
+      "interaction_110": "Handles its own 'submission' data, as indicated by the service configuration. [Source: services/quiz/config/services.yml]",
+      "interaction_111": "Directly manipulates internal data models of the Quiz Service (e.g., questions, answers, submissions). [Source: services/quiz/lib/tasks/regrading.rake]",
+      "interaction_112": "Triggers updates to course results, likely through an interaction with the Course Service, via the `regrading:just_update_course` task. [Source: services/quiz/lib/tasks/regrading.rake]",
+      "interaction_113": "Interacts with the DOM to find the submission selection element.",
+      "interaction_114": "Modifies `window.location.replace` to navigate the user.",
+      "interaction_115": "Interacts with `Xikolo::Quiz::Question` and `Xikolo::Quiz::Answer` ACFS models to fetch and persist data from the `quiz` microservice.",
+      "interaction_116": "Uses `Acfs.run` to execute asynchronous data fetching requests.",
+      "interaction_117": "Performs direct `DELETE` API calls to the `quiz` microservice via `Xikolo.api(:quiz)`.",
+      "interaction_118": "Redirects to course item editing paths after actions.",
+      "interaction_119": "Includes `CourseContextHelper` for context-specific authorization.",
+      "interaction_120": "Interacts with `Xikolo::Course::Item` and `Xikolo::Quiz::Quiz` ACFS models to retrieve course and quiz context.",
+      "interaction_121": "Interacts with various `Xikolo::Quiz::Question` ACFS models to fetch and persist question data from the `quiz` microservice.",
+      "interaction_122": "Uses `Acfs.run` to execute asynchronous data fetching requests.",
+      "interaction_123": "Performs direct `PATCH` and `GET` API calls to the `quiz` microservice via `Xikolo.api(:quiz)` for updates and type plausibility checks.",
+      "interaction_124": "Redirects to course item editing paths or `root_url` after actions.",
+      "interaction_125": "Includes `CourseContextHelper` for context-specific authorization.",
+      "interaction_126": "Authenticates users via `ensure_logged_in`.",
+      "interaction_127": "Fetches questions from the `quiz` microservice using `Xikolo.api(:quiz)`.",
+      "interaction_128": "Fetches course items from the `course` microservice using `Xikolo.api(:course)` to generate `referenceLink`.",
+      "interaction_129": "Serializes fetched data into a structured JSON response.",
+      "interaction_130": "Includes `CourseContextHelper` and `ItemContextHelper` for contextual data.",
+      "interaction_131": "Authenticates users via `ensure_logged_in`.",
+      "interaction_132": "Interacts extensively with ACFS models: `Xikolo::Quiz::Quiz`, `Xikolo::Submission::QuizSubmission`, `Xikolo::Submission::UserQuizAttempts`, `Xikolo::Submission::QuizSubmissionSnapshot` to fetch and persist data from `quiz` and `submission` microservices.",
+      "interaction_133": "Uses `Acfs.run` for concurrent data fetching.",
+      "interaction_134": "Performs direct API calls to `quiz` and `course` microservices via `Xikolo.api(:quiz)` and `Xikolo.api(:course)`.",
+      "interaction_135": "Publishes a `xikolo.submission.submission.create` event to RabbitMQ via `Msgr` upon successful submission.",
+      "interaction_136": "Utilizes `QuizResultPresenter` and `QuizSubmissionProctoringPresenter` for data presentation.",
+      "interaction_137": "Manages redirection logic based on quiz type, attempts, and deadlines.",
+      "interaction_138": "Interacts with `Proctoring::ItemContext` for proctoring-related logic.",
+      "interaction_139": "Authenticates users via `ensure_logged_in`.",
+      "interaction_140": "Posts snapshot data to the `quiz` microservice via `Xikolo.api(:quiz)`.",
+      "interaction_141": "Delegates properties to `@quiz` (Xikolo::Quiz::Quiz) and `@attempts` (Xikolo::Submission::UserQuizAttempts) ACFS models.",
+      "interaction_142": "Interacts with `Xikolo::Course::Enrollment`, `Xikolo::Submission::QuizSubmission` ACFS models.",
+      "interaction_143": "Uses `Acfs.run` for concurrent data fetching.",
+      "interaction_144": "Utilizes `Proctoring::ItemContext` and `Proctoring::SmowlAdapter` for proctoring-related logic.",
+      "interaction_145": "Generates URLs using `Rails.application.routes.url_helpers`.",
+      "interaction_146": "Receives `quiz`, `submission`, and `all_submissions` data as input.",
+      "interaction_147": "Uses `ProgressHelper` for percentage calculation.",
+      "interaction_148": "Perform `find`, `where`, `new`, `save!`, `update_attributes`, `delete!` operations, which translate into API calls to the respective microservices.",
+      "interaction_149": "Enqueue further ACFS requests for associated resources (e.g., questions enqueue answers) to facilitate concurrent data fetching.",
+      "interaction_150": "Send HTTP requests to the `quiz` and `course` microservices for data retrieval and manipulation.",
+      "interaction_151": "Publishes `xikolo.submission.submission.create` events to the RabbitMQ message queue.",
+      "interaction_152": "Receives `course`, `item`, and `enrollment` objects to establish proctoring context.",
+      "interaction_153": "Interacts with `Proctoring::SmowlAdapter` to check service availability.",
+      "interaction_154": "Communicates with PostgreSQL for data persistence.",
+      "interaction_155": "Uses RabbitMQ for asynchronous inter-service communication.",
+      "interaction_156": "Relies on Redis for caching and Sidekiq job queueing.",
+      "interaction_157": "Interacts with the Account Service for user authentication and authorization contexts.",
+      "interaction_158": "Interacts with the Course Service for course-related data and associations.",
+      "interaction_159": "Stores quiz-related assets in S3 buckets.",
+      "interaction_160": "Contains multiple 'Question' entities.",
+      "interaction_161": "Associated with 'QuizSubmission' entities for user attempts.",
+      "interaction_162": "Linked to 'Course' and 'Section' entities (via Course Service).",
+      "interaction_163": "Belongs to a 'Quiz'.",
+      "interaction_164": "Contains multiple 'Answer' entities.",
+      "interaction_165": "Belongs to a 'Question'.",
+      "interaction_166": "Associated with a 'Quiz'.",
+      "interaction_167": "Associated with a 'User' (from Account Service).",
+      "interaction_168": "Reads and validates XML data.",
+      "interaction_169": "Creates/updates 'Quiz' entities.",
+      "interaction_170": "Creates/updates 'Question' entities.",
+      "interaction_171": "Creates/updates 'Answer' entities."
+    },
+    "technicalDebt": [
+      "\"Ugly hotfix: question.type is nil and overwrites model in service\" during question move operations [Source: app/controllers/quiz_questions_controller.rb]",
+      "Explicitly noted as: \"This should become a real ActiveRecord model in the future.\" [Source: app/models/quiz/submission.rb]",
+      "TODO: \"move to correct possition -> feed back to controller\" regarding redirect logic [Source: app/presenters/quiz_item_presenter.rb]",
+      "Proctoring feature is noted as 'Temporary: We do not offer proctoring anymore' and should be removed or refactored. [Source: app/controllers/quiz_submission_controller.rb]",
+      "TODO: 'Use the Restify response wrapped in a presenter everywhere' indicates an incomplete transition or inconsistency in API response handling. [Source: app/controllers/quiz_submission_controller.rb]",
+      "TODO: 'remove it -> generate urls without section' suggests a refactoring for URL generation. [Source: app/presenters/quiz_item_presenter.rb]",
+      "TODO: '- move to correct possition -> feed back to controller' indicates some logic might be misplaced in the presenter. [Source: app/presenters/quiz_item_presenter.rb]",
+      "Proctoring feature is noted as 'Temporary: Proctoring is not offered anymore.' and `proctoring_service_available?` is hardcoded to `false`. This indicates deprecated or dead code. [Source: app/presenters/quiz_item_presenter.rb]",
+      "The reliance on `rake` tasks for critical regrading operations suggests a lack of a user interface or dedicated API endpoints for these functionalities, potentially leading to manual errors or requiring specialized knowledge for execution. [Source: services/quiz/lib/tasks/regrading.rake]",
+      "Manual execution via shell commands increases the risk of human error and requires direct access to the production environment. [Source: services/quiz/lib/tasks/regrading.rake]",
+      "Lack of an integrated UI for these operations could hinder usability and auditability for non-technical administrators. [Source: services/quiz/lib/tasks/regrading.rake]",
+      "The `answer_type` method relies on checking `params[:xikolo_quiz_text_answer].nil?` which can be brittle and less explicit than other methods for determining parameter presence.",
+      "Commented as an \"Ugly hotfix\" for `question.type` being nil during move operations, indicating a potential issue in how question types are handled or persisted.",
+      "The `question_type` method relies on checking `params[:xikolo_quiz_multiple_choice_question].nil?` which can be brittle and less explicit than other methods for determining parameter presence.",
+      "TODO comment: \"Use the Restify response wrapped in a presenter everywhere\" suggests inconsistent data handling.",
+      "Comments like \"Temporary: We do not offer proctoring anymore\" indicate features that are either deprecated or temporarily disabled, requiring review.",
+      "TODO comment: \"remove it -> generate urls without section\" indicates a potential routing or URL generation issue.",
+      "TODO comment: \"move to correct possition -> feed back to controller\" suggests a responsibility mismatch or tight coupling.",
+      "Comments like \"Temporary: Proctoring is not offered anymore\" indicate features that are either deprecated or temporarily disabled, requiring review."
+    ]
+  }
+}

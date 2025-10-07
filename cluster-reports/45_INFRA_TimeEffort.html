@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeEffort standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for TimeEffort standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#infra" class="breadcrumb-link">INFRA</a></li>
+            <li class="breadcrumb-item active">TimeEffort standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-infra">INFRA</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="time-effort-microservice%3A-learning-item-duration-calculation---technical-documentation" tabindex="-1"><a class="header-anchor" href="#time-effort-microservice%3A-learning-item-duration-calculation---technical-documentation"><span>Time Effort Microservice: Learning Item Duration Calculation - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/19/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo Time Effort Microservice (cluster 45_INFRA_TimeEffort) is a specialized backend service dedicated to the estimation, calculation, and management of time effort for course items within the Xikolo platform. It operates within a distributed microservice architecture, integrating with other core services like CourseService and QuizService to provide dynamic and persisted time estimations. Key components include an HTTP API for direct requests, a RabbitMQ consumer for event-driven processing, and a Sidekiq worker for asynchronous tasks, all leveraging PostgreSQL for data persistence and Redis for caching/job management. The primary purpose is to provide robust, configurable, and accurate time effort data, crucial for learner planning and content management.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Time Effort Microservice architecture is designed for scalability and modularity, focusing on the core responsibility of time effort management. It comprises a central microservice (<code>TimeEffortService</code>) that exposes various operational modes and interacts with foundational infrastructure and other domain-specific microservices. This setup ensures that time effort calculations can be triggered via different mechanisms—real-time API calls, asynchronous message processing, or scheduled background jobs—while drawing necessary data from external sources. The service also includes robust error handling utilities and operation wrappers to standardize internal logic outcomes.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-timeeffort-microservice-architecture" tabindex="-1"><a class="header-anchor" href="#main-timeeffort-microservice-architecture"><span>Main TimeEffort Microservice Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  timeEffortService["TimeEffort Microservice"]
+  msgrConsumer["MsgrConsumer (RabbitMQ)"]
+  timeEffortAPI["TimeEffort API (HTTP)"]
+  timeEffortWorker["TimeEffort Worker (Sidekiq)"]
+  courseService["CourseService Microservice"]
+  quizService["QuizService Microservice"]
+
+  msgrConsumer -->|"receives messages"| timeEffortService
+  timeEffortAPI -->|"receives HTTP requests"| timeEffortService
+  timeEffortWorker -->|"pulls and executes jobs"| timeEffortService
+  timeEffortService -->|"retrieves course items"| courseService
+  timeEffortService -->|"retrieves quiz data"| quizService
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>TimeEffortService:</strong> Interacts with CourseService to retrieve course item details and structure. [Source: services/timeeffort/config/services.yml]</li>
+<li><strong>TimeEffortService:</strong> Interacts with QuizService to retrieve quiz-specific data relevant to time effort calculation. [Source: services/timeeffort/config/services.yml]</li>
+<li><strong>MsgrConsumer:</strong> Receives messages from RabbitMQ. [Source: RAG: docker/compose.timeeffort.yml, RAG: services/timeeffort/config/rabbitmq.yml]</li>
+<li><strong>MsgrConsumer:</strong> Triggers TimeEffortService logic (e.g., calculations, data updates). [Source: foundational_context]</li>
+<li><strong>TimeEffortAPI:</strong> Receives HTTP requests (e.g., GET for effort, POST for updates). [Source: RAG: docker/compose.timeeffort.yml]</li>
+<li><strong>TimeEffortAPI:</strong> Interacts with TimeEffortService core logic and database. [Source: foundational_context]</li>
+<li><strong>TimeEffortWorker:</strong> Pulls jobs from Redis-backed Sidekiq queue. [Source: foundational_context, RAG: docker/compose.timeeffort.yml]</li>
+<li><strong>TimeEffortWorker:</strong> Executes TimeEffortService logic. [Source: foundational_context]</li>
+<li><strong>Course::Admin::ItemTimeEffortController:</strong> Receives AJAX GET, PUT, and DELETE requests from the <code>_time_effort.html.slim</code> frontend component. [Source: app/controllers/course/admin/item_time_effort_controller.rb]</li>
+<li><strong>Course::Admin::ItemTimeEffortController:</strong> Communicates with the <code>Xikolo::TimeEffort</code> microservice (via <code>Xikolo.api(:timeeffort)</code> and <code>Restify</code>) to fetch, update, or delete time effort data for course items. [Source: app/controllers/course/admin/item_time_effort_controller.rb]</li>
+<li><strong>_time_effort.html.slim:</strong> Renders HTML for the time effort display and editable input field. [Source: app/views/items/_time_effort.html.slim]</li>
+<li><strong>_time_effort.html.slim:</strong> Uses <code>bootstrap-editable</code> for in-place editing of the time effort value. [Source: app/views/items/_time_effort.html.slim]</li>
+<li><strong>Xikolo::TimeEffort Microservice (Client Proxy):</strong> Receives calls from <code>Course::Admin::ItemTimeEffortController</code> to perform GET, PUT, and DELETE operations on item time effort. [Source: app/controllers/course/admin/item_time_effort_controller.rb]</li>
+<li><strong>Xikolo::TimeEffort Microservice (Client Proxy):</strong> Sends HTTP requests to the actual <code>Xikolo::TimeEffort</code> microservice, likely using <code>Restify</code> for inter-service communication. [Source: app/controllers/course/admin/item_time_effort_controller.rb, RAG: foundational_context]</li>
+<li><strong>Xikolo::CourseService Microservice (Client Proxy):</strong> Receives calls from <code>Course::Admin::ItemTimeEffortController</code> to fetch course details. [Source: app/controllers/course/admin/item_time_effort_controller.rb]</li>
+<li><strong>Xikolo::CourseService Microservice (Client Proxy):</strong> Sends HTTP requests to the actual <code>Xikolo::CourseService</code> microservice, likely using <code>Restify</code>. [Source: app/controllers/course/admin/item_time_effort_controller.rb, RAG: foundational_context]</li>
+<li><strong>Errors (TimeEffort Service):</strong> Error classes within this module are intended to be raised by the <code>Xikolo::TimeEffort</code> microservice’s business logic when specific validation or operational failures occur. [Source: services/timeeffort/lib/errors.rb]</li>
+<li><strong>Errors (TimeEffort Service):</strong> Provides a standardized format for error messages that can be serialized into JSON for API responses. [Source: services/timeeffort/lib/errors.rb]</li>
+<li><strong>Operation (TimeEffort Service):</strong> Used internally within the <code>Xikolo::TimeEffort</code> microservice to wrap the results of business logic executions. [Source: services/timeeffort/lib/operation.rb]</li>
+<li><strong>Operation (TimeEffort Service):</strong> Provides methods (<code>error!</code>, <code>success?</code>) to manage and query the operation’s status and errors. [Source: services/timeeffort/lib/operation.rb]</li>
+<li><strong>CourseService:</strong> Provides course item data to TimeEffortService for effort calculation. [Source: services/timeeffort/config/services.yml]</li>
+<li><strong>QuizService:</strong> Provides quiz data to TimeEffortService for effort calculation. [Source: services/timeeffort/config/services.yml]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Time Effort Microservice is implemented as a Docker container, <code>xikolo-timeeffort:latest</code>, supporting three distinct operational modes: <code>timeeffort-msgr</code> for RabbitMQ message consumption, <code>timeeffort-server</code> for exposing an HTTP API (listening on port 80), and <code>timeeffort-sidekiq</code> for processing background jobs. This allows for flexible deployment configurations and diverse interaction patterns. The service’s core functionality can be dynamically enabled or disabled via the <code>timeeffort.enabled</code> feature flag, as configured in <code>app/xikolo.yml</code>.</p>
+<p>Dependencies include PostgreSQL for persistent data storage, configured via <code>DATABASE_URL</code> and <code>CONCURRENCY</code> environment variables. RabbitMQ is used for asynchronous message queuing and inter-service communication, with its connectivity managed by the <code>XIKOLO_RABBITMQ_URL</code> environment variable. Redis serves as a caching layer and as the backend for Sidekiq job management, although specific configuration details for Redis beyond its role with Sidekiq are not specified in cluster data.</p>
+<p>Inter-service communication is facilitated through both RabbitMQ for event-driven interactions and direct HTTP calls using <code>Restify</code> for client proxies. The <code>TimeEffortService</code> makes outbound HTTP requests to the <code>CourseService</code> and <code>QuizService</code> microservices, whose locations are specified by <code>XIKOLO_SERVICE_COURSE</code> and <code>XIKOLO_SERVICE_QUIZ</code> environment variables, respectively. These external services provide crucial learning item and quiz data necessary for time effort calculations. The <code>Errors (TimeEffort Service)</code> module defines custom error classes for internal business logic failures, providing structured error responses, though the main application’s <code>Course::Admin::ItemTimeEffortController</code> does not currently parse these detailed error types, potentially leading to generic user feedback. The <code>Operation (TimeEffort Service)</code> class wraps business logic results, offering a standardized way to manage operation status and errors within the microservice.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Course::Admin::ItemTimeEffortController</strong> <code>app/controllers/course/admin/item_time_effort_controller.rb</code></li>
+<li>📄 <strong>Course::Admin::ItemTimeEffortController</strong> <code>RAG: foundational_context</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>TimeEffortService</strong> <code>services/timeeffort/config/services.yml</code></li>
+<li>📄 <strong>TimeEffortService</strong> <code>services/timeeffort/README.rdoc</code></li>
+<li>📄 <strong>Xikolo::TimeEffort Microservice (Client Proxy)</strong> <code>app/controllers/course/admin/item_time_effort_controller.rb</code></li>
+<li>📄 <strong>Xikolo::TimeEffort Microservice (Client Proxy)</strong> <code>RAG: foundational_context</code></li>
+<li>📄 <strong>Xikolo::CourseService Microservice (Client Proxy)</strong> <code>app/controllers/course/admin/item_time_effort_controller.rb</code></li>
+<li>📄 <strong>Xikolo::CourseService Microservice (Client Proxy)</strong> <code>RAG: foundational_context</code></li>
+<li>📄 <strong>Errors (TimeEffort Service)</strong> <code>services/timeeffort/lib/errors.rb</code></li>
+<li>📄 <strong>Operation (TimeEffort Service)</strong> <code>services/timeeffort/lib/operation.rb</code></li>
+<li>📄 <strong>CourseService</strong> <code>services/timeeffort/config/services.yml</code></li>
+<li>📄 <strong>QuizService</strong> <code>services/timeeffort/config/services.yml</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>MsgrConsumer</strong> <code>RAG: docker/compose.timeeffort.yml</code></li>
+<li>📄 <strong>TimeEffortAPI</strong> <code>RAG: docker/compose.timeeffort.yml</code></li>
+<li>📄 <strong>TimeEffortWorker</strong> <code>RAG: docker/compose.timeeffort.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>MsgrConsumer</strong> <code>foundational_context</code></li>
+<li>📄 <strong>TimeEffortAPI</strong> <code>foundational_context</code></li>
+<li>📄 <strong>TimeEffortWorker</strong> <code>foundational_context</code></li>
+<li>📄 <strong>_time_effort.html.slim</strong> <code>app/views/items/_time_effort.html.slim</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294540"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

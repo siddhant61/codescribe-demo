@@ -1,0 +1,1283 @@
+{
+  "clusterId": "20_COMM_Announcements",
+  "featureFocus": "Global and Course-Specific Announcements and News Management",
+  "documentationReport": "{\n  \"title\": \"Global and Course-Specific News and Announcement Management System\",\n  \"functional_domain\": \"News and Announcement Management\",\n  \"overview\": \"The Global and Course-Specific News and Announcement Management System provides a comprehensive solution for creating, managing, and displaying announcements and news items across the platform. This merged cluster integrates a Ruby on Rails web frontend with a dedicated microservice, the `Xikolo News Service`, to handle both administrative operations and public dissemination. It supports general announcements, course-specific messages, and homepage news, with robust features for email notifications, recipient targeting, and read tracking.\",\n  \"architecture\": {\n    \"main_application\": \"The main Ruby on Rails application serves as the web frontend, providing all administrative interfaces for content creation and management, as well as the public-facing views for displaying news and announcements. It acts as a client to various microservices for data persistence and retrieval.\",\n    \"microservices\": [\n      {\n        \"name\": \"Xikolo News Service\",\n        \"role\": \"The core backend microservice for news and announcement data. It handles storage, retrieval, and processing of all announcement and news data, including email sending logic. Internally, it comprises a `News API Server` for external communication, a `News Msgr Consumer` for processing messages, and a `News Sidekiq Worker` for asynchronous tasks like email notifications. It manages the `News (Data Entity)`.\",\n        \"components\": [\n          \"Xikolo::NewsService\",\n          \"News Service (Microservice)\",\n          \"News API Server\",\n          \"News Msgr Consumer\",\n          \"News Sidekiq Worker\",\n          \"News (Data Entity)\",\n          \"Email Notification Component\"\n        ]\n      },\n      {\n        \"name\": \"AccountService\",\n        \"role\": \"Provides user and group information, essential for recipient selection in announcement emails and for resolving author/sender details for display.\",\n        \"api_endpoint\": \"Xikolo.api(:account)\"\n      },\n      {\n        \"name\": \"CourseService\",\n        \"role\": \"Provides course details, used for targeting announcements to specific courses.\",\n        \"api_endpoint\": \"Xikolo.api(:course)\"\n      }\n    ]\n  },\n  \"key_functionality\": {\n    \"admin_interfaces\": {\n      \"general_announcements\": {\n        \"description\": \"Manages core CRUD operations for general announcements, distinguishing between drafts and published items. Utilizes `Admin::AnnouncementForm` for input and `Admin::AnnouncementsListPresenter` for display.\",\n        \"controller\": \"Admin::AnnouncementsController\",\n        \"authorization\": [\n          \"news.announcement.create\",\n          \"news.announcement.update\"\n        ]\n      },\n      \"announcement_email_management\": {\n        \"description\": \"Handles the email aspect of announcements, allowing administrators to view email statuses and compose new announcement emails. Interacts with the `NewsService` for data.\",\n        \"controller\": \"Admin::AnnouncementEmailsController\",\n        \"forms\": [\n          \"Admin::AnnouncementEmailForm\"\n        ],\n        \"presenters\": [\n          \"Admin::AnnouncementEmailPresenter\"\n        ]\n      },\n      \"recipient_selection\": {\n        \"description\": \"An AJAX-specific interface providing dynamic lists of potential recipients (users, courses, groups) for announcement emails. Data is aggressively cached for performance and formatted as JSON.\",\n        \"controller\": \"Admin::Announcement::RecipientsController\",\n        \"data_sources\": [\n          \"AccountService\",\n          \"CourseService\"\n        ]\n      },\n      \"homepage_news_management\": {\n        \"description\": \"Manages news items specifically for homepage display, including CRUD operations and the ability to send test or actual announcement emails via the `NewsService`.\",\n        \"controller\": \"AnnouncementsController\",\n        \"forms\": [\n          \"Admin::NewsForm\"\n        ],\n        \"authorization\": [\n          \"news.announcement.send\",\n          \"news.announcement.send_test\"\n        ]\n      }\n    },\n    \"public_display\": {\n      \"description\": \"Displays announcements on the application's homepage. Fetches posts from the `NewsService`, showing published items to regular users and drafts to authorized administrators. Uses `AnnouncementPresenter` for formatting.\",\n      \"controller\": \"Home::AnnouncementsController\"\n    },\n    \"announcement_tracking\": {\n      \"description\": \"A Rack middleware that intercepts specific requests to asynchronously mark announcements as read by users, sending visit data to the `NewsService`.\",\n      \"middleware\": \"Middleware::NewsTracker\"\n    }\n  },\n  \"core_components\": {\n    \"controllers\": [\n      \"Admin::AnnouncementsController\",\n      \"Admin::AnnouncementEmailsController\",\n      \"Admin::Announcement::RecipientsController\",\n      \"AnnouncementsController\",\n      \"Home::AnnouncementsController\"\n    ],\n    \"forms\": [\n      {\n        \"name\": \"Admin::AnnouncementForm\",\n        \"description\": \"XUI::Form subclass for general announcement data, supporting multi-language translations via `Translation` subforms.\"\n      },\n      {\n        \"name\": \"Admin::AnnouncementEmailForm\",\n        \"description\": \"XUI::Form subclass for email-specific data, including a `RecipientsArray` processor to convert UI IDs to URNs for the `NewsService`.\"\n      },\n      {\n        \"name\": \"Admin::NewsForm\",\n        \"description\": \"XUI::Form subclass for homepage news items, supporting multi-language translations via `Translation` subforms.\",\n        \"sub_components\": [\n          \"Admin::NewsForm::Translation\"\n        ]\n      }\n    ],\n    \"presenters\": [\n      {\n        \"name\": \"Admin::AnnouncementEmailPresenter\",\n        \"description\": \"Transforms `NewsService` data for email display, asynchronously fetching author/sender details and calculating delivery statistics.\"\n      },\n      {\n        \"name\": \"Admin::AnnouncementPresenter\",\n        \"description\": \"Formats announcement data for admin views, providing paths for email creation and statistics.\"\n      },\n      {\n        \"name\": \"Admin::AnnouncementsListPresenter\",\n        \"description\": \"Presents collections of `Admin::AnnouncementPresenter` objects.\"\n      },\n      {\n        \"name\": \"AnnouncementPresenter\",\n        \"description\": \"Formats news items for public display, including teaser generation from markdown.\"\n      }\n    ],\n    \"models\": [\n      {\n        \"name\": \"Alert\",\n        \"description\": \"An ApplicationRecord model for system-wide alerts, conceptually similar to announcements, with translation support and 'published' scopes.\"\n      }\n    ],\n    \"middleware\": [\n      \"Middleware::NewsTracker\"\n    ]\n  },\n  \"inter_service_communication\": [\n    {\n      \"service\": \"Xikolo.api(:news)\",\n      \"interactions\": \"Primary interaction point for all announcement and news data management (CRUD, email sending, visit tracking).\"\n    },\n    {\n      \"service\": \"Xikolo.api(:account)\",\n      \"interactions\": \"Used to fetch user and group information for recipient selection and to resolve author/sender names.\"\n    },\n    {\n      \"service\": \"Xikolo.api(:course)\",\n      \"interactions\": \"Used to fetch course details for recipient selection.\"\n    }\n  ],\n  \"internationalization\": \"The system demonstrates robust internationalization across forms and presenters, utilizing `I18n.t` and managing multiple language versions of content. The `NewsService` itself provides locale files for email headers and disable links.\",\n  \"technical_debt\": [\n    \"Missing permission check for `Admin::AnnouncementEmailsController#show` action.\",\n    \"Incomplete delivery statistics in `Admin::AnnouncementEmailPresenter` (TODOs for `disabled_deliveries` and `error_deliveries`).\",\n    \"Hardcoded 'sending' status in `Admin::AnnouncementPresenter#email_status`.\"\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Admin::Announcement::RecipientsController": {
+        "type": "Controller",
+        "description": "An AJAX controller responsible for providing a list of potential recipients (users, courses, groups) for announcement emails to the frontend. It fetches data from the Account and Course microservices and caches the results.",
+        "interactions": {
+          "interaction_0": "Authorizes 'news.announcement.send' permission.",
+          "interaction_1": "Fetches user data from Xikolo::Account service via `account_api.rel(:users).get`.",
+          "interaction_2": "Fetches course data from Xikolo::CourseService via `Xikolo.api(:course).value!.rel(:courses).get`.",
+          "interaction_3": "Fetches group data (access, content_test, custom_recipients) from Xikolo::Account service via `account_api.rel(:groups).get`.",
+          "interaction_4": "Caches API responses using `Rails.cache`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/announcement/recipients_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 45,
+              "code": "class Admin::Announcement::RecipientsController < Abstract::AjaxController\n  require_feature 'admin_announcements'\n\n  def index\n    authorize! 'news.announcement.send'\n\n    users = Rails.cache.fetch(\n      \"announcements/users/#{params[:q]}\",\n      expires_in: 30.minutes,\n      race_condition_ttl: 10.seconds\n    ) do\n      account_api.rel(:users).get({query: params[:q]}).value!\n    end\n\n    user_recipients = users.map do |user|\n      {\n        group: I18n.t('admin.announcement_email.recipients_selector_students'),\n        id: \"user:#{user['id']}\",\n        text: \"#{user['name']} (#{user['email']})\",\n      }\n    end\n\n    courses = Rails.cache.fetch(\n      \"announcements/courses/#{params[:q]}\",\n      expires_in: 1.hour,\n      race_condition_ttl: 10.seconds\n    ) do\n      Xikolo.api(:course).value!.rel(:courses).get({\n        groups: 'any',\n        autocomplete: params[:q],\n        limit: 100,\n      }).value!\n    end\n\n    course_recipients = courses.map do |c...",
+              "source": "app/controllers/admin/announcement/recipients_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/announcement/recipients_controller.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/controllers/admin/announcement_emails_controller.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/controllers/admin/announcements_controller.rb",
+              "relevance": 15
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementEmailsController": {
+        "type": "Controller",
+        "description": "Manages the creation and viewing of announcement emails. It interacts with the NewsService to send and retrieve email-related data.",
+        "interactions": {
+          "interaction_0": "Requires 'admin_announcements' feature.",
+          "interaction_1": "Interacts with Xikolo::NewsService via `news_service` to get announcement and message details.",
+          "interaction_2": "Uses `Admin::AnnouncementEmailForm` for creating new email messages.",
+          "interaction_3": "Uses `Admin::AnnouncementEmailPresenter` to display email details.",
+          "interaction_4": "Handles `Restify::UnprocessableEntity` errors during email creation."
+        },
+        "techDebt": [
+          "Missing permission check for the `show` action. [Source: app/controllers/admin/announcement_emails_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/announcement_emails_controller.rb"
+          ]
+        }
+      },
+      "Admin::AnnouncementsController": {
+        "type": "Controller",
+        "description": "Handles CRUD operations for general announcements within the admin interface. It manages drafts and published announcements.",
+        "interactions": {
+          "interaction_0": "Requires 'admin_announcements' feature.",
+          "interaction_1": "Authorizes 'news.announcement.create' and 'news.announcement.update' permissions.",
+          "interaction_2": "Interacts with Xikolo::NewsService via `news_service` to fetch, create, update announcements.",
+          "interaction_3": "Uses `Admin::AnnouncementForm` for announcement data input.",
+          "interaction_4": "Uses `Admin::AnnouncementsListPresenter` to display lists of announcements.",
+          "interaction_5": "Handles `Restify::UnprocessableEntity` errors during creation and update."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/announcements_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 33,
+              "code": "class AnnouncementsController < Abstract::FrontendController\n  require_feature 'announcements'\n\n  def new\n    authorize! 'news.announcement.create'\n\n    @announcement = Admin::NewsForm.new(\n      'show_on_homepage' => true,\n      'language' => 'en', # The default announcement language is English\n      'translations' => {}\n    )\n  end\n\n  def edit\n    authorize! 'news.announcement.update'\n\n    @announcement = news_service.rel(:news).get({\n      id: params[:id],\n      embed: 'translations',\n    }).then do |announcement|\n      Admin::NewsForm.from_resource(announcement)\n    end.value!\n  end\n\n  def create\n    authorize! 'news.announcement.create'\n\n    @announcement = Admin::NewsForm.from_params(params)\n\n    # re-render creation form if announcement is invalid\n    return render(action: :new) unless @announcement.valid?\n\n    announcement = news_service\n      .rel(:news_index)\n      .post(\n        @announcement.to_resource.merge(\n          'author_id' => current_...",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 40,
+              "code": "class AnnouncementsController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  # This returns (targeted) announcements for admins only, these are not\n  # displayed to regular users.\n  def index\n    respond_with Announcement.order(created_at: :desc)\n  end\n\n  def show\n    respond_with Announcement.find params[:id]\n  end\n\n  def create\n    announcement = Announcement.create announcement_params\n\n    respond_with announcement, location: nil\n  end\n\n  def decoration_context\n    @decoration_context ||= params.permit(:language)\n  end\n\n  private\n\n  def announcement_params\n    params.permit(:author_id, translations: translation_structure)\n  end\n\n  def translation_structure\n    Xikolo.config.locales['available'].index_with do |_locale|\n      %i[subject content]\n    end\n  end\nend",
+              "source": "app/controllers/announcements_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/announcements_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/news/app/controllers/announcements_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "AnnouncementsController": {
+        "type": "Controller",
+        "description": "Handles administrative CRUD operations for announcements (create, read, update, delete). It enforces permissions and interacts with the 'news' microservice for data persistence and email sending.",
+        "interactions": {
+          "interaction_0": "Authorizes actions using `authorize!` and `current_user.allowed?` based on permissions like `news.announcement.create`, `news.announcement.update`, `news.announcement.delete`, `news.announcement.send`, `news.announcement.send_test` [Source: app/controllers/announcements_controller.rb, services/account/lib/tasks/permissions/news.yml].",
+          "interaction_1": "Uses `Admin::NewsForm` for data binding and validation of announcement attributes [Source: app/controllers/announcements_controller.rb, app/forms/admin/news_form.rb].",
+          "interaction_2": "Interacts with the `news` microservice (`Xikolo.api(:news)`) to create, fetch, update, and delete announcements [Source: app/controllers/announcements_controller.rb].",
+          "interaction_3": "Sends email notifications (test or full) via the `news` microservice's email endpoint if `send_emails?` is true [Source: app/controllers/announcements_controller.rb].",
+          "interaction_4": "Handles `Restify::UnprocessableEntity` errors from the `news` service for remote validation failures [Source: app/controllers/announcements_controller.rb]."
+        },
+        "techDebt": [
+          "The `send_emails?` and `email_params` methods contain conditional logic for sending test vs. full emails. This could be refactored into a dedicated service object for better separation of concerns if email notification requirements become more complex [Source: app/controllers/announcements_controller.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/announcements_controller.rb",
+            "services/account/lib/tasks/permissions/news.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 16,
+              "code": "# frozen_string_literal: true\n\nclass AnnouncementsController < Abstract::FrontendController\n  require_feature 'announcements'\n\n  def new\n    authorize! 'news.announcement.create'\n\n    @announcement = Admin::NewsForm.new(\n      'show_on_homepage' => true,\n      'language' => 'en', # The default announcement language is English\n      'translations' => {}\n    )\n  end",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 28,
+              "code": "  def edit\n    authorize! 'news.announcement.update'\n\n    @announcement = news_service.rel(:news).get({\n      id: params[:id],\n      embed: 'translations',\n    }).then do |announcement|\n      Admin::NewsForm.from_resource(announcement)\n    end.value!\n  end",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 30,
+              "endLine": 41,
+              "code": "  def create\n    authorize! 'news.announcement.create'\n\n    @announcement = Admin::NewsForm.from_params(params)\n\n    # re-render creation form if announcement is invalid\n    return render(action: :new) unless @announcement.valid?\n\n    announcement = news_service\n      .rel(:news_index)\n      .post(\n        @announcement.to_resource.merge(\n          'author_id' => current_...",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 12,
+              "code": "# frozen_string_literal: true\n\nclass AnnouncementsController < ApplicationController\n  responders Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n\n  respond_to :json\n\n  # This returns (targeted) announcements for admins only, these are not\n  # displayed to regular users.\n  def index",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 15,
+              "code": "    respond_with Announcement.order(created_at: :desc)\n  end",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 19,
+              "code": "  def show\n    respond_with Announcement.find params[:id]\n  end",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 21,
+              "endLine": 24,
+              "code": "  def create\n    announcement = Announcement.create announcement_params\n\n    respond_with announcement, location: nil\n  end",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 30,
+              "endLine": 32,
+              "code": "  def announcement_params\n    params.permit(:author_id, translations: translation_structure)\n  end",
+              "source": "app/controllers/announcements_controller.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 38,
+              "code": "  def translation_structure\n    Xikolo.config.locales['available'].index_with do |_locale|\n      %i[subject content]\n    end\n  end",
+              "source": "app/controllers/announcements_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/announcements_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/news/app/controllers/announcements_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Home::AnnouncementsController": {
+        "type": "Controller",
+        "description": "Manages the public display of announcements, fetching them from the 'news' microservice and preparing them for rendering.",
+        "interactions": {
+          "interaction_0": "Checks for the 'announcements' feature flag [Source: app/controllers/home/announcements_controller.rb].",
+          "interaction_1": "Fetches announcement posts from the `news` microservice (`Xikolo.api(:news).rel(:posts).get`) [Source: app/controllers/home/announcements_controller.rb].",
+          "interaction_2": "Adjusts query parameters (`published`, `user_id`, `language`) based on `current_user` login status and `news.announcement.show` permission [Source: app/controllers/home/announcements_controller.rb, spec/requests/announcements/index_spec.rb].",
+          "interaction_3": "Maps raw post resources to `AnnouncementPresenter` instances for display [Source: app/controllers/home/announcements_controller.rb, app/presenters/announcement_presenter.rb].",
+          "interaction_4": "Sets meta tags for the page title [Source: app/controllers/home/announcements_controller.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/announcements_controller.rb",
+            "spec/requests/announcements/index_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 21,
+              "code": "class Home::AnnouncementsController < Abstract::FrontendController   include Interruptible    require_feature 'announcements'    def index     get_params = {       published: !current_user.allowed?('news.announcement.show'),       language: I18n.locale     }     get_params[:user_id] = current_user.id if current_user.logged_in?      @posts = Xikolo.api(:news).value!.rel(:posts).get(       get_params     ).value!.map do |post|       AnnouncementPresenter.create post     end      set_meta_tags(title: t(:'announcements.title', brand: Xikolo.config.site_name))   end end",
+              "source": "app/controllers/announcements_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/announcements_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/news/app/controllers/announcements_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/home/announcements_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementEmailForm": {
+        "type": "Form",
+        "description": "A form object for creating and editing announcement emails, including recipient selection and multi-language content.",
+        "interactions": {
+          "interaction_0": "Contains nested `Translation` subforms for subject and content in different languages.",
+          "interaction_1": "Uses `RecipientsArray` processor to transform recipient IDs to URNs for the NewsService.",
+          "interaction_2": "Uses `TranslationsArray` processor to manage default and additional language translations.",
+          "interaction_3": "Validates presence of subject, content, and recipients.",
+          "interaction_4": "Fetches user and group details for recipient display from Xikolo::Account service.",
+          "interaction_5": "Fetches course titles from `Course::Course` model for recipient display.",
+          "interaction_6": "Fetches consent treatments from Xikolo::Account service."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/announcement_email_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 39,
+              "code": "class Admin::AnnouncementEmailForm < XUI::Form\n  self.form_name = 'announcement_email'\n\n  class Translation < XUI::Form\n    self.form_name = 'translation'\n\n    attribute :subject, :single_line_string\n    attribute :content, :markup\n    attribute :language, :single_line_string\n\n    def self.readonly_attributes\n      %w[language]\n    end\n  end\n\n  attribute :id, :uuid\n  attribute :subject, :single_line_string\n  attribute :content, :markup\n  attribute :recipients, :list, subtype: :single_line_string, default: []\n  attribute :consents, :list, subtype: :single_line_string, default: []\n  attribute :language, :single_line_string\n  attribute :test, :boolean, default: false\n\n  attribute :translations,\n    :list,\n    subtype: :subform,\n    subtype_opts: {klass: Translation},\n    default: []\n\n  validates :subject, :content, :recipients, presence: true\n  validate :subject_and_content?\n  validate :valid_recipients\n\n  def self.readonly_attributes\n    %w[language]\n  end",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/forms/admin/channel_form.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementEmailForm::Translation": {
+        "type": "Form (Nested)",
+        "description": "A subform for handling translated subject and content of an announcement email.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/announcement_email_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 16,
+              "code": "  class Translation < XUI::Form\n    self.form_name = 'translation'\n\n    attribute :subject, :single_line_string\n    attribute :content, :markup\n    attribute :language, :single_line_string\n\n    def self.readonly_attributes\n      %w[language]\n    end\n  end",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/news_form.rb",
+              "relevance": 31
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementEmailForm::RecipientsArray": {
+        "type": "Form Processor",
+        "description": "Transforms recipient identifiers (e.g., 'user:ID', 'group:NAME') between the UI format and URNs expected by the NewsService API.",
+        "interactions": {
+          "interaction_0": "Processes `recipients` attribute for `Admin::AnnouncementEmailForm`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/announcement_email_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 26,
+              "endLine": 26,
+              "code": "attribute :recipients, :list, subtype: :single_line_string, default: []",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            },
+            {
+              "startLine": 35,
+              "endLine": 35,
+              "code": "validates :subject, :content, :recipients, presence: true",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            },
+            {
+              "startLine": 37,
+              "endLine": 37,
+              "code": "validate :valid_recipients",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/forms/admin/channel_form.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementEmailForm::TranslationsArray": {
+        "type": "Form Processor",
+        "description": "Manages the structure of translations for `Admin::AnnouncementEmailForm`, converting between a flat structure and a nested hash for the NewsService API.",
+        "interactions": {
+          "interaction_0": "Processes `translations` attribute for `Admin::AnnouncementEmailForm`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/announcement_email_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.7,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 13,
+              "code": "  class Translation < XUI::Form\n    self.form_name = 'translation'\n\n    attribute :subject, :single_line_string\n    attribute :content, :markup\n    attribute :language, :single_line_string\n\n    def self.readonly_attributes\n      %w[language]\n    end\n  end",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 27,
+              "code": "  attribute :translations,\n    :list,\n    subtype: :subform,\n    subtype_opts: {klass: Translation},\n    default: []",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/news_form.rb",
+              "relevance": 31
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementForm": {
+        "type": "Form",
+        "description": "A form object for creating and editing general announcements, supporting multi-language content.",
+        "interactions": {
+          "interaction_0": "Contains nested `Translation` subforms for subject and content in different languages.",
+          "interaction_1": "Uses `TranslationsArray` processor to manage default and additional language translations.",
+          "interaction_2": "Validates presence of subject and content."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/announcement_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 46,
+              "code": "# frozen_string_literal: true\n\nclass Admin::AnnouncementForm < XUI::Form\n  self.form_name = 'announcement'\n\n  class Translation < XUI::Form\n    self.form_name = 'translation'\n\n    attribute :subject, :single_line_string\n    attribute :content, :markup\n    attribute :language, :single_line_string\n\n    def self.readonly_attributes\n      %w[language]\n    end\n  end\n\n  attribute :id, :uuid\n  attribute :subject, :single_line_string\n  attribute :content, :markup\n  attribute :language, :single_line_string\n\n  attribute :translations,\n    :list,\n    subtype: :subform,\n    subtype_opts: {klass: Translation},\n    default: []\n\n  validates :subject, :content, presence: true\n  validate :subject_and_content?\n\n  def self.readonly_attributes\n    %w[language]\n  end\n\n  class TranslationsArray\n    def to_resource(resource, _obj)\n      other_translations = resource['translations'].to_h do |t|\n        [t['language'], (t.except('language') if t['subject'].present?)]\n      end.compact\n\n      resource['translat...\n",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/forms/admin/channel_form.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementForm::Translation": {
+        "type": "Form (Nested)",
+        "description": "A subform for handling translated subject and content of a general announcement.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/announcement_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 1,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 16,
+              "code": "  class Translation < XUI::Form\n    self.form_name = 'translation'\n\n    attribute :subject, :single_line_string\n    attribute :content, :markup\n    attribute :language, :single_line_string\n\n    def self.readonly_attributes\n      %w[language]\n    end\n  end",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/news_form.rb",
+              "relevance": 31
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementForm::TranslationsArray": {
+        "type": "Form Processor",
+        "description": "Manages the structure of translations for `Admin::AnnouncementForm`, converting between a flat structure and a nested hash for the NewsService API.",
+        "interactions": {
+          "interaction_0": "Processes `translations` attribute for `Admin::AnnouncementForm`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/announcement_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 41,
+              "endLine": 48,
+              "code": "  class TranslationsArray\n    def to_resource(resource, _obj)\n      other_translations = resource['translations'].to_h do |t|\n        [t['language'], (t.except('language') if t['subject'].present?)]\n      end.compact\n\n      resource['translat...",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/news_form.rb",
+              "relevance": 31
+            }
+          ]
+        }
+      },
+      "Admin::NewsForm": {
+        "type": "Form Object",
+        "description": "Encapsulates the data, validations, and resource transformation logic for creating and updating announcements in the admin interface, including handling multilingual translations.",
+        "interactions": {
+          "interaction_0": "Inherits from `XUI::Form` [Source: app/forms/admin/news_form.rb].",
+          "interaction_1": "Defines attributes for announcement properties like `title`, `text`, `publish_at`, `language`, `visual_url`, `audience`, and `translations` [Source: app/forms/admin/news_form.rb].",
+          "interaction_2": "Includes nested `Translation` subforms for managing multilingual content [Source: app/forms/admin/news_form.rb].",
+          "interaction_3": "Performs validations for presence of `title`, `publish_at`, `text`, and a custom validation `title_and_text?` for translations [Source: app/forms/admin/news_form.rb].",
+          "interaction_4": "Uses a `TranslationsArray` processor to convert translation data between form and resource formats for the `news` microservice [Source: app/forms/admin/news_form.rb]."
+        },
+        "techDebt": [
+          "The `TranslationsArray` class is a nested class within `Admin::NewsForm`. If similar translation handling is required across many forms, extracting this logic into a reusable module or dedicated class could improve modularity and prevent duplication [Source: app/forms/admin/news_form.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/news_form.rb"
+          ]
+        }
+      },
+      "Admin::NewsForm::Translation": {
+        "type": "Form Object (Nested)",
+        "description": "Represents a single translation for an announcement within the `Admin::NewsForm`.",
+        "interactions": {
+          "interaction_0": "Defines attributes for `title`, `text`, and `language` of a translation [Source: app/forms/admin/news_form.rb].",
+          "interaction_1": "Used as a `subtype` for the `translations` attribute in `Admin::NewsForm` [Source: app/forms/admin/news_form.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/news_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 16,
+              "code": "  class Translation < XUI::Form\n    self.form_name = 'translation'\n\n    attribute :title, :single_line_string\n    attribute :text, :markup\n    attribute :language, :single_line_string\n\n    def self.readonly_attributes\n      %w[language]\n    end\n  end",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/news_form.rb",
+              "relevance": 31
+            }
+          ]
+        }
+      },
+      "Admin::NewsForm::TranslationsArray": {
+        "type": "Form Processor",
+        "description": "Manages the structure of translations for `Admin::NewsForm`, converting between a flat structure and a nested hash for the NewsService API.",
+        "interactions": {
+          "interaction_0": "Processes `translations` attribute for `Admin::NewsForm`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/admin/news_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 36,
+              "endLine": 42,
+              "code": "  class TranslationsArray\n    def to_resource(resource, _obj)\n      other_translations = resource['translations'].to_h do |t|\n        [t['language'], (t.except('language') if t['subject'].present?)]\n      end.compact\n\n      resource['translat...",
+              "source": "app/forms/admin/announcement_email_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/forms/admin/news_form.rb",
+              "relevance": 31
+            }
+          ]
+        }
+      },
+      "Alert": {
+        "type": "Model",
+        "description": "An ActiveRecord model representing system-wide alerts, which are similar in concept to announcements. It stores translated content and manages publication dates.",
+        "interactions": {
+          "interaction_0": "Uses `translations` (likely a JSONB or hstore column) to store multi-language content.",
+          "interaction_1": "Defines scopes `by_publication_date` and `published` for filtering.",
+          "interaction_2": "Ensures a default translation exists via `default_translation_exists` validation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/alert.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 36,
+              "code": "class Alert < ApplicationRecord\n  scope :by_publication_date, lambda {\n    order Arel.sql('publish_at IS NOT NULL'), 'publish_at DESC'\n  }\n\n  scope :published, lambda {\n    now = Time.zone.now\n    where.not(publish_at: nil)\n      .where(publish_at: ...now)\n      .where('publish_until IS NULL OR publish_until > ?', now)\n  }\n\n  validate :default_translation_exists\n\n  class << self\n    def default_locale\n      Xikolo.config.locales['default']\n    end\n  end\n\n  def try_translation(locale)\n    locale = self.class.default_locale unless translations.key?(locale)\n    Translation.new(locale, translations[locale])\n  end\n\n  private\n\n  def default_translation_exists\n    return if translations[self.class.default_locale]\n\n    errors.add :translations, 'default_translation_missing'\n  end\n\n  class Translation\n    def initialize(locale, data)\n      @locale = locale\n      @data = data\n    end\n\n    attr_reader :locale\n\n    def title\n      @data['title']\n    end\n\n    def text...\n",
+              "source": "app/models/alert.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 31,
+              "code": "  const alertConfig = {\n    customClass: {\n      confirmButton: 'btn btn-danger',\n      cancelButton: 'btn btn-default',\n    },\n    title: I18n.t('simple_form.prompts.lti_provider.title'),\n    text: I18n.t('simple_form.prompts.lti_provider.text'),\n    icon: 'warning',\n    showCancelButton: true,\n    focusCancel: true,\n    allowOutsideClick: false,\n    buttonsStyling: false,\n    cancelButtonText: I18n.t('simple_form.prompts.lti_provider.cancel'),\n    confirmButtonText: I18n.t('simple_form.prompts.lti_provider.confirm'),\n  };\n\n  const resetToAnonymized = () => {\n    anonymizedRadio.checked = true;\n    unprotectedRadio.checked = false;\n  };\n\n  unprotectedRadio.addEventList...\n",
+              "source": "app/models/alert.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 27,
+              "code": "ready(() => {\n  const systemAlerts = document.querySelectorAll(\"[data-id='system-alerts']\");\n\n  systemAlerts.forEach((alerts) => {\n    const closeBtn = alerts.querySelector(\n      \"[data-id='system-alerts__close-btn']\",\n    );\n    const toggle = alerts.querySelector(\"[data-id='system-alerts__toggle']\");\n\n    if (!closeBtn || !toggle) return;\n\n    alerts.addEventListener('click', () => {\n      toggle.setAttribute('aria-expanded', true);\n    });\n\n    closeBtn.addEventListener('click', (e) => {\n      toggle.setAttribute('aria-expanded', false);\n\n      // Mark all current alerts as seen when closing the dropdown\n      const { systemAlertCookie } = alerts.dataset;\n      Cookies.set('seen_alerts', systemAlertCookie);\n\n      // do not call click event on system-alert (parent)\n      e.stopPropagation();\n    });\n  });\n});\n",
+              "source": "app/models/alert.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/alert.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/assets/admin/lti_providers/privacy-alert.js",
+              "relevance": 11
+            },
+            {
+              "path": "app/assets/components/global/system-alerts.js",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Alert::Translation": {
+        "type": "Model (Nested)",
+        "description": "A nested class within `Alert` to provide convenient access to translated title and text content for a specific locale.",
+        "interactions": {
+          "interaction_0": "Initializes with a locale and data hash, providing `title` and `text` methods."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/alert.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 35,
+              "endLine": 46,
+              "code": "  class Translation\n    def initialize(locale, data)\n      @locale = locale\n      @data = data\n    end\n\n    attr_reader :locale\n\n    def title\n      @data['title']\n    end\n\n    def text...\n",
+              "source": "app/lib/translations.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/translations.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/alert.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementEmailPresenter": {
+        "type": "Presenter",
+        "description": "Formats and presents data related to an announcement's email notification for administrative views, including delivery statistics and sender/author information.",
+        "interactions": {
+          "interaction_0": "Initializes with announcement and email resources [Source: app/presenters/admin/announcement_email_presenter.rb].",
+          "interaction_1": "Asynchronously fetches author and sender user details from the `account` microservice (`Xikolo.api(:account)`) [Source: app/presenters/admin/announcement_email_presenter.rb].",
+          "interaction_2": "Calculates and provides email delivery percentages and open percentages [Source: app/presenters/admin/announcement_email_presenter.rb]."
+        },
+        "techDebt": [
+          "The comments indicate that counts for `disabled_deliveries` and `error_deliveries` are not yet fully implemented or provided by the `news` service, leading to potential gaps in email delivery reporting [Source: app/presenters/admin/announcement_email_presenter.rb]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/announcement_email_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 38,
+              "code": "class Admin::AnnouncementEmailPresenter\n  def initialize(announcement, email)\n    @announcement = announcement\n    @email = email\n\n    # Start loading information about users (creator and sender)\n    account_api = Xikolo.api(:account).value!\n    @author_promise = account_api.rel(:user).get({id: author_id})\n    @sender_promise = account_api.rel(:user).get({id: sender_id})\n  end\n\n  def authored_at\n    I18n.l Time.zone.parse(@announcement['created_at']), format: :short_datetime\n  end\n\n  def author_id\n    @announcement['author_id']\n  end\n\n  def author_name\n    @author_promise.value!['full_name']\n  end\n\n  def sent_at\n    I18n.l Time.zone.parse(@email['created_at']), format: :long_datetime\n  end\n\n  def sender_id\n    @email['creator_id']\n  end\n\n  def sender_name\n    @sender_promise.value!['full_name']\n  end\n\n  def recipients\n    @email['recipients'].join ', '\n  end\n\n  def subject\n    @email['subject']\n  end\n\n  def status\n    @email['status']\n  end\n\n  def total_d...\n",
+              "source": "app/presenters/admin/announcement_email_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/admin/announcement_email_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/admin/announcement_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/admin/announcements_list_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementPresenter": {
+        "type": "Presenter",
+        "description": "Formats and presents individual announcement data for administrative list views, including links to related actions.",
+        "interactions": {
+          "interaction_0": "Initializes with an announcement resource [Source: app/presenters/admin/announcement_presenter.rb].",
+          "interaction_1": "Provides formatted `created_at` and `title` [Source: app/presenters/admin/announcement_presenter.rb].",
+          "interaction_2": "Indicates publication channels (`blog`, `email`) and generates relevant paths (e.g., `blog_path`, `email_create_path`, `email_stats_path`) [Source: app/presenters/admin/announcement_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/announcement_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nclass Admin::AnnouncementPresenter\n  def initialize(resource)\n    @resource = resource\n  end\n\n  include Rails.application.routes.url_helpers\n\n  def author_id\n    @resource['author_id']\n  end\n\n  def created_at\n    I18n.l Time.zone.parse(@resource['created_at']), format: :short_datetime\n  end\n\n  def title\n    @resource['title']\n  end\n\n  def blog?\n    @resource['publication_channels'].key? 'blog'\n  end\n\n  def blog_path\n    news_index_path anchor: \"post_#{@resource['id']}\"\n  end\n\n  def email?\n    @resource['publication_channels'].key? 'email'\n  end\n\n  def email_status\n    'sending'\n  end\n\n  def email_create_path\n    new_admin_announcement_email_path @resource['id']\n  end\n\n  def email_stats_path\n    admin_announcement_email_path @resource['id']\n  end\nend",
+              "source": "app/presenters/announcement_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/announcement_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/admin/announcement_email_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/admin/announcement_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::AnnouncementsListPresenter": {
+        "type": "Presenter",
+        "description": "Wraps a collection of announcement resources for presentation in admin list views, providing pagination capabilities.",
+        "interactions": {
+          "interaction_0": "Delegates iteration methods (`each`, `any?`) to the underlying collection [Source: app/presenters/admin/announcements_list_presenter.rb].",
+          "interaction_1": "Uses `RestifyPaginationCollection` for handling pagination metadata from the `news` service [Source: app/presenters/admin/announcements_list_presenter.rb].",
+          "interaction_2": "Maps raw announcement resources to `Admin::AnnouncementPresenter` instances [Source: app/presenters/admin/announcements_list_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/admin/announcements_list_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 32,
+              "code": "class Admin::AnnouncementsListPresenter\n  extend Forwardable\n\n  def initialize(announcements)\n    @announcements = announcements\n  end\n\n  def_delegators :all, :each, :any?\n\n  def pagination\n    RestifyPaginationCollection.new(@announcements)\n  end\n\n  private\n\n  def all\n    @all ||= @announcements.map do |res|\n      Admin::AnnouncementPresenter.new res\n    end\n  end\nend",
+              "source": "app/presenters/admin/announcement_email_presenter.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 32,
+              "code": "class Admin::AnnouncementPresenter\n  def initialize(resource)\n    @resource = resource\n  end\n\n  include Rails.application.routes.url_helpers\n\n  def author_id\n    @resource['author_id']\n  end\n\n  def created_at\n    I18n.l Time.zone.parse(@resource['created_at']), format: :short_datetime\n  end\n\n  def title\n    @resource['title']\n  end\n\n  def blog?\n    @resource['publication_channels'].key? 'blog'\n  end\n\n  def blog_path\n    news_index_path anchor: \"post_#{@resource['id']}\"\n  end\n\n  def email?\n    @resource['publication_channels'].key? 'email'\n  end\n\n  def email_status\n    'sending'\n  end\n\n  def email_create_path\n    new_admin_announcement_email_path @resource['id']\n  end\n\n  def email_stats_path\n    admin_announcement_email_path @resource['id']\n  end\nend",
+              "source": "app/presenters/admin/announcement_email_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/admin/announcement_email_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/admin/announcement_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/admin/announcements_list_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "AnnouncementPresenter": {
+        "type": "Presenter",
+        "description": "Formats and presents announcement data for public display, including markdown rendering and text truncation.",
+        "interactions": {
+          "interaction_0": "Initializes with a news resource [Source: app/presenters/announcement_presenter.rb].",
+          "interaction_1": "Includes `MarkdownHelper` to render markdown content [Source: app/presenters/announcement_presenter.rb].",
+          "interaction_2": "Uses `HtmlTruncator` to generate a `teaser` from the rendered markdown text [Source: app/presenters/announcement_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/announcement_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nclass AnnouncementPresenter < Presenter\n  require 'html_truncator'\n  include MarkdownHelper\n\n  attr_accessor :news\n\n  def self.create(news)\n    new news:\n  end\n\n  def id\n    news['id']\n  end\n\n  def title\n    news['title']\n  end\n\n  def text\n    news['text']\n  end\n\n  def teaser\n    truncator.truncate render_markdown(text) unless text.nil?\n  end\n\n  def publish_at\n    news['publish_at'] && DateTime.parse(news['publish_at'])\n  end\n\n  def visual_url\n    news['visual_url']\n  end\n\n  def visual_url?\n    visual_url.present?\n  end\n\n  private\n\n  def truncator\n    @truncator ||= HtmlTruncator.new\n  end\nend",
+              "source": "app/presenters/announcement_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/announcement_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Middleware::NewsTracker": {
+        "type": "Middleware",
+        "description": "A Rack middleware that tracks when users view announcements by sending an asynchronous request to the NewsService.",
+        "interactions": {
+          "interaction_0": "Intercepts HTTP requests to check for 'news' tracking parameters (`tracking_type`, `tracking_id`, `tracking_user`).",
+          "interaction_1": "Sends an asynchronous POST request to `Xikolo.api(:news).value!.rel(:visits)` to mark an announcement as read, without blocking the main request-response cycle."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "lib/middleware/news_tracker.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 8,
+              "code": "    def initialize(app)\n      @app = app\n    end",
+              "source": "lib/middleware/news_tracker.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 20,
+              "code": "    def call(env)\n      request = Rack::Request.new env\n\n      if news_tracking_info? request\n        announcement = UUID4.try_convert request.params['tracking_id']\n        user = UUID4.try_convert request.params['tracking_user']\n\n        mark_as_read! announcement, user if announcement && user\n      end\n\n      @app.call env\n    end",
+              "source": "lib/middleware/news_tracker.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 24,
+              "code": "    private\n\n    def news_tracking_info?(request)\n      request.params['tracking_type'] == 'news' && %w[tracking_user tracking_id].all? {|key| request.params.key? key }\n    end",
+              "source": "lib/middleware/news_tracker.rb"
+            },
+            {
+              "startLine": 26,
+              "endLine": 29,
+              "code": "    def mark_as_read!(announcement_id, user_id)\n      # Send the request to mark the announcement as read for the given user.\n      #\n      # NOTE: We're not calling `value` here, so that the request is executed in parallel\n      # while the actual application is run. Also, this way we do not delay sending of the\n      # resp...",
+              "source": "lib/middleware/news_tracker.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/middleware/news_tracker.rb",
+              "relevance": 26
+            },
+            {
+              "path": "api/xikolo/auth/middleware/legacy_token.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/auth/middleware/session.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Xikolo::NewsService": {
+        "type": "Microservice",
+        "description": "An API-only Ruby on Rails microservice responsible for managing and serving global and course-specific news and announcements. It provides endpoints for creating, retrieving, updating, and deleting news items and potentially handles their distribution, including email notifications. [Source: services/news/README.md]",
+        "interactions": {
+          "interaction_0": "Communicates with `Xikolo::Account` service to potentially retrieve user or account-related information. [Source: services/news/config/services.yml]",
+          "interaction_1": "Communicates with `Xikolo::CourseService` to associate news with specific courses or retrieve course details. [Source: services/news/config/services.yml]",
+          "interaction_2": "Utilizes RabbitMQ (`msgr` gem) for inter-service communication. ",
+          "interaction_3": "Sends emails, potentially using custom branded templates and stylesheets. [Source: docs/app/development/branding/email.md]",
+          "interaction_4": "Persists data in PostgreSQL. ",
+          "interaction_5": "Leverages `xikolo-sidekiq` for background job processing. "
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/news/README.md",
+            "services/news/config/services.yml",
+            "docs/app/development/branding/email.md"
+          ]
+        }
+      },
+      "Xikolo::Account": {
+        "type": "Microservice",
+        "description": "An API-only Rails microservice providing user and group management. It is leveraged by the main application to retrieve recipient information and user details for announcements.",
+        "interactions": {
+          "interaction_0": "Provides user data (name, email) for announcement recipient selection.",
+          "interaction_1": "Provides group data (access, content_test, custom_recipients) for recipient selection.",
+          "interaction_2": "Provides user details (full name) for displaying author and sender information in announcement emails.",
+          "interaction_3": "Provides consent treatment information."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/announcement/recipients_controller.rb",
+            "app/forms/admin/announcement_email_form.rb",
+            "app/presenters/admin/announcement_email_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 21,
+              "code": "# frozen_string_literal: true\n\nrequire 'acfs'\n\nmodule Xikolo\n  module Account\n    require 'xikolo/account/client'\n\n    # Now require your resources in Xikolo namespace to\n    # make them available as e.g. `Xikolo::User`.\n    require 'xikolo/account/authorization'\n    require 'xikolo/account/email'\n    require 'xikolo/account/user'\n    require 'xikolo/account/password_reset'\n    require 'xikolo/account/preferences'\n    require 'xikolo/account/session'\n    require 'xikolo/account/profile'\n    require 'xikolo/account/statistic'\n    require 'xikolo/account/token'\n    require 'xikolo/account/features'\n  end\nend",
+              "source": "clients/xikolo-account/lib/xikolo/account.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "clients/xikolo-account/lib/xikolo/account.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/controllers/account/accounts_controller.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/forms/account/account_form.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Xikolo::CourseService": {
+        "type": "Microservice",
+        "description": "An API-only Rails microservice managing course-related data. It is used by the main application to retrieve course information for announcement recipient selection.",
+        "interactions": {
+          "interaction_0": "Provides course data (title, course_code) for announcement recipient selection."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/announcement/recipients_controller.rb"
+          ]
+        }
+      },
+      "News (Data Entity)": {
+        "type": "Model",
+        "description": "Represents a news or announcement item, which can be either global (visible to all users) or specific to a particular course. This entity is persisted in PostgreSQL and managed by the `Xikolo::NewsService`. [Source: services/news/README.md]",
+        "interactions": {
+          "interaction_0": "Created, read, updated, and deleted via the `Xikolo::NewsService` API. [Source: services/news/README.md]",
+          "interaction_1": "Potentially associated with `Course` entities from `Xikolo::CourseService`. [Source: services/news/config/services.yml]",
+          "interaction_2": "Can trigger email notifications upon creation or update. [Source: docs/app/development/branding/email.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/news/README.md"
+          ]
+        }
+      },
+      "Email Notification Component": {
+        "type": "Service Component",
+        "description": "A component within the `Xikolo::NewsService` responsible for generating and sending email notifications related to news and announcements. It supports brand-specific customization of email layouts and stylesheets. [Source: docs/app/development/branding/email.md]",
+        "interactions": {
+          "interaction_0": "Receives news content and recipient information from other parts of `Xikolo::NewsService`.",
+          "interaction_1": "Utilizes custom templates and stylesheets located in `services/news/brand/<name>/assets/views/layouts` and `services/news/brand/<name>/assets/stylesheets` for branding. [Source: docs/app/development/branding/email.md]",
+          "interaction_2": "Likely uses `xikolo-sidekiq` for asynchronous email delivery. "
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docs/app/development/branding/email.md"
+          ]
+        }
+      },
+      "announcements.scss": {
+        "type": "Stylesheet",
+        "description": "Provides styling for the administrative announcement forms and email status displays.",
+        "interactions": {},
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/admin/announcements/announcements.scss"
+          ]
+        }
+      },
+      "News Service (Microservice)": {
+        "type": "Microservice",
+        "description": "The core service responsible for managing global and course-specific news and announcements. It handles the storage, retrieval, and distribution of news items, including sending notifications and managing related assets.",
+        "interactions": {
+          "interaction_0": "Interacts with PostgreSQL for data persistence. [Source: services/news/config/database.yml]",
+          "interaction_1": "Communicates with RabbitMQ for asynchronous messaging (both consuming and publishing). [Source: docker/compose.news.yml, services/news/config/rabbitmq.yml]",
+          "interaction_2": "Interacts with Redis for caching and Sidekiq job management. [Source: docker/compose.news.yml]",
+          "interaction_3": "Communicates with the Account service (e.g., for user details, notification preferences). [Source: services/news/config/services.yml, services/news/config/locales/en.yml]",
+          "interaction_4": "Communicates with the Course service (e.g., for course context for course news). [Source: services/news/config/services.yml]",
+          "interaction_5": "Integrates with S3 for storing news-related assets in 'news' and 'uploads' buckets. [Source: docker/config/xikolo/news.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/news/README.md",
+            "docker/compose.news.yml",
+            "docker/config/xikolo/news.yml",
+            "services/news/config/database.yml",
+            "services/news/config/locales/en.yml",
+            "services/news/config/rabbitmq.yml",
+            "services/news/config/services.yml"
+          ]
+        }
+      },
+      "News Msgr Consumer": {
+        "type": "Message Consumer",
+        "description": "A component of the News Service that listens to and processes messages from RabbitMQ. It is responsible for reacting to events related to news creation, updates, or triggers for sending notifications.",
+        "interactions": {
+          "interaction_0": "Consumes messages from RabbitMQ. [Source: docker/compose.news.yml, services/news/config/rabbitmq.yml]",
+          "interaction_1": "Interacts with the News Service's PostgreSQL database for data operations.",
+          "interaction_2": "May trigger Sidekiq jobs for background processing."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.news.yml",
+            "services/news/config/rabbitmq.yml"
+          ]
+        }
+      },
+      "News API Server": {
+        "type": "API Server",
+        "description": "Provides RESTful API endpoints for external and internal clients to interact with the News Service. This includes operations for creating, retrieving, updating, and deleting news items.",
+        "interactions": {
+          "interaction_0": "Exposes an HTTP API (debug port 4300). [Source: docker/compose.news.yml]",
+          "interaction_1": "Interacts with the News Service's PostgreSQL database for data operations.",
+          "interaction_2": "May publish messages to RabbitMQ (e.g., 'news created' events)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.news.yml"
+          ]
+        }
+      },
+      "News Sidekiq Worker": {
+        "type": "Background Worker",
+        "description": "Handles asynchronous tasks for the News Service, such as sending email notifications, processing S3 uploads, or other long-running operations related to news distribution and asset management.",
+        "interactions": {
+          "interaction_0": "Processes jobs from the Redis-backed Sidekiq queue. [Source: docker/compose.news.yml]",
+          "interaction_1": "Interacts with the News Service's PostgreSQL database.",
+          "interaction_2": "Sends emails for notifications (implied by locale files). [Source: services/news/config/locales/en.yml]",
+          "interaction_3": "Interacts with S3 for file storage and retrieval. [Source: docker/config/xikolo/news.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.news.yml",
+            "services/news/config/locales/en.yml",
+            "docker/config/xikolo/news.yml"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Authorizes 'news.announcement.send' permission.",
+      "interaction_1": "Fetches user data from Xikolo::Account service via `account_api.rel(:users).get`.",
+      "interaction_2": "Fetches course data from Xikolo::CourseService via `Xikolo.api(:course).value!.rel(:courses).get`.",
+      "interaction_3": "Fetches group data (access, content_test, custom_recipients) from Xikolo::Account service via `account_api.rel(:groups).get`.",
+      "interaction_4": "Caches API responses using `Rails.cache`.",
+      "interaction_5": "Requires 'admin_announcements' feature.",
+      "interaction_6": "Interacts with Xikolo::NewsService via `news_service` to get announcement and message details.",
+      "interaction_7": "Uses `Admin::AnnouncementEmailForm` for creating new email messages.",
+      "interaction_8": "Uses `Admin::AnnouncementEmailPresenter` to display email details.",
+      "interaction_9": "Handles `Restify::UnprocessableEntity` errors during email creation.",
+      "interaction_10": "Requires 'admin_announcements' feature.",
+      "interaction_11": "Authorizes 'news.announcement.create' and 'news.announcement.update' permissions.",
+      "interaction_12": "Interacts with Xikolo::NewsService via `news_service` to fetch, create, update announcements.",
+      "interaction_13": "Uses `Admin::AnnouncementForm` for announcement data input.",
+      "interaction_14": "Uses `Admin::AnnouncementsListPresenter` to display lists of announcements.",
+      "interaction_15": "Handles `Restify::UnprocessableEntity` errors during creation and update.",
+      "interaction_16": "Requires 'announcements' feature.",
+      "interaction_17": "Authorizes 'news.announcement.create', 'news.announcement.update', 'news.announcement.delete', 'news.announcement.send', 'news.announcement.send_test' permissions.",
+      "interaction_18": "Interacts with Xikolo::NewsService via `news_service` to manage news items and send emails.",
+      "interaction_19": "Uses `Admin::NewsForm` for news item data input.",
+      "interaction_20": "Sends emails via `announcement.rel(:email).post` based on user permissions and parameters.",
+      "interaction_21": "Handles `Restify::UnprocessableEntity` errors.",
+      "interaction_22": "Requires 'announcements' feature.",
+      "interaction_23": "Interacts with Xikolo::NewsService via `Xikolo.api(:news).value!.rel(:posts).get` to fetch news posts.",
+      "interaction_24": "Filters posts based on user permissions: regular users see published posts, privileged users (with 'news.announcement.show' permission) can see unpublished posts.",
+      "interaction_25": "Uses `AnnouncementPresenter` to format posts for display.",
+      "interaction_26": "Sets meta tags for the page.",
+      "interaction_27": "Contains nested `Translation` subforms for subject and content in different languages.",
+      "interaction_28": "Uses `RecipientsArray` processor to transform recipient IDs to URNs for the NewsService.",
+      "interaction_29": "Uses `TranslationsArray` processor to manage default and additional language translations.",
+      "interaction_30": "Validates presence of subject, content, and recipients.",
+      "interaction_31": "Fetches user and group details for recipient display from Xikolo::Account service.",
+      "interaction_32": "Fetches course titles from `Course::Course` model for recipient display.",
+      "interaction_33": "Fetches consent treatments from Xikolo::Account service.",
+      "interaction_34": "Processes `recipients` attribute for `Admin::AnnouncementEmailForm`.",
+      "interaction_35": "Processes `translations` attribute for `Admin::AnnouncementEmailForm`.",
+      "interaction_36": "Contains nested `Translation` subforms for subject and content in different languages.",
+      "interaction_37": "Uses `TranslationsArray` processor to manage default and additional language translations.",
+      "interaction_38": "Validates presence of subject and content.",
+      "interaction_39": "Processes `translations` attribute for `Admin::AnnouncementForm`.",
+      "interaction_40": "Contains nested `Translation` subforms for title and text in different languages.",
+      "interaction_41": "Uses `TranslationsArray` processor to manage translations.",
+      "interaction_42": "Validates presence of title, publish_at, and text.",
+      "interaction_43": "Provides an `audience_collection` based on `Xikolo.config.access_groups`.",
+      "interaction_44": "Processes `translations` attribute for `Admin::NewsForm`.",
+      "interaction_45": "Uses `translations` (likely a JSONB or hstore column) to store multi-language content.",
+      "interaction_46": "Defines scopes `by_publication_date` and `published` for filtering.",
+      "interaction_47": "Ensures a default translation exists via `default_translation_exists` validation.",
+      "interaction_48": "Initializes with a locale and data hash, providing `title` and `text` methods.",
+      "interaction_49": "Initializes with announcement and email resources from the NewsService.",
+      "interaction_50": "Fetches author and sender details asynchronously from Xikolo::Account service.",
+      "interaction_51": "Calculates delivery percentages and open rates.",
+      "interaction_52": "Formats dates and recipient lists.",
+      "interaction_53": "Initializes with an announcement resource.",
+      "interaction_54": "Determines if the announcement is published to a blog or email channel.",
+      "interaction_55": "Provides paths for blog display, email creation, and email statistics.",
+      "interaction_56": "Delegates iteration (`each`, `any?`) to the underlying collection of `Admin::AnnouncementPresenter` instances.",
+      "interaction_57": "Uses `RestifyPaginationCollection` for pagination.",
+      "interaction_58": "Initializes with a news resource.",
+      "interaction_59": "Uses `HtmlTruncator` and `MarkdownHelper` to generate a `teaser` from the full text.",
+      "interaction_60": "Intercepts HTTP requests to check for 'news' tracking parameters (`tracking_type`, `tracking_id`, `tracking_user`).",
+      "interaction_61": "Sends an asynchronous POST request to `Xikolo.api(:news).value!.rel(:visits)` to mark an announcement as read, without blocking the main request-response cycle.",
+      "interaction_62": "Receives requests from the main application for CRUD operations on announcements and news.",
+      "interaction_63": "Handles email sending for announcements.",
+      "interaction_64": "Processes tracking requests to mark announcements as read.",
+      "interaction_65": "Provides translated content for emails. [Source: services/news/config/locales/de.yml, services/news/config/locales/en.yml]",
+      "interaction_66": "Provides user data (name, email) for announcement recipient selection.",
+      "interaction_67": "Provides group data (access, content_test, custom_recipients) for recipient selection.",
+      "interaction_68": "Provides user details (full name) for displaying author and sender information in announcement emails.",
+      "interaction_69": "Provides consent treatment information.",
+      "interaction_70": "Provides course data (title, course_code) for announcement recipient selection.",
+      "interaction_71": "Communicates with `Xikolo::Account` service to potentially retrieve user or account-related information. [Source: services/news/config/services.yml]",
+      "interaction_72": "Communicates with `Xikolo::CourseService` to associate news with specific courses or retrieve course details. [Source: services/news/config/services.yml]",
+      "interaction_73": "Utilizes RabbitMQ (`msgr` gem) for inter-service communication. ",
+      "interaction_74": "Sends emails, potentially using custom branded templates and stylesheets. [Source: docs/app/development/branding/email.md]",
+      "interaction_75": "Persists data in PostgreSQL. ",
+      "interaction_76": "Leverages `xikolo-sidekiq` for background job processing. ",
+      "interaction_77": "Created, read, updated, and deleted via the `Xikolo::NewsService` API. [Source: services/news/README.md]",
+      "interaction_78": "Potentially associated with `Course` entities from `Xikolo::CourseService`. [Source: services/news/config/services.yml]",
+      "interaction_79": "Can trigger email notifications upon creation or update. [Source: docs/app/development/branding/email.md]",
+      "interaction_80": "Receives news content and recipient information from other parts of `Xikolo::NewsService`.",
+      "interaction_81": "Utilizes custom templates and stylesheets located in `services/news/brand/<name>/assets/views/layouts` and `services/news/brand/<name>/assets/stylesheets` for branding. [Source: docs/app/development/branding/email.md]",
+      "interaction_82": "Likely uses `xikolo-sidekiq` for asynchronous email delivery. ",
+      "interaction_83": "Authorizes actions using `authorize!` and `current_user.allowed?` based on permissions like `news.announcement.create`, `news.announcement.update`, `news.announcement.delete`, `news.announcement.send`, `news.announcement.send_test` [Source: app/controllers/announcements_controller.rb, services/account/lib/tasks/permissions/news.yml].",
+      "interaction_84": "Uses `Admin::NewsForm` for data binding and validation of announcement attributes [Source: app/controllers/announcements_controller.rb, app/forms/admin/news_form.rb].",
+      "interaction_85": "Interacts with the `news` microservice (`Xikolo.api(:news)`) to create, fetch, update, and delete announcements [Source: app/controllers/announcements_controller.rb].",
+      "interaction_86": "Sends email notifications (test or full) via the `news` microservice's email endpoint if `send_emails?` is true [Source: app/controllers/announcements_controller.rb].",
+      "interaction_87": "Handles `Restify::UnprocessableEntity` errors from the `news` service for remote validation failures [Source: app/controllers/announcements_controller.rb].",
+      "interaction_88": "Checks for the 'announcements' feature flag [Source: app/controllers/home/announcements_controller.rb].",
+      "interaction_89": "Fetches announcement posts from the `news` microservice (`Xikolo.api(:news).rel(:posts).get`) [Source: app/controllers/home/announcements_controller.rb].",
+      "interaction_90": "Adjusts query parameters (`published`, `user_id`, `language`) based on `current_user` login status and `news.announcement.show` permission [Source: app/controllers/home/announcements_controller.rb, spec/requests/announcements/index_spec.rb].",
+      "interaction_91": "Maps raw post resources to `AnnouncementPresenter` instances for display [Source: app/controllers/home/announcements_controller.rb, app/presenters/announcement_presenter.rb].",
+      "interaction_92": "Sets meta tags for the page title [Source: app/controllers/home/announcements_controller.rb].",
+      "interaction_93": "Inherits from `XUI::Form` [Source: app/forms/admin/news_form.rb].",
+      "interaction_94": "Defines attributes for announcement properties like `title`, `text`, `publish_at`, `language`, `visual_url`, `audience`, and `translations` [Source: app/forms/admin/news_form.rb].",
+      "interaction_95": "Includes nested `Translation` subforms for managing multilingual content [Source: app/forms/admin/news_form.rb].",
+      "interaction_96": "Performs validations for presence of `title`, `publish_at`, `text`, and a custom validation `title_and_text?` for translations [Source: app/forms/admin/news_form.rb].",
+      "interaction_97": "Uses a `TranslationsArray` processor to convert translation data between form and resource formats for the `news` microservice [Source: app/forms/admin/news_form.rb].",
+      "interaction_98": "Defines attributes for `title`, `text`, and `language` of a translation [Source: app/forms/admin/news_form.rb].",
+      "interaction_99": "Used as a `subtype` for the `translations` attribute in `Admin::NewsForm` [Source: app/forms/admin/news_form.rb].",
+      "interaction_100": "Initializes with announcement and email resources [Source: app/presenters/admin/announcement_email_presenter.rb].",
+      "interaction_101": "Asynchronously fetches author and sender user details from the `account` microservice (`Xikolo.api(:account)`) [Source: app/presenters/admin/announcement_email_presenter.rb].",
+      "interaction_102": "Calculates and provides email delivery percentages and open percentages [Source: app/presenters/admin/announcement_email_presenter.rb].",
+      "interaction_103": "Initializes with an announcement resource [Source: app/presenters/admin/announcement_presenter.rb].",
+      "interaction_104": "Provides formatted `created_at` and `title` [Source: app/presenters/admin/announcement_presenter.rb].",
+      "interaction_105": "Indicates publication channels (`blog`, `email`) and generates relevant paths (e.g., `blog_path`, `email_create_path`, `email_stats_path`) [Source: app/presenters/admin/announcement_presenter.rb].",
+      "interaction_106": "Delegates iteration methods (`each`, `any?`) to the underlying collection [Source: app/presenters/admin/announcements_list_presenter.rb].",
+      "interaction_107": "Uses `RestifyPaginationCollection` for handling pagination metadata from the `news` service [Source: app/presenters/admin/announcements_list_presenter.rb].",
+      "interaction_108": "Maps raw announcement resources to `Admin::AnnouncementPresenter` instances [Source: app/presenters/admin/announcements_list_presenter.rb].",
+      "interaction_109": "Initializes with a news resource [Source: app/presenters/announcement_presenter.rb].",
+      "interaction_110": "Includes `MarkdownHelper` to render markdown content [Source: app/presenters/announcement_presenter.rb].",
+      "interaction_111": "Uses `HtmlTruncator` to generate a `teaser` from the rendered markdown text [Source: app/presenters/announcement_presenter.rb].",
+      "interaction_112": "Interacts with PostgreSQL for data persistence. [Source: services/news/config/database.yml]",
+      "interaction_113": "Communicates with RabbitMQ for asynchronous messaging (both consuming and publishing). [Source: docker/compose.news.yml, services/news/config/rabbitmq.yml]",
+      "interaction_114": "Interacts with Redis for caching and Sidekiq job management. [Source: docker/compose.news.yml]",
+      "interaction_115": "Communicates with the Account service (e.g., for user details, notification preferences). [Source: services/news/config/services.yml, services/news/config/locales/en.yml]",
+      "interaction_116": "Communicates with the Course service (e.g., for course context for course news). [Source: services/news/config/services.yml]",
+      "interaction_117": "Integrates with S3 for storing news-related assets in 'news' and 'uploads' buckets. [Source: docker/config/xikolo/news.yml]",
+      "interaction_118": "Consumes messages from RabbitMQ. [Source: docker/compose.news.yml, services/news/config/rabbitmq.yml]",
+      "interaction_119": "Interacts with the News Service's PostgreSQL database for data operations.",
+      "interaction_120": "May trigger Sidekiq jobs for background processing.",
+      "interaction_121": "Exposes an HTTP API (debug port 4300). [Source: docker/compose.news.yml]",
+      "interaction_122": "Interacts with the News Service's PostgreSQL database for data operations.",
+      "interaction_123": "May publish messages to RabbitMQ (e.g., 'news created' events).",
+      "interaction_124": "Processes jobs from the Redis-backed Sidekiq queue. [Source: docker/compose.news.yml]",
+      "interaction_125": "Interacts with the News Service's PostgreSQL database.",
+      "interaction_126": "Sends emails for notifications (implied by locale files). [Source: services/news/config/locales/en.yml]",
+      "interaction_127": "Interacts with S3 for file storage and retrieval. [Source: docker/config/xikolo/news.yml]"
+    },
+    "technicalDebt": [
+      "Missing permission check for the `show` action. [Source: app/controllers/admin/announcement_emails_controller.rb]",
+      "Counts for `disabled_deliveries` and `error_deliveries` are not yet implemented. [Source: app/presenters/admin/announcement_email_presenter.rb]",
+      "The `email_status` is hardcoded to 'sending'. [Source: app/presenters/admin/announcement_presenter.rb]",
+      "The `send_emails?` and `email_params` methods contain conditional logic for sending test vs. full emails. This could be refactored into a dedicated service object for better separation of concerns if email notification requirements become more complex [Source: app/controllers/announcements_controller.rb].",
+      "The `TranslationsArray` class is a nested class within `Admin::NewsForm`. If similar translation handling is required across many forms, extracting this logic into a reusable module or dedicated class could improve modularity and prevent duplication [Source: app/forms/admin/news_form.rb].",
+      "The comments indicate that counts for `disabled_deliveries` and `error_deliveries` are not yet fully implemented or provided by the `news` service, leading to potential gaps in email delivery reporting [Source: app/presenters/admin/announcement_email_presenter.rb]."
+    ]
+  }
+}

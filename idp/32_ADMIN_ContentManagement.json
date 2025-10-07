@@ -1,0 +1,1834 @@
+{
+  "clusterId": "32_ADMIN_ContentManagement",
+  "featureFocus": "Static Pages and Rich Text Content Management",
+  "documentationReport": "{\n  \"title\": \"Unified Content and Document Management System\",\n  \"overview\": \"This system provides comprehensive capabilities for managing various forms of content, including static pages, rich text content within courses, and general documents. It features robust S3 integration for file storage, localization support, and a streamlined workflow for content creation, editing, and display. The architecture combines core application logic with specialized components for administrative tasks, course-specific content, and potentially a microservice for document and media asset management.\",\n  \"functional_domains\": [\n    {\n      \"name\": \"Static Pages Management\",\n      \"description\": \"Enables the creation, display, and administrative editing of static content pages (e.g., imprint, FAQ).\",\n      \"details\": [\n        \"**Model:** `Page` (ActiveRecord) manages specific versions of static pages, identified by `name` and `locale`.\",\n        \"**Localization:** Supports multiple translations for a given page `name` using `preferred_locales` for retrieval.\",\n        \"**Content Storage:** `text` attribute uses `Xikolo::S3::Markup` to manage S3 file references (images, PDFs).\",\n        \"**Viewing:** `Home::PagesController#show` retrieves pages based on `I18n.locale`. Content is wrapped by `PagePresenter`. Missing pages raise 404 unless `helpdesk.page.store` permission is present, allowing on-the-fly creation.\",\n        \"**Editing:** `PagesController` handles administrative `edit` and `update` actions, requiring `helpdesk.page.store` permission.\",\n        \"**File Uploads:** `Xikolo::S3::TextWithUploadsProcessor` manages embedded file uploads, configuring S3 keys (e.g., `pages/{page.name}/{id}/{File.basename upload.key}`), ACLs, and cache controls.\",\n        \"**Deletion:** `S3FileDeletionJob` is scheduled (1-minute delay) to remove unreferenced files after updates.\"\n      ]\n    },\n    {\n      \"name\": \"Course Rich Text Management\",\n      \"description\": \"Manages rich text content embedded within courses, such as learning materials.\",\n      \"details\": [\n        \"**Model:** `Course::Richtext` (ActiveRecord) is polymorphically associated with `Course::Item` as its `content`.\",\n        \"**Content Storage:** `text` attribute uses `Xikolo::S3::Markup` for S3 file uploads, specifically for the `course_richtext` purpose.\",\n        \"**Storage Logic:** `Course::Richtext::Store` operation encapsulates creation/update logic, utilizing `Xikolo::S3::TextWithUploadsProcessor` for file handling.\",\n        \"**File Uploads:** S3 keys are specific to courses (e.g., `courses/{cid}/rtfiles/{upload.unique_sanitized_name}`).\",\n        \"**Deletion:** `S3FileDeletionJob` is scheduled (1-hour delay) for obsolete files, but only if they are not referenced by other `Course::Richtext` instances or `Course::Course` descriptions (checked via `self.referenced?`).\"\n      ]\n    },\n    {\n      \"name\": \"General Document and Media Asset Management\",\n      \"description\": \"Provides broader capabilities for managing documents and media assets, including administrative and course-specific contexts, with localization support.\",\n      \"details\": [\n        \"**Models:** `Document` and `DocumentLocalization` manage general documents and their localized versions.\",\n        \"**Administrative Control:** `Admin::DocumentsController` and `Admin::DocumentLocalizationsController` facilitate management of documents and their translations.\",\n        \"**Course-Specific Documents:** `Course::DocumentsController` handles documents within courses, supported by `Course::Documents::FilterBar`, `Course::DocumentsPresenter`, `DocumentHelper`, and `DocumentsListPresenter` for UI/UX.\",\n        \"**Microservice Integration:** A 'Course-specific Document and Media Asset Management Microservice' is indicated, potentially handling `Document`, `DocumentLocalization`, `DocumentsItem`, `DocumentsController`, and `DocumentLocalizationsController` for course-related assets in a distributed manner.\"\n      ]\n    }\n  ],\n  \"s3_integration_and_file_management\": {\n    \"description\": \"Central to content management, custom S3 utilities provide robust handling of embedded files.\",\n    \"components\": [\n      {\n        \"name\": \"Xikolo::S3::Markup\",\n        \"type\": \"ActiveRecord Attribute Type\",\n        \"role\": \"Stores rich text with S3 file references, handling serialization/deserialization. Configured for specific file types (e.g., `image/*`, `application/pdf` for pages).\"\n      },\n      {\n        \"name\": \"Xikolo::S3::TextWithUploadsProcessor\",\n        \"type\": \"Service Object\",\n        \"role\": \"Parses rich text, identifies new `upload://` URIs, moves files from temporary to permanent S3 locations, and identifies obsolete `s3://` URIs for deletion. Provides commit/rollback functionality for S3 changes.\"\n      },\n      {\n        \"name\": \"S3FileDeletionJob\",\n        \"type\": \"Background Job\",\n        \"role\": \"Performs actual deletion of S3 objects. Scheduled with a delay (1 min for pages, 1 hour for richtext) for fault tolerance, allowing time for page loading before files are removed.\"\n      }\n    ],\n    \"file_uri_conversion\": \"The system automatically converts internal `s3://` URIs to public `https://s3.xikolo.de` URLs for rendering.\"\n  },\n  \"content_display_and_editing_workflows\": {\n    \"frontend_editor\": {\n      \"name\": \"MarkdownInput\",\n      \"type\": \"SimpleForm Input\",\n      \"role\": \"Renders a `markdown-editor` component (likely `@toast-ui/editor`). Supports file uploads via a `dropzone` and hidden fields for `url_mapping` and `other_files`.\",\n      \"s3_upload_preparation\": \"`dropzone_data` method generates parameters for direct S3 uploads using `::FileUpload`.\"\n    },\n    \"backend_processing\": \"Content submitted from the frontend is processed by `Xikolo::S3::TextWithUploadsProcessor` to manage embedded file uploads and deletions.\"\n  },\n  \"permissions\": [\n    {\n      \"name\": \"helpdesk.page.store\",\n      \"role\": \"Crucial for administrators to manage static pages, including creating new ones and editing existing translations.\"\n    }\n  ],\n  \"key_system_components\": {\n    \"models\": [\n      \"Page\",\n      \"Course::Richtext\",\n      \"Document\",\n      \"DocumentLocalization\",\n      \"DocumentsItem\"\n    ],\n    \"controllers\": [\n      \"Home::PagesController\",\n      \"PagesController\",\n      \"Admin::DocumentLocalizationsController\",\n      \"Admin::DocumentsController\",\n      \"Course::DocumentsController\",\n      \"DocumentsController\",\n      \"DocumentLocalizationsController\"\n    ],\n    \"operations\": [\n      \"Course::Richtext::Store\"\n    ],\n    \"presenters\": [\n      \"PagePresenter\",\n      \"Course::DocumentsPresenter\",\n      \"DocumentsListPresenter\"\n    ],\n    \"helpers\": [\n      \"DocumentHelper\"\n    ],\n    \"inputs\": [\n      \"MarkdownInput\"\n    ],\n    \"utilities_and_services\": [\n      \"Xikolo::S3::Markup\",\n      \"Xikolo::S3::TextWithUploadsProcessor\",\n      \"S3FileDeletionJob\",\n      \"Course::Documents::FilterBar\",\n      \"::FileUpload\"\n    ],\n    \"frontend_components\": [\n      \"markdown-editor\",\n      \"@toast-ui/editor\",\n      \"initMarkdownEditorOnSelector\"\n    ]\n  },\n  \"technical_considerations_and_debt\": [\n    {\n      \"issue\": \"Page model associations\",\n      \"detail\": \"The `Page` model's `translations` and `other_translations` associations use `inverse_of: false`, which might lead to N+1 query issues or unexpected ActiveRecord behavior if not carefully managed.\"\n    },\n    {\n      \"issue\": \"Performance of `Course::Richtext.referenced?`\",\n      \"detail\": \"The `Course::Richtext.referenced?` method relies on `LIKE` queries on text columns. For large datasets, this could be a bottleneck. Leveraging PostgreSQL's `pg_trgm` extension (already enabled in the schema) with GIN/GiST indexes could improve performance.\"\n    },\n    {\n      \"issue\": \"Custom S3 logic maintainability\",\n      \"detail\": \"The custom `Xikolo::S3::Markup` and `Xikolo::S3::TextWithUploadsProcessor` provide powerful S3 integration but represent custom logic requiring thorough testing and documentation for long-term maintainability.\"\n    },\n    {\n      \"issue\": \"Delayed S3 object deletion\",\n      \"detail\": \"The delayed deletion of S3 objects via `S3FileDeletionJob` (1 minute for pages, 1 hour for richtext) is a trade-off for fault tolerance, meaning obsolete files might temporarily remain in storage.\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Page": {
+        "type": "Model",
+        "description": "Represents a static content page, identified by a unique `name` and `locale`. It stores the page's `title` and `text`. The `text` attribute is a custom type (`Xikolo::S3::Markup`) designed to manage embedded S3 files within the content. Pages can have multiple language translations linked by their `name` attribute.",
+        "interactions": {
+          "interaction_0": "Is created, read, updated, and deleted by `PagesController`.",
+          "interaction_1": "Its `text` attribute is processed by `Xikolo::S3::TextWithUploadsProcessor` for embedded file management.",
+          "interaction_2": "Its data is formatted for display by `PagePresenter`.",
+          "interaction_3": "Interacts with `Xikolo::S3::Markup` for custom attribute handling of text with embedded S3 references."
+        },
+        "techDebt": [
+          "The `rubocop:disable Rails/HasManyOrHasOneDependent` comment on `has_many` associations suggests a potential design choice that might need re-evaluation regarding the lifecycle of translations when a 'parent' page (identified by `name`) is deleted. [Source: app/models/page.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/page.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nmodule Global\n  class PageHeader < ApplicationComponent\n    def initialize(title, lang: nil, type: nil, subtitle: nil)\n      @title = title\n      @lang = lang\n      @type = type\n      @subtitle = subtitle\n    end\n\n    renders_one :pill, Pill\n\n    private\n\n    def css_modifier\n      'pages-header--slim' if @type == :slim\n    end\n  end\nend",
+              "source": "app/components/global/page_header.rb"
+            },
+            {
+              "startLine": 7,
+              "endLine": 9,
+              "code": "    def simple\n      render Global::PageHeader.new('Quantencomputing Summer School')\n    end",
+              "source": "app/components/global/page_header.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 18,
+              "code": "    def with_pill\n      render Global::PageHeader.new('Quantencomputing Summer School', subtitle: 'Offered by openHPI Team') do |c|\n        c.with_pill 'Active course', color: :note\n      end\n    end",
+              "source": "app/components/global/page_header.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 10,
+              "code": "  def edit\n    @page = Page.find_or_initialize_by(\n      name: params[:id],\n      locale: params.require(:locale)\n    )\n  end",
+              "source": "app/components/global/page_header.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 34,
+              "code": "  def update\n    @page = Page.find_or_initialize_by(\n      name: params[:id],\n      locale: params.require(:locale)\n    )\n\n    processor = process_uploads(@page)\n\n    @page.assign_attributes(page_params.except(:text))\n    @page.text = processor.result\n\n    if processor.valid? && @page.save\n      processor.commit!\n      processor.obsolete_uris.each do |uri|\n        # The page has been saved, so obsolete S3 files can be removed now.\n        # Fault-tolerance: Wait one minute to allow pages for users with slow\n        # connection to finish loading.\n        S3FileDeletionJob.set(wait: 1.minute).perform_later(uri)\n      end\n\n      redirect_to page_path(@page.name)\n    else\n      processor.rollback!\n",
+              "source": "app/components/global/page_header.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/global/page_header.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/components/global/page_header_preview.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/pages_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Course::Richtext": {
+        "type": "Model",
+        "description": "Represents rich text content within a course, typically linked to a `Course::Item`. Manages S3 file references embedded in the text and handles conditional deletion of S3 objects upon destruction.",
+        "interactions": {
+          "interaction_0": "Belongs to `Course::Course`.",
+          "interaction_1": "Has one `Course::Item` polymorphically as its content.",
+          "interaction_2": "Uses `Xikolo::S3::Markup` for its `text` attribute to manage S3 file references.",
+          "interaction_3": "Schedules `S3FileDeletionJob` for referenced S3 objects upon destruction, after checking for other references.",
+          "interaction_4": "Interacts with `Course::Richtext::Store` for creation and updates."
+        },
+        "techDebt": [
+          "The `referenced?` method uses `LIKE` queries on text columns, which could be a performance bottleneck for large datasets. Consider leveraging `pg_trgm` for faster lookups if performance becomes an issue."
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/course/richtext.rb",
+            "spec/models/course/richtext_spec.rb",
+            "integration/features/xikolo/content/richtexts/create_richtext_item.feature"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 12,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class Richtext < ApplicationRecord\n    attribute :text, Xikolo::S3::Markup.new(\n      uploads: {purpose: 'course_richtext'}\n    )\n\n    belongs_to :course, class_name: 'Course::Course'\n    has_one :item,\n      class_name: 'Course::Item',\n      as: :content,\n      dependent: :restrict_with_exception",
+              "source": "app/models/course/richtext.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 15,
+              "code": "    def self.referenced?(uri)\n      ::Course::Course.exists?(['description LIKE ?', \"%#{uri}%\"]) ||\n        ::Course::Richtext.exists?(['text LIKE ?', \"%#{uri}%\"])\n    end",
+              "source": "app/models/course/richtext.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 18,
+              "code": "    def as_api_v2\n      @api_v2 ||= ::Course::Richtext::APIV2.new(self).as_json # rubocop:disable Naming/MemoizedInstanceVariableName\n    end",
+              "source": "app/models/course/richtext.rb"
+            },
+            {
+              "startLine": 7,
+              "endLine": 9,
+              "code": "  def show\n    respond_with Richtext.find params[:id]\n  end",
+              "source": "app/models/course/richtext.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 7,
+              "code": "  def fields\n    {\n      id: object.id,\n      text:,\n    }\n  end",
+              "source": "app/models/course/richtext.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 14,
+              "code": "  def text\n    Xikolo::S3.externalize_file_refs(object.text, public: true)\n  end",
+              "source": "app/models/course/richtext.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/course/richtext.rb",
+              "relevance": 37
+            },
+            {
+              "path": "services/course/app/controllers/richtexts_controller.rb",
+              "relevance": 33
+            },
+            {
+              "path": "services/course/app/decorators/richtext_decorator.rb",
+              "relevance": 33
+            }
+          ]
+        }
+      },
+      "Home::PagesController": {
+        "type": "Controller",
+        "description": "Handles the display of static content pages to end-users, retrieving them based on locale preferences. It also provides a mechanism for administrators to create missing pages.",
+        "interactions": {
+          "interaction_0": "Retrieves Page records using `Page.preferred_locales`.",
+          "interaction_1": "Instantiates `PagePresenter` to format page data.",
+          "interaction_2": "Checks `current_user` permissions (`allowed?('helpdesk.page.store')`) to determine if a missing page can be created.",
+          "interaction_3": "Uses `I18n.locale` and `Xikolo.config.locales['default']` for locale resolution.",
+          "interaction_4": "Sets page title via `set_page_title`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/home/pages_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 37,
+              "code": "# frozen_string_literal: true\n\nclass PagesController < Abstract::FrontendController\n  require_permission 'helpdesk.page.store'\n\n  def edit\n    @page = Page.find_or_initialize_by(\n      name: params[:id],\n      locale: params.require(:locale)\n    )\n  end\n\n  def update\n    @page = Page.find_or_initialize_by(\n      name: params[:id],\n      locale: params.require(:locale)\n    )\n\n    processor = process_uploads(@page)\n\n    @page.assign_attributes(page_params.except(:text))\n    @page.text = processor.result\n\n    if processor.valid? && @page.save\n      processor.commit!\n      processor.obsolete_uris.each do |uri|\n        # The page has been saved, so obsolete S3 files can be removed now.\n        # Fault-tolerance: Wait one minute to allow pages for users with slow\n        # connection to finish loading.\n        S3FileDeletionJob.set(wait: 1.minute).perform_later(uri)\n      end\n\n      redirect_to page_path(@page.name)\n    else\n      processor.rollback!\n      processor.errors.each do |_url, cod...",
+              "source": "app/controllers/pages_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/pages_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/home/announcements_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/home/channels_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "PagesController": {
+        "type": "Controller",
+        "description": "Manages the administrative interface for creating, editing, and updating static pages. It handles user permissions, retrieves and persists `Page` objects, and orchestrates the processing of embedded file uploads via `Xikolo::S3::TextWithUploadsProcessor`. It also schedules background jobs for S3 file deletions.",
+        "interactions": {
+          "interaction_0": "Interacts with the `Page` model to find, initialize, and save page data.",
+          "interaction_1": "Delegates embedded file processing to `Xikolo::S3::TextWithUploadsProcessor`.",
+          "interaction_2": "Enqueues `S3FileDeletionJob` for obsolete S3 files.",
+          "interaction_3": "Requires `helpdesk.page.store` permission for access."
+        },
+        "techDebt": [
+          "S3 bucket name (`:pages`) and purpose (`'helpdesk_page_file'`) are hardcoded, which could be made more configurable. [Source: app/controllers/pages_controller.rb]",
+          "Error handling for `processor.errors` in the `update` action adds generic `:text` errors, which might not provide the most specific or user-friendly feedback. [Source: app/controllers/pages_controller.rb]",
+          "The `locale_param` method explicitly returns `nil`, overriding potential base controller logic for locale detection, which might indicate a specific, possibly less flexible, locale handling strategy for this controller. [Source: app/controllers/pages_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/pages_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nclass PagesController < Abstract::FrontendController\n  require_permission 'helpdesk.page.store'\n\n  def edit\n    @page = Page.find_or_initialize_by(\n      name: params[:id],\n      locale: params.require(:locale)\n    )\n  end",
+              "source": "app/controllers/pages_controller.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 37,
+              "code": "  def update\n    @page = Page.find_or_initialize_by(\n      name: params[:id],\n      locale: params.require(:locale)\n    )\n\n    processor = process_uploads(@page)\n\n    @page.assign_attributes(page_params.except(:text))\n    @page.text = processor.result\n\n    if processor.valid? && @page.save\n      processor.commit!\n      processor.obsolete_uris.each do |uri|\n        # The page has been saved, so obsolete S3 files can be removed now.\n        # Fault-tolerance: Wait one minute to allow pages for users with slow\n        # connection to finish loading.\n        S3FileDeletionJob.set(wait: 1.minute).perform_later(uri)\n      end\n\n      redirect_to page_path(@page.name)\n    else\n      processor.rollback!\n      processor.errors.each do |_url, cod...",
+              "source": "app/controllers/pages_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/pages_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "MarkdownInput": {
+        "type": "SimpleForm Input",
+        "description": "A custom SimpleForm input that renders a rich text editor, optionally including file upload capabilities via a dropzone and hidden fields for S3 file mapping.",
+        "interactions": {
+          "interaction_0": "Renders HTML for the rich text editor and file upload dropzone.",
+          "interaction_1": "Generates S3 upload parameters using `::FileUpload`.",
+          "interaction_2": "Interacts with frontend JavaScript (`initializeMarkdownEditor`) to activate the editor functionality."
+        },
+        "techDebt": [
+          "Directly embeds `I18n.t` calls; for a component-based UI, passing translations as props or data attributes might be cleaner."
+        ],
+        "provenance": {
+          "sources": [
+            "app/inputs/markdown_input.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 17,
+              "code": "# To transform form textarea elements into markdown editors add to them the attribute\n# data-behavior=\"markdown-form-input\" and anoter div with data-behavior=\"markdown-editor\".\n# Finally, wrap both elements with a div[data-behavior=\"markdown-editor-wrapper\"] element.\n#\n# Since the textarea will delegate its focus state to the markdown editor, the browser will not be\n# able to add the build-in form validation message. If you want to keep it you can optionally add\n# the following paragraph element:\n# <p class='markdown-editor-error-message' id=textarea-id data-behavior='markdown-editor-error'></p>\n#\n# See the template for more details.\n#\n# @!group Without file upload\ndef large\n  render_with_template(\n    template: 'util/markdown_input/markdown_input'\n  )\nend",
+              "source": "app/components/util/markdown_input_preview.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 11,
+              "code": "class MarkdownInput < SimpleForm::Inputs::TextInput\n  def input(_opts)\n    template.capture do\n      template.concat markdown_editor\n      template.concat validaton_form_message\n    end\n  end\n\n  private",
+              "source": "app/components/util/markdown_input_preview.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 25,
+              "code": "  def markdown_editor\n    template.tag.div(\n      class: \"markdown-editor #{'markdown-editor--with-uploads' if uploads?}\",\n      data: {behavior: 'markdown-editor-wrapper'}\n    ) do\n      if uploads?\n        input_with_uploads\n      else\n        input_without_uploads\n      end\n    end\n  end",
+              "source": "app/components/util/markdown_input_preview.rb"
+            },
+            {
+              "startLine": 27,
+              "endLine": 29,
+              "code": "  def resize_btn\n    template.tag.button(class: 'markdown-editor__resize-btn', type: 'button', id: \"#{label_target}-resize\",\n      title: I18n.t(:'components.markdown_editor.expand'), aria_label: I18n.t(:'components.markdown_editor.expand'))\n  end",
+              "source": "app/components/util/markdown_input_preview.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 32,
+              "code": "  def validaton_form_message\n    template.tag.p(class: 'markdown-editor__error-message', data: {behavior: 'markdown-editor-error'},\n      id: \"#{label_target}-error\")\n  end",
+              "source": "app/components/util/markdown_input_preview.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 34,
+              "code": "  def input_without_uploads\n    template.concat f...",
+              "source": "app/components/util/markdown_input_preview.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/util/markdown_input_preview.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/inputs/markdown_input.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Xikolo::S3::Markup": {
+        "type": "Custom ActiveRecord Attribute Type",
+        "description": "A custom attribute type used by the `Page` model for its `text` attribute. It encapsulates the logic for handling text content that may contain embedded references to S3-managed files, ensuring proper serialization and deserialization.",
+        "interactions": {
+          "interaction_0": "Used by the `Page` model to define the behavior of its `text` attribute.",
+          "interaction_1": "Interacts implicitly with `Xikolo::S3::TextWithUploadsProcessor` during content updates."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/models/page.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 19,
+              "code": "    class Markup < ActiveModel::Type::Value       attr_reader :uploads        def initialize(uploads: nil)         @uploads = uploads         super()       end        def type         :xikolo_s3_markup       end        def cast_value(value)         Field.new(value)       end        def serialize(value)         value.to_s.presence       end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/markup.rb"
+            },
+            {
+              "startLine": 21,
+              "endLine": 41,
+              "code": "      class Field         def initialize(markup)           @markup = markup         end          def file_refs           S3.extract_file_refs(@markup)         end          def url_mapping           media_refs[:url_mapping]         end          def other_files           media_refs[:other_files]         end          def external           @external ||= Xikolo::S3.externalize_file_refs(@markup, public: true)         end          def to_s           @markup         end          def to_hash           {             'markup' => @markup,             'url_mapping' => url_mapping,...         end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/markup.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 44
+            },
+            {
+              "path": "gems/xui-form/lib/active_model/type/markup.rb",
+              "relevance": 30
+            },
+            {
+              "path": "gems/xikolo-s3/spec/rails/active_model/markup_attribute_spec.rb",
+              "relevance": 17
+            }
+          ]
+        }
+      },
+      "Xikolo::S3::TextWithUploadsProcessor": {
+        "type": "Service/Utility",
+        "description": "A service object responsible for parsing text content, identifying new file uploads, managing existing S3 references, and preparing the text for storage. It handles the actual S3 upload/deletion operations and ensures consistency of file references within the text.",
+        "interactions": {
+          "interaction_0": "Invoked by `PagesController` to process page content before saving.",
+          "interaction_1": "Interacts with S3 (via `xikolo-s3` gem) to upload and manage files.",
+          "interaction_2": "Provides `result` (processed text), `valid?`, `commit!`, `rollback!`, and `obsolete_uris` methods to `PagesController`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pages_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 38,
+              "code": "class TextWithUploadsProcessor     attr_reader :result, :errors      def initialize(bucket:, purpose:, text:, current:, valid_refs: [], check_override: true) # rubocop:disable Metrics/ParameterLists       @bucket = bucket       @purpose = purpose       @text = text       @current_text = current       @errors = []       @uploaded = []       @replaced = []       @current_refs = if current                         Xikolo::S3.extract_file_refs(current)                       else                         []                       end       @valid_refs = valid_refs       @check_override = check_override     end      def on_new(&block)       @new_callback = block     end      def parse!       return unless @text # simply skip nil as value        processed_uploads = {}       @text.scan Xikolo::S3.url_regex do |match|         validate_ref! match       end       @result = @text.gsub %r{upload://[-a-zA-Z0-9./_]*} do |match|         if processed_uplo...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "S3FileDeletionJob": {
+        "type": "Background Job",
+        "description": "An asynchronous background job responsible for deleting obsolete files from S3. It is scheduled by `PagesController` with a delay to provide fault tolerance and allow pages to finish loading for users with slow connections.",
+        "interactions": {
+          "interaction_0": "Enqueued by `PagesController` after a successful page update that results in obsolete S3 files."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/pages_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 14,
+              "code": "class S3FileDeletionJob < ApplicationJob\n  queue_as :default\n  queue_with_priority :eventual\n\n  def perform(uri)\n    Xikolo::S3.object(uri).delete if uri.present?\n  rescue URI::InvalidURIError, ArgumentError\n    # No valid URI, no deletion\n  rescue Aws::S3::Errors::ServiceError => e\n    ::Mnemosyne.attach_error(e)\n    ::Sentry.capture_exception(e)\n  end\nend",
+              "source": "app/jobs/s3_file_deletion_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Course::Richtext::Store": {
+        "type": "Operation",
+        "description": "An operation class that encapsulates the logic for storing and updating `Course::Richtext` content, including handling embedded S3 file uploads and conditional deletion of obsolete files.",
+        "interactions": {
+          "interaction_0": "Receives `Course::Richtext` instance and parameters.",
+          "interaction_1": "Uses `Xikolo::S3::TextWithUploadsProcessor` to manage text and S3 uploads.",
+          "interaction_2": "Schedules `S3FileDeletionJob` for obsolete URIs, checking if they are referenced elsewhere."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/course/richtext/store.rb",
+            "spec/operations/course/richtext/store_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 44,
+              "code": "# frozen_string_literal: true\n\nmodule Course\n  class Richtext\n    class Store < ApplicationOperation\n      def initialize(richtext, params)\n        super()\n\n        @richtext = richtext\n        @params = params\n      end\n\n      def call\n        if @params[:text].blank?\n          @richtext.errors.add :text, :blank\n        else\n          text = @params.delete(:text)\n          @richtext.assign_attributes @params\n          configure_processor! text\n          process_text\n        end\n        if @richtext.errors.blank? && @richtext.save\n          remove_replaced_files!\n        else\n          @processor&.rollback!\n        end\n        @richtext\n      end\n\n      private\n\n      def configure_processor!(text)\n        @processor = Xikolo::S3::TextWithUploadsProcessor.new \\\n          bucket: :course,\n          purpose: 'course_richtext',\n          current: @richtext.text,\n          text:,\n          valid_refs: @richtext.text&.file_refs || []\n        @processor.on_new do |upload|\n          cid = UUI...\n",
+              "source": "app/operations/course/richtext/store.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/operations/course/richtext/store.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/operations/course/metadata/store.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/operations/course/visual/store.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "initializeMarkdownEditor": {
+        "type": "JavaScript Function",
+        "description": "Initializes the rich text markdown editor component on the frontend.",
+        "interactions": {
+          "interaction_0": "Called by `initMarkdownEditorOnSelector`.",
+          "interaction_1": "Likely initializes `@toast-ui/editor` based on project dependencies."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/util/markdown-editor.ts",
+            "package.json"
+          ]
+        }
+      },
+      "initMarkdownEditorOnSelector": {
+        "type": "JavaScript Adapter",
+        "description": "An adapter function that takes an HTML scope and initializes the legacy markdown editor within that scope.",
+        "interactions": {
+          "interaction_0": "Calls `initializeMarkdownEditor`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/util/markdown-editor.ts"
+          ]
+        }
+      },
+      "Admin::DocumentLocalizationsController": {
+        "type": "Controller",
+        "description": "Manages administrative CRUD operations for localized versions of documents. It interacts with the Xikolo Course microservice API to fetch and update document localization data. It relies on `DocumentHelper` for file upload preparation and enforces authorization via `authorize!`. This controller is gated by a beta feature flag.",
+        "interactions": {
+          "interaction_0": "Interacts with `Xikolo.api(:course)` to manage `DocumentLocalization` records. [Source: app/controllers/admin/document_localizations_controller.rb]",
+          "interaction_1": "Uses `DocumentHelper` for file upload related functionalities. [Source: app/controllers/admin/document_localizations_controller.rb]",
+          "interaction_2": "Enforces authorization using `authorize! 'course.document.manage'`. [Source: app/controllers/admin/document_localizations_controller.rb]",
+          "interaction_3": "Responds to JSON requests. [Source: app/controllers/admin/document_localizations_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/document_localizations_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 34,
+              "code": "# frozen_string_literal: true\n\nclass DocumentLocalizationsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n  respond_to :json\n\n  rfc6570_params index: [:document_id]\n\n  def index\n    document_localization = DocumentLocalization.all.not_deleted\n\n    # Filter by document\n    if params[:document_id]\n      document_localization.where! document_id: params[:document_id]\n    end\n    respond_with document_localization\n  end\n\n  def create\n    document_localization = DocumentLocalization.create \\\n      document_localization_params\n    respond_with document_localization\n  end\n\n  def show\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    respond_with document_localization\n  end\n\n  def update\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    document_localization.update(document_localization_params)\n    resp...",
+              "source": "services/course/app/controllers/document_localizations_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/document_localizations_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Admin::DocumentsController": {
+        "type": "Controller",
+        "description": "Manages administrative CRUD operations for documents. It orchestrates data retrieval from the Xikolo Course microservice and uses `DocumentsListPresenter` for display. It relies on `DocumentHelper` for file upload preparation and enforces authorization. This controller is also gated by a beta feature flag.",
+        "interactions": {
+          "interaction_0": "Interacts with `Xikolo.api(:course)` to manage `Document` records, fetch courses, and document tags. [Source: app/controllers/admin/documents_controller.rb]",
+          "interaction_1": "Uses `DocumentsListPresenter` to build the document list for display. [Source: app/controllers/admin/documents_controller.rb]",
+          "interaction_2": "Uses `DocumentHelper` for file upload related functionalities. [Source: app/controllers/admin/documents_controller.rb]",
+          "interaction_3": "Enforces authorization using `authorize! 'course.document.manage'`. [Source: app/controllers/admin/documents_controller.rb]",
+          "interaction_4": "Responds to JSON requests. [Source: app/controllers/admin/documents_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/documents_controller.rb",
+            "app/presenters/documents_list_presenter.rb"
+          ]
+        }
+      },
+      "Course::DocumentsController": {
+        "type": "Controller",
+        "description": "Manages HTTP requests related to course documents, including listing all documents and displaying a specific document. It acts as an intermediary between the frontend and the `Xikolo::CourseService` API.",
+        "interactions": {
+          "interaction_0": "Inherits from `Abstract::FrontendController` and includes `CourseContextHelper` and `DocumentHelper`. [Source: app/controllers/course/documents_controller.rb]",
+          "interaction_1": "Requires `Xikolo.config.beta_features['documents']` to be enabled for access. [Source: app/controllers/course/documents_controller.rb]",
+          "interaction_2": "Fetches a list of documents from `course_api.rel(:documents)` for the `index` action, applying `tag` and `language` filters from `params`. [Source: app/controllers/course/documents_controller.rb]",
+          "interaction_3": "Fetches a specific document from `course_api.rel(:document)` for the `show` action. [Source: app/controllers/course/documents_controller.rb]",
+          "interaction_4": "Uses `Xikolo.api(:course)` (a `Restify` client) to interact with the `Xikolo::CourseService`. [Source: app/controllers/course/documents_controller.rb]",
+          "interaction_5": "Ensures user is logged in via `ensure_logged_in` before actions. [Source: app/controllers/course/documents_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/documents_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 35,
+              "code": "class DocumentsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n  respond_to :json\n\n  rfc6570_params index: %i[course_id item_id language tag]\n  def index\n    documents = Document.all.not_deleted\n\n    # Filter by course\n    if params[:course_id].present?\n      documents = documents.joins(:courses_documents)\n        .where(courses_documents: {course_id: params[:course_id]})\n    end\n\n    # Filter by items\n    if params[:item_id].present?\n      documents = documents.joins(:documents_items)\n        .where(documents_items: {item_id: params[:item_id]})\n    end\n\n    # Filter by language\n    if params[:language].present?\n      documents = documents.joins(:localizations)\n        .where(document_localizations: {language: params[:language]})\n    end\n\n    # Filter by tag\n    documents = documents.tagged_with(params[:tag]) if params[:tag].p...\n",
+              "source": "services/course/app/controllers/documents_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/documents_controller.rb",
+              "relevance": 27
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Document": {
+        "type": "Model",
+        "description": "Represents a document within the course service. It manages associations with courses and items, supports tagging, and handles soft deletion. Publishes lifecycle events to RabbitMQ.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course` (has_and_belongs_to_many).",
+          "interaction_1": "Interacts with `Item` via `DocumentsItem` (has_many through).",
+          "interaction_2": "Manages `DocumentLocalization` records (has_many).",
+          "interaction_3": "Publishes events to RabbitMQ via `Msgr` on create, update, and destroy.",
+          "interaction_4": "Uses `ApplicationRecord` for common scopes like `not_deleted`.",
+          "interaction_5": "Accessed and manipulated by `DocumentsController`."
+        },
+        "techDebt": [
+          "The `update_courses` callback dynamically associates documents with courses of their items, which might be complex to manage and debug if not explicitly documented or controlled."
+        ],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/document.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 37,
+              "code": "      def initialize(context)\n        @context = context\n        @included = Set.new\n        @meta = {}\n        @links = {}\n      end\n\n      def data=(entity)\n        @data = PrimaryData.from entity\n      end\n\n      def include!(*includes)\n        @included.merge(includes.flat_map {|relation_name|\n          @data.include(relation_name, @context)\n        })\n      end\n\n      def meta!(key, value)\n        @meta[key] = value\n      end\n\n      def link!(name, href)\n        @links[name] = href\n      end\n\n      def serialize(context)\n        included = @included\n        meta = @meta\n        links = @links\n\n        {'data' => @data.serialize(context)}.tap {|hash|\n          hash['included'] = included.map {|i| i.serialize(context) } unless included.empty?\n          hash['meta'] = meta unless meta.empty?\n          hash['links'] = links unless links.empty?\n        }\n      }",
+              "source": "api/xikolo/json_api/document.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 35,
+              "code": "      entity do\n        type 'document-localizations'\n\n        attribute('title') {\n          description 'The title of the document localization'\n          type :string\n        }\n\n        attribute('description') {\n          description 'The description of the document localization'\n          type :string\n        }\n\n        attribute('language') {\n          description 'The language of the document localization'\n          type :string\n        }\n\n        attribute('revision') {\n          description 'The revision number of the document localization'\n          type :integer\n        }\n\n        attribute('file_url') {\n          description 'The url to the localization file'\n          type :string\n        }\n\n        has_one('document', Xikolo::V2::Documents::Documents) {\n          foreign_key 'document_id'\n        }\n      end",
+              "source": "api/xikolo/json_api/document.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 39,
+              "code": "      entity do\n        type 'documents'\n\n        attribute('title') {\n          description 'The title of the document'\n          type :string\n        }\n\n        attribute('description') {\n          description 'A short description of the document contents'\n          type :string\n        }\n\n        attribute('tags') {\n          description 'A lists of tags ot the document'\n          type :array, of: :string\n        }\n\n        attribute('public') {\n          description 'flag indication whether a document is available on the platform'\n          type :boolean\n        }\n\n        includable has_many('localizations', Xikolo::V2::Documents::DocumentLocalizations) {\n          filter_by 'document'\n        }\n\n        includable has_many('courses', Xikolo::V2::Courses::Courses) {\n          filter_by 'document'\n        }\n      end",
+              "source": "api/xikolo/json_api/document.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/json_api/document.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/v2/documents/document_localizations.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/v2/documents/documents.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "DocumentLocalization": {
+        "type": "Model",
+        "description": "Represents a localized version of a document. Handles file storage on S3, versioning with PaperTrail, and soft deletion. Publishes lifecycle events to RabbitMQ.",
+        "interactions": {
+          "interaction_0": "Belongs to `Document`.",
+          "interaction_1": "Includes `FileReference` concern for S3 file management.",
+          "interaction_2": "Uses `Xikolo::S3` for storing and retrieving files.",
+          "interaction_3": "Uses `PaperTrail` for versioning.",
+          "interaction_4": "Publishes events to RabbitMQ via `Msgr` on create, update, and destroy.",
+          "interaction_5": "Accessed and manipulated by `DocumentLocalizationsController`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/document_localization.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 35,
+              "code": "      entity do\n        type 'document-localizations'\n\n        attribute('title') {\n          description 'The title of the document localization'\n          type :string\n        }\n\n        attribute('description') {\n          description 'The description of the document localization'\n          type :string\n        }\n\n        attribute('language') {\n          description 'The language of the document localization'\n          type :string\n        }\n\n        attribute('revision') {\n          description 'The revision number of the document localization'\n          type :integer\n        }\n\n        attribute('file_url') {\n          description 'The url to the localization file'\n          type :string\n        }\n\n        has_one('document', Xikolo::V2::Documents::Documents) {\n          foreign_key 'document_id'\n        }\n      end",
+              "source": "api/xikolo/v2/documents/document_localizations.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 35,
+              "code": "  rfc6570_params index: [:document_id]\n\n  def index\n    document_localization = DocumentLocalization.all.not_deleted\n\n    # Filter by document\n    if params[:document_id]\n      document_localization.where! document_id: params[:document_id]\n    end\n    respond_with document_localization\n  end\n\n  def create\n    document_localization = DocumentLocalization.create \\\n      document_localization_params\n    respond_with document_localization\n  end\n\n  def show\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    respond_with document_localization\n  end\n\n  def update\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    document_localization.update(document_localization_params)\n    resp...",
+              "source": "api/xikolo/v2/documents/document_localizations.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 28,
+              "code": "  delegate_all\n\n  def fields\n    {\n      id: model.id,\n      title: model.title,\n      description: model.description,\n      language: model.language,\n      revision: model.revision,\n      document_id: model.document_id,\n      deleted: model.deleted,\n      file_url: model.file_url,\n    }\n  end\n\n  def as_api_v1(*)\n    fields.merge(\n      url: h.document_localization_path(model),\n      document_url: h.document_path(model.document_id)\n    )\n  end\n\n  def as_event\n    fields.as_json\n  end",
+              "source": "api/xikolo/v2/documents/document_localizations.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/documents/document_localizations.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/course/app/controllers/document_localizations_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/course/app/decorators/document_localization_decorator.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "DocumentsListPresenter": {
+        "type": "Presenter",
+        "description": "Formats and prepares a list of documents for display, including extracting unique languages and tags for filtering, and handling pagination.",
+        "interactions": {
+          "interaction_0": "Delegates document properties to `DocumentPresenter` for individual document display. [Source: app/presenters/documents_list_presenter.rb]",
+          "interaction_1": "Extracts unique languages from `document['localizations']` and tags from `@tags` for filter options. [Source: app/presenters/documents_list_presenter.rb]",
+          "interaction_2": "Reads pagination headers (`X_TOTAL_PAGES`, `X_CURRENT_PAGE`) from the API response. [Source: app/presenters/documents_list_presenter.rb]",
+          "interaction_3": "Constructs filter objects using `DocumentListFilter` for UI presentation. [Source: app/presenters/documents_list_presenter.rb]",
+          "interaction_4": "Uses `helpers` to generate URLs for filter options. [Source: app/presenters/documents_list_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/documents_list_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 5,
+              "code": "class DocumentsListPresenter < PrivatePresenter\n  def_delegators :@documents, :empty?",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 7,
+              "endLine": 16,
+              "code": "  def self.build(documents, courses, tags, params, helpers)\n    new(\n      documents:,\n      courses:,\n      tags:,\n      params:,\n      helpers:\n    )\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 25,
+              "code": "  def initialize(*)\n    super\n\n    @languages = @documents.flat_map do |document|\n      document['localizations'].pluck('language')\n    end.uniq\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 27,
+              "endLine": 30,
+              "code": "  def each\n    @documents.each do |document|\n      yield DocumentPresenter.new(document:, courses: @courses)\n    end\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 34,
+              "code": "  def filters?\n    !filters.empty?\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 36,
+              "endLine": 38,
+              "code": "  def filtered?\n    !@params.empty?\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 40,
+              "endLine": 42,
+              "code": "  def tag_list\n    @tags.to_h {|t| [t, t] }\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 44,
+              "endLine": 46,
+              "code": "  def language_list\n    @languages.to_h {|l| [l, l] }\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 48,
+              "endLine": 50,
+              "code": "  def total_pages\n    @documents.response.headers['X_TOTAL_PAGES'].to_i\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 52,
+              "endLine": 54,
+              "code": "  def current_page\n    @documents.response.headers['X_CURRENT_PAGE'].to_i\n  end",
+              "source": "app/presenters/documents_list_presenter.rb"
+            },
+            {
+              "startLine": 56,
+              "endLine": 59,
+              "code": "  def filters\n    @filters ||= [].tap do |filters|\n      unless @languages.empty?\n        ...",
+              "source": "app/presenters/documents_list_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/documents_list_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Course::DocumentsPresenter": {
+        "type": "Presenter",
+        "description": "Presents course-specific document information, primarily focusing on the availability and status of various certificates and badges for a given enrollment.",
+        "interactions": {
+          "interaction_0": "Initializes with `user_id`, `course`, and `current_user`. [Source: app/presenters/course/documents_presenter.rb]",
+          "interaction_1": "Finds `Xikolo::Course::Enrollment` to check learning evaluation status. [Source: app/presenters/course/documents_presenter.rb]",
+          "interaction_2": "Delegates to `::DocumentsPresenter.create` for core document/certificate logic. [Source: app/presenters/course/documents_presenter.rb]",
+          "interaction_3": "Checks `Xikolo.config.certificate['transcript_of_records']` for TOR availability. [Source: app/presenters/course/documents_presenter.rb]",
+          "interaction_4": "Uses `BasicCoursePresenter` to wrap course data. [Source: app/presenters/course/documents_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/course/documents_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 4,
+              "code": "class DocumentsPresenter < Presenter\n  attr_accessor :enrollment, :course, :user",
+              "source": "app/presenters/documents_presenter.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 10,
+              "code": "  def self.create(enrollment, user)\n    new(enrollment:, user:).tap do |presenter|\n      presenter.course!\n      presenter.templates!\n    end\n  end",
+              "source": "app/presenters/documents_presenter.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 16,
+              "code": "  def course!\n    @course = course_api.rel(:course).get({id: enrollment.course_id}).then do |course|\n      BasicCoursePresenter.new(course)\n    end.value!\n  end",
+              "source": "app/presenters/documents_presenter.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 30,
+              "code": "  def templates!\n    @templates ||= {}.tap do |templates|\n      if enrollment.certificates[:confirmation_of_participation]\n        templates[:confirmation_of_participation] = template_for(type: Certificate::Record::COP)\n      end\n\n      if enrollment.certificates[:record_of_achievement]\n        templates[:record_of_achievement] = template_for(type: Certificate::Record::ROA)\n        templates[:open_badge] = Certificate::OpenBadgeTemplate.find_by(course_id: enrollment.course_id)\n      end\n\n      if enrollment.certificates[:transcript_of_records]\n        templates[:transcr...",
+              "source": "app/presenters/documents_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/documents_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/course/admin/metadata_edit_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/course/admin/visual_edit_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "DocumentsPresenter": {
+        "type": "Presenter",
+        "description": "A comprehensive presenter for managing and determining the availability of various certificates (COP, ROA, CERT, TOR) and Open Badges associated with a user's course enrollment.",
+        "interactions": {
+          "interaction_0": "Fetches course details from `course_api` using `enrollment.course_id`. [Source: app/presenters/documents_presenter.rb]",
+          "interaction_1": "Finds `Certificate::Template` and `Certificate::OpenBadgeTemplate` based on course and certificate type. [Source: app/presenters/documents_presenter.rb]",
+          "interaction_2": "Checks `enrollment.certificates` hash for certificate availability flags. [Source: app/presenters/documents_presenter.rb]",
+          "interaction_3": "Integrates with `Proctoring` and `Proctoring::SmowlAdapter` to check proctoring status for certificate download conditions. [Source: app/presenters/documents_presenter.rb]",
+          "interaction_4": "Checks `user.feature?('proctoring')` and `Xikolo.config.roa_threshold_percentage`, `Xikolo.config.cop_threshold_percentage` for certificate requirements. [Source: app/presenters/documents_presenter.rb]",
+          "interaction_5": "Uses `RequestStore` to cache `course_api` root. [Source: app/presenters/documents_presenter.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/documents_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\nclass DocumentsPresenter < Presenter\n  attr_accessor :enrollment, :course, :user\n\n  def self.create(enrollment, user)\n    new(enrollment:, user:).tap do |presenter|\n      presenter.course!\n      presenter.templates!\n    end\n  end\n\n  def course!\n    @course = course_api.rel(:course).get({id: enrollment.course_id}).then do |course|\n      BasicCoursePresenter.new(course)\n    end.value!\n  end\n\n  def templates!\n    @templates ||= {}.tap do |templates|\n      if enrollment.certificates[:confirmation_of_participation]\n        templates[:confirmation_of_participation] = template_for(type: Certificate::Record::COP)\n      end\n\n      if enrollment.certificates[:record_of_achievement]\n        templates[:record_of_achievement] = template_for(type: Certificate::Record::ROA)\n        templates[:open_badge] = Certificate::OpenBadgeTemplate.find_by(course_id: enrollment.course_id)\n      end\n\n      if enrollment.certificates[:transcript_of_records]\n        templates[:transcr...",
+              "source": "app/presenters/documents_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/documents_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Xikolo::S3::SingleFileUpload": {
+        "type": "Utility (S3)",
+        "description": "A helper class for processing and validating single file uploads to a temporary S3 bucket. It checks for 'accepted' state and 'purpose' metadata before returning the uploaded file object. This is an older approach to file uploads.",
+        "interactions": {
+          "interaction_0": "Interacts with `Xikolo::S3.bucket_for(:uploads)` to access the temporary upload bucket. [Source: gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb]",
+          "interaction_1": "Checks S3 object metadata (`xikolo-state`, `xikolo-purpose`) for validity. [Source: gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb]"
+        },
+        "techDebt": [
+          "The `README.md` for `xikolo-s3` explicitly states this approach has drawbacks and recommends `UploadByUri` for new implementations. This indicates potential technical debt or a legacy component. [Source: gems/xikolo-s3/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb",
+            "gems/xikolo-s3/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::S3\n  class SingleFileUpload\n    class InvalidUpload < RuntimeError; end\n\n    def initialize(id, purpose: nil)\n      @id = UUID4.try_convert(id)\n      @purpose = purpose\n      @rejected_files = []\n      @accepted_files = []\n    end\n\n    def empty?\n      return true unless @id\n\n      process!\n      (@accepted_files.size + @rejected_files.size).zero?\n    end\n\n    def accepted_file!\n      process!\n      raise InvalidUpload if @accepted_files.size != 1\n\n      @accepted_files[0]\n    end\n\n    private\n\n    def bucket\n      @bucket ||= Xikolo::S3.bucket_for(:uploads)\n    end\n\n    def process!\n      return if @processed\n\n      # request list of objects\n      bucket.objects(prefix: \"uploads/#{@id.to_str}\").each do |summary|\n        # receive data\n        object = summary.object.load\n        if valid? object\n          @accepted_files << object\n        else\n          @rejected_files << object\n        end\n      end\n      @processed = true\n    end\n\n    de...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Xikolo::S3::UploadByUri": {
+        "type": "Utility (S3)",
+        "description": "A helper class for handling file uploads referenced by a URI (e.g., `upload://UUID/filename`). It validates the upload's state and purpose, and facilitates copying the file from a temporary upload bucket to its final S3 destination.",
+        "interactions": {
+          "interaction_0": "Parses `upload://` URIs to locate files in the temporary upload bucket. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+          "interaction_1": "Interacts with `Xikolo::S3.bucket_for(:uploads)` and other specified buckets. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+          "interaction_2": "Checks S3 object metadata (`xikolo-state`, `xikolo-purpose`) for validity. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+          "interaction_3": "Copies files between S3 locations. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+          "interaction_4": "Handles S3 service errors. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb",
+            "gems/xikolo-s3/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::S3\n  class UploadByUri\n    attr_reader :upload\n\n    def initialize(uri:, purpose:, check_override: true)\n      @uri = uri\n      @purpose = purpose\n      @check_override = check_override\n    end\n\n    def valid?\n      upload!\n      upload.metadata['xikolo-state'] == 'accepted' \\\n        && upload.metadata['xikolo-purpose'] == @purpose.to_s\n    rescue Aws::S3::Errors::ServiceError => e\n      defined? Mnemosyne and Mnemosyne.attach_error e\n      false\n    end\n\n    def save(params)\n      upload!\n      dest_obj = Xikolo::S3.bucket_for(params.delete(:bucket)).object(params.delete(:key))\n      return :rtfile_exists if exists?(dest_obj)\n\n      dest_obj.copy_from(upload, params.merge(metadata_directive: 'REPLACE'))\n      dest_obj\n    rescue Aws::S3::Errors::ConfigurationMissingError => e\n      defined? Mnemosyne and Mnemosyne.attach_error e\n      :rtfile_unconfigured\n    rescue Aws::S3::Errors::ServiceError => e\n      defined? Mnemosyne and Mnemosyne...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "DocumentHelper": {
+        "type": "Helper",
+        "description": "Provides methods for CRUD operations on documents and localizations by interacting directly with the `Xikolo::CourseService` API. It also defines `Struct`s to represent document and localization data.",
+        "interactions": {
+          "interaction_0": "Defines `Document` and `Localization` `Struct`s with `ActiveModel` concerns for data representation. [Source: app/helpers/document_helper.rb]",
+          "interaction_1": "Performs `POST`, `PATCH`, `DELETE` requests to `Xikolo.api(:course)` (Course API) for document and localization management. [Source: app/helpers/document_helper.rb]",
+          "interaction_2": "Handles error cases during document creation, specifically for title uniqueness. [Source: app/helpers/document_helper.rb]",
+          "interaction_3": "Uses `FileUpload` for managing file attachments to localizations. [Source: app/helpers/document_helper.rb]",
+          "interaction_4": "Loads all tags from the Course API for dropdowns. [Source: app/helpers/document_helper.rb]"
+        },
+        "techDebt": [
+          "Explicit `TODO: Get rid of this helper` indicates it's an anti-pattern and should be refactored, likely into a service object or dedicated model layer. [Source: app/helpers/document_helper.rb]",
+          "Rubocop disable comments (`rubocop:disable Rails/HelperInstanceVariable`) suggest potential issues with instance variable usage in a helper. [Source: app/helpers/document_helper.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/helpers/document_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 21,
+              "code": "Document = Struct.new(:title, :description, :tags, :course_ids, :public, :id, :language, :localizations) do\n    include ActiveModel::Validations\n    include ActiveModel::Conversion\n    extend ActiveModel::Naming\n\n    def persisted?\n      true\n    end\n\n    def tag_array\n      tags&.join(',')\n    end\n  end",
+              "source": "app/helpers/document_helper.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 29,
+              "code": "Localization = Struct.new(:title, :description, :file_url, :language, :deleted, :document_id, :id) do\n    include ActiveModel::Validations\n    include ActiveModel::Conversion\n    extend ActiveModel::Naming\n\n    def persisted?\n      true\n    end\n  end",
+              "source": "app/helpers/document_helper.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 37,
+              "code": "def add_localization(document = nil)\n    document ||= Xikolo.api(:course).value!.rel(:document).get({\n      id: params[:document_id],\n    }).value!\n    document.rel(:localizations).post(create_localization_params).value!\n    redirect_to documents_path\n  end",
+              "source": "app/helpers/document_helper.rb"
+            },
+            {
+              "startLine": 39,
+              "endLine": 40,
+              "code": "def update_localization\n    update_params =...",
+              "source": "app/helpers/document_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/document_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Course::Documents::FilterBar": {
+        "type": "ViewComponent",
+        "description": "A UI component responsible for rendering the document filtering interface, including language and tag filters. It processes a list of documents to extract unique languages and tags for filter options.",
+        "interactions": {
+          "interaction_0": "Renders a form for filtering documents, submitting to `course_documents_path`.",
+          "interaction_1": "Renders `Global::FilterBar::Controls` for filter management.",
+          "interaction_2": "Renders `State::Loading` and `State::Empty` components based on content availability.",
+          "interaction_3": "Extracts unique languages from `document[:localizations]` for filter options. [Source: app/components/course/documents/filter_bar.rb]",
+          "interaction_4": "Extracts unique tags from `document[:tags]` for filter options. [Source: app/components/course/documents/filter_bar.rb]",
+          "interaction_5": "Uses `params` to determine selected filter values. [Source: app/components/course/documents/filter_bar.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/components/course/documents/filter_bar.rb",
+            "app/components/course/documents/filter_bar.html.slim"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "    class FilterBar < ApplicationComponent       def initialize(documents)         @documents = documents       end        def action         course_documents_path       end",
+              "source": "app/components/course/documents/filter_bar.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 18,
+              "code": "      def filters         @filters ||= [           language_filters,           tag_filters,         ].compact       end",
+              "source": "app/components/course/documents/filter_bar.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 30,
+              "code": "      private        def language_filters         languages = @documents.flat_map do |document|           document[:localizations].pluck(:language)         end.uniq          Global::FilterBar::Filter.new(:language,           I18n.t(:'knowledge_documents.language'),           localize_language_options(languages),           selected: params[:language])",
+              "source": "app/components/course/documents/filter_bar.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 38,
+              "code": "      def localize_language_options(languages)         languages.map do |lang|           platform_localization = I18n.t(\"languages.title.#{lang}\")           native_localization = I18n.t(\"languages.name.#{lang}\")            [\"#{platform_localization} (#{native_localization})\",...",
+              "source": "app/components/course/documents/filter_bar.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/course/documents/filter_bar.rb",
+              "relevance": 33
+            },
+            {
+              "path": "app/components/admin/course/filter_bar.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/components/course/pinboard/filter_bar.rb",
+              "relevance": 26
+            }
+          ]
+        }
+      },
+      "PagePresenter": {
+        "type": "Presenter",
+        "description": "Prepares `Page` model data for display in views. It renders the page's `text` content (which is of type `Xikolo::S3::Markup`) into HTML using Markdown, and provides methods to list existing and potential new translations.",
+        "interactions": {
+          "interaction_0": "Receives a `Page` object and its translations for presentation.",
+          "interaction_1": "Utilizes `MarkdownHelper` to convert Markdown text to HTML.",
+          "interaction_2": "Accesses `Xikolo.config.locales['available']` to determine available locales for new translations."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/page_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 37,
+              "code": "# frozen_string_literal: true\n\nclass PagePresenter < PrivatePresenter\n  include MarkdownHelper\n\n  def name\n    @page.name\n  end\n\n  def title\n    @page.title\n  end\n\n  def last_changed\n    @page.updated_at\n  end\n\n  def html\n    render_markdown @page.text.external, include_toc: true, escape_html: false, allow_tables: true\n  end\n\n  def existing_translations(&)\n    processed_translations.each_pair(&)\n  end\n\n  def new_translations\n    Xikolo.config.locales['available'].each do |locale|\n      yield locale unless processed_translations.key? locale.to_s\n    end\n  end\n\n  private\n\n  def processed_translations\n    @processed_translations ||= @translations.to_h do |translation|\n      [translation.locale, translation.title]\n    end\n  end\nend",
+              "source": "app/presenters/page_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/page_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "MarkdownHelper": {
+        "type": "Helper Module",
+        "description": "A helper module that provides functionality to convert Markdown formatted text into HTML, supporting features like table of contents generation and HTML escaping.",
+        "interactions": {
+          "interaction_0": "Included and used by `PagePresenter` to render page content for display."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/page_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 37,
+              "code": "module MarkdownHelper   EMPTY = ''    SANITIZE_CONFIG = Sanitize::Config.freeze_config(     elements: %w[       a abbr address article aside b bdi bdo blockquote body br caption cite       code col colgroup data dd del dfn div dl dt em figcaption figure footer       h1 h2 h3 h4 h5 h6 head header hgroup hr html i img ins kbd li main mark       nav ol p pre q rp rt ruby s samp section small span strike strong style       sub summary sup sup table tbody td tfoot th thead time title tr u ul       var wbr     ],     attributes: {       all: %w[class dir hidden id lang style tabindex title translate],       'a' => %w[href target rel],       'abbr' => %w[title],       'blockquote' => %w[cite],       'dfn' => %w[title],       'q' => %w[cite],       'time' => %w[datetime pubdate],       'col' => %w[span width],       'colgroup' => %w[span width],       'data' => %w[value],       'del' => %w[cite datetime],       'img' => %w[align alt border height src srcset width...",
+              "source": "app/helpers/markdown_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/markdown_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "DocumentsItem": {
+        "type": "Model",
+        "description": "A join table model connecting `Document` and `Item` records, defining a many-to-many relationship.",
+        "interactions": {
+          "interaction_0": "Belongs to `Document`.",
+          "interaction_1": "Belongs to `Item`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/documents_item.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 8,
+              "code": "# frozen_string_literal: true\n\nclass DocumentsItem < ApplicationRecord\n  self.primary_key = %i[document_id item_id]\n\n  belongs_to :document\n  belongs_to :item\nend",
+              "source": "services/course/app/models/documents_item.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/models/documents_item.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "DocumentsController": {
+        "type": "Controller",
+        "description": "API controller for managing `Document` resources. Provides CRUD operations and supports filtering documents by course, item, language, and tags.",
+        "interactions": {
+          "interaction_0": "Interacts with `Document` model for data access and manipulation.",
+          "interaction_1": "Uses `ApplicationController` as its base.",
+          "interaction_2": "Utilizes `Responders::ApiResponder`, `Responders::DecorateResponder`, `Responders::HttpCacheResponder`, `Responders::PaginateResponder` for API response formatting."
+        },
+        "techDebt": [
+          "The `embed:` parameter in `respond_with` calls is present but empty, suggesting an incomplete or placeholder feature for embedding related resources."
+        ],
+        "provenance": {
+          "sources": [
+            "services/course/app/controllers/documents_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 34,
+              "code": "class DocumentsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n  respond_to :json\n\n  rfc6570_params index: %i[course_id item_id language tag]\n  def index\n    documents = Document.all.not_deleted\n\n    # Filter by course\n    if params[:course_id].present?\n      documents = documents.joins(:courses_documents)\n        .where(courses_documents: {course_id: params[:course_id]})\n    end\n\n    # Filter by items\n    if params[:item_id].present?\n      documents = documents.joins(:documents_items)\n        .where(documents_items: {item_id: params[:item_id]})\n    end\n\n    # Filter by language\n    if params[:language].present?\n      documents = documents.joins(:localizations)\n        .where(document_localizations: {language: params[:language]})\n    end\n\n    # Filter by tag\n    documents = documents.tagged_with(params[:tag]) if params[:tag].p...",
+              "source": "services/course/app/controllers/documents_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/documents_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "DocumentLocalizationsController": {
+        "type": "Controller",
+        "description": "API controller for managing `DocumentLocalization` resources. Provides CRUD operations and supports filtering localizations by document.",
+        "interactions": {
+          "interaction_0": "Interacts with `DocumentLocalization` model for data access and manipulation.",
+          "interaction_1": "Uses `ApplicationController` as its base.",
+          "interaction_2": "Utilizes `Responders::ApiResponder`, `Responders::DecorateResponder`, `Responders::HttpCacheResponder`, `Responders::PaginateResponder` for API response formatting."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/controllers/document_localizations_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 37,
+              "code": "class DocumentLocalizationsController < ApplicationController\n  responders Responders::ApiResponder,\n    Responders::DecorateResponder,\n    Responders::HttpCacheResponder,\n    Responders::PaginateResponder\n  respond_to :json\n\n  rfc6570_params index: [:document_id]\n\n  def index\n    document_localization = DocumentLocalization.all.not_deleted\n\n    # Filter by document\n    if params[:document_id]\n      document_localization.where! document_id: params[:document_id]\n    end\n    respond_with document_localization\n  end\n\n  def create\n    document_localization = DocumentLocalization.create \\\n      document_localization_params\n    respond_with document_localization\n  end\n\n  def show\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    respond_with document_localization\n  end\n\n  def update\n    document_localization = DocumentLocalization.not_deleted.find params[:id]\n    document_localization.update(document_localization_params)\n    resp...\n",
+              "source": "services/course/app/controllers/document_localizations_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/document_localizations_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "DocumentsTagsController": {
+        "type": "Controller",
+        "description": "API controller for retrieving all unique tags associated with documents.",
+        "interactions": {
+          "interaction_0": "Interacts with `Document.all_tags` to fetch tag data.",
+          "interaction_1": "Uses `ApplicationController` as its base."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/controllers/documents_tags_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass DocumentsTagsController < ApplicationController\n  respond_to :json\n\n  def index\n    respond_with Document.all_tags\n  end\nend",
+              "source": "services/course/app/controllers/documents_tags_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/controllers/documents_tags_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Duplicated::Visual": {
+        "type": "Model",
+        "description": "Represents a visual asset (image or video) associated with a course, used primarily in the context of cloning or duplication. It maps to the `course_visuals` table.",
+        "interactions": {
+          "interaction_0": "Belongs to `Course`.",
+          "interaction_1": "Optionally belongs to `Duplicated::Video`.",
+          "interaction_2": "Interacts with `Xikolo::S3` to generate public URLs for images.",
+          "interaction_3": "Used by `Course::Visual::Clone` operation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/duplicated/visual.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": "# frozen_string_literal: true\n\nmodule Duplicated\n  class Visual < ApplicationRecord\n    self.table_name = 'course_visuals'\n\n    belongs_to :course\n    belongs_to :video, class_name: 'Duplicated::Video', optional: true\n\n    def video_stream_id\n      video&.pip_stream_id\n    end\n\n    def image_url\n      Xikolo::S3.object(image_uri).public_url if image_uri?\n    end\n  end\nend",
+              "source": "services/course/app/models/duplicated/visual.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/models/duplicated/visual.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/course/visual.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/operations/course/visual/store.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Course::Visual::Clone": {
+        "type": "Operation",
+        "description": "An application operation responsible for cloning visual assets (images, videos, and subtitles) from one course's visual to another. It handles S3 file copying and database record creation.",
+        "interactions": {
+          "interaction_0": "Takes `Duplicated::Visual` and `Course` objects as input.",
+          "interaction_1": "Interacts with `Xikolo::S3` to copy image files.",
+          "interaction_2": "Creates/updates `Course::Visual` and `Course::Video` records.",
+          "interaction_3": "Clones `Subtitle` records associated with videos.",
+          "interaction_4": "Handles `ActiveRecord::RecordInvalid` and `ActiveRecord::RecordNotUnique` errors during cloning."
+        },
+        "techDebt": [
+          "Silent `noop` error handling for `ActiveRecord::RecordInvalid` during image and video cloning can lead to incomplete visual data without explicit logging or user feedback."
+        ],
+        "provenance": {
+          "sources": [
+            "services/course/app/operations/course/visual/clone.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 1,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 52,
+              "code": "# frozen_string_literal: true\n\nclass Course::Visual::Clone < ApplicationOperation\n  # param visual [Duplicated::Visual]\n  # param course [Course]\n  def initialize(visual, course)\n    super()\n    @visual = visual\n    @course = course\n  end\n\n  def call\n    return unless @visual\n\n    clone_image!\n    clone_video!\n\n    @course.visual\n  end\n\n  private\n\n  def clone_image!\n    file_uri = copy_file(@visual.image_uri)\n\n    return unless file_uri\n\n    begin\n      if @course.visual\n        @course.visual.update!(image_uri: file_uri)\n      else\n        @course.create_visual!(image_uri: file_uri)\n      end\n    rescue ActiveRecord::RecordInvalid\n      # noop\n    rescue ActiveRecord::RecordNotUnique\n      retry\n    end\n  end\n\n  def clone_video!\n    return if @visual.video_stream_id.blank?\n\n    if @course.visual\n      @course.visual.create_video!(pip_stream_id: @visual.video_stream_id)\n    else\n      ActiveRecord::Base.transaction do\n        @course.build_visual.tap do |visual|\n          visual.create...\n",
+              "source": "services/course/app/operations/course/visual/clone.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/operations/course/visual/clone.rb",
+              "relevance": 21
+            },
+            {
+              "path": "services/course/app/operations/course/clone.rb",
+              "relevance": 18
+            },
+            {
+              "path": "services/course/spec/operations/course/visual/clone_spec.rb",
+              "relevance": 17
+            }
+          ]
+        }
+      },
+      "FileDeletionWorker": {
+        "type": "Worker",
+        "description": "A Sidekiq background job responsible for asynchronously deleting files from S3 based on a provided URI.",
+        "interactions": {
+          "interaction_0": "Includes `Sidekiq::Job` module.",
+          "interaction_1": "Interacts with `Xikolo::S3` to perform file deletion."
+        },
+        "techDebt": [
+          "Catches `URI::InvalidURIError` but does not log or report it, potentially masking issues with invalid URIs being passed for deletion."
+        ],
+        "provenance": {
+          "sources": [
+            "services/course/app/workers/file_deletion_worker.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class FileDeletionWorker   include Sidekiq::Job    def perform(uri)     Xikolo::S3.object(uri).delete   rescue URI::InvalidURIError     # No valid URI, no deletion   end end",
+              "source": "services/course/app/workers/file_deletion_worker.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/workers/file_deletion_worker.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "External/Shared Component",
+        "description": "A messaging client used for publishing events to RabbitMQ, indicating changes in document and document localization lifecycles.",
+        "interactions": {
+          "interaction_0": "Receives messages from `Document` model (after_create, after_update, soft_delete).",
+          "interaction_1": "Receives messages from `DocumentLocalization` model (after_create, after_update, soft_delete)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/document.rb",
+            "services/course/app/models/document_localization.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 18,
+              "code": "module MsgrSentryIntegration   def dispatch(*)     Sentry.with_scope do       super     rescue Sentry::Error       raise # Don't capture Sentry errors     rescue Exception => e # rubocop:disable Lint/RescueException       Sentry.capture_exception(e)       raise     end   end end  Msgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Xikolo::S3": {
+        "type": "External/Shared Component",
+        "description": "A shared utility module for interacting with Amazon S3, used for file storage, copying, and deletion.",
+        "interactions": {
+          "interaction_0": "Used by `DocumentLocalization` for file uploads and key generation.",
+          "interaction_1": "Used by `Duplicated::Visual` to generate public image URLs.",
+          "interaction_2": "Used by `Course::Visual::Clone` for copying image files.",
+          "interaction_3": "Used by `FileDeletionWorker` for deleting files."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/document_localization.rb",
+            "services/course/app/models/duplicated/visual.rb",
+            "services/course/app/operations/course/visual/clone.rb",
+            "services/course/app/workers/file_deletion_worker.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.98,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 29,
+              "code": "module Xikolo\n  module S3\n    class << self\n      def bucket_for(name)\n        configured_name = bucket_config[name.to_s]\n        if configured_name.blank?\n          raise ArgumentError.new \\\n            \"Configure the #{name} bucket in Xikolo.config.s3['buckets']!\"\n        end\n        resource.bucket configured_name\n      end\n\n      def object(uri)\n        parsed = URI.parse uri\n        unless parsed.scheme == 's3'\n          raise \"unknown storage schema in uri: #{uri}\"\n        end\n\n        resource.bucket(parsed.host).object(parsed.path[1..].to_s)\n      end\n\n      def resource\n        @resource ||= Aws::S3::Resource.new \\\n          client: (Aws::S3::Client.new(client_config).tap do |client|\n            client.handlers.add(Seahorse::MnemosyneHandler, step: :build) if defined?(::Mnemosyne)\n          end)\n      end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 14,
+              "code": "class S3FileDeletionJob < ApplicationJob\n  queue_as :default\n  queue_with_priority :eventual\n\n  def perform(uri)\n    Xikolo::S3.object(uri).delete if uri.present?\n  rescue URI::InvalidURIError, ArgumentError\n    # No valid URI, no deletion\n  rescue Aws::S3::Errors::ServiceError => e\n    ::Mnemosyne.attach_error(e)\n    ::Sentry.capture_exception(e)\n  end\nend",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 49,
+              "code": "module Xikolo\n  module S3\n    class Markup < ActiveModel::Type::Value\n      attr_reader :uploads\n\n      def initialize(uploads: nil)\n        @uploads = uploads\n        super()\n      end\n\n      def type\n        :xikolo_s3_markup\n      end\n\n      def cast_value(value)\n        Field.new(value)\n      end\n\n      def serialize(value)\n        value.to_s.presence\n      end\n\n      class Field\n        def initialize(markup)\n          @markup = markup\n        end\n\n        def file_refs\n          S3.extract_file_refs(@markup)\n        end\n\n        def url_mapping\n          media_refs[:url_mapping]\n        end\n\n        def other_files\n          media_refs[:other_files]\n        end\n\n        def external\n          @external ||= Xikolo::S3.externalize_file_refs(@markup, public: true)\n        end\n\n        def to_s\n          @markup\n        end\n\n        def to_hash\n          {\n            'markup' => @markup,\n            'url_mapping' => url_mapping,",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 30
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "FileReference": {
+        "type": "Concern/Module",
+        "description": "A module included in models that need to manage file references, typically integrating with S3 for storage.",
+        "interactions": {
+          "interaction_0": "Included in `DocumentLocalization` to handle file uploads and S3 key generation."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/document_localization.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule FileReference\n  extend ActiveSupport::Concern\n\n  included do\n    validate :validate_s3_reference_or_upload\n    after_commit :delete_old_s3_references\n    after_rollback :delete_wrongly_uploaded_files\n  end",
+              "source": "services/course/app/models/concerns/file_reference.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 30,
+              "code": "  module ClassMethods\n    @default_file_params = {}\n    def file_reference(name, params_labmda, params = {})\n      class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1\n        def #{name}_url                                               # def filename_url\n          Xikolo::S3.object(#{name}_uri).public_url if #{name}_uri?   #   Xikolo::S3.object(filename_uri).public_url if filename_uri?\n        end                                                           # end\n      RUBY_EVAL\n\n      purpose = params[:purpose] || \"course_#{self.name.to_s.downcase}_#{name}\"\n\n      # rubocop:disable Style/DocumentDynamicEvalDefinition\n      class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1\n        def #{name}_upload_id=(upload_id)\n          @upload_error ||= {}\n...",
+              "source": "services/course/app/models/concerns/file_reference.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/models/concerns/file_reference.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "PaperTrail": {
+        "type": "Gem/Library",
+        "description": "A gem used for versioning ActiveRecord models, tracking changes to records.",
+        "interactions": {
+          "interaction_0": "Included in `DocumentLocalization` to track changes."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/models/document_localization.rb"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Interacts with `Home::PagesController` for display.",
+      "interaction_1": "Interacts with `PagesController` for creation and updates.",
+      "interaction_2": "Uses `Xikolo::S3::Markup` for its `text` attribute to manage S3 file references.",
+      "interaction_3": "Relies on `S3FileDeletionJob` for cleanup of obsolete S3 files during updates.",
+      "interaction_4": "Belongs to `Course::Course`.",
+      "interaction_5": "Has one `Course::Item` polymorphically as its content.",
+      "interaction_6": "Uses `Xikolo::S3::Markup` for its `text` attribute to manage S3 file references.",
+      "interaction_7": "Schedules `S3FileDeletionJob` for referenced S3 objects upon destruction, after checking for other references.",
+      "interaction_8": "Interacts with `Course::Richtext::Store` for creation and updates.",
+      "interaction_9": "Retrieves `Page` records based on locale preferences.",
+      "interaction_10": "Uses `PagePresenter` to format page data for views.",
+      "interaction_11": "Checks `current_user` permissions (`helpdesk.page.store`) to determine if a missing page can be created by an admin.",
+      "interaction_12": "Requires `helpdesk.page.store` permission.",
+      "interaction_13": "Finds or initializes `Page` records.",
+      "interaction_14": "Uses `Xikolo::S3::TextWithUploadsProcessor` to parse and store rich text with embedded S3 uploads.",
+      "interaction_15": "Schedules `S3FileDeletionJob` for obsolete S3 files after a successful update.",
+      "interaction_16": "Renders HTML for the rich text editor and file upload dropzone.",
+      "interaction_17": "Generates S3 upload parameters using `::FileUpload`.",
+      "interaction_18": "Interacts with frontend JavaScript (`initializeMarkdownEditor`) to activate the editor functionality.",
+      "interaction_19": "Used by `Page` and `Course::Richtext` models for their `text` attributes.",
+      "interaction_20": "Works in conjunction with `Xikolo::S3::TextWithUploadsProcessor` to manage file lifecycle.",
+      "interaction_21": "Used by `PagesController` for static page updates.",
+      "interaction_22": "Used by `Course::Richtext::Store` for course rich text updates.",
+      "interaction_23": "Interacts with S3 for file operations (upload, check existence).",
+      "interaction_24": "Provides `obsolete_uris` for `S3FileDeletionJob`.",
+      "interaction_25": "Scheduled by `PagesController` for obsolete static page files.",
+      "interaction_26": "Scheduled by `Course::Richtext` (on destroy) and `Course::Richtext::Store` (on update) for obsolete course rich text files.",
+      "interaction_27": "Receives `Course::Richtext` instance and parameters.",
+      "interaction_28": "Uses `Xikolo::S3::TextWithUploadsProcessor` to manage text and S3 uploads.",
+      "interaction_29": "Schedules `S3FileDeletionJob` for obsolete URIs, checking if they are referenced elsewhere.",
+      "interaction_30": "Called by `initMarkdownEditorOnSelector`.",
+      "interaction_31": "Likely initializes `@toast-ui/editor` based on project dependencies.",
+      "interaction_32": "Calls `initializeMarkdownEditor`.",
+      "interaction_33": "Interacts with `Xikolo.api(:course)` to manage `DocumentLocalization` records. [Source: app/controllers/admin/document_localizations_controller.rb]",
+      "interaction_34": "Uses `DocumentHelper` for file upload related functionalities. [Source: app/controllers/admin/document_localizations_controller.rb]",
+      "interaction_35": "Enforces authorization using `authorize! 'course.document.manage'`. [Source: app/controllers/admin/document_localizations_controller.rb]",
+      "interaction_36": "Responds to JSON requests. [Source: app/controllers/admin/document_localizations_controller.rb]",
+      "interaction_37": "Interacts with `Xikolo.api(:course)` to manage `Document` records, fetch courses, and document tags. [Source: app/controllers/admin/documents_controller.rb]",
+      "interaction_38": "Uses `DocumentsListPresenter` to build the document list for display. [Source: app/controllers/admin/documents_controller.rb]",
+      "interaction_39": "Uses `DocumentHelper` for file upload related functionalities. [Source: app/controllers/admin/documents_controller.rb]",
+      "interaction_40": "Enforces authorization using `authorize! 'course.document.manage'`. [Source: app/controllers/admin/documents_controller.rb]",
+      "interaction_41": "Responds to JSON requests. [Source: app/controllers/admin/documents_controller.rb]",
+      "interaction_42": "Interacts with `Xikolo.api(:course)` to retrieve documents for a specific course. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_43": "Uses `CourseContextHelper` to establish course context. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_44": "Requires user login via `ensure_logged_in`. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_45": "Gated by `Xikolo.config.beta_features['documents']`. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_46": "Has `has_and_belongs_to_many :courses`. [Source: services/course/app/models/document.rb]",
+      "interaction_47": "Has `has_many :localizations` (DocumentLocalization). [Source: services/course/app/models/document.rb]",
+      "interaction_48": "Publishes `xikolo.course.document.create`, `update`, and `destroy` events via `Msgr`. [Source: services/course/app/models/document.rb]",
+      "interaction_49": "Updates associated courses based on items. [Source: services/course/app/models/document.rb]",
+      "interaction_50": "Belongs to `Document`. [Source: services/course/app/models/document_localization.rb]",
+      "interaction_51": "Uses `FileReference` concern for S3 file management, defining S3 key, ACL, content type, etc. [Source: services/course/app/models/document_localization.rb]",
+      "interaction_52": "Publishes `xikolo.course.document_localization.create`, `update`, and `destroy` events via `Msgr`. [Source: services/course/app/models/document_localization.rb]",
+      "interaction_53": "Uses `has_paper_trail` for versioning. [Source: services/course/app/models/document_localization.rb]",
+      "interaction_54": "Receives raw document, course, and tag data from `Admin::DocumentsController`. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_55": "Contains nested `DocumentPresenter` and `DocumentListFilter` classes for specific presentation logic. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_56": "Extracts languages from document localizations for filtering. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_57": "Initializes with `user_id`, `course`, and `current_user`. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_58": "Delegates to `DocumentsPresenter` (the other one) to retrieve actual document data based on enrollment. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_59": "Presents information about certificate availability and requirements. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_60": "Interacts with `Xikolo.api(:course)` to fetch course details. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_61": "Finds `Certificate::Template` and `Certificate::OpenBadgeTemplate` based on course and certificate type. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_62": "Checks user features (`user.feature?('proctoring')`) and proctoring status (`Proctoring::SmowlAdapter`) for certificate download eligibility. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_63": "Casts values to `Field` objects. [Source: gems/xikolo-s3/lib/xikolo/s3/markup.rb]",
+      "interaction_64": "Uses `Xikolo::S3.extract_file_refs` and `Xikolo::S3.media_refs` to process markup. [Source: gems/xikolo-s3/lib/xikolo/s3/markup.rb]",
+      "interaction_65": "Uses `Xikolo::S3.externalize_file_refs` to convert internal S3 URIs to external URLs. [Source: gems/xikolo-s3/lib/xikolo/s3/markup.rb]",
+      "interaction_66": "Interacts with `Xikolo::S3.bucket_for(:uploads)` to access the temporary upload bucket. [Source: gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb]",
+      "interaction_67": "Checks S3 object metadata (`xikolo-state`, `xikolo-purpose`) for validity. [Source: gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb]",
+      "interaction_68": "Scans text for `upload://` URIs. [Source: gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb]",
+      "interaction_69": "Interacts with `Xikolo::S3.bucket_for` for both upload and destination buckets. [Source: gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb]",
+      "interaction_70": "Checks S3 object metadata (`xikolo-state`, `xikolo-purpose`) for validity of uploads. [Source: gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb]",
+      "interaction_71": "Copies files between S3 locations. [Source: gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb]",
+      "interaction_72": "Reports errors related to S3 operations or invalid references. [Source: gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb]",
+      "interaction_73": "Parses `upload://` URIs to locate files in the temporary upload bucket. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+      "interaction_74": "Interacts with `Xikolo::S3.bucket_for(:uploads)` and other specified buckets. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+      "interaction_75": "Checks S3 object metadata (`xikolo-state`, `xikolo-purpose`) for validity. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+      "interaction_76": "Copies files between S3 locations. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+      "interaction_77": "Handles S3 service errors. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]",
+      "interaction_78": "Included in `Admin::DocumentLocalizationsController`, `Admin::DocumentsController`, and `Course::DocumentsController`. [Source: app/controllers/admin/document_localizations_controller.rb, app/controllers/admin/documents_controller.rb, app/controllers/course/documents_controller.rb]",
+      "interaction_79": "Provides `file_upload!` method, which is called in `new` and `edit` actions to facilitate file uploads. [Source: app/controllers/admin/document_localizations_controller.rb, app/controllers/admin/documents_controller.rb]",
+      "interaction_80": "Renders a form for filtering documents, submitting to `course_documents_path`.",
+      "interaction_81": "Renders `Global::FilterBar::Controls` for filter management.",
+      "interaction_82": "Renders `State::Loading` and `State::Empty` components based on content availability.",
+      "interaction_83": "Extracts unique languages from `document[:localizations]` for filter options. [Source: app/components/course/documents/filter_bar.rb]",
+      "interaction_84": "Extracts unique tags from `document[:tags]` for filter options. [Source: app/components/course/documents/filter_bar.rb]",
+      "interaction_85": "Uses `params` to determine selected filter values. [Source: app/components/course/documents/filter_bar.rb]",
+      "interaction_86": "Inherits from `Abstract::FrontendController` and includes `CourseContextHelper` and `DocumentHelper`. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_87": "Requires `Xikolo.config.beta_features['documents']` to be enabled for access. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_88": "Fetches a list of documents from `course_api.rel(:documents)` for the `index` action, applying `tag` and `language` filters from `params`. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_89": "Fetches a specific document from `course_api.rel(:document)` for the `show` action. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_90": "Uses `Xikolo.api(:course)` (a `Restify` client) to interact with the `Xikolo::CourseService`. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_91": "Ensures user is logged in via `ensure_logged_in` before actions. [Source: app/controllers/course/documents_controller.rb]",
+      "interaction_92": "Defines `Document` and `Localization` `Struct`s with `ActiveModel` concerns for data representation. [Source: app/helpers/document_helper.rb]",
+      "interaction_93": "Performs `POST`, `PATCH`, `DELETE` requests to `Xikolo.api(:course)` (Course API) for document and localization management. [Source: app/helpers/document_helper.rb]",
+      "interaction_94": "Handles error cases during document creation, specifically for title uniqueness. [Source: app/helpers/document_helper.rb]",
+      "interaction_95": "Uses `FileUpload` for managing file attachments to localizations. [Source: app/helpers/document_helper.rb]",
+      "interaction_96": "Loads all tags from the Course API for dropdowns. [Source: app/helpers/document_helper.rb]",
+      "interaction_97": "Initializes with `user_id`, `course`, and `current_user`. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_98": "Finds `Xikolo::Course::Enrollment` to check learning evaluation status. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_99": "Delegates to `::DocumentsPresenter.create` for core document/certificate logic. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_100": "Checks `Xikolo.config.certificate['transcript_of_records']` for TOR availability. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_101": "Uses `BasicCoursePresenter` to wrap course data. [Source: app/presenters/course/documents_presenter.rb]",
+      "interaction_102": "Delegates document properties to `DocumentPresenter` for individual document display. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_103": "Extracts unique languages from `document['localizations']` and tags from `@tags` for filter options. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_104": "Reads pagination headers (`X_TOTAL_PAGES`, `X_CURRENT_PAGE`) from the API response. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_105": "Constructs filter objects using `DocumentListFilter` for UI presentation. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_106": "Uses `helpers` to generate URLs for filter options. [Source: app/presenters/documents_list_presenter.rb]",
+      "interaction_107": "Fetches course details from `course_api` using `enrollment.course_id`. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_108": "Finds `Certificate::Template` and `Certificate::OpenBadgeTemplate` based on course and certificate type. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_109": "Checks `enrollment.certificates` hash for certificate availability flags. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_110": "Integrates with `Proctoring` and `Proctoring::SmowlAdapter` to check proctoring status for certificate download conditions. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_111": "Checks `user.feature?('proctoring')` and `Xikolo.config.roa_threshold_percentage`, `Xikolo.config.cop_threshold_percentage` for certificate requirements. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_112": "Uses `RequestStore` to cache `course_api` root. [Source: app/presenters/documents_presenter.rb]",
+      "interaction_113": "Retrieves Page records using `Page.preferred_locales`.",
+      "interaction_114": "Instantiates `PagePresenter` to format page data.",
+      "interaction_115": "Checks `current_user` permissions (`allowed?('helpdesk.page.store')`) to determine if a missing page can be created.",
+      "interaction_116": "Uses `I18n.locale` and `Xikolo.config.locales['default']` for locale resolution.",
+      "interaction_117": "Sets page title via `set_page_title`.",
+      "interaction_118": "Requires 'helpdesk.page.store' permission.",
+      "interaction_119": "Finds or initializes `Page` records using `Page.find_or_initialize_by`.",
+      "interaction_120": "Processes page content and S3 uploads using `Xikolo::S3::TextWithUploadsProcessor`.",
+      "interaction_121": "Saves `Page` records.",
+      "interaction_122": "Schedules `S3FileDeletionJob` for obsolete S3 URIs.",
+      "interaction_123": "Redirects to `page_path` on success or renders 'edit' on failure.",
+      "interaction_124": "Uses `UUID4` to generate unique IDs for S3 keys.",
+      "interaction_125": "Uses `Xikolo::S3::Markup` for the `text` attribute to handle S3-backed content.",
+      "interaction_126": "Defines `has_many :translations` and `has_many :other_translations` for multi-locale management.",
+      "interaction_127": "Provides `preferred_locales` class method for ordering pages by locale preference.",
+      "interaction_128": "Validates `name`, `title`, `text`, and `locale`.",
+      "interaction_129": "Receives a `Page` object and optionally its `translations`.",
+      "interaction_130": "Includes `MarkdownHelper` to render `text` content to HTML.",
+      "interaction_131": "Provides methods for `name`, `title`, `last_changed`, `html`, `existing_translations`, and `new_translations`.",
+      "interaction_132": "Uses `Xikolo.config.locales['available']` to determine potential new translations.",
+      "interaction_133": "Used by `PagesController` to manage embedded files within page text.",
+      "interaction_134": "Parses text to identify S3 file references.",
+      "interaction_135": "Provides `valid?`, `result`, `commit!`, `rollback!`, `errors`, and `obsolete_uris` methods.",
+      "interaction_136": "Configured with `bucket`, `purpose`, `current` text, `new` text, `check_override`, and `valid_refs`.",
+      "interaction_137": "Scheduled by `PagesController` to remove S3 files that are no longer referenced in page content.",
+      "interaction_138": "Included and used by `PagePresenter` to convert `Page` text content from Markdown to HTML.",
+      "interaction_139": "Is created, read, updated, and deleted by `PagesController`.",
+      "interaction_140": "Its `text` attribute is processed by `Xikolo::S3::TextWithUploadsProcessor` for embedded file management.",
+      "interaction_141": "Its data is formatted for display by `PagePresenter`.",
+      "interaction_142": "Interacts with `Xikolo::S3::Markup` for custom attribute handling of text with embedded S3 references.",
+      "interaction_143": "Interacts with the `Page` model to find, initialize, and save page data.",
+      "interaction_144": "Delegates embedded file processing to `Xikolo::S3::TextWithUploadsProcessor`.",
+      "interaction_145": "Enqueues `S3FileDeletionJob` for obsolete S3 files.",
+      "interaction_146": "Requires `helpdesk.page.store` permission for access.",
+      "interaction_147": "Receives a `Page` object and its translations for presentation.",
+      "interaction_148": "Utilizes `MarkdownHelper` to convert Markdown text to HTML.",
+      "interaction_149": "Accesses `Xikolo.config.locales['available']` to determine available locales for new translations.",
+      "interaction_150": "Used by the `Page` model to define the behavior of its `text` attribute.",
+      "interaction_151": "Interacts implicitly with `Xikolo::S3::TextWithUploadsProcessor` during content updates.",
+      "interaction_152": "Invoked by `PagesController` to process page content before saving.",
+      "interaction_153": "Interacts with S3 (via `xikolo-s3` gem) to upload and manage files.",
+      "interaction_154": "Provides `result` (processed text), `valid?`, `commit!`, `rollback!`, and `obsolete_uris` methods to `PagesController`.",
+      "interaction_155": "Enqueued by `PagesController` after a successful page update that results in obsolete S3 files.",
+      "interaction_156": "Included and used by `PagePresenter` to render page content for display.",
+      "interaction_157": "Interacts with `Course` (has_and_belongs_to_many).",
+      "interaction_158": "Interacts with `Item` via `DocumentsItem` (has_many through).",
+      "interaction_159": "Manages `DocumentLocalization` records (has_many).",
+      "interaction_160": "Publishes events to RabbitMQ via `Msgr` on create, update, and destroy.",
+      "interaction_161": "Uses `ApplicationRecord` for common scopes like `not_deleted`.",
+      "interaction_162": "Accessed and manipulated by `DocumentsController`.",
+      "interaction_163": "Belongs to `Document`.",
+      "interaction_164": "Includes `FileReference` concern for S3 file management.",
+      "interaction_165": "Uses `Xikolo::S3` for storing and retrieving files.",
+      "interaction_166": "Uses `PaperTrail` for versioning.",
+      "interaction_167": "Publishes events to RabbitMQ via `Msgr` on create, update, and destroy.",
+      "interaction_168": "Accessed and manipulated by `DocumentLocalizationsController`.",
+      "interaction_169": "Belongs to `Document`.",
+      "interaction_170": "Belongs to `Item`.",
+      "interaction_171": "Interacts with `Document` model for data access and manipulation.",
+      "interaction_172": "Uses `ApplicationController` as its base.",
+      "interaction_173": "Utilizes `Responders::ApiResponder`, `Responders::DecorateResponder`, `Responders::HttpCacheResponder`, `Responders::PaginateResponder` for API response formatting.",
+      "interaction_174": "Interacts with `DocumentLocalization` model for data access and manipulation.",
+      "interaction_175": "Uses `ApplicationController` as its base.",
+      "interaction_176": "Utilizes `Responders::ApiResponder`, `Responders::DecorateResponder`, `Responders::HttpCacheResponder`, `Responders::PaginateResponder` for API response formatting.",
+      "interaction_177": "Interacts with `Document.all_tags` to fetch tag data.",
+      "interaction_178": "Uses `ApplicationController` as its base.",
+      "interaction_179": "Belongs to `Course`.",
+      "interaction_180": "Optionally belongs to `Duplicated::Video`.",
+      "interaction_181": "Interacts with `Xikolo::S3` to generate public URLs for images.",
+      "interaction_182": "Used by `Course::Visual::Clone` operation.",
+      "interaction_183": "Takes `Duplicated::Visual` and `Course` objects as input.",
+      "interaction_184": "Interacts with `Xikolo::S3` to copy image files.",
+      "interaction_185": "Creates/updates `Course::Visual` and `Course::Video` records.",
+      "interaction_186": "Clones `Subtitle` records associated with videos.",
+      "interaction_187": "Handles `ActiveRecord::RecordInvalid` and `ActiveRecord::RecordNotUnique` errors during cloning.",
+      "interaction_188": "Includes `Sidekiq::Job` module.",
+      "interaction_189": "Interacts with `Xikolo::S3` to perform file deletion.",
+      "interaction_190": "Receives messages from `Document` model (after_create, after_update, soft_delete).",
+      "interaction_191": "Receives messages from `DocumentLocalization` model (after_create, after_update, soft_delete).",
+      "interaction_192": "Used by `DocumentLocalization` for file uploads and key generation.",
+      "interaction_193": "Used by `Duplicated::Visual` to generate public image URLs.",
+      "interaction_194": "Used by `Course::Visual::Clone` for copying image files.",
+      "interaction_195": "Used by `FileDeletionWorker` for deleting files.",
+      "interaction_196": "Included in `DocumentLocalization` to handle file uploads and S3 key generation.",
+      "interaction_197": "Included in `DocumentLocalization` to track changes."
+    },
+    "technicalDebt": [
+      "Associations `translations` and `other_translations` use `inverse_of: false`, which might lead to N+1 query issues or unexpected ActiveRecord behavior if not carefully managed.",
+      "The `referenced?` method uses `LIKE` queries on text columns, which could be a performance bottleneck for large datasets. Consider leveraging `pg_trgm` for faster lookups if performance becomes an issue.",
+      "Directly embeds `I18n.t` calls; for a component-based UI, passing translations as props or data attributes might be cleaner.",
+      "As a custom implementation, it carries a maintenance burden; comprehensive tests and clear documentation are crucial.",
+      "The delayed deletion means obsolete files temporarily remain in S3 storage, which is a trade-off for fault tolerance.",
+      "The name `Course::DocumentsPresenter` and `DocumentsPresenter` are very similar and could lead to confusion. Clarification of their distinct roles might be beneficial.",
+      "The name `DocumentsPresenter` is generic and could be confused with `DocumentsListPresenter` or `Course::DocumentsPresenter`. A more specific name like `CertificateDocumentsPresenter` might improve clarity.",
+      "The `README.md` for `xikolo-s3` explicitly states this approach has drawbacks and recommends `UploadByUri` for new implementations. This indicates potential technical debt or a legacy component. [Source: gems/xikolo-s3/README.md]",
+      "The actual implementation of `DocumentHelper` is not provided, making it difficult to fully assess its responsibilities and potential complexities. [Source: N/A]",
+      "Explicit `TODO: Get rid of this helper` indicates it's an anti-pattern and should be refactored, likely into a service object or dedicated model layer. [Source: app/helpers/document_helper.rb]",
+      "Rubocop disable comments (`rubocop:disable Rails/HelperInstanceVariable`) suggest potential issues with instance variable usage in a helper. [Source: app/helpers/document_helper.rb]",
+      "The `rubocop:disable Rails/HasManyOrHasOneDependent` comment indicates that the `translations` and `other_translations` associations do not have a `dependent` option. This could lead to orphaned `Page` records if a page (identified by `name`) is deleted without explicitly handling its associated translations.",
+      "The `rubocop:disable Rails/HasManyOrHasOneDependent` comment on `has_many` associations suggests a potential design choice that might need re-evaluation regarding the lifecycle of translations when a 'parent' page (identified by `name`) is deleted. [Source: app/models/page.rb]",
+      "S3 bucket name (`:pages`) and purpose (`'helpdesk_page_file'`) are hardcoded, which could be made more configurable. [Source: app/controllers/pages_controller.rb]",
+      "Error handling for `processor.errors` in the `update` action adds generic `:text` errors, which might not provide the most specific or user-friendly feedback. [Source: app/controllers/pages_controller.rb]",
+      "The `locale_param` method explicitly returns `nil`, overriding potential base controller logic for locale detection, which might indicate a specific, possibly less flexible, locale handling strategy for this controller. [Source: app/controllers/pages_controller.rb]",
+      "The `update_courses` callback dynamically associates documents with courses of their items, which might be complex to manage and debug if not explicitly documented or controlled.",
+      "The `embed:` parameter in `respond_with` calls is present but empty, suggesting an incomplete or placeholder feature for embedding related resources.",
+      "Silent `noop` error handling for `ActiveRecord::RecordInvalid` during image and video cloning can lead to incomplete visual data without explicit logging or user feedback.",
+      "Catches `URI::InvalidURIError` but does not log or report it, potentially masking issues with invalid URIs being passed for deletion."
+    ]
+  }
+}

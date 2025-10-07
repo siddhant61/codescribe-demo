@@ -1,0 +1,130 @@
+/**
+ * Dark Theme Variables
+ * Applied when [data-theme="dark"] is set on the HTML element
+ */
+
+[data-theme="dark"] {
+  /* Text Colors */
+  --color-text-primary: #f8f9fa;
+  --color-text-secondary: #adb5bd;
+  --color-text-muted: #868e96;
+  --color-text-inverse: #1a202c;
+  
+  /* Background Colors */
+  --color-background: #1a202c;
+  --color-background-alt: #2d3748;
+  --color-background-dark: #171923;
+  --color-background-overlay: rgba(0, 0, 0, 0.7);
+  
+  /* Border Colors */
+  --color-border: #4a5568;
+  --color-border-light: #2d3748;
+  --color-border-dark: #718096;
+  
+  /* Primary Colors (slightly adjusted for dark mode) */
+  --color-primary: #7c8df8;
+  --color-primary-hover: #9ca8ff;
+  --color-primary-light: #4a5568;
+  --color-primary-dark: #c5cfff;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #7c8df8 0%, #9059e0 100%);
+  --gradient-background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  
+  /* Shadows (darker for dark mode) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Component-specific dark mode adjustments */
+[data-theme="dark"] .page-header {
+  background-color: rgba(26, 32, 44, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"] .card {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .card:hover {
+  background-color: #374151;
+}
+
+[data-theme="dark"] code {
+  background-color: var(--color-background-dark);
+  color: #c5cfff;
+}
+
+[data-theme="dark"] pre {
+  background-color: var(--color-background-dark);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(124, 141, 248, 0.2);
+}
+
+[data-theme="dark"] .sidebar {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .sidebar-nav-link.active {
+  background-color: rgba(124, 141, 248, 0.2);
+  color: var(--color-primary-dark);
+}
+
+[data-theme="dark"] table thead {
+  background-color: var(--color-background-dark);
+}
+
+[data-theme="dark"] table tr:hover {
+  background-color: var(--color-background-alt);
+}
+
+[data-theme="dark"] .hero {
+  background: var(--gradient-background);
+}
+
+[data-theme="dark"] .diagram-container {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-border);
+}
+
+/* Smooth transition when switching themes */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *:before,
+html.theme-transitioning *:after {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease !important;
+  transition-delay: 0s !important;
+}

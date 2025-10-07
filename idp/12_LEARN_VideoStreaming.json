@@ -1,0 +1,1568 @@
+{
+  "clusterId": "12_LEARN_VideoStreaming",
+  "featureFocus": "Video Management, Streaming, and Subtitles",
+  "documentationReport": "{\n  \"title\": \"Video Content Management, Streaming, and Subtitle Services\",\n  \"description\": \"This comprehensive documentation report details the 'Video Management, Streaming, and Subtitles' feature cluster, encompassing a wide array of functionalities from user-facing video playback and interaction to backend administration of video providers, stream synchronization, and subtitle handling. The system leverages a microservice architecture, with the main `web` application handling user-facing interactions and administrative tasks, while relying on shared libraries and external services for core functionalities like S3 storage and video playback. This merged cluster integrates insights from various analysis sources to provide a holistic view of video content management, streaming, and subtitle services within the application.\",\n  \"functional_domains\": [\n    \"Video Playback\",\n    \"Video Administration\",\n    \"Stream Management\",\n    \"Subtitle Services\",\n    \"Content Storage\",\n    \"Streaming Integrations\",\n    \"Download Management\"\n  ],\n  \"sections\": [\n    {\n      \"title\": \"Frontend Video Playback and Interaction\",\n      \"description\": \"This section covers the user-facing aspects of video playback and interaction, including enhanced player features and teacher-specific stream selection.\",\n      \"components\": [\n        {\n          \"name\": \"`app/assets/course/items/video.js`\",\n          \"type\": \"JavaScript Logic\",\n          \"details\": \"Contains JavaScript logic for enhancing the video playback experience. It integrates with a custom `xm-player` web component to provide features such as seeking to specific timestamps when a user clicks on a timestamp in the UI. It also manages the creation of new discussion topics associated with a video, allowing users to submit topics with a video timestamp by fetching the current video progress from `xm-player` and sending a POST request to the backend. Keyboard shortcuts for the video player are also forwarded from the document body to the `xm-player` component, ensuring a seamless user experience.\"\n        },\n        {\n          \"name\": \"`app/assets/teacher/items/video-streams.ts`\",\n          \"type\": \"TypeScript Logic\",\n          \"details\": \"Provides auto-completion logic for selecting video streams (lecturer, slides) based on a chosen Picture-in-Picture (PIP) stream. This is achieved by making an AJAX call to `/admin/streams` to fetch matching stream data.\"\n        },\n        {\n          \"name\": \"`app/assets/teacher/items/video.ts`\",\n          \"type\": \"TypeScript Logic\",\n          \"details\": \"Orchestrates the visibility of various form elements for video items, such as the public description, based on an 'open mode' checkbox, and integrates the stream auto-completion.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Video Provider and Stream Management (Admin)\",\n      \"description\": \"Administrative control over video providers and streams, including CRUD operations, synchronization, and listing functionalities.\",\n      \"components\": [\n        {\n          \"name\": \"`Admin::VideoProvidersController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"Manages CRUD operations for `Video::Provider` records. It dynamically permits credential attributes based on the provider type, ensuring flexibility for different video platforms. This controller requires the `video.provider.manage` permission.\"\n        },\n        {\n          \"name\": \"`Admin::VideoProviderSyncController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"Allows administrators to trigger synchronization jobs for video providers. It prevents immediate re-syncs if a sync was recently triggered or is currently in progress, raising a `SyncRecentlyTriggered` error. The actual synchronization is performed asynchronously by `Video::SyncVideosJob`. This controller requires the `video.video.manage` permission.\"\n        },\n        {\n          \"name\": \"`Admin::VideosController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"Provides an interface to list and destroy `Video::Stream` records. It uses pagination and allows querying streams by prefix. This controller also requires the `video.video.manage` permission.\"\n        },\n        {\n          \"name\": \"`Stream::SyncsController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"A component related to stream synchronization, likely complementing or extending the functionality of `Admin::VideoProviderSyncController`.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Subtitle Management\",\n      \"description\": \"Handles the display and deletion of video subtitles, ensuring proper formatting and access control.\",\n      \"components\": [\n        {\n          \"name\": \"`SubtitlesController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"Handles requests to display and destroy `Video::Subtitle` records. When displaying a subtitle, it renders the content as `text/vtt` and includes an `Access-Control-Allow-Origin: *` header to support web-based video players like Google Cast. Deletion of subtitles requires the `video.subtitle.manage` permission.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Video Data Storage and Processing\",\n      \"description\": \"Centralized operations for persisting video-related data, attachments, and subtitles, with robust S3 integration.\",\n      \"components\": [\n        {\n          \"name\": \"`Video::Store`\",\n          \"type\": \"Ruby Operation\",\n          \"details\": \"Central to handling the persistence of video-related data and attachments. It manages the description, reading material, slides, transcripts, and subtitles. Key functionalities include: **Description Processing** using `Xikolo::S3::TextWithUploadsProcessor` for rich text and file uploads; **Attachment Handling** for reading material, slides, and transcripts in an S3 bucket (`xikolo-video`) supporting upload IDs and URIs; **Subtitle Processing** accepting `.zip` or `.vtt` files, extracting language from filenames, and attaching content with error handling; **S3 File Management** ensuring atomicity by deleting newly uploaded files on operation failure and enqueuing `S3FileDeletionJob` for old, unreferenced files.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Streaming and Playlist Generation\",\n      \"description\": \"Manages the generation and manipulation of HLS playlists for optimal video streaming across various devices.\",\n      \"components\": [\n        {\n          \"name\": \"`M3u8Playlist`\",\n          \"type\": \"Ruby Class\",\n          \"details\": \"Responsible for generating and manipulating HLS (HTTP Live Streaming) playlists. It can create master playlists that combine multiple stream qualities and subtitle tracks, and stream-specific playlists. It rewrites URIs to point to the application's controller and sorts stream playlist items by bandwidth in descending order for optimal iOS playback. It integrates with `Restify` to fetch external HLS data.\"\n        },\n        {\n          \"name\": \"`Video::PlaylistsController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"A controller dedicated to handling video playlist requests, likely leveraging `M3u8Playlist` for dynamic playlist generation and serving.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Integrations\",\n      \"description\": \"Details external service integrations for enhanced video functionality, including Chromecast and TransPipe.\",\n      \"components\": [\n        {\n          \"name\": \"`ChromecastController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"Dynamically renders a Styled Media Receiver (SMR) CSS stylesheet for Google's Chromecast, allowing custom styling (background, logo, progress color) based on `Xikolo.config`. It ensures that the Chromecast feature is configured before attempting to render the stylesheet.\"\n        },\n        {\n          \"name\": \"`Chromecast`\",\n          \"type\": \"Module/Configuration\",\n          \"details\": \"Represents the core Chromecast integration, likely containing configuration settings and helper methods used by `ChromecastController`.\"\n        },\n        {\n          \"name\": \"`Transpipe`\",\n          \"type\": \"Ruby Module\",\n          \"details\": \"Provides utility methods for generating URLs to the TransPipe service for courses and videos. This integration is conditional on the `transpipe.enabled` configuration setting. The TransPipe API itself exposes video stream URLs (lecturer, PIP, slides) and subtitle information (language, automatic status).\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Video Download Functionality\",\n      \"description\": \"Manages the availability and restrictions of video and associated material downloads.\",\n      \"components\": [\n        {\n          \"name\": \"`spec/system/video/video_download_spec.rb`\",\n          \"type\": \"System Test\",\n          \"details\": \"Demonstrates that video and audio download options are enabled or disabled based on the `enable_video_download` setting of a course. When disabled, a tooltip explains the licensing restrictions. Download buttons for slides, transcripts, and reading material are always available, regardless of the video download setting.\"\n        },\n        {\n          \"name\": \"`Stream::DownloadsController`\",\n          \"type\": \"Ruby on Rails Controller\",\n          \"details\": \"A controller specifically designed to handle requests for downloading video streams or related content, complementing the download functionality described in system tests.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Technical Debt\",\n      \"description\": \"Identified areas requiring refactoring or improvement for better maintainability and adherence to best practices.\",\n      \"components\": [\n        {\n          \"name\": \"`Video::Store` ActiveModel Contract Violation\",\n          \"type\": \"Code Issue\",\n          \"details\": \"The `Video::Store` operation assigns errors to non-existent attributes (e.g., `:invalid_subtitle`) on the `Video` model, which is a workaround for a Rails 6.1 incompatibility. A `TODO` comment explicitly states that an unused dump attribute `:invalid_subtitle` exists on the `Video` model to prevent exceptions. This should be refactored to align with ActiveModel's error handling best practices.\"\n        },\n        {\n          \"name\": \"`M3u8Playlist` Stream Order Determinism\",\n          \"type\": \"Code Issue\",\n          \"details\": \"The `M3u8Playlist` class notes that the order of stream playlist items received from Vimeo is not deterministic, which could lead to inconsistent playback experiences or issues with specific client implementations (e.g., iOS).\"\n        }\n      ]\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "VideoPlayerFrontendLogic": {
+        "type": "Frontend Logic",
+        "description": "Handles client-side interactions for video playback, including seeking to timestamps, creating discussion topics with video timestamps, and forwarding keyboard shortcuts to the video player. It interacts with a custom `xm-player` web component.",
+        "interactions": {
+          "interaction_0": "Interacts with `xm-player` (custom web component) to control video playback and retrieve progress. [Source: app/assets/course/items/video.js]",
+          "interaction_1": "Sends POST requests to the backend API for creating new discussion topics. [Source: app/assets/course/items/video.js]",
+          "interaction_2": "Uses `I18n` for internationalization of timestamp text. [Source: app/assets/course/items/video.js]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/course/items/video.js",
+            "docs/app/development/frontend/video-player.md"
+          ]
+        }
+      },
+      "VideoStreamAutocompletion": {
+        "type": "Frontend Logic",
+        "description": "Provides auto-completion functionality for selecting lecturer and slides video streams based on a chosen Picture-in-Picture (PIP) stream. It fetches stream data from an admin API endpoint.",
+        "interactions": {
+          "interaction_0": "Makes an AJAX GET request to `/admin/streams` to fetch stream data. [Source: app/assets/teacher/items/video-streams.ts]",
+          "interaction_1": "Updates `TomInput` select elements for lecturer and slides streams. [Source: app/assets/teacher/items/video-streams.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/video-streams.ts"
+          ]
+        }
+      },
+      "VideoItemFormHandler": {
+        "type": "Frontend Logic",
+        "description": "Manages the visibility of form elements for video items, specifically the public description based on an 'open mode' checkbox. It integrates the `VideoStreamAutocompletion` logic.",
+        "interactions": {
+          "interaction_0": "Calls `setVisibility` and `hideAndUncheckSwitch` from `form-helpers` to manage UI elements. [Source: app/assets/teacher/items/video.ts]",
+          "interaction_1": "Invokes `videoStreamsAutocompletion` to enable stream auto-selection. [Source: app/assets/teacher/items/video.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/video.ts"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 11,
+              "endLine": 35,
+              "code": "ready(() => {\n  const advancedSettingsButtons: NodeListOf<HTMLButtonElement> =\n    document.querySelectorAll('[data-behavior=toggle-visibility]');\n\n  advancedSettingsButtons.forEach((button) => {\n    const target = document.getElementById(\n      button.dataset.toggleVisibility!,\n    ) as HTMLElement;\n    const onText = button.getAttribute('data-toggle-text-on');\n    const offText = button.getAttribute('data-toggle-text-off');\n\n    target.hidden = true;\n\n    button.addEventListener('click', () => {\n      const btn = button as HTMLButtonElement;\n\n      if (target.hidden) {\n        target.hidden = false;\n        btn.textContent = offText;\n      } else {\n        target.hidden = true;\n        btn.textContent = onText;\n      }\n    });\n  });\n});",
+              "source": "app/assets/util/forms/advanced-settings.ts"
+            },
+            {
+              "startLine": 12,
+              "endLine": 29,
+              "code": "Dropzone.autoDiscover = false;\n\nconst showPreviousImage = (dropzone) => {\n  // Show existing image in preview-zone\n  const fileUrl = document.getElementsByName('file_url')[0];\n  if (fileUrl && fileUrl.value !== '') {\n    const mockFile = {\n      name: fileUrl.value.split('/')[fileUrl.value.split('/').length - 1],\n    };\n    dropzone.emit('addedfile', mockFile);\n    dropzone.files.push(mockFile);\n    const currentImage = mockFile.previewElement.querySelector(\n      '[data-dz-thumbnail]',\n    );\n    currentImage.alt = mockFile.name;\n    currentImage.src = fileUrl.value;\n    dropzone.emit('success', mockFile);\n  }\n};",
+              "source": "app/assets/util/forms/advanced-settings.ts"
+            },
+            {
+              "startLine": 9,
+              "endLine": 45,
+              "code": "Dropzone.autoDiscover = false;\n\nconst initMdUpload = (el) => {\n  const elZone = el.querySelector('.xui-mdupload-zone');\n\n  if (!elZone || elZone.dropzone != null) {\n    return;\n  }\n\n  const s3 = JSON.parse(el.dataset.s3);\n  const url = el.dataset.mdupload;\n\n  // (pre)process passed arguments:\n  const s3Key = s3.key;\n  const acceptedFiles = s3.content_type;\n  const textArea = document.querySelector(el.dataset.textareaId);\n  const { uploadId } = el.dataset;\n\n  delete s3.key;\n  delete s3.content_type;\n\n  const dropzone = new Dropzone(elZone, {\n    url,\n    acceptedFiles,\n    timeout: null,\n    thumbnailWidth: 50,\n    thumbnailHeight: 50,\n  });\n\n  dropzone.on('sending', (file, _, fd) => {\n    Object.keys(s3).forEach((k) => {\n      const v = s3[k];\n      fd.append(k, v);\n    });\n  });\n};",
+              "source": "app/assets/util/forms/advanced-settings.ts"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/assets/util/forms/advanced-settings.ts",
+              "relevance": 5
+            },
+            {
+              "path": "app/assets/util/forms/image-upload.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/assets/util/forms/mdupload.js",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Admin::VideoProviderSyncController": {
+        "type": "Controller",
+        "description": "Handles requests to initiate synchronization of videos from a specific video provider. It prevents immediate re-syncs if a sync is already in progress or recently completed. Dispatches a background job for the actual synchronization.",
+        "interactions": {
+          "interaction_0": "Dispatches `Video::SyncVideosJob` to perform synchronization asynchronously. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+          "interaction_1": "Interacts with `Video::Provider` to check sync status. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+          "interaction_2": "Redirects to `admin_video_providers_path` after action. [Source: app/controllers/admin/video_provider_sync_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/video_provider_sync_controller.rb"
+          ]
+        }
+      },
+      "Admin::VideoProvidersController": {
+        "type": "Controller",
+        "description": "Manages CRUD operations for video providers within the admin interface. It allows administrators to create, edit, update, and delete video provider configurations.",
+        "interactions": {
+          "interaction_0": "Interacts with `Video::Provider` model for data persistence. [Source: app/controllers/admin/video_providers_controller.rb]",
+          "interaction_1": "Uses `Video::Provider.new(provider_type: type).type` to determine credential attributes for different provider types. [Source: app/controllers/admin/video_providers_controller.rb]",
+          "interaction_2": "Handles `ActiveRecord::DeleteRestrictionError` if a provider cannot be deleted due to dependencies. [Source: app/controllers/admin/video_providers_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/video_providers_controller.rb"
+          ]
+        }
+      },
+      "Admin::VideosController": {
+        "type": "Controller",
+        "description": "Provides administrative functionality for listing and deleting individual video streams. Requires `video.video.manage` permission.",
+        "interactions": {
+          "interaction_0": "Queries `Video::Stream` for listing and deletion. [Source: app/controllers/admin/videos_controller.rb]",
+          "interaction_1": "Authorizes actions using `authorize! 'video.video.manage'`. [Source: app/controllers/admin/videos_controller.rb]",
+          "interaction_2": "Handles `ActiveRecord::DeleteRestrictionError` for stream deletion. [Source: app/controllers/admin/videos_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/videos_controller.rb"
+          ]
+        }
+      },
+      "ChromecastController": {
+        "type": "Controller",
+        "description": "Handles requests for Chromecast Styled Media Receiver (SMR) stylesheets, allowing custom branding for the casting experience.",
+        "interactions": {
+          "interaction_0": "Reads configuration from the `Chromecast` module to determine styling parameters.",
+          "interaction_1": "Renders a CSS stylesheet dynamically based on configured values."
+        },
+        "techDebt": [
+          "Raising `AbstractController::ActionNotFound` in a `before_action` is an unconventional way to prevent rendering; a `head :not_found` or redirect might be more appropriate for clearer HTTP semantics."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/chromecast_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 23,
+              "code": "class ChromecastController < ApplicationController   before_action do     # If the SMR is not properly configured, don't render one     raise AbstractController::ActionNotFound unless Chromecast.configured?   end    # Dynamically render a Styled Media Receiver (SMR) CSS stylesheet for Google's Chromecast   #   # This allows for some custom styling when using Android apps on the TV via   # Chromecast. A custom color, logo and background can be set in Xikolo Config.   #   # See https://developers.google.com/cast/docs/styled_receiver.   def stylesheet     @chromecast_styles = {}.tap do |styles|       styles[:background] = Chromecast.background_url if Chromecast.background_url       styles[:logo] = Chromecast.logo_url if Chromecast.logo_url       styles[:progress_color] = Chromecast.progress_color if Chromecast.progress_color     end      render css: 'stylesheet'   end end",
+              "source": "app/controllers/chromecast_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/chromecast_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "SubtitlesController": {
+        "type": "Controller",
+        "description": "Manages and serves video subtitle files in WebVTT (`.vtt`) format. It also provides an endpoint for authorized users to destroy subtitle records.",
+        "interactions": {
+          "interaction_0": "Interacts with the `Video::Subtitle` model to find and render subtitle content.",
+          "interaction_1": "Sets `Access-Control-Allow-Origin: *` header to support Google Cast and other web-based video players."
+        },
+        "techDebt": [
+          "The use of a wildcard `Access-Control-Allow-Origin: *` is broad and could be a security concern; restricting to specific domains is generally recommended if feasible."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/subtitles_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 29,
+              "code": "# frozen_string_literal: true\n\nmodule Bridges\n  module Transpipe\n    class SubtitlesController < BaseController\n      before_action Xi::Controllers::RequireBearerToken.new(\n        realm: Transpipe.realm,\n        token: -> { Transpipe.shared_secret }\n      )\n\n      def show\n        render plain: subtitle.to_vtt, content_type: 'text/vtt'\n      rescue ActiveRecord::RecordNotFound\n        render plain: '', status: :not_found, content_type: 'text/vtt'\n      end\n\n      def update\n        return problem_details('The request body cannot be blank.', status: :bad_request) if request.raw_post.blank?\n\n        vtt = request.raw_post.force_encoding('UTF-8')\n        video = ::Video::Video.find params[:id]\n        automatic = params.fetch(:automatic, false)\n        ::Video::Subtitle.attach!(vtt, params[:lang], video, automatic:)\n\n        head(:ok)\n      rescue ActiveRecord::RecordNotFound\n        head(:not_found)\n      rescue ActiveRecord::RecordInvalid\n        head(:unprocessable_entity)\n      rescu...",
+              "source": "app/controllers/bridges/transpipe/subtitles_controller.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\nclass SubtitlesController < ApplicationController\n  def show\n    # Required CORS header to support Google Cast and other web-based video\n    # players. Since we do not know exactly which domains from Google access\n    # the streams, we use a wildcard.\n    response.headers['Access-Control-Allow-Origin'] = '*'\n\n    subtitle = Video::Subtitle.find(params[:id])\n\n    render plain: subtitle.to_vtt, content_type: 'text/vtt'\n  rescue ActiveRecord::RecordNotFound\n    head(:not_found, content_type: 'text/plain')\n  end\n\n  def destroy\n    authorize! 'video.subtitle.manage'\n\n    Video::Subtitle.find(params[:id]).destroy\n\n    redirect_back fallback_location: root_path\n  rescue ActiveRecord::RecordNotFound\n    head(:not_found, content_type: 'text/plain')\n  end\nend\n...",
+              "source": "app/controllers/bridges/transpipe/subtitles_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/bridges/transpipe/subtitles_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/subtitles_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "M3u8Playlist": {
+        "type": "Service Object/Library Wrapper",
+        "description": "A utility class that wraps the `M3u8` gem to read, manipulate, and generate HLS playlists. It transforms master playlists (rewriting stream URIs, embedding Xikolo subtitles) and stream playlists (making segment URIs absolute). It can also generate standalone subtitle playlists.",
+        "interactions": {
+          "interaction_0": "Fetches external HLS content using `Restify`.",
+          "interaction_1": "Generates internal URLs for playlists and subtitles using `Xikolo::V2::URL`.",
+          "interaction_2": "Receives `Video::Video` and `Video::Subtitle` information via options to embed Xikolo's subtitles."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/lib/m3u8_playlist.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nrequire 'uri'\n\nclass M3u8Playlist\n  class << self\n    def from(stream = nil, opts = {})\n      new(stream, opts)\n    end\n\n    def for(opts = {})\n      # This playlist is not created from another playlist and therefore does\n      # not require a stream input. #subtitle_playlist creates a new playlist\n      # from the given opts.\n      new(nil, opts)\n    end\n  end\n\n  def initialize(stream, opts)\n    @playlist = if stream.present?\n                  M3u8::Playlist.read(\n                    Restify.new(stream.hls_url).get.value!\n                  )\n                end\n    @opts = opts\n  end",
+              "source": "app/lib/m3u8_playlist.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 37,
+              "code": "  SUBTITLE_GROUP = 'subs' # Place all of our subtitles in a single group\n  def master_playlist\n    # Replace URIs of subtitles and stream playlist items to point to this\n    # controller. If there was a video explicitly specified for the subtitles,\n    # use the subtitles of the video instead of the subtitles from the\n    # original HLS playlist.\n    #\n    # Order of stream ...",
+              "source": "app/lib/m3u8_playlist.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/m3u8_playlist.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Transpipe": {
+        "type": "Integration Module",
+        "description": "Provides an interface to an external 'Transpipe' service, primarily for generating URLs to course and video resources within that service. It includes a mechanism to check if the integration is enabled.",
+        "interactions": {
+          "interaction_0": "Reads configuration from `Xikolo.config` to determine if the service is enabled and to retrieve URL templates.",
+          "interaction_1": "Uses `Transpipe::URL` to construct specific URLs."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/lib/transpipe.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 6,
+              "code": "    def enabled?\n      Xikolo.config.transpipe&.dig('enabled')\n    end",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 23,
+              "code": "      def for_course(course)\n        course_url_template&.expand(\n          course_id: course.try(:[], 'id') || course.id\n        )&.to_s\n      end\n\n      def course_url_template\n        return unless Xikolo.config.transpipe['course_url_template']\n\n        Addressable::Template.new(\n          Xikolo.config.transpipe['course_url_template']\n        )\n      rescue TypeError\n        # The template cannot be parsed for whatever reason.\n        # This is fine.\n      end",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 29,
+              "code": "      def for_video(item)\n        course_video_url_template&.expand(\n          course_id: item.try(:[], 'course_id') || item.course_id,\n          video_id: item.try(:[], 'content_id') || item.content_id\n        )&.to_s\n      end",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 11,
+              "code": "    def self.shared_secret\n      Rails.application.secrets.bridge_transpipe\n    end\n\n    def self.realm\n      Xikolo.config.transpipe['realm']\n    end",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 18,
+              "code": "      def course_api\n        @course_api ||= Xikolo.api(:course).value!\n      end",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 9,
+              "code": "    class CoursesController < BaseController\n      before_action Xi::Controllers::RequireBearerToken.new(\n        realm: Transpipe.realm,\n        token: -> { Transpipe.shared_secret }\n      )",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 14,
+              "code": "      def index\n        response.link(bridges_transpipe_courses_url(page: page + 1), rel: 'next') if courses.rel?(:next)\n        response.link(bridges_transpipe_courses_url(page: page - 1), rel: 'prev') if courses.rel?(:prev)\n\n        render json: courses.map {|course| serialize_course_for_index(course) }",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 20,
+              "code": "      def show\n        return head(:not_found, content_type: 'text/plain') if external_course?\n\n        render json: serialize_course_for_show(course)\n      rescue Restify::NotFound\n        head(:not_found, content_type: 'text/plain')\n      end",
+              "source": "app/lib/transpipe.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 29,
+              "code": "      def courses\n        @courses ||= course_api.rel(:courses)\n          .get({exclude_external: true, latest_first: true, page:})\n          .value!\n      end",
+              "source": "app/lib/transpipe.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/transpipe.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/base_controller.rb",
+              "relevance": 22
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/courses_controller.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "Video::Store": {
+        "type": "Operation",
+        "description": "An operation class responsible for storing and updating video records, including handling associated attachments (reading material, slides, transcript) and subtitles. It manages S3 uploads, rich text processing, and ensures data integrity through transactions and error handling.",
+        "interactions": {
+          "interaction_0": "Interacts with `Video::Video` model to assign attributes and save. [Source: app/operations/video/store.rb]",
+          "interaction_1": "Uses `Xikolo::S3::TextWithUploadsProcessor` for rich text description processing. [Source: app/operations/video/store.rb]",
+          "interaction_2": "Uses `Xikolo::S3::SingleFileUpload` and `Xikolo::S3::UploadByUri` for handling file uploads to S3. [Source: app/operations/video/store.rb]",
+          "interaction_3": "Interacts with `Video::Subtitle` for subtitle extraction and attachment. [Source: app/operations/video/store.rb]",
+          "interaction_4": "Dispatches `S3FileDeletionJob` for obsolete S3 files. [Source: app/operations/video/store.rb]",
+          "interaction_5": "Captures errors with `Mnemosyne` and `Sentry`. [Source: app/operations/video/store.rb]"
+        },
+        "techDebt": [
+          "Assigns errors to non-existent attributes (e.g., `:invalid_subtitle`) on the `Video` model, requiring a workaround with a dummy attribute to prevent `NoMethodError` in Rails 6.1+. [Source: app/operations/video/store.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/operations/video/store.rb"
+          ]
+        }
+      },
+      "Video::SyncVideosJob": {
+        "type": "Background Job",
+        "description": "An asynchronous job responsible for synchronizing videos from a specified video provider. It can perform a full or partial sync.",
+        "interactions": {
+          "interaction_0": "Triggered by `Admin::VideoProviderSyncController`. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+          "interaction_1": "Processes video data from a `Video::Provider`. [Source: app/controllers/admin/video_provider_sync_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/video_provider_sync_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 27,
+              "code": "# frozen_string_literal: true\n\nmodule Video\n  class SyncVideosJob < LongRunningApplicationJob\n    queue_with_priority :eventual\n\n    # When the authentication with the video provider fails, this\n    # - often can be considered a configuration error (invalid token or\n    #   expired account) and the job shall not be retried,\n    # - or is a temporary issue, which is covered by retries via cron.\n    #\n    # The (domain-specific) error is reported to the monitoring systems so\n    # it will not go unnoticed.\n    discard_on ::Video::Provider::AuthenticationFailed,\n      ::Video::Provider::AccountInactive do |_job, e|\n      ::Mnemosyne.attach_error(e)\n      ::Sentry.capture_exception(e)\n    end\n\n    # Since this job is scheduled via cron anyway, the number of retries can\n    # be reduced.\n    def max_attempts\n      3\n    end\n\n    def perform(provider: nil, full: false)\n      return Provider.find(provider).sync(full:) if provider\n\n      Provider.ids.each do |id|\n        self.class.perform_lat...\n",
+              "source": "app/jobs/video/sync_videos_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/video/sync_videos_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/jobs/video/extract_audio_job.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/jobs/video/sync_subtitles_job.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Video::Provider": {
+        "type": "Model",
+        "description": "Represents a video provider (e.g., Vimeo, Azure). Stores configuration and credentials for external video services.",
+        "interactions": {
+          "interaction_0": "Managed by `Admin::VideoProvidersController`. [Source: app/controllers/admin/video_providers_controller.rb]",
+          "interaction_1": "Used by `Admin::VideoProviderSyncController` to initiate syncs. [Source: app/controllers/admin/video_provider_sync_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/video_providers_controller.rb",
+            "app/controllers/admin/video_provider_sync_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Video\n  class Provider < ::ApplicationRecord\n    VALID_PROVIDER_TYPES = {\n      'kaltura' => ProviderTypes::Kaltura,\n      'vimeo' => ProviderTypes::Vimeo,\n    }.freeze\n\n    ADAPTER = {\n      'kaltura' => KalturaAdapter,\n      'vimeo' => VimeoAdapter,\n    }.freeze\n\n    has_many :streams, class_name: '::Video::Stream', dependent: :destroy\n\n    validates :provider_type, presence: true, inclusion: VALID_PROVIDER_TYPES.keys\n    validates :name, presence: true, uniqueness: true\n    validate :uniqueness_of_default, if: -> { Provider.method_defined? :default }\n\n    def uniqueness_of_default\n      # make sure that this is the only default provider\n      return unless default &&\n                    Provider.where(default: true).where.not(id:).exists?\n\n      errors.add(:default, 'default Provider already exists')\n    end\n\n    delegate :downloads_expire?, to: :adapter\n    delegate :get_download_links, to: :adapter\n    delegate :safe_metadata, to: :adapter\n   ...",
+              "source": "app/models/video/provider.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/video/provider.rb",
+              "relevance": 37
+            },
+            {
+              "path": "integration/features/steps/video/provider.rb",
+              "relevance": 33
+            },
+            {
+              "path": "app/models/lti/provider.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Video::Stream": {
+        "type": "Model",
+        "description": "Represents a specific video stream, likely containing the base HLS URL and potentially direct download URLs for different qualities (e.g., HD, SD).",
+        "interactions": {
+          "interaction_0": "Accessed by `Video::PlaylistsController` to retrieve the HLS URL for playlist processing.",
+          "interaction_1": "Accessed by `M3u8Playlist` to fetch external HLS content.",
+          "interaction_2": "Accessed by `VideoPresenter` to provide download URLs for various qualities."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/video/playlists_controller.rb",
+            "app/lib/m3u8_playlist.rb",
+            "app/presenters/video_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 14,
+              "code": "class RequireProviderVideoIDForStreams < ActiveRecord::Migration[6.1]\n  class Stream < ApplicationRecord; end\n\n  def change\n    up_only do\n      Stream.where(provider_video_id: [nil, '']).delete_all\n    end\n\n    change_column_null :streams, :provider_video_id, false\n  end\nend",
+              "source": "db/migrate/20231103133925_require_provider_video_id_for_streams.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 25,
+              "code": "module Admin\n  module Ajax\n    class StreamsController < Abstract::AjaxController\n      # TODO: (XI-6286) add pagination (tomSelect supports this pretty easily, see https://tom-select.js.org/plugins/virtual_scroll/)\n\n      def index\n        authorize! 'video.video.index'\n\n        streams = Video::Stream.includes(:provider).query(params[:q]).limit(250)\n\n        render(\n          json: streams.map do |stream|\n            {\n              id: stream.id,\n              text: \"#{stream.title} (#{stream.provider_name})\",\n            }\n          end\n        )\n      end\n    end\n  end\nend",
+              "source": "db/migrate/20231103133925_require_provider_video_id_for_streams.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "db/migrate/20231103133925_require_provider_video_id_for_streams.rb",
+              "relevance": 33
+            },
+            {
+              "path": "app/controllers/admin/ajax/streams_controller.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/timeeffort/app/models/duplicated/stream.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Video::Subtitle": {
+        "type": "Model",
+        "description": "Represents a subtitle track associated with a video. It stores the subtitle content, typically in a format convertible to WebVTT, and its language.",
+        "interactions": {
+          "interaction_0": "Accessed by `SubtitlesController` for serving VTT files.",
+          "interaction_1": "Accessed by `M3u8Playlist` to embed Xikolo's subtitles into HLS master playlists or generate standalone subtitle playlists."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/subtitles_controller.rb",
+            "app/lib/m3u8_playlist.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 15,
+              "code": "# frozen_string_literal: true\n\nrequire 'zip'\nrequire 'webvtt'\n\nmodule Video\n  class Subtitle < ::ApplicationRecord\n    belongs_to :video, class_name: '::Video::Video'\n    has_many :cues, class_name: '::Video::SubtitleCue', dependent: :destroy\n\n    after_commit(on: %i[create update]) do\n      ::Video::SyncSubtitlesJob.perform_later(video_id, lang) if trigger_subtitle_sync?\n    end\n    after_commit(on: :destroy) { ::Video::SyncSubtitlesJob.perform_later(video_id, lang) }\n\n    validates :lang, presence: true, uniqueness: {scope: :video_id}",
+              "source": "app/models/video/subtitle.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 83,
+              "code": "    class << self\n      # Extract the in S3 stored zip file\n      # And attach the contained subtitles to the given video\n      # The S3 object remains unchanged!\n      def extract!(object, video)\n        Zip::File.open_buffer(object.get.body) do |zipfile|\n          zipfile.each do |entry|\n            lang = extract_lang(entry.name)\n            next unless lang\n\n            attach!(entry.get_input_stream.read, lang, video, automatic: false)\n          end\n        end\n      end\n\n      def attach!(vtt_content, lang, video, automatic: false)\n        subtitle = video.subtitles.find_or_initialize_by(lang: lang)\n        subtitle.automatic = automatic\n\n        vtt = WebVTT.read_string(vtt_content)\n\n        ApplicationRecord.transaction do\n          # Remove cues that are not in the new VTT (cues that have been deleted)\n          old_cue_identifiers = subtitle.cues.pluck(:identifier).to_set\n          new_cue_identifiers = vtt.cues.map(&:id).compact.to_set\n          cues_to_destroy = old_cue_identifiers - new_cue_identifiers\n\n          subtitle.cues.where(identifier: cues_to_destroy.to_a).destroy_all if cues_to_destroy.any?\n\n          # Update or create cues based on the new VTT\n          vtt.cues.each do |vtt_cue|\n            cue = subtitle.cues.find_or_initialize_by(identifier: vtt_cue.id)\n            cue.start = vtt_cue.start\n            cue.stop = vtt_cue.end\n            cue.text = vtt_cue.text\n            cue.style = vtt_cue.styles.present? ? vtt_cue.styles.to_h : {}\n            cue.save!\n          end\n\n          subtitle.save!\n        end\n        subtitle\n      end\n    end\n\n    def generate_vtt\n      WebVTT::File.new(cues.map(&:to_vtt).join(\"\\n\\n\")).to_s\n    end",
+              "source": "app/models/video/subtitle.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 38,
+              "code": "# frozen_string_literal: true\n\nrequire 'webvtt'\n\nmodule Video\n  class SubtitleCue < ::ApplicationRecord\n    belongs_to :subtitle, class_name: '::Video::Subtitle'\n\n    # Use new interval type (default in Rails 7):\n    attribute :start, :interval\n    attribute :stop, :interval\n\n    validates :identifier, presence: true, uniqueness: {scope: :subtitle_id}\n    validates :start, :stop, presence: true\n    validate :start_before_stop\n\n    default_scope { order(identifier: :asc) }\n\n    serialize :style, coder: YAML, type: Hash\n\n    def as_api_v2\n      @api_v2 ||= ::Video::SubtitleCue::APIV2.new(self).as_json # rubocop:disable Naming/MemoizedInstanceVariableName\n    end\n\n    def to_vtt\n      \"#{identifier}\\n#{formatted_start} --> #{formatted_stop} #{settings}\\n#{vtt_text}\\n\"\n    end\n\n    def settings\n      style.map {|k, v| \"#{k}:#{v}\" }.join(' ')\n    end\n\n    def formatted_start\n      WebVTT::Timestamp.new(start).to_s\n    end\n\n    def formatted_stop\n      WebVTT::Timestamp.new(stop).to_s\n    end",
+              "source": "app/models/video/subtitle.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Bridges\n  module Transpipe\n    class SubtitlesController < BaseController\n      before_action Xi::Controllers::RequireBearerToken.new(\n        realm: Transpipe.realm,\n        token: -> { Transpipe.shared_secret }\n      )\n\n      def show\n        render plain: subtitle.to_vtt, content_type: 'text/vtt'\n      rescue ActiveRecord::RecordNotFound\n        render plain: '', status: :not_found, content_type: 'text/vtt'\n      end\n\n      def update\n        return problem_details('The request body cannot be blank.', status: :bad_request) if request.raw_post.blank?\n\n        vtt = request.raw_post.force_encoding('UTF-8')\n        video = ::Video::Video.find params[:id]\n        automatic = params.fetch(:automatic, false)\n        ::Video::Subtitle.attach!(vtt, params[:lang], video, automatic:)\n\n        head(:ok)\n      rescue ActiveRecord::RecordNotFound\n        head(:not_found)\n      rescue ActiveRecord::RecordInvalid\n        head(:unprocessable_entity)\n      end\n    end\n  end\nend",
+              "source": "app/models/video/subtitle.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/video/subtitle.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/video/subtitle_cue.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/subtitles_controller.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "xm-player": {
+        "type": "Web Component (External)",
+        "description": "An external custom web component for video playback, developed in a separate GitHub repository. It provides a public API for controlling playback, seeking, and retrieving progress.",
+        "interactions": {
+          "interaction_0": "Used by `VideoPlayerFrontendLogic` for video control and progress retrieval. [Source: app/assets/course/items/video.js]",
+          "interaction_1": "Receives keyboard events forwarded from the document body. [Source: app/assets/course/items/video.js]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/course/items/video.js",
+            "docs/app/development/frontend/video-player.md"
+          ]
+        }
+      },
+      "Xikolo::S3::TextWithUploadsProcessor": {
+        "type": "Library/Service",
+        "description": "A shared library component for processing rich text content that may contain embedded file uploads, typically used for descriptions.",
+        "interactions": {
+          "interaction_0": "Used by `Video::Store` to handle video descriptions. [Source: app/operations/video/store.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/video/store.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 6,
+              "code": "module Xikolo::S3\n  class TextWithUploadsProcessor\n    attr_reader :result, :errors",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 24,
+              "code": "    def initialize(bucket:, purpose:, text:, current:, valid_refs: [], check_override: true) # rubocop:disable Metrics/ParameterLists\n      @bucket = bucket\n      @purpose = purpose\n      @text = text\n      @current_text = current\n      @errors = []\n      @uploaded = []\n      @replaced = []\n      @current_refs = if current\n                        Xikolo::S3.extract_file_refs(current)\n                      else\n                        []\n                      end\n      @valid_refs = valid_refs\n      @check_override = check_override\n    end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb"
+            },
+            {
+              "startLine": 26,
+              "endLine": 28,
+              "code": "    def on_new(&block)\n      @new_callback = block\n    end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb"
+            },
+            {
+              "startLine": 30,
+              "endLine": 38,
+              "code": "    def parse!\n      return unless @text # simply skip nil as value\n\n      processed_uploads = {}\n      @text.scan Xikolo::S3.url_regex do |match|\n        validate_ref! match\n      end\n      @result = @text.gsub %r{upload://[-a-zA-Z0-9./_]*} do |match|\n        if processed_uplo...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Xikolo::S3::SingleFileUpload": {
+        "type": "Library/Service",
+        "description": "A shared library component for managing single file uploads to S3, validating their state and purpose.",
+        "interactions": {
+          "interaction_0": "Used by `Video::Store` for processing reading material, slides, transcripts, and subtitles uploads. [Source: app/operations/video/store.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/video/store.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 7,
+              "code": "  class SingleFileUpload\n    class InvalidUpload < RuntimeError; end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 15,
+              "code": "    def initialize(id, purpose: nil)\n      @id = UUID4.try_convert(id)\n      @purpose = purpose\n      @rejected_files = []\n      @accepted_files = []\n    end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 22,
+              "code": "    def empty?\n      return true unless @id\n\n      process!\n      (@accepted_files.size + @rejected_files.size).zero?\n    end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb"
+            },
+            {
+              "startLine": 24,
+              "endLine": 28,
+              "code": "    def accepted_file!\n      process!\n      raise InvalidUpload if @accepted_files.size != 1\n\n      @accepted_files[0]\n    end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 34,
+              "code": "    def bucket\n      @bucket ||= Xikolo::S3.bucket_for(:uploads)\n    end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb"
+            },
+            {
+              "startLine": 36,
+              "endLine": 48,
+              "code": "    def process!\n      return if @processed\n\n      # request list of objects\n      bucket.objects(prefix: \"uploads/#{@id.to_str}\").each do |summary|\n        # receive data\n        object = summary.object.load\n        if valid? object\n          @accepted_files << object\n        else\n          @rejected_files << object\n        end\n      end\n      @processed = true\n    end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Xikolo::S3::UploadByUri": {
+        "type": "Library/Service",
+        "description": "A shared library component for managing file uploads to S3 via a URI, validating and saving the content.",
+        "interactions": {
+          "interaction_0": "Used by `Video::Store` for processing attachments uploaded via URI. [Source: app/operations/video/store.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/video/store.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 34,
+              "code": "class UploadByUri     attr_reader :upload      def initialize(uri:, purpose:, check_override: true)       @uri = uri       @purpose = purpose       @check_override = check_override     end      def valid?       upload!       upload.metadata['xikolo-state'] == 'accepted' \\\n        && upload.metadata['xikolo-purpose'] == @purpose.to_s     rescue Aws::S3::Errors::ServiceError => e       defined? Mnemosyne and Mnemosyne.attach_error e       false     end      def save(params)       upload!       dest_obj = Xikolo::S3.bucket_for(params.delete(:bucket)).object(params.delete(:key))       return :rtfile_exists if exists?(dest_obj)        dest_obj.copy_from(upload, params.merge(metadata_directive: 'REPLACE'))       dest_obj     rescue Aws::S3::Errors::ConfigurationMissingError => e       defined? Mnemosyne and Mnemosyne.attach_error e       :rtfile_unconfigured     rescue Aws::S3::Errors::ServiceError => e       defined? Mnemosyne and Mnemosyne...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "S3FileDeletionJob": {
+        "type": "Background Job",
+        "description": "An asynchronous job responsible for deleting files from S3. It is typically enqueued to delete old or unreferenced files.",
+        "interactions": {
+          "interaction_0": "Enqueued by `Video::Store` to delete replaced attachment files. [Source: app/operations/video/store.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/video/store.rb",
+            "spec/operations/video/store_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 14,
+              "code": "class S3FileDeletionJob < ApplicationJob\n  queue_as :default\n  queue_with_priority :eventual\n\n  def perform(uri)\n    Xikolo::S3.object(uri).delete if uri.present?\n  rescue URI::InvalidURIError, ArgumentError\n    # No valid URI, no deletion\n  rescue Aws::S3::Errors::ServiceError => e\n    ::Mnemosyne.attach_error(e)\n    ::Sentry.capture_exception(e)\n  end\nend",
+              "source": "app/jobs/s3_file_deletion_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Stream::DownloadsController": {
+        "type": "Controller",
+        "description": "Manages the download of video streams. It ensures the user is logged in (unless a bot) and redirects to the appropriate external download link based on stream ID and requested quality.",
+        "interactions": {
+          "interaction_0": "Interacts with `Video::Download` service to obtain download links. [Source: app/controllers/stream/downloads_controller.rb]",
+          "interaction_1": "Handles various exceptions related to video download availability and quality. [Source: app/controllers/stream/downloads_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/stream/downloads_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 4,
+              "code": "class Stream::DownloadsController < ApplicationController\n  before_action :ensure_logged_in, unless: -> { browser.bot.search_engine? }",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 14,
+              "code": "  def show\n    redirect_external download_link\n  rescue Video::Vimeo::API::RequestTimeout\n    add_flash_message :error, t(:'flash.error.download_not_refreshed')\n    redirect_back fallback_location: dashboard_url\n  rescue Video::Download::QualityNotSupportedError, Video::Download::NoQualityAvailableError,\n         Video::Download::VideoNotAvailableError\n    add_flash_message :error, t(:'flash.error.download_not_available')\n    redirect_back fallback_location: dashboard_url\n  end",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 16,
+              "code": "  private",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 20,
+              "code": "  def stream_id\n    UUID4.try_convert(params[:stream_id]).to_s\n  end",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 24,
+              "code": "  def download_link\n    Video::Download.new(stream_id, params[:quality]).download_link\n  end",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/streams_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/stream/downloads_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/stream/syncs_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Stream::SyncsController": {
+        "type": "Controller",
+        "description": "Handles requests to synchronize a single video stream. Requires `video.video.index` permission.",
+        "interactions": {
+          "interaction_0": "Finds `Video::Stream` by ID and calls its `sync` method. [Source: app/controllers/stream/syncs_controller.rb]",
+          "interaction_1": "Authorizes actions using `authorize! 'video.video.index'`. [Source: app/controllers/stream/syncs_controller.rb]",
+          "interaction_2": "Handles `ActiveRecord::RecordNotFound` and `Kaltura::KalturaAPIError`. [Source: app/controllers/stream/syncs_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/stream/syncs_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 17,
+              "code": "# frozen_string_literal: true\n\nclass Stream::SyncsController < ApplicationController\n  before_action :ensure_logged_in\n\n  def create\n    authorize! 'video.video.index'\n\n    Video::Stream.find(params[:stream_id]).sync\n\n    add_flash_message(:success, t(:'flash.success.single_video_synced'))\n    redirect_to videos_path\n  rescue ActiveRecord::RecordNotFound, Kaltura::KalturaAPIError\n    add_flash_message(:error, t(:'flash.error.single_video_sync_failed'))\n    redirect_to videos_path\n  end\nend",
+              "source": "app/controllers/admin/ajax/streams_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/streams_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/stream/downloads_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/stream/syncs_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Video::PlaylistsController": {
+        "type": "Controller",
+        "description": "Serves HTTP Live Streaming (HLS) master, stream, and subtitle playlists. It dynamically transforms these playlists to integrate Xikolo's custom subtitles, rewrite URIs, and ensure compatibility with various players.",
+        "interactions": {
+          "interaction_0": "Interacts with `Video::Stream` and `Video::Video` models to retrieve stream and video data.",
+          "interaction_1": "Utilizes `M3u8Playlist` to fetch, parse, and transform HLS playlists.",
+          "interaction_2": "Sets `Cache-Control` headers to improve offline playback on iOS.",
+          "interaction_3": "Sets `Access-Control-Allow-Origin: *` and `Access-Control-Allow-Headers` for CORS compatibility with web-based HLS players.",
+          "interaction_4": "Responds with `application/x-mpegURL` content type."
+        },
+        "techDebt": [
+          "The use of a wildcard `Access-Control-Allow-Origin: *` is broad and could be a security concern; restricting to specific domains is generally recommended if feasible."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/video/playlists_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 28,
+              "code": "class Video::PlaylistsController < ApplicationController\n  before_action :ensure_valid_bandwidth\n  before_action :ensure_valid_subtitles\n\n  def show\n    # By default, Rails uses \"max-age=0, private, must-revalidate\" as the value\n    # for the \"Cache-Control\" header. Especially using \"must-revalidate\" results\n    # in the problem that for downloaded videos on iOS, the playback will not\n    # start if no Internet connection is given. Despite the lack of access to\n    # the Internet, the HLS playback framework on iOS tries to revalidate the\n    # provided URLs and remains in a loading state ignoring the previously\n    # downloaded data (see https://forums.developer.apple.com/thread/117784).\n    # Hence, we are using a more reasonable value.\n    response.headers['Cache-Control'] = \"max-age=#{1.hour}, public\"\n\n    # Required CORS header to support Google Cast and other web-based HLS video\n    # players. Since streaming protocols, unlike most file based protoco...",
+              "source": "app/controllers/bridges/lanalytics/video_stats_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/bridges/lanalytics/video_stats_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/bridges/transpipe/videos_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/video/playlists_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Transpipe::URL": {
+        "type": "Utility Class",
+        "description": "A nested class within the `Transpipe` module responsible for constructing URLs for courses and videos based on configurable `Addressable::Template` templates for the external Transpipe service.",
+        "interactions": {
+          "interaction_0": "Used by the `Transpipe` module to generate external service URLs."
+        },
+        "techDebt": [
+          "The `rescue TypeError` for template parsing is very generic and might mask other configuration or parsing issues; more specific error handling could be beneficial."
+        ],
+        "provenance": {
+          "sources": [
+            "app/lib/transpipe.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 1,
+          "codeBlocks": [
+            {
+              "startLine": 11,
+              "endLine": 42,
+              "code": "  class URL\n    require 'addressable/template'\n\n    class << self\n      def for_course(course)\n        course_url_template&.expand(\n          course_id: course.try(:[], 'id') || course.id\n        )&.to_s\n      end\n\n      def course_url_template\n        return unless Xikolo.config.transpipe['course_url_template']\n\n        Addressable::Template.new(\n          Xikolo.config.transpipe['course_url_template']\n        )\n      rescue TypeError\n        # The template cannot be parsed for whatever reason.\n        # This is fine.\n      end\n\n      def for_video(item)\n        course_video_url_template&.expand(\n          course_id: item.try(:[], 'course_id') || item.course_id,\n          video_id: item.try(:[], 'content_id') || item.content_id\n        )&.to_s\n      end\n\n      def course_video_url_template\n        return unless Xikolo.config.transpipe['course_vi...",
+              "source": "api/xikolo/v2/url.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/url.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/lib/transpipe.rb",
+              "relevance": 26
+            },
+            {
+              "path": "gems/xui-form/lib/active_model/type/uri.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "VideoItemPresenter": {
+        "type": "Presenter",
+        "description": "Prepares data for displaying a video item within a course context, including Open Graph meta tags for social sharing and determining the forum locking status.",
+        "interactions": {
+          "interaction_0": "Delegates video-specific presentation to `VideoPresenter`.",
+          "interaction_1": "Interacts with `Course::Section` to check pinboard status.",
+          "interaction_2": "Uses `Rails.application.routes.url_helpers` to generate URLs.",
+          "interaction_3": "Merges Open Graph meta tags for video content."
+        },
+        "techDebt": [
+          "Inconsistent use of `UUID4` and `UUID` for UUID conversion; standardizing on one approach or clarifying their distinct uses could improve consistency."
+        ],
+        "provenance": {
+          "sources": [
+            "app/presenters/video_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class VideoItemPresenter < ItemPresenter   include Rails.application.routes.url_helpers    attr_reader :video   attr_accessor :new_question, :implicit_tags    class << self",
+              "source": "app/presenters/video_item_presenter.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 19,
+              "code": "    def build(item, course, user, params: {})       video = Video::Video.find item['content_id']        video_presenter = VideoPresenter.new(         video:, user:, embed_resources: true, course:       )       new item:, video: video_presenter, course:, user:, params:     end   end",
+              "source": "app/presenters/video_item_presenter.rb"
+            },
+            {
+              "startLine": 21,
+              "endLine": 23,
+              "code": "  def forum_locked?     course_pinboard_closed? || Course::Section.find(@item['section_id']).pinboard_closed   end",
+              "source": "app/presenters/video_item_presenter.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 27,
+              "code": "  def featured_image     @video.thumbnail   end",
+              "source": "app/presenters/video_item_presenter.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 42,
+              "code": "  def meta_tags     super.merge(       og: {         # mandatory:         title:,         type: 'video',         image: @video.pip_stream&.poster,         url: Xikolo.base_url.join(           course_item_path(             course_id: @course.course_code,             id: UUID(id).to_param           )         ),         # optional         descripti...",
+              "source": "app/presenters/video_item_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/video_item_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "VideoItemTopicPresenter": {
+        "type": "Presenter",
+        "description": "Prepares data for displaying a forum topic related to a video item, specifically extracting and formatting video timestamps for display.",
+        "interactions": {
+          "interaction_0": "Uses `HtmlTruncator` and `MarkdownHelper` for content formatting.",
+          "interaction_1": "Uses `Rails.application.routes.url_helpers` to generate topic URLs."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/video_item_topic_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 6,
+              "code": "class VideoItemTopicPresenter\n  require 'html_truncator'\n  include Rails.application.routes.url_helpers\n  include MarkdownHelper",
+              "source": "app/presenters/video_item_topic_presenter.rb"
+            },
+            {
+              "startLine": 8,
+              "endLine": 11,
+              "code": "  def initialize(topic, course_code)\n    @topic = topic\n    @course_code = course_code\n  end",
+              "source": "app/presenters/video_item_topic_presenter.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 53,
+              "code": "  def id\n    @topic['id']\n  end\n\n  def title\n    @topic['title']\n  end\n\n  def abstract\n    truncator.truncate render_markdown(@topic['abstract']) if @topic['abstract'].present?\n  end\n\n  def formatted_timestamp\n    return '' unless timestamp?\n\n    Time.at(timestamp).utc.strftime('%M:%S')\n  end\n\n  def timestamp\n    @topic.dig('meta', 'video_timestamp')\n  end\n\n  def timestamp?\n    timestamp.present?\n  end\n\n  def created_at\n    @topic['created_at']\n  end\n\n  def reply_count\n    @topic['num_replies']\n  end\n\n  def tags\n    @topic['tags']\n  end\n\n  def url\n    course_question_path(course_id: @course_code, id:)\n  end",
+              "source": "app/presenters/video_item_topic_presenter.rb"
+            },
+            {
+              "startLine": 55,
+              "endLine": 62,
+              "code": "  private\n\n  def <=>(other)\n    [timestamp.to_i, created_at] <=> [other.timestamp.to_i, other.created_at]\n  end\n\n  def truncator\n...",
+              "source": "app/presenters/video_item_topic_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/video_item_topic_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "VideoPresenter": {
+        "type": "Presenter",
+        "description": "Prepares detailed video information for the UI, including different stream types (PIP, lecturer, slides, subtitled), thumbnail, and a comprehensive list of download options. It also initializes the `Video::VideoPlayer`.",
+        "interactions": {
+          "interaction_0": "Interacts with `Video::Video` model to retrieve video details and stream URLs.",
+          "interaction_1": "Initializes the `Video::VideoPlayer` component.",
+          "interaction_2": "Uses `Rails.application.routes.url_helpers` to generate download paths.",
+          "interaction_3": "Uses `I18n` for localized download button captions."
+        },
+        "techDebt": [
+          "Inconsistent use of `UUID4` and `UUID` for UUID conversion; standardizing on one approach or clarifying their distinct uses could improve consistency."
+        ],
+        "provenance": {
+          "sources": [
+            "app/presenters/video_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class VideoPresenter   def initialize(video:, user:, embed_resources: false, course: nil)     @video = video     @user = user     @embed_resources = embed_resources     @course = course   end",
+              "source": "app/presenters/video_presenter.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 28,
+              "code": "  def description     @video.description&.external   end    def pip_stream     @video.pip_stream   end    def lecturer_stream     @video.lecturer_stream   end    def slides_stream     @video.slides_stream   end    def subtitled_stream     @video.subtitled_stream   end    def thumbnail     @video.thumbnail   end",
+              "source": "app/presenters/video_presenter.rb"
+            },
+            {
+              "startLine": 30,
+              "endLine": 49,
+              "code": "  def video_download_dropdowns     [       {         text: I18n.t(:'items.show.video.video_downloads'),         buttons: [           hd_video_button,           sd_video_button,         ].compact,       },       {         text: I18n.t(:'items.show.video.additional_downloads'),         buttons: [           subtitled_stream_button,           slides_button,           transcript_button,           reading_material_button,           audio_button,         ].compact,...",
+              "source": "app/presenters/video_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/video_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "app/assets/course/items/video.js": {
+        "type": "Frontend Script",
+        "description": "Client-side JavaScript for enhancing video item pages. It handles adding timestamp listeners for seeking in the video player, managing the UI for creating new discussion topics linked to video timestamps, and forwarding keyboard shortcuts to the `xm-player`.",
+        "interactions": {
+          "interaction_0": "Interacts with the `xm-player` custom element for seeking and getting progress. [Source: app/assets/course/items/video.js]",
+          "interaction_1": "Sends AJAX requests to create new topics. [Source: app/assets/course/items/video.js]",
+          "interaction_2": "Manipulates DOM elements for topic form visibility and error display. [Source: app/assets/course/items/video.js]",
+          "interaction_3": "Uses `I18n` for localization. [Source: app/assets/course/items/video.js]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/course/items/video.js"
+          ]
+        }
+      },
+      "app/assets/teacher/items/video-streams.ts": {
+        "type": "Frontend Script",
+        "description": "TypeScript logic for autocompleting related video streams (lecturer, slides) when a Picture-in-Picture (PIP) stream is selected in the teacher's video editing interface. It fetches stream data from an admin API.",
+        "interactions": {
+          "interaction_0": "Listens for 'change' events on the PIP stream selector (`#video_pip_stream_id`). [Source: app/assets/teacher/items/video-streams.ts]",
+          "interaction_1": "Fetches stream data from `/admin/streams?q=...` API endpoint. [Source: app/assets/teacher/items/video-streams.ts]",
+          "interaction_2": "Updates `TomInput` selectors for lecturer and slides streams. [Source: app/assets/teacher/items/video-streams.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/video-streams.ts"
+          ]
+        }
+      },
+      "app/assets/teacher/items/video.ts": {
+        "type": "Frontend Script",
+        "description": "TypeScript logic for managing the visibility of various form elements in the teacher's video editing interface based on the selected video type and 'open mode' status.",
+        "interactions": {
+          "interaction_0": "Calls `videoStreamsAutocompletion` to initialize stream matching. [Source: app/assets/teacher/items/video.ts]",
+          "interaction_1": "Manipulates visibility of form elements based on checkbox states. [Source: app/assets/teacher/items/video.ts]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/items/video.ts"
+          ]
+        }
+      },
+      "Chromecast": {
+        "type": "Utility Module",
+        "description": "Provides an interface to retrieve Chromecast configuration settings (background URL, logo URL, progress color) from the global `Xikolo.config`.",
+        "interactions": {
+          "interaction_0": "Used by `ChromecastController` to access styling configurations."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/lib/chromecast.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 24,
+              "code": "class ChromecastController < ApplicationController\n  before_action do\n    # If the SMR is not properly configured, don't render one\n    raise AbstractController::ActionNotFound unless Chromecast.configured?\n  end\n\n  # Dynamically render a Styled Media Receiver (SMR) CSS stylesheet for Google's Chromecast\n  #\n  # This allows for some custom styling when using Android apps on the TV via\n  # Chromecast. A custom color, logo and background can be set in Xikolo Config.\n  #\n  # See https://developers.google.com/cast/docs/styled_receiver.\n  def stylesheet\n    @chromecast_styles = {}.tap do |styles|\n      styles[:background] = Chromecast.background_url if Chromecast.background_url\n      styles[:logo] = Chromecast.logo_url if Chromecast.logo_url\n      styles[:progress_color] = Chromecast.progress_color if Chromecast.progress_color\n    end\n\n    render css: 'stylesheet'\n  end\nend",
+              "source": "app/controllers/chromecast_controller.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 27,
+              "code": "module Chromecast\n  class << self\n    def configured?\n      config.is_a? Hash\n    end\n\n    def background_url\n      config['background_url']\n    end\n\n    def logo_url\n      config['logo_url']\n    end\n\n    def progress_color\n      config['progress_color']\n    end\n\n    private\n\n    def config\n      Xikolo.config.chromecast\n    end\n  end\nend",
+              "source": "app/controllers/chromecast_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/chromecast_controller.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/lib/chromecast.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Video::VideoPlayer": {
+        "type": "External Component Wrapper",
+        "description": "Represents the client-side video player. It's an external JavaScript-based component (`@openhpi/xikolo-video-player` npm package) integrated into the Rails application, responsible for rendering and controlling video playback.",
+        "interactions": {
+          "interaction_0": "Initialized by `VideoPresenter` with video, user, and thumbnail loading options.",
+          "interaction_1": "Likely consumes HLS playlists and VTT subtitle files provided by `Video::PlaylistsController` and `SubtitlesController`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/video_presenter.rb",
+            "docs/app/development/frontend/video-player.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 11,
+              "code": "    def self.compatible?(video)\n      provider_types = %w[vimeo kaltura]\n\n      [video.lecturer_stream, video.slides_stream, video.pip_stream, video.subtitled_stream].compact.all? do |stream|\n        provider_types.include? stream.provider.provider_type\n      end\n    end",
+              "source": "app/components/video/video_player.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 15,
+              "code": "    def self.build(video:, user:, **opts)\n      new(video, user:, opts:)\n    end",
+              "source": "app/components/video/video_player.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 21,
+              "code": "    def initialize(video, user:, opts: {})\n      @video = video\n      @user = user\n      @opts = opts\n    end",
+              "source": "app/components/video/video_player.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 35,
+              "code": "    def streams\n      if @video.lecturer_stream && @video.slides_stream\n        [\n          render_stream(@video.lecturer_stream, 'primary'),\n          render_stream(@video.slides_stream, 'secondary'),\n          tag.xm_presentation('', reference: 'primary,secondary', name: 'dual',\n            label: t(:'video_player.dual_stream_mode')),\n        ]\n      elsif @video.pip_stream\n        [\n          render_stream(@video.pip_stream, 'p...",
+              "source": "app/components/video/video_player.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/video/video_player.rb",
+              "relevance": 26
+            },
+            {
+              "path": "api/xikolo/v2/course_items/videos.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/v2/video_stream.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Video::Video": {
+        "type": "Model",
+        "description": "Represents a video asset within the Xikolo platform. It stores metadata such as description, references to various stream types (PIP, lecturer, slides, subtitled), thumbnail, and URLs for supplementary materials like slides, transcripts, reading material, and audio.",
+        "interactions": {
+          "interaction_0": "Accessed by `VideoItemPresenter` and `VideoPresenter` for UI display.",
+          "interaction_1": "Used by `Video::PlaylistsController` and `M3u8Playlist` to retrieve video-specific information for playlist generation.",
+          "interaction_2": "Contains `subtitles` association (inferred from `M3u8Playlist`)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/video_item_presenter.rb",
+            "app/presenters/video_presenter.rb",
+            "app/controllers/video/playlists_controller.rb",
+            "app/lib/m3u8_playlist.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 30,
+              "code": "      entity do\n        type 'videos'\n\n        attribute('summary') {\n          description 'A short description of the video contents'\n          alias_for 'description'\n          type :string\n        }\n\n        attribute('duration') {\n          description 'The video\\'s duration in seconds, if known'\n          type :integer\n        }\n\n        attribute('single_stream') {\n          description 'Media info about the single stream (picture-in-picture), if it exists. Clients can choose to use this version instead of combining the lecturer and slides streams.'\n          type :hash, of: Xikolo::V2::VideoStream.schema\n          reading {|video|\n            next if video['pip_stream_id'].blank?\n\n            stream = ::Video::Stream.find video['pip_stream_id']\n            Xikolo::V2::VideoStream.data stream, video['id']\n          }\n        }",
+              "source": "api/xikolo/v2/course_items/videos.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 25,
+              "code": "    class VideoStream\n      class << self\n        def schema\n          {\n            hd_url: :string,\n            sd_url: :string,\n            hls_url: :string,\n            hd_size: :integer,\n            sd_size: :integer,\n            thumbnail_url: :string,\n          }\n        end\n\n        def data(stream, video_id = nil)\n          {\n            hd_url: stream.hd_url,\n            sd_url: stream.sd_url,\n            hls_url: stream.hls_url.present? ? Xikolo::V2::URL.playlist_url(id: stream.id, format: 'm3u8', embed_subtitles_for_video: video_id) : nil,\n            hd_size: stream.hd_size || 0,\n            sd_size: stream.sd_size || 0,\n            thumbnail_url: stream.poster,\n          }\n        end\n      end\n    end",
+              "source": "api/xikolo/v2/course_items/videos.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 33,
+              "code": "  class VideoPlayer < ApplicationComponent\n    def self.compatible?(video)\n      provider_types = %w[vimeo kaltura]\n\n      [video.lecturer_stream, video.slides_stream, video.pip_stream, video.subtitled_stream].compact.all? do |stream|\n        provider_types.include? stream.provider.provider_type\n      end\n    end\n\n    def self.build(video:, user:, **opts)\n      new(video, user:, opts:)\n    end\n\n    def initialize(video, user:, opts: {})\n      @video = video\n      @user = user\n      @opts = opts\n    end\n\n    private\n\n    def streams\n      if @video.lecturer_stream && @video.slides_stream\n        [\n          render_stream(@video.lecturer_stream, 'primary'),\n          render_stream(@video.slides_stream, 'secondary'),\n          tag.xm_presentation('', reference: 'primary,secondary', name: 'dual',\n            label: t(:'video_player.dual_stream_mode')),\n        ]\n      elsif @video.pip_stream\n        [\n          render_stream(@video.pip_stream, 'p...",
+              "source": "api/xikolo/v2/course_items/videos.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/course_items/videos.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/video_stream.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/video/video_player.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Restify": {
+        "type": "HTTP Client",
+        "description": "A utility for making HTTP requests to external services.",
+        "interactions": {
+          "interaction_0": "Used by `M3u8Playlist` to fetch external HLS playlist content from upstream providers."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/lib/m3u8_playlist.rb",
+            "Foundational Context"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 16,
+              "code": "module Xikolo::Common   module Restify     require 'xikolo/common/restify/paginator'      def paginate(request, &block)       paginator = Paginator.new(request)        if block         paginator.each_item(&block)       else         paginator       end     end   end    ::Xikolo.extend Restify end",
+              "source": "gems/xikolo-common/lib/xikolo/common/restify.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 17,
+              "code": "module RestifyForwardable   # a `def_delegators` compatible method designed to be used on restify   # responses: the field are access via obj['field_name'] not obj.field_name.   # the references object can be a `Restify::Promise`, the promise will be   # resolved transparently on access.   def def_restify_delegators(dest, *fields)     fields.each do |field|       class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1         # delegates to restify resource or promise:         # restify strict modus compatible         def #{field}                                              # def name           value = #{dest}                                         #   value = @promise           value = value.value! if value.is_a?(Restify::Promise)   #   value = value.value! if value.is_a?(Restify::Promise)           value[#{field.to_s.inspect}]                            #   value['name']         end                                                       # end       RUBY_EVAL",
+              "source": "gems/xikolo-common/lib/xikolo/common/restify.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 15,
+              "code": "class RestifyPaginationCollection   def initialize(collection)     @collection = collection   end    def total_pages     @collection.response.headers['X_TOTAL_PAGES'].to_i   end    def current_page     @collection.response.headers['X_CURRENT_PAGE'].to_i   end end",
+              "source": "gems/xikolo-common/lib/xikolo/common/restify.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/restify.rb",
+              "relevance": 30
+            },
+            {
+              "path": "lib/restify_forwardable.rb",
+              "relevance": 30
+            },
+            {
+              "path": "lib/restify_pagination_collection.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Xikolo::V2::URL": {
+        "type": "URL Helper",
+        "description": "Provides methods to generate specific URLs for Xikolo's V2 API, used for constructing internal links to playlists and subtitles.",
+        "interactions": {
+          "interaction_0": "Used by `M3u8Playlist` to construct internal URLs for transformed HLS playlists and subtitle tracks."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/lib/m3u8_playlist.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nrequire 'singleton'\n\nmodule Xikolo\n  module V2\n    class URL\n      include Singleton\n\n      class << self\n        def method_missing(name, *, **)\n          if instance.respond_to?(name)\n            instance.public_send(name, *, **)\n          else\n            super\n          end\n        end\n\n        def respond_to_missing?(name, *)\n          instance.respond_to?(name)\n        end\n      end\n\n      include Rails.application.routes.url_helpers\n      include Sprockets::Rails::Helper\n\n      extend Forwardable\n\n      def_delegators ActionView::Base, *VIEW_ACCESSORS\n\n      def default_url_options\n        {host:, port:, protocol:}\n      end\n\n      def host\n        Xikolo.base_url.host\n      end\n\n      def port\n        Xikolo.base_url.port\n      end\n\n      def protocol\n        Xikolo.base_url.scheme\n      end\n\n      # Don't raise exceptions when an asset cannot be found, but instead\n      # assume it is in the /public folder.\n      def unknown_asset_fallback\n      ...\n",
+              "source": "api/xikolo/v2/url.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/v2/url.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/lib/transpipe.rb",
+              "relevance": 19
+            },
+            {
+              "path": "gems/xui-form/lib/active_model/type/uri.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Interacts with `xm-player` (custom web component) to control video playback and retrieve progress. [Source: app/assets/course/items/video.js]",
+      "interaction_1": "Sends POST requests to the backend API for creating new discussion topics. [Source: app/assets/course/items/video.js]",
+      "interaction_2": "Uses `I18n` for internationalization of timestamp text. [Source: app/assets/course/items/video.js]",
+      "interaction_3": "Makes an AJAX GET request to `/admin/streams` to fetch stream data. [Source: app/assets/teacher/items/video-streams.ts]",
+      "interaction_4": "Updates `TomInput` select elements for lecturer and slides streams. [Source: app/assets/teacher/items/video-streams.ts]",
+      "interaction_5": "Calls `setVisibility` and `hideAndUncheckSwitch` from `form-helpers` to manage UI elements. [Source: app/assets/teacher/items/video.ts]",
+      "interaction_6": "Invokes `videoStreamsAutocompletion` to enable stream auto-selection. [Source: app/assets/teacher/items/video.ts]",
+      "interaction_7": "Requires `video.video.manage` permission. [Source: app/controllers/admin/video_provider_sync_controller.rb, services/account/lib/tasks/permissions/video.yml]",
+      "interaction_8": "Enqueues `Video::SyncVideosJob` for asynchronous processing. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_9": "Interacts with `Video::Provider` to check sync status. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_10": "Requires `video.provider.manage` permission. [Source: app/controllers/admin/video_providers_controller.rb, services/account/lib/tasks/permissions/video.yml]",
+      "interaction_11": "Manages `Video::Provider` records. [Source: app/controllers/admin/video_providers_controller.rb]",
+      "interaction_12": "Requires `video.video.manage` permission. [Source: app/controllers/admin/videos_controller.rb, services/account/lib/tasks/permissions/video.yml]",
+      "interaction_13": "Interacts with `Video::Stream` for querying and destruction. [Source: app/controllers/admin/videos_controller.rb]",
+      "interaction_14": "Checks `Chromecast.configured?` for feature enablement. [Source: app/controllers/chromecast_controller.rb]",
+      "interaction_15": "Retrieves styling parameters (background, logo, progress color) from `Chromecast` configuration. [Source: app/controllers/chromecast_controller.rb]",
+      "interaction_16": "Requires `video.subtitle.manage` permission for destruction. [Source: app/controllers/subtitles_controller.rb, services/account/lib/tasks/permissions/video.yml]",
+      "interaction_17": "Interacts with `Video::Subtitle` to retrieve and destroy subtitle records. [Source: app/controllers/subtitles_controller.rb]",
+      "interaction_18": "Renders plain text VTT content. [Source: app/controllers/subtitles_controller.rb]",
+      "interaction_19": "Fetches HLS playlist data using `Restify`. [Source: app/lib/m3u8_playlist.rb]",
+      "interaction_20": "Generates `M3u8::Playlist` objects. [Source: app/lib/m3u8_playlist.rb]",
+      "interaction_21": "Interacts with `Xikolo::V2::URL` to generate playlist and subtitle URLs. [Source: app/lib/m3u8_playlist.rb]",
+      "interaction_22": "Retrieves video subtitles from a `Video` object. [Source: app/lib/m3u8_playlist.rb]",
+      "interaction_23": "Reads configuration from `Xikolo.config.transpipe`. [Source: app/lib/transpipe.rb]",
+      "interaction_24": "Uses `Addressable::Template` to expand URL templates. [Source: app/lib/transpipe.rb]",
+      "interaction_25": "Interacts with `Video::Video` model to assign attributes and save. [Source: app/operations/video/store.rb]",
+      "interaction_26": "Uses `Xikolo::S3::TextWithUploadsProcessor` for rich text description handling. [Source: app/operations/video/store.rb]",
+      "interaction_27": "Utilizes `Xikolo::S3::SingleFileUpload` and `Xikolo::S3::UploadByUri` for attachment uploads. [Source: app/operations/video/store.rb]",
+      "interaction_28": "Enqueues `S3FileDeletionJob` for asynchronous deletion of replaced files. [Source: app/operations/video/store.rb]",
+      "interaction_29": "Interacts with `Video::Subtitle` for subtitle extraction and attachment. [Source: app/operations/video/store.rb]",
+      "interaction_30": "Captures errors with `Mnemosyne` and `Sentry`. [Source: app/operations/video/store.rb]",
+      "interaction_31": "Triggered by `Admin::VideoProviderSyncController`. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_32": "Processes video data from a `Video::Provider`. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_33": "Managed by `Admin::VideoProvidersController`. [Source: app/controllers/admin/video_providers_controller.rb]",
+      "interaction_34": "Used by `Admin::VideoProviderSyncController` to initiate syncs. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_35": "Queried and destroyed by `Admin::VideosController`. [Source: app/controllers/admin/videos_controller.rb]",
+      "interaction_36": "Includes association to `Video::Provider`. [Source: app/controllers/admin/videos_controller.rb]",
+      "interaction_37": "Managed by `SubtitlesController`. [Source: app/controllers/subtitles_controller.rb]",
+      "interaction_38": "Created and processed by `Video::Store`. [Source: app/operations/video/store.rb]",
+      "interaction_39": "Provides `to_vtt` method to render subtitle content. [Source: app/controllers/subtitles_controller.rb]",
+      "interaction_40": "Used by `VideoPlayerFrontendLogic` for video control and progress retrieval. [Source: app/assets/course/items/video.js]",
+      "interaction_41": "Receives keyboard events forwarded from the document body. [Source: app/assets/course/items/video.js]",
+      "interaction_42": "Used by `Video::Store` to handle video descriptions. [Source: app/operations/video/store.rb]",
+      "interaction_43": "Used by `Video::Store` for processing reading material, slides, transcripts, and subtitles uploads. [Source: app/operations/video/store.rb]",
+      "interaction_44": "Used by `Video::Store` for processing attachments uploaded via URI. [Source: app/operations/video/store.rb]",
+      "interaction_45": "Enqueued by `Video::Store` to delete replaced attachment files. [Source: app/operations/video/store.rb]",
+      "interaction_46": "Dispatches `Video::SyncVideosJob` to perform synchronization asynchronously. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_47": "Interacts with `Video::Provider` to check sync status. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_48": "Redirects to `admin_video_providers_path` after action. [Source: app/controllers/admin/video_provider_sync_controller.rb]",
+      "interaction_49": "Interacts with `Video::Provider` model for data persistence. [Source: app/controllers/admin/video_providers_controller.rb]",
+      "interaction_50": "Uses `Video::Provider.new(provider_type: type).type` to determine credential attributes for different provider types. [Source: app/controllers/admin/video_providers_controller.rb]",
+      "interaction_51": "Handles `ActiveRecord::DeleteRestrictionError` if a provider cannot be deleted due to dependencies. [Source: app/controllers/admin/video_providers_controller.rb]",
+      "interaction_52": "Queries `Video::Stream` for listing and deletion. [Source: app/controllers/admin/videos_controller.rb]",
+      "interaction_53": "Authorizes actions using `authorize! 'video.video.manage'`. [Source: app/controllers/admin/videos_controller.rb]",
+      "interaction_54": "Handles `ActiveRecord::DeleteRestrictionError` for stream deletion. [Source: app/controllers/admin/videos_controller.rb]",
+      "interaction_55": "Interacts with `Video::Download` service to obtain download links. [Source: app/controllers/stream/downloads_controller.rb]",
+      "interaction_56": "Handles various exceptions related to video download availability and quality. [Source: app/controllers/stream/downloads_controller.rb]",
+      "interaction_57": "Finds `Video::Stream` by ID and calls its `sync` method. [Source: app/controllers/stream/syncs_controller.rb]",
+      "interaction_58": "Authorizes actions using `authorize! 'video.video.index'`. [Source: app/controllers/stream/syncs_controller.rb]",
+      "interaction_59": "Handles `ActiveRecord::RecordNotFound` and `Kaltura::KalturaAPIError`. [Source: app/controllers/stream/syncs_controller.rb]",
+      "interaction_60": "Finds `Video::Subtitle` by ID to render its VTT content. [Source: app/controllers/subtitles_controller.rb]",
+      "interaction_61": "Handles `ActiveRecord::RecordNotFound` for missing subtitles. [Source: app/controllers/subtitles_controller.rb]",
+      "interaction_62": "Authorizes deletion using `authorize! 'video.subtitle.manage'`. [Source: app/controllers/subtitles_controller.rb]",
+      "interaction_63": "Interacts with `M3u8Playlist` to construct the HLS playlists. [Source: app/controllers/video/playlists_controller.rb]",
+      "interaction_64": "Finds `Video::Stream` and `Video::Video` objects to gather necessary data for playlist generation. [Source: app/controllers/video/playlists_controller.rb]",
+      "interaction_65": "Finds `Video::Subtitle` for specific language subtitles. [Source: app/controllers/video/playlists_controller.rb]",
+      "interaction_66": "Uses `Restify` to fetch external HLS playlist content. [Source: app/lib/m3u8_playlist.rb]",
+      "interaction_67": "Generates URLs for playlists and subtitles using `Xikolo::V2::URL`. [Source: app/lib/m3u8_playlist.rb]",
+      "interaction_68": "Interacts with `Video::Stream` and `Video::Video` (via options) to get stream URLs and subtitle data. [Source: app/lib/m3u8_playlist.rb]",
+      "interaction_69": "Reads configuration from `Xikolo.config.transpipe`. [Source: app/lib/transpipe.rb]",
+      "interaction_70": "Uses `Addressable::Template` for URL expansion. [Source: app/lib/transpipe.rb]",
+      "interaction_71": "Interacts with `Video::Video` model to assign attributes and save. [Source: app/operations/video/store.rb]",
+      "interaction_72": "Uses `Xikolo::S3::TextWithUploadsProcessor` for rich text description processing. [Source: app/operations/video/store.rb]",
+      "interaction_73": "Uses `Xikolo::S3::SingleFileUpload` and `Xikolo::S3::UploadByUri` for handling file uploads to S3. [Source: app/operations/video/store.rb]",
+      "interaction_74": "Interacts with `Video::Subtitle` for subtitle extraction and attachment. [Source: app/operations/video/store.rb]",
+      "interaction_75": "Dispatches `S3FileDeletionJob` for obsolete S3 files. [Source: app/operations/video/store.rb]",
+      "interaction_76": "Captures errors with `Mnemosyne` and `Sentry`. [Source: app/operations/video/store.rb]",
+      "interaction_77": "Initializes and uses `VideoPresenter` for video details. [Source: app/presenters/video_item_presenter.rb]",
+      "interaction_78": "Interacts with `Course::Section` to determine if the pinboard is closed. [Source: app/presenters/video_item_presenter.rb]",
+      "interaction_79": "Generates URLs using `Rails.application.routes.url_helpers`. [Source: app/presenters/video_item_presenter.rb]",
+      "interaction_80": "Uses `HtmlTruncator` for abstract truncation. [Source: app/presenters/video_item_topic_presenter.rb]",
+      "interaction_81": "Uses `MarkdownHelper` to render markdown content. [Source: app/presenters/video_item_topic_presenter.rb]",
+      "interaction_82": "Generates URLs using `Rails.application.routes.url_helpers`. [Source: app/presenters/video_item_topic_presenter.rb]",
+      "interaction_83": "Interacts with `Video::Video` to retrieve stream and resource URLs. [Source: app/presenters/video_presenter.rb]",
+      "interaction_84": "Uses `Video::VideoPlayer` to build player configurations. [Source: app/presenters/video_presenter.rb]",
+      "interaction_85": "Generates download paths using `Rails.application.routes.url_helpers`. [Source: app/presenters/video_presenter.rb]",
+      "interaction_86": "Interacts with the `xm-player` custom element for seeking and getting progress. [Source: app/assets/course/items/video.js]",
+      "interaction_87": "Sends AJAX requests to create new topics. [Source: app/assets/course/items/video.js]",
+      "interaction_88": "Manipulates DOM elements for topic form visibility and error display. [Source: app/assets/course/items/video.js]",
+      "interaction_89": "Uses `I18n` for localization. [Source: app/assets/course/items/video.js]",
+      "interaction_90": "Listens for 'change' events on the PIP stream selector (`#video_pip_stream_id`). [Source: app/assets/teacher/items/video-streams.ts]",
+      "interaction_91": "Fetches stream data from `/admin/streams?q=...` API endpoint. [Source: app/assets/teacher/items/video-streams.ts]",
+      "interaction_92": "Updates `TomInput` selectors for lecturer and slides streams. [Source: app/assets/teacher/items/video-streams.ts]",
+      "interaction_93": "Calls `videoStreamsAutocompletion` to initialize stream matching. [Source: app/assets/teacher/items/video.ts]",
+      "interaction_94": "Manipulates visibility of form elements based on checkbox states. [Source: app/assets/teacher/items/video.ts]",
+      "interaction_95": "Reads configuration from the `Chromecast` module to determine styling parameters.",
+      "interaction_96": "Renders a CSS stylesheet dynamically based on configured values.",
+      "interaction_97": "Used by `ChromecastController` to access styling configurations.",
+      "interaction_98": "Interacts with the `Video::Subtitle` model to find and render subtitle content.",
+      "interaction_99": "Sets `Access-Control-Allow-Origin: *` header to support Google Cast and other web-based video players.",
+      "interaction_100": "Interacts with `Video::Stream` and `Video::Video` models to retrieve stream and video data.",
+      "interaction_101": "Utilizes `M3u8Playlist` to fetch, parse, and transform HLS playlists.",
+      "interaction_102": "Sets `Cache-Control` headers to improve offline playback on iOS.",
+      "interaction_103": "Sets `Access-Control-Allow-Origin: *` and `Access-Control-Allow-Headers` for CORS compatibility with web-based HLS players.",
+      "interaction_104": "Responds with `application/x-mpegURL` content type.",
+      "interaction_105": "Fetches external HLS content using `Restify`.",
+      "interaction_106": "Generates internal URLs for playlists and subtitles using `Xikolo::V2::URL`.",
+      "interaction_107": "Receives `Video::Video` and `Video::Subtitle` information via options to embed Xikolo's subtitles.",
+      "interaction_108": "Reads configuration from `Xikolo.config` to determine if the service is enabled and to retrieve URL templates.",
+      "interaction_109": "Uses `Transpipe::URL` to construct specific URLs.",
+      "interaction_110": "Used by the `Transpipe` module to generate external service URLs.",
+      "interaction_111": "Delegates video-specific presentation to `VideoPresenter`.",
+      "interaction_112": "Interacts with `Course::Section` to check pinboard status.",
+      "interaction_113": "Uses `Rails.application.routes.url_helpers` to generate URLs.",
+      "interaction_114": "Merges Open Graph meta tags for video content.",
+      "interaction_115": "Uses `HtmlTruncator` and `MarkdownHelper` for content formatting.",
+      "interaction_116": "Uses `Rails.application.routes.url_helpers` to generate topic URLs.",
+      "interaction_117": "Interacts with `Video::Video` model to retrieve video details and stream URLs.",
+      "interaction_118": "Initializes the `Video::VideoPlayer` component.",
+      "interaction_119": "Uses `Rails.application.routes.url_helpers` to generate download paths.",
+      "interaction_120": "Uses `I18n` for localized download button captions.",
+      "interaction_121": "Initialized by `VideoPresenter` with video, user, and thumbnail loading options.",
+      "interaction_122": "Likely consumes HLS playlists and VTT subtitle files provided by `Video::PlaylistsController` and `SubtitlesController`.",
+      "interaction_123": "Accessed by `VideoItemPresenter` and `VideoPresenter` for UI display.",
+      "interaction_124": "Used by `Video::PlaylistsController` and `M3u8Playlist` to retrieve video-specific information for playlist generation.",
+      "interaction_125": "Contains `subtitles` association (inferred from `M3u8Playlist`).",
+      "interaction_126": "Accessed by `SubtitlesController` for serving VTT files.",
+      "interaction_127": "Accessed by `M3u8Playlist` to embed Xikolo's subtitles into HLS master playlists or generate standalone subtitle playlists.",
+      "interaction_128": "Accessed by `Video::PlaylistsController` to retrieve the HLS URL for playlist processing.",
+      "interaction_129": "Accessed by `M3u8Playlist` to fetch external HLS content.",
+      "interaction_130": "Accessed by `VideoPresenter` to provide download URLs for various qualities.",
+      "interaction_131": "Used by `M3u8Playlist` to fetch external HLS playlist content from upstream providers.",
+      "interaction_132": "Used by `M3u8Playlist` to construct internal URLs for transformed HLS playlists and subtitle tracks."
+    },
+    "technicalDebt": [
+      "The order of stream playlist items from Vimeo is noted as 'not deterministic', requiring manual sorting for optimal iOS playback. [Source: app/lib/m3u8_playlist.rb]",
+      "The `rescue TypeError` for template parsing is broad and could be more specific. [Source: app/lib/transpipe.rb]",
+      "ActiveModel contract violation: The operation assigns errors to non-existent attributes (e.g., `:invalid_subtitle`) on the `Video` model as a workaround for Rails 6.1, requiring an unused dump attribute. [Source: app/operations/video/store.rb]",
+      "Assigns errors to non-existent attributes (e.g., `:invalid_subtitle`) on the `Video` model, requiring a workaround with a dummy attribute to prevent `NoMethodError` in Rails 6.1+. [Source: app/operations/video/store.rb]",
+      "Raising `AbstractController::ActionNotFound` in a `before_action` is an unconventional way to prevent rendering; a `head :not_found` or redirect might be more appropriate for clearer HTTP semantics.",
+      "The use of a wildcard `Access-Control-Allow-Origin: *` is broad and could be a security concern; restricting to specific domains is generally recommended if feasible.",
+      "The `rescue TypeError` for template parsing is very generic and might mask other configuration or parsing issues; more specific error handling could be beneficial.",
+      "Inconsistent use of `UUID4` and `UUID` for UUID conversion; standardizing on one approach or clarifying their distinct uses could improve consistency."
+    ]
+  }
+}

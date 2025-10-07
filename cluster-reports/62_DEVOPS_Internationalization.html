@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internationalization standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Internationalization standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#devops" class="breadcrumb-link">DEVOPS</a></li>
+            <li class="breadcrumb-item active">Internationalization standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-locale-detection-and-setting-workflow" class="sidebar-nav-link">1. Locale Detection and Setting Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-translation-retrieval-process-workflow" class="sidebar-nav-link">2. Translation Retrieval Process Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#technical-considerations" class="sidebar-nav-link">Technical Considerations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#dependencies-and-integrations" class="sidebar-nav-link">Dependencies and Integrations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#configuration-requirements" class="sidebar-nav-link">Configuration Requirements</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-devops">DEVOPS</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="internationalization-and-localization---technical-documentation" tabindex="-1"><a class="header-anchor" href="#internationalization-and-localization---technical-documentation"><span>Internationalization and Localization - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/19/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the internationalization (i18n) and localization (l10n) capabilities of the Xikolo application, focusing on cluster 62_DEVOPS_Internationalization. The system is engineered to deliver robust multi-language support, allowing content to adapt to user preferences and predefined system settings. It leverages the foundational Ruby on Rails <code>I18n</code> framework, extended by custom logic and utilities to manage seamless locale detection, translation management, and content delivery across both server-side and client-side application layers. Key components include a custom <code>Locale</code> concern, a <code>Translations</code> utility class, an extended <code>ActionView::Helpers::TranslationHelper</code>, and the <code>i18n-js</code> library for frontend localization.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The internationalization architecture for Xikolo is built upon a layered approach, integrating standard Rails i18n features with custom components for enhanced flexibility and control. At its core, the system uses the <code>I18n (Rails Gem)</code> to manage translation data, which is sourced from <code>Locale YAML Files</code>. A crucial element, the <code>Locale</code> concern, dynamically determines the active locale for each request, interacting with both the <code>I18n</code> framework and <code>Xikolo.config</code> for global settings. For server-side content rendering, the <code>ActionView::Helpers::TranslationHelper (Extended)</code> customizes translation lookups, while the <code>Translations</code> utility class offers more granular control over text selection. Client-side localization is powered by <code>i18n-js</code>, which consumes backend translation data. This structure ensures a consistent multilingual experience across the entire application, from data storage to user interface display. The <code>Xikolo.config</code> object serves as a central repository for application-wide internationalization settings, influencing locale availability and default fallback mechanisms.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-architecture-overview"><span>Main Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  httpRequest["HTTP Request"] -->|"initiates request"| localeConcern["Locale Concern"]
+  localeConcern["Locale Concern"] -->|"sets global locale"| i18nFramework["I18n (Rails Gem)"]
+  localeConcern -->|"accesses config & locales"| xikoloConfig["Xikolo.config"]
+  i18nFramework -->|"loads translation data"| localeYAMLFiles["Locale YAML Files"]
+  actionViewHelper["ActionView::Helpers::TranslationHelper (Extended)"] -->|"translates view content"| i18nFramework
+  i18nJS["i18n-js"] -->|"consumes translations for client"| i18nFramework
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Locale:</strong> Interacts with <code>I18n</code> to set the global locale. [Source: app/controllers/concerns/locale.rb]</li>
+<li><strong>Locale:</strong> Accesses <code>Xikolo.config.locales</code> to get available and default locales. [Source: app/controllers/concerns/locale.rb]</li>
+<li><strong>Translations:</strong> Initializes with a hash of localized strings and an optional locale preference.</li>
+<li><strong>Translations:</strong> Interacts with <code>I18n.locale</code> and <code>Xikolo.config</code> to determine the best locale for text selection.</li>
+<li><strong>I18n:</strong> Used by the <code>Locale</code> concern to set the active locale. [Source: app/controllers/concerns/locale.rb]</li>
+<li><strong>I18n:</strong> Used by the <code>Translations</code> class to determine the current locale. [Source: app/lib/translations.rb]</li>
+<li><strong>Xikolo.config:</strong> Accessed by the <code>Locale</code> concern to retrieve default and available locales for validation and fallback. [Source: app/controllers/concerns/locale.rb]</li>
+<li><strong>Xikolo.config:</strong> Accessed by the <code>Translations</code> class to determine the application’s default locale. [Source: app/lib/translations.rb]</li>
+<li><strong>Locale YAML Files:</strong> Provide translation data to the <code>I18n</code> framework. [Source: RAG: config/locales/de.yml, RAG: config/locales/en.yml]</li>
+<li><strong>I18n (Rails Gem):</strong> Configured by <code>config/initializers/i18n.rb</code> to load locale files.</li>
+<li><strong>I18n (Rails Gem):</strong> Utilized by <code>Translations</code> class to determine the current locale for dynamic content selection.</li>
+<li><strong>ActionView::Helpers::TranslationHelper (Extended):</strong> Overrides the default <code>translate</code> method to add custom logic.</li>
+<li><strong>ActionView::Helpers::TranslationHelper (Extended):</strong> Interacts with <code>I18n</code> for actual translation lookup.</li>
+<li><strong>i18n-js:</strong> Configured via <code>config/i18n.yml</code> to specify export paths and patterns.</li>
+<li><strong>i18n-js:</strong> Listens for changes in locale files in development to generate translations on-the-fly.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-locale-detection-and-setting-workflow" tabindex="-1"><a class="header-anchor" href="#1.-locale-detection-and-setting-workflow"><span>1. Locale Detection and Setting Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  start["Start: Incoming HTTP Request"]
+  checkQueryParam["Check Query Parameter (params[":locale"])"]
+  persistLocale["Persist Locale (Session, User Account)"]
+  checkSession["Check Session Cookie (session[":locale"])"]
+  checkUserPref["Check Signed-in User Preference"]
+  checkBrowserPref["Check HTTP_ACCEPT_LANGUAGE"]
+  fallbackDefault["Fallback: Xikolo.config Default Locale"]
+  sanitizeLocale["Sanitize & Set I18n.locale"]
+  final["Final: Locale Determined & Set"]
+
+  start -->|"extracts locale"| checkQueryParam
+  checkQueryParam -->|"if valid & present"| persistLocale
+  persistLocale -->|"updates"| sanitizeLocale
+  checkQueryParam -->|"if not present"| checkSession
+  checkSession -->|"if found"| sanitizeLocale
+  checkSession -->|"if not found"| checkUserPref
+  checkUserPref -->|"if found"| sanitizeLocale
+  checkUserPref -->|"if not found"| checkBrowserPref
+  checkBrowserPref -->|"if match found"| sanitizeLocale
+  checkBrowserPref -->|"if no match"| fallbackDefault
+  fallbackDefault -->|"uses"| sanitizeLocale
+  sanitizeLocale -->|"completes"| final
+</pre></div>
+<p>The application employs a sophisticated mechanism, primarily managed by the <code>set_locale</code> method within the <code>Locale</code> concern, to determine and set the active locale for each incoming request. This process, executed as a <code>before_action</code> in application controllers, follows a strict order of precedence to ensure the most relevant locale is applied. First, the system checks for an explicit <code>locale</code> query parameter in the request. If present and valid, this locale is prioritized, persisted in the user’s session, and, for authenticated users, updated in their preferred language setting via the <code>account</code> microservice. If no query parameter is found or valid, the system then checks the user’s session cookie for a previously stored locale. Following this, for signed-in users, their <code>preferred_language</code> retrieved from the <code>account</code> service is considered. If still undetermined, the browser’s preferred languages, indicated by the <code>HTTP_ACCEPT_LANGUAGE</code> header, are used to find a compatible locale from the application’s available locales. As a final fallback, if all other methods fail, the application defaults to the globally configured locale specified in <code>Xikolo.config.locales['default']</code>. All detected locales undergo rigorous sanitization against a predefined list of <code>available</code> locales to ensure only supported languages are utilized throughout the application.</p>
+<h3 id="2.-translation-retrieval-process-workflow" tabindex="-1"><a class="header-anchor" href="#2.-translation-retrieval-process-workflow"><span>2. Translation Retrieval Process Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  reqTranslation["Request Translation (Server-side/Client-side)"]
+  i18nFramework["I18n (Rails Gem)"]
+  localeYAMLFiles["Locale YAML Files"]
+  translationsClass["Translations Utility Class"]
+  actionViewHelper["ActionView::Helpers::TranslationHelper (Extended)"]
+  i18nJSClient["i18n-js (Client-side)"]
+  returnText["Return Localized Text"]
+
+  reqTranslation -->|"server-side lookup"| i18nFramework
+  reqTranslation -->|"flexible server-side"| translationsClass
+  reqTranslation -->|"view rendering"| actionViewHelper
+  reqTranslation -->|"client-side display"| i18nJSClient
+
+  i18nFramework -->|"loads data from"| localeYAMLFiles
+  translationsClass -->|"uses I18n.locale & Xikolo.config"| i18nFramework
+  actionViewHelper -->|"calls translate method on"| i18nFramework
+  i18nJSClient -->|"exports translations from"| i18nFramework
+
+  localeYAMLFiles -->|"provides translations"| i18nFramework
+  i18nFramework -->|"provides text"| translationsClass
+  i18nFramework -->|"provides text"| actionViewHelper
+  i18nFramework -->|"provides JSON data"| i18nJSClient
+
+  translationsClass -->|"returns selected text"| returnText
+  actionViewHelper -->|"renders safe HTML"| returnText
+  i18nJSClient -->|"displays dynamic text"| returnText
+</pre></div>
+<p>The Xikolo application provides multiple mechanisms for retrieving localized strings, catering to different layers of the application stack. The primary server-side retrieval is handled by the <code>I18n (Rails Gem)</code>, which loads translation data from structured <code>Locale YAML Files</code> located in the <code>config/locales</code> directory. These files contain a comprehensive range of localized strings, from general UI elements to specific gem-related content. The <code>Translations</code> utility class offers an additional, flexible layer for server-side translation selection, prioritizing a provided locale preference, then the current <code>I18n.locale</code>, the default Xikolo locale, and finally falling back to English. For view-level rendering, the <code>ActionView::Helpers::TranslationHelper (Extended)</code> customizes the default <code>translate</code> method. This extension automatically HTML-escapes interpolation values for security and injects brand-specific information from <code>Xikolo.config</code> into translations. On the client-side, the <code>i18n-js</code> library ensures that translations are accessible and dynamically applied within the browser, providing a consistent localized experience. <code>i18n-js</code> is configured via <code>config/i18n.yml</code> to specify export paths and patterns, consuming translation data provided by the backend’s <code>I18n</code> framework and even listening for changes in locale files during development to generate translations on-the-fly. This multi-faceted approach guarantees that localized content is available and correctly rendered across all application components.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<h3 id="technical-considerations" tabindex="-1"><a class="header-anchor" href="#technical-considerations"><span>Technical Considerations</span></a></h3>
+<p>The internationalization implementation within Xikolo presents several technical considerations, primarily identified as areas of technical debt. A significant point is the direct coupling of the <code>Locale</code> concern to the <code>account</code> microservice API (<code>Xikolo.api(:account)</code>) for updating user preferred languages. This direct interaction within a controller concern could be refactored into a dedicated service object, enhancing testability by decoupling the concern from microservice dependencies. Furthermore, the <code>Translations</code> utility class contains a hardcoded fallback order within its <code>best_locale</code> method. While functional, making this fallback order more configurable would offer greater flexibility in defining locale prioritization strategies. The <code>ActionView::Helpers::TranslationHelper (Extended)</code> employs <code>alias orig_translate translate</code> to override the default translation method. This approach, while effective, might be less robust than a decorator pattern, potentially leading to conflicts with future Ruby on Rails updates. Lastly, a <code>rubocop:disable Rails/OutputSafety</code> comment within the extended <code>TranslationHelper</code> points to a potential XSS vulnerability if raw translation strings from locale files are not thoroughly audited and sanitized. This necessitates careful review of all locale content to prevent malicious script injection.</p>
+<h3 id="dependencies-and-integrations" tabindex="-1"><a class="header-anchor" href="#dependencies-and-integrations"><span>Dependencies and Integrations</span></a></h3>
+<p>The internationalization system relies on several key dependencies and integrations. The <code>Locale</code> concern critically depends on the <code>I18n</code> framework to set the global locale and <code>Xikolo.config</code> to access available and default locale settings. It also integrates with the user <code>session</code> for persistence and with the <code>account</code> microservice via <code>Xikolo.api(:account)</code> for user-specific language preferences. The <code>Translations</code> class is tightly integrated with <code>I18n.locale</code> and <code>Xikolo.config</code> to determine the most suitable locale for text selection. The core <code>I18n (Rails Gem)</code> loads its translation data from <code>Locale YAML Files</code> and is configured through <code>config/initializers/i18n.rb</code>. This gem also provides the underlying translation data consumed by <code>i18n-js</code> for frontend localization. The <code>ActionView::Helpers::TranslationHelper (Extended)</code> integrates with <code>I18n</code> for actual translation lookups, leverages <code>ERB::Util.html_escape</code> for security, and accesses <code>Xikolo.config</code> for branding information. The <code>i18n-js</code> library is configured via <code>config/i18n.yml</code>, consuming translation data from the <code>I18n</code> backend and integrating with the development environment to dynamically generate translations.</p>
+<h3 id="configuration-requirements" tabindex="-1"><a class="header-anchor" href="#configuration-requirements"><span>Configuration Requirements</span></a></h3>
+<p>Specific configuration requirements for the internationalization system are evident from the cluster data. The <code>Xikolo.config</code> object is a central point for application-wide internationalization settings, implicitly defining the <code>default</code> and <code>available</code> locales that the <code>Locale</code> concern and <code>Translations</code> class utilize. While the direct configuration location for <code>Xikolo.config</code>’s <code>locales</code> entry is not explicitly detailed beyond its access, its values are critical for fallback and validation. The <code>i18n-js</code> library is configured via <code>config/i18n.yml</code>, where specifics such as export paths and patterns for JavaScript translation files are defined. Additionally, the <code>I18n (Rails Gem)</code> is configured in <code>config/initializers/i18n.rb</code>, where <code>I18n.enforce_available_locales = true</code> is set, ensuring only supported locales are used. This initializer also specifies additional load paths for locale files, including brand-specific locales. Beyond these, specific environment variables or external secrets for translation management are not specified in the cluster data.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Locale</strong> <code>app/controllers/concerns/locale.rb</code></li>
+<li>📄 <strong>Locale</strong> <code>spec/controllers/concerns/locale_spec.rb</code></li>
+<li>📄 <strong>Translations</strong> <code>app/lib/translations.rb</code></li>
+<li>📄 <strong>I18n</strong> <code>app/controllers/concerns/locale.rb</code></li>
+<li>📄 <strong>I18n</strong> <code>app/lib/translations.rb</code></li>
+<li>📄 <strong>Xikolo.config</strong> <code>app/controllers/concerns/locale.rb</code></li>
+<li>📄 <strong>Xikolo.config</strong> <code>app/lib/translations.rb</code></li>
+<li>📄 <strong>Locale YAML Files</strong> <code>RAG: config/locales/de.yml</code></li>
+<li>📄 <strong>Locale YAML Files</strong> <code>RAG: config/locales/en.yml</code></li>
+<li>📄 <strong>I18n (Rails Gem)</strong> <code>config/initializers/i18n.rb</code></li>
+<li>📄 <strong>I18n (Rails Gem)</strong> <code>config/initializers/i18n_translate.rb</code></li>
+<li>📄 <strong>ActionView::Helpers::TranslationHelper (Extended)</strong> <code>config/initializers/i18n_translate.rb</code></li>
+<li>📄 <strong>i18n-js</strong> <code>config/initializers/i18n.rb</code></li>
+<li>📄 <strong>i18n-js</strong> <code>RAG: config/i18n.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294069"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

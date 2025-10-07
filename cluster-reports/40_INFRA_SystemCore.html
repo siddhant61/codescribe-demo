@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SystemCore standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for SystemCore standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#infra" class="breadcrumb-link">INFRA</a></li>
+            <li class="breadcrumb-item active">SystemCore standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-application-initialization-and-system-readiness" class="sidebar-nav-link">1. Application Initialization and System Readiness</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-request-processing-and-authentication-flow" class="sidebar-nav-link">2. User Request Processing and Authentication Flow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-asynchronous-background-job-execution" class="sidebar-nav-link">3. Asynchronous Background Job Execution</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-infra">INFRA</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="core-application-infrastructure-%26-shared-configuration---technical-documentation" tabindex="-1"><a class="header-anchor" href="#core-application-infrastructure-%26-shared-configuration---technical-documentation"><span>Core Application Infrastructure &amp; Shared Configuration - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo platform’s Core Application (40_INFRA_SystemCore) serves as the central Ruby on Rails 7.2.0 application, built on Ruby 3.4.4, operating within a distributed microservice architecture. It functions as both a user-facing frontend and an API gateway, orchestrating complex interactions with various backend services. The primary purpose of this core system is to provide the foundational infrastructure, manage shared configurations, handle user authentication, process requests, and ensure robust background job execution and monitoring. Key components include the <code>Xikolo::Web::Application</code> server, <code>PostgreSQL</code> for data, <code>RabbitMQ</code> for messaging, and <code>Redis</code> for caching and job queues. This report synthesizes insights into the system’s architecture, critical operational workflows, and implementation specifics to provide a comprehensive overview.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo Core Application operates within a robust, containerized microservice architecture. External user requests are initially received by an <code>Nginx</code> reverse proxy, which then efficiently routes this traffic to the main <code>Xikolo::Web::Application</code>, served by <code>Puma</code> application servers. This Rails instance is the central orchestrator for user interactions and API calls. It extensively utilizes the <code>Xikolo (Global Config/Namespace)</code> for environment-specific settings, feature toggles, and sensitive <code>Secrets</code> crucial for its operation. For persistent data storage, <code>PostgreSQL</code> serves as the primary relational database. Two distinct <code>Redis</code> instances, <code>RedisCache</code> and <code>RedisSidekiq</code>, are fundamental for improving performance through caching and for managing asynchronous background job queues, respectively. Asynchronous communication between the various services is facilitated by <code>RabbitMQ</code>, with the <code>Msgr</code> client embedded within the web application handling message exchange. This foundational architecture ensures high scalability, modularity, and availability for the entire Xikolo platform.</p>
+<p><strong>Key Components &amp; Interactions:</strong></p>
+<ul>
+<li><strong>Nginx Reverse Proxy:</strong> This component acts as the public entry point, receiving all incoming HTTP and HTTPS requests. It effectively distributes and routes traffic to the appropriate backend services, including the <code>Xikolo Web Application</code> and other <code>DockerComposeService</code> instances. <code>Nginx</code> exposes ports <code>8000:80</code> and <code>8443:443</code> for external access, directing requests to internal application servers.</li>
+<li><strong>Xikolo Web Application (Puma):</strong> This is the core Rails application, hosted on the <code>Puma</code> application server. It’s responsible for processing user requests, handling API calls, and integrating various Rails frameworks. It manages database connections with <code>PostgreSQL</code> and interacts with <code>RabbitMQ</code> via <code>Msgr</code>. <code>Puma</code> is configured to gracefully manage <code>ActiveRecord</code> database connections and <code>Msgr</code> client disconnections during worker lifecycle events, such as forking.</li>
+<li><strong>PostgreSQL Database:</strong> <code>PostgreSQL</code> provides the primary relational data persistence layer for the <code>Xikolo Web Application</code> and all other <code>DockerComposeService</code> microservices. Its schema is maintained through database migrations initiated by <code>DockerComposeInit</code> services during deployment.</li>
+<li><strong>Redis (Cache &amp; Sidekiq):</strong> This represents two distinct Redis instances. <code>RedisCache</code> is used by <code>Xikolo Web Application</code> and other services for caching frequently accessed data, thereby enhancing responsiveness. <code>RedisSidekiq</code> is specifically dedicated to <code>Sidekiq</code> for managing background job queues, processing, and scheduling. Both are accessed by <code>DockerComposeWeb</code> and <code>DockerComposeService</code> instances for their respective roles.</li>
+<li><strong>RabbitMQ Message Broker:</strong> <code>RabbitMQ</code> serves as the central message broker for the platform, enabling asynchronous communication and event-driven patterns between services. The <code>web-msgr</code> and <code>*-msgr</code> services within the <code>Xikolo Web Application</code> and microservices connect to <code>RabbitMQ</code> for publishing and consuming messages.</li>
+<li><strong>Xikolo.config:</strong> While not a runtime service, <code>Xikolo.config</code> is a critical logical component that provides centralized, application-wide configuration values, including site name, base URL, SMTP settings, CSP policies, and feature toggles. It loads settings from <code>app/xikolo.yml</code> and sensitive <code>Secrets</code> from <code>config/secrets.yml</code>, influencing <code>Xikolo::Web::Application</code> behaviors and integrations.</li>
+</ul>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-application-architecture" tabindex="-1"><a class="header-anchor" href="#main-application-architecture"><span>Main Application Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph LR
+  userClient["User/Client"]
+  nginxProxy["Nginx Reverse Proxy"]
+  xikoloWebApp["Xikolo Web App (Puma)"]
+  postgreSQL["PostgreSQL Database"]
+  redisCluster["Redis (Cache & Sidekiq)"]
+  rabbitMQ["RabbitMQ Message Broker"]
+
+  userClient -->|"HTTP/S requests"| nginxProxy
+  nginxProxy -->|"forwards requests"| xikoloWebApp
+  xikoloWebApp -->|"persists data"| postgreSQL
+  xikoloWebApp -->|"uses for caching & jobs"| redisCluster
+  xikoloWebApp -->|"async messaging"| rabbitMQ
+
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Xikolo::Web::Application:</strong> Loads Rails frameworks (ActiveRecord, ActionController, etc.). [Source: config/application.rb]</li>
+<li><strong>Xikolo::Web::Application:</strong> Configures <code>Xikolo.brand</code> based on <code>ENV['BRAND']</code>. [Source: config/application.rb]</li>
+<li><strong>ApplicationController:</strong> Includes <code>FeatureTogglesHelper</code> for feature flag evaluation [Source: app/controllers/application_controller.rb]</li>
+<li><strong>ApplicationController:</strong> Includes <code>Login</code> module for authentication-related helpers [Source: app/controllers/application_controller.rb]</li>
+<li><strong>ApplicationJob:</strong> Sets the default queue for jobs to ‘default’ [Source: app/jobs/application_job.rb]</li>
+<li><strong>ApplicationJob:</strong> Defines a <code>max_run_time</code> of 20 minutes for jobs [Source: app/jobs/application_job.rb]</li>
+<li><strong>ApplicationOperation:</strong> Provides a <code>call</code> class method to execute operations [Source: app/operations/application_operation.rb]</li>
+<li><strong>ApplicationOperation:</strong> Uses <code>ResultNegotiation</code> to wrap operation results, allowing clients to react to different outcomes (e.g., <code>success</code>, <code>failure</code>) [Source: app/operations/application_operation.rb]</li>
+<li><strong>Makefile:</strong> Orchestrates <code>webpack</code> and <code>sprockets</code> targets for asset compilation [Source: Makefile]</li>
+<li><strong>Makefile:</strong> Invokes <code>bundle exec rake assets:i18n:export</code> for i18n file generation [Source: Makefile]</li>
+<li><strong>Procfile:</strong> Starts <code>bin/rails server</code> for the web application.</li>
+<li><strong>Procfile:</strong> Starts <code>yarn start</code> for web assets compilation.</li>
+<li><strong>bin/entrypoint:</strong> Executes database migrations via <code>bundle exec rake db:prepare</code> [Source: bin/entrypoint]</li>
+<li><strong>bin/entrypoint:</strong> Starts Delayed Job workers via <code>bundle exec rake delayed:work</code> [Source: bin/entrypoint]</li>
+<li><strong>Xikolo (Global Config/Namespace):</strong> Sets the application <code>brand</code> based on <code>ENV['BRAND']</code> [Source: config/application.rb]</li>
+<li><strong>Xikolo (Global Config/Namespace):</strong> Includes <code>Xikolo::Common::Secrets</code> for accessing sensitive configuration [Source: config/application.rb]</li>
+<li><strong>Xikolo::Common::Auth::Middleware:</strong> Called by <code>ApplicationController#auth_middleware</code> during <code>around_action</code> [Source: app/controllers/application_controller.rb]</li>
+<li><strong>Xikolo::Common::Auth::Middleware:</strong> Processes <code>RelayState</code> from SAML/OpenID Connect for session management [Source: app/controllers/application_controller.rb]</li>
+<li><strong>Xikolo::Common::Auth::CurrentUser:</strong> Used by <code>ApplicationController#current_user</code> to represent the authenticated user [Source: app/controllers/application_controller.rb]</li>
+<li><strong>Xikolo::Common::Auth::CurrentUser:</strong> Provides <code>logged_in?</code>, <code>anonymous?</code>, <code>allowed?</code>, <code>allowed_any?</code>, <code>feature?</code> methods [Source: app/controllers/application_controller.rb]</li>
+<li><strong>Msgr:</strong> Connects to RabbitMQ for message exchange [Source: Gemfile, config/rabbitmq.yml]</li>
+<li><strong>Msgr:</strong> Routes messages to specific handlers (e.g., for gamification events) [Source: config/msgr.rb]</li>
+<li><strong>Sentry:</strong> Integrated via <code>sentry-rails</code>, <code>sentry-ruby</code>, <code>sentry-sidekiq</code> gems [Source: Gemfile]</li>
+<li><strong>Sentry:</strong> Sets user context with <code>current_user.id</code> in <code>ApplicationController</code> [Source: app/controllers/application_controller.rb]</li>
+<li><strong>Telegraf:</strong> Receives metrics from <code>Xikolo.metrics</code> [Source: RAG: gems/xikolo-common/README.md]</li>
+<li><strong>Telegraf:</strong> Sends collected data to a configured Telegraf endpoint [Source: config/application.rb]</li>
+<li><strong>Rack::Attack:</strong> Intercepts incoming requests before they reach the Rails application. [Source: config/application.rb]</li>
+<li><strong>Rack::Attack:</strong> Applies rate limiting and blocking rules to requests. [Source: config/application.rb]</li>
+<li><strong>Rack::Cors:</strong> Allows POST requests from <code>*.openhpi.de</code>. [Source: config/application.rb]</li>
+<li><strong>Rack::Cors:</strong> Allows GET requests from any origin (<code>*</code>) to <code>/playlists/*</code> for external video players. [Source: config/application.rb]</li>
+<li><strong>I18n:</strong> Configured in <code>config/application.rb</code> with <code>available_locales</code> (<code>de</code>, <code>en</code>), <code>default_locale</code> (<code>en</code>), and <code>fallbacks</code> (<code>en</code>) [Source: config/application.rb]</li>
+<li><strong>I18n:</strong> Used by <code>Rakefile</code> tasks (<code>assets:i18n:export</code>, <code>i18n:missing_keys</code>) for managing translation files [Source: Rakefile]</li>
+<li><strong>Bootsnap:</strong> Accelerates application startup by caching various Ruby artifacts. [Source: config/boot.rb]</li>
+<li><strong>Bootsnap:</strong> Loaded conditionally based on the Rails environment (development only). [Source: config/boot.rb]</li>
+<li><strong>RubyVM::YJIT:</strong> Enabled in an <code>after_initialize</code> block if <code>RubyVM::YJIT.enable</code> is defined (Ruby 3.3+) [Source: config/initializers/enable_yjit.rb]</li>
+<li><strong>Lookbook:</strong> Configured in <code>config/application.rb</code> to show previews, define preview layouts, listen paths, and page paths [Source: config/application.rb]</li>
+<li><strong>Imagecrop:</strong> Used by <code>ApplicationHelper#imagecrop</code> to transform image URLs [Source: app/helpers/application_helper.rb]</li>
+<li><strong>Imagecrop:</strong> Relies on <code>imgproxy</code> gem [Source: Gemfile]</li>
+<li><strong>BrowserSupport:</strong> Instantiated by <code>ApplicationHelper#browser_support</code> to provide browser-specific information [Source: app/helpers/application_helper.rb]</li>
+<li><strong>BrowserSupport:</strong> Used to determine whether to hide browser warnings based on cookies [Source: app/helpers/application_helper.rb]</li>
+<li><strong>Acfs:</strong> Queue is cleared <code>before_action</code> in <code>ApplicationController</code> [Source: app/controllers/application_controller.rb]</li>
+<li><strong>Acfs:</strong> Used for promise-compatible interfaces in <code>ApplicationController</code> [Source: app/controllers/application_controller.rb]</li>
+<li><strong>Restify:</strong> Facilitates HTTP requests to other microservices [Source: Gemfile]</li>
+<li><strong>Restify:</strong> Handles <code>BadGateway</code>, <code>ServiceUnavailable</code>, and <code>GatewayTimeout</code> exceptions [Source: config/application.rb]</li>
+<li><strong>Delayed (Delayed Job):</strong> Configured as <code>config.active_job.queue_adapter = :delayed</code> in <code>config/application.rb</code> [Source: config/application.rb]</li>
+<li><strong>Delayed (Delayed Job):</strong> Workers are started via <code>bin/rake delayed:work</code> in <code>Procfile</code> and <code>bin/entrypoint</code> [Source: Procfile, bin/entrypoint]</li>
+<li><strong>Sidekiq:</strong> Processes background jobs using Redis [Source: Gemfile, config/sidekiq_redis.yml]</li>
+<li><strong>Sidekiq:</strong> Runs scheduled cron jobs defined in <code>config/cron.yml</code> [Source: Gemfile, RAG: gems/xikolo-sidekiq/README.md]</li>
+<li><strong>Xikolo.config:</strong> Provides configuration values to Xikolo::Web::Application and other components [Source: config/application.rb]</li>
+<li><strong>Xikolo.config:</strong> Reads configuration from <code>app/xikolo.yml</code> and environment-specific YAML files [Source: app/xikolo.yml, RAG: docs/app/development/application_configuration/index.md, RAG: gems/xikolo-config/README.md]</li>
+<li><strong>Xikolo.metrics:</strong> Sends data to Telegraf [Source: RAG: gems/xikolo-common/README.md]</li>
+<li><strong>Xikolo.metrics:</strong> Used by various application components to report custom events and values [Source: RAG: gems/xikolo-common/README.md]</li>
+<li><strong>Xikolo::S3:</strong> Configures AWS S3 client using <code>xikolo-config</code>. [Source: RAG: gems/xikolo-s3/README.md]</li>
+<li><strong>Xikolo::S3:</strong> Interacts with AWS S3 buckets and objects for file storage and retrieval. [Source: RAG: gems/xikolo-s3/README.md]</li>
+<li><strong>Puma:</strong> Serves HTTP requests for the Rails application [Source: Gemfile, config/puma.rb]</li>
+<li><strong>Puma:</strong> Manages ActiveRecord database connections during worker lifecycle [Source: config/puma.rb]</li>
+<li><strong>Delayed Job:</strong> Processes jobs enqueued via Active Job [Source: config/application.rb]</li>
+<li><strong>Delayed Job:</strong> Utilizes a dedicated ‘mails’ queue for email delivery [Source: config/application.rb]</li>
+<li><strong>Grape:</strong> Defines API endpoints for the main application [Source: Gemfile]</li>
+<li><strong>Grape:</strong> Integrates with <code>grape-entity</code> for API response serialization [Source: Gemfile]</li>
+<li><strong>Dockerignore:</strong> Interacts with Docker build processes to filter context.</li>
+<li><strong>EnvFile:</strong> Provides environment variables to <code>Procfile</code> for local execution.</li>
+<li><strong>EnvFile:</strong> Provides environment variables to Docker Compose services for container configuration.</li>
+<li><strong>PumaConfiguration:</strong> Serves the Rails application (web and microservices).</li>
+<li><strong>PumaConfiguration:</strong> Disconnects from <code>ActiveRecord::Base</code> and <code>Msgr.client</code> before forking workers.</li>
+<li><strong>UnicornConfiguration:</strong> Serves the Rails application.</li>
+<li><strong>UnicornConfiguration:</strong> Disconnects from <code>ActiveRecord::Base</code> before forking workers.</li>
+<li><strong>DockerBakeHCL:</strong> Defines base images used by service-specific Dockerfiles (e.g., <code>account.Dockerfile</code>, <code>web.Dockerfile</code>).</li>
+<li><strong>DockerBakeHCL:</strong> Utilizes <code>CI_REGISTRY_IMAGE</code> and <code>TAG</code> variables for image naming and versioning.</li>
+<li><strong>DockerComposeBackground:</strong> Provides database services to all application components.</li>
+<li><strong>DockerComposeBackground:</strong> Provides message queuing for inter-service communication and background jobs.</li>
+<li><strong>DockerComposeInit:</strong> Depends on <code>PostgreSQL</code>, <code>RabbitMQ</code>, <code>RedisCache</code>, <code>RedisSidekiq</code> being healthy.</li>
+<li><strong>DockerComposeInit:</strong> Runs database migrations for the <code>xikolo-web</code> application.</li>
+<li><strong>DockerComposeService:</strong> Builds images from service-specific Dockerfiles.</li>
+<li><strong>DockerComposeService:</strong> Uses environment variables from <code>.env</code>.</li>
+<li><strong>DockerComposeWeb:</strong> Builds image from <code>docker/files/web.Dockerfile</code>.</li>
+<li><strong>DockerComposeWeb:</strong> Uses environment variables from <code>.env</code>.</li>
+<li><strong>DockerComposeNginx:</strong> Routes traffic to <code>DockerComposeWeb</code> and <code>DockerComposeService</code> instances.</li>
+<li><strong>DockerComposeNginx:</strong> Exposes ports <code>8000:80</code> and <code>8443:443</code> for external access.</li>
+<li><strong>DockerComposeMain:</strong> Includes <code>DockerComposeBackground</code>, <code>DockerComposeInit</code>, <code>DockerComposeWeb</code>, <code>DockerComposeService</code> (for all microservices), and <code>DockerComposeNginx</code>.</li>
+<li><strong>PostgreSQL:</strong> Accessed by <code>DockerComposeWeb</code> and all <code>DockerComposeService</code> instances.</li>
+<li><strong>PostgreSQL:</strong> Initialized by <code>init-database</code> service.</li>
+<li><strong>RabbitMQ:</strong> Used by <code>web-msgr</code> and <code>*-msgr</code> services for message processing.</li>
+<li><strong>RabbitMQ:</strong> Accessed by <code>DockerComposeWeb</code> and all <code>DockerComposeService</code> instances for message publishing/consuming.</li>
+<li><strong>RedisCache:</strong> Accessed by <code>DockerComposeWeb</code> and all <code>DockerComposeService</code> instances for caching operations.</li>
+<li><strong>RedisSidekiq:</strong> Accessed by <code>web-sidekiq</code> and <code>*-sidekiq</code> services for job queuing and processing.</li>
+<li><strong>Minio:</strong> Provides file storage capabilities to application services that require S3-compatible storage.</li>
+<li><strong>Mailpit:</strong> Receives emails sent by application services for testing purposes.</li>
+<li><strong>Nginx:</strong> Receives incoming HTTP/HTTPS requests.</li>
+<li><strong>Nginx:</strong> Forwards requests to <code>web-server</code> and <code>*-server</code> services based on routing rules.</li>
+<li><strong>Xikolo.config (app/xikolo.yml):</strong> Provides <code>locales</code> settings for I18n. [Source: app/xikolo.yml]</li>
+<li><strong>Xikolo.config (app/xikolo.yml):</strong> Defines <code>email.smtp</code> server for outgoing emails. [Source: app/xikolo.yml]</li>
+<li><strong>Secrets (config/secrets.yml):</strong> Provides <code>secret_key_base</code> for Rails cookie signing. [Source: config/secrets.yml]</li>
+<li><strong>Secrets (config/secrets.yml):</strong> Supplies <code>imgproxy_key</code> and <code>imgproxy_salt</code> for signing image processing URLs. [Source: config/secrets.yml]</li>
+<li><strong>Service Endpoints (config/services.yml):</strong> Provides endpoint URLs for <code>account</code>, <code>course</code>, <code>learnanalytics</code>, <code>news</code>, <code>notification</code>, <code>pinboard</code>, <code>quiz</code>, <code>quizimporter</code>, and <code>timeeffort</code> services. [Source: config/services.yml]</li>
+<li><strong>Service Endpoints (config/services.yml):</strong> Allows environment variables (<code>ENV['XIKOLO_SERVICE_ACCOUNT']</code>, etc.) to override default <code>localhost</code> URLs. [Source: config/services.yml]</li>
+<li><strong>Redis Configuration (Cache &amp; Sidekiq):</strong> Configures Redis <code>url</code> and <code>db</code> for caching. [Source: config/cache_redis.yml]</li>
+<li><strong>Redis Configuration (Cache &amp; Sidekiq):</strong> Configures Redis <code>url</code>, <code>db</code>, <code>pool_timeout</code>, and <code>network_timeout</code> for Sidekiq. [Source: config/sidekiq_redis.yml]</li>
+<li><strong>Rake Tasks:</strong> Loads <code>Xikolo::Web::Application.load_tasks</code> to make application-specific tasks available. [Source: Rakefile]</li>
+<li><strong>Rake Tasks:</strong> <code>ci:setup</code> interacts with the database (<code>db:drop:all</code>, <code>db:create:all</code>, <code>db:schema:load</code>) and asset pipeline (<code>assets:i18n:export</code>). [Source: Rakefile]</li>
+<li><strong>Middleware::NewsTracker:</strong> Intercepts incoming requests. [Source: config/application.rb]</li>
+<li><strong>Middleware::NewsTracker:</strong> Performs custom tracking logic for news-related operations. [Source: config/application.rb]</li>
+<li><strong>Xikolo::Common:</strong> Integrates <code>Restify</code> for HTTP communication with other services. [Source: RAG: gems/xikolo-common/README.md]</li>
+<li><strong>Xikolo::Common:</strong> Provides <code>Xikolo.metrics</code> object to send data to Telegraf for monitoring. [Source: RAG: gems/xikolo-common/README.md]</li>
+<li><strong>Xikolo::Config:</strong> Reads configuration from <code>xikolo.yml</code> files, respecting Rails environments. [Source: RAG: gems/xikolo-config/README.md]</li>
+<li><strong>Xikolo::Config:</strong> Provides <code>Xikolo.base_url</code> as an <code>Addressable::URI</code> object for URL generation. [Source: RAG: gems/xikolo-config/README.md]</li>
+<li><strong>Xikolo::Sidekiq:</strong> Configures Sidekiq to use Redis, with connection details from <code>config/sidekiq_redis.yml</code>. [Source: RAG: gems/xikolo-sidekiq/README.md]</li>
+<li><strong>Xikolo::Sidekiq:</strong> Integrates with ActiveJob for background processing. [Source: RAG: gems/xikolo-sidekiq/README.md]</li>
+<li><strong>check-gem-versions:</strong> Reads <code>Gemfile.lock</code> files from the <code>web</code> application and all <code>services/*</code> directories. [Source: scripts/check-gem-versions]</li>
+<li><strong>check-gem-versions:</strong> Outputs reports in console or CSV format. [Source: scripts/check-gem-versions]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-application-initialization-and-system-readiness" tabindex="-1"><a class="header-anchor" href="#1.-application-initialization-and-system-readiness"><span>1. Application Initialization and System Readiness</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  entrypoint["bin/entrypoint Script"]
+  dbMigration["Database Migrations (db:prepare)"]
+  jobWorkers["Background Job Workers"]
+  pumaServer["Puma Web Server"]
+  appLoader["App Loader & Initializers"]
+  coreServices["External Core Services"]
+
+  entrypoint -->|"initiates"| dbMigration
+  entrypoint -->|"starts"| jobWorkers
+  jobWorkers -->|"connects to"| coreServices
+  coreServices["External Core Services"] --"PostgreSQL, RabbitMQ"--> jobWorkers
+  entrypoint -->|"launches"| pumaServer
+  pumaServer -->|"loads & configures"| appLoader
+  appLoader -->|"enables YJIT & Bootsnap"| pumaServer
+
+</pre></div>
+<p>The application initialization workflow describes the sequence of operations required to bring the Xikolo::Web::Application to a fully operational state, particularly within a Dockerized environment. The process commences with the <code>bin/entrypoint</code> script, which orchestrates several critical pre-launch tasks. Firstly, it executes database migrations by running <code>bundle exec rake db:prepare</code>, ensuring the <code>PostgreSQL</code> database schema is up-to-date. Following this, it initiates essential background job processors: <code>Delayed Job</code> workers are started via <code>bundle exec rake delayed:work</code>, and the <code>msgr</code> AMQP consumer is launched via <code>bundle exec msgr</code> to connect to <code>RabbitMQ</code>. Once these foundational services are active and connected, the <code>Puma</code> application server is started using <code>/app/bin/thrust puma</code>, ready to handle incoming HTTP requests. During the <code>Xikolo::Web::Application</code> loading phase, core Rails frameworks are initialized, and configuration from <code>Xikolo.config</code> (including brand settings from <code>ENV['BRAND']</code>) is applied. Performance enhancements such as <code>Bootsnap</code> are conditionally loaded for development environments, and <code>RubyVM::YJIT</code> is enabled post-initialization if the Ruby version is 3.3 or newer, providing significant runtime performance improvements. Additionally, crucial middlewares like <code>Rack::Attack</code> and <code>Rack::Cors</code> are configured during the application boot process to enforce security and cross-origin policies.</p>
+<h3 id="2.-user-request-processing-and-authentication-flow" tabindex="-1"><a class="header-anchor" href="#2.-user-request-processing-and-authentication-flow"><span>2. User Request Processing and Authentication Flow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRequest["User Request"]
+  nginxProxy["Nginx Proxy"]
+  webAppServer["Web App Server (Puma)"]
+  requestMiddleware["Security & CORS Middleware"]
+  appController["ApplicationController"]
+  backendServices["Auth & Data Services"]
+
+  userRequest -->|"sends"| nginxProxy
+  nginxProxy -->|"forwards"| webAppServer
+  webAppServer -->|"applies"| requestMiddleware
+  requestMiddleware -->|"passes to"| appController
+  appController -->|"interacts with"| backendServices
+  backendServices -->|"Xikolo::Auth, Restify, DB"| appController
+  appController -->|"generates and returns"| response["Response"]
+  response -->|"sends to"| userRequest
+
+</pre></div>
+<p>This workflow details how an external user request is processed, from its entry into the system through to the application logic and the generation of a response, with a focus on authentication. The journey begins when a <code>userRequest</code> reaches the <code>nginxProxy</code>, which acts as the primary reverse proxy and load balancer. <code>Nginx</code> then forwards this request to an available instance of the <code>webAppServer</code> (Puma). Upon reception by the <code>Puma</code> server, the request passes through a series of <code>requestMiddleware</code>. Here, <code>Rack::Attack</code> applies rate-limiting and blocking rules to mitigate abusive traffic, and <code>Rack::Cors</code> enforces Cross-Origin Resource Sharing policies, permitting or denying requests based on origin and method (e.g., allowing POST requests from <code>*.openhpi.de</code>). If the request is permitted, it proceeds to the <code>ApplicationController</code>. Inside the <code>ApplicationController</code>, an <code>around_action</code> hook invokes <code>Xikolo::Common::Auth::Middleware</code>, which handles the primary authentication flow, processing <code>RelayState</code> from SAML/OpenID Connect for session management and populating the request environment with <code>xikolo_context</code>. The <code>ApplicationController</code> then utilizes <code>Xikolo::Common::Auth::CurrentUser</code> to represent the authenticated user, providing methods for authorization checks (<code>allowed?</code>, <code>feature?</code>) and also setting <code>Sentry</code> user context for error tracking. Data required for the request is fetched from <code>backendServices</code>, which includes direct queries to <code>PostgreSQL</code>, cached data from <code>RedisCache</code>, and interactions with other microservices via <code>Restify</code>. Any errors encountered during this process are logged to <code>Sentry</code>. Finally, the <code>ApplicationController</code> compiles the necessary data and renders a <code>response</code>, which is then sent back through <code>Nginx</code> to the <code>userClient</code>.</p>
+<h3 id="3.-asynchronous-background-job-execution" tabindex="-1"><a class="header-anchor" href="#3.-asynchronous-background-job-execution"><span>3. Asynchronous Background Job Execution</span></a></h3>
+<p>This workflow describes the mechanism for processing background tasks asynchronously, crucial for maintaining application responsiveness by offloading long-running or non-blocking operations. The <code>Xikolo::Web::Application</code> initiates background tasks by enqueuing them via <code>ActiveJob</code>. This framework is configured in <code>config/application.rb</code> to use <code>:delayed</code> as its queue adapter, directing jobs to <code>Delayed Job</code>. Alternatively, <code>Sidekiq</code> is also heavily utilized for background job processing and scheduled tasks. All jobs inherit from <code>ApplicationJob</code>, which defines a default queue (<code>'default'</code>), a <code>max_run_time</code> of 20 minutes, and a special <code>ExpectedRetry</code> error class; this error is used for explicit job retries that <code>Sentry</code> is configured to ignore, preventing noise in error tracking. <code>Delayed Job</code> workers are started as separate processes via <code>bin/rake delayed:work</code>, typically managing their job queue and state within the <code>PostgreSQL</code> database. <code>Sidekiq</code> workers, on the other hand, are launched via <code>bundle exec sidekiq</code> and rely on <code>RedisSidekiq</code> for their job queues, processing, and status management. <code>Sidekiq-cron</code> further extends Sidekiq’s capabilities by loading scheduled tasks from <code>config/cron.yml</code> to execute periodic jobs. During the execution of any background job, <code>Sentry</code> is actively integrated (via the <code>sentry-sidekiq</code> gem) to capture and report unhandled exceptions, ensuring comprehensive error monitoring for asynchronous operations.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo core application is a Ruby on Rails 7.2.0 application, built on Ruby 3.4.4. A critical technical consideration is the platform’s microservice architecture, where the <code>Xikolo::Web::Application</code> acts as a central hub. Inter-service communication is primarily handled by the <code>Restify</code> client, which is actively replacing the legacy <code>Acfs</code> client. The application’s <code>config/application.rb</code> explicitly maps <code>Acfs</code> and <code>Restify</code> exceptions (<code>BadGateway</code>, <code>ServiceUnavailable</code>, <code>GatewayTimeout</code>) to HTTP status codes for consistent error handling. The ongoing migration from <code>Acfs</code> to <code>Restify</code> is a significant technical debt item, aiming to streamline internal HTTP communication.</p>
+<p>Deployment relies heavily on containerization using Docker and Docker Compose. <code>DockerBakeHCL</code> defines multi-platform base images (<code>ruby-base</code>, <code>ruby-base-node</code>) for consistency across services. The <code>docker-compose.yml</code> file orchestrates the entire development environment, integrating <code>DockerComposeBackground</code> (for <code>PostgreSQL</code>, <code>RabbitMQ</code>, <code>RedisCache</code>, <code>RedisSidekiq</code>, <code>Minio</code>, <code>Mailpit</code>), <code>DockerComposeInit</code> (for database migrations and permission loading), <code>DockerComposeWeb</code> (the main Rails application), and <code>DockerComposeService</code> (for other microservices). <code>Nginx</code> serves as the ingress controller, routing external traffic to internal services. The <code>bin/entrypoint</code> script within Docker containers handles startup tasks such as <code>bundle exec rake db:prepare</code> for database migrations, and initiating background workers (<code>delayed</code>, <code>msgr</code>, <code>sidekiq</code>). Performance is enhanced by enabling <code>RubyVM::YJIT</code> for Ruby 3.3+ via <code>config/initializers/enable_yjit.rb</code> and by conditionally loading <code>Bootsnap</code> in development for faster application boot times.</p>
+<p>Configuration management follows a layered approach. Core Rails settings, including autoload paths, <code>ActiveJob</code> queue adapter (<code>:delayed</code>), <code>ActionMailer</code> defaults, <code>I18n</code> locales, custom exception mappings, and middlewares (<code>Rack::Attack</code>, <code>Middleware::NewsTracker</code>, <code>Rack::Cors</code>, <code>Telegraf</code>), are defined in <code>config/application.rb</code>. <code>Xikolo.config</code> (from <code>app/xikolo.yml</code>) centralizes application-wide settings such as <code>site_name</code>, <code>base_url</code>, <code>mailsender</code>, CSP policies, S3 bucket configurations (leveraging <code>Xikolo::S3</code>), and various feature toggles (<code>beta_features</code>, <code>gamification</code>, <code>recaptcha</code>). Sensitive credentials are stored in <code>config/secrets.yml</code> (<code>secret_key_base</code>, <code>imgproxy_key/salt</code>, Smowl credentials, various bridge API secrets). Microservice endpoints are defined in <code>config/services.yml</code>, allowing overrides via environment variables (e.g., <code>ENV['XIKOLO_SERVICE_ACCOUNT']</code>). Redis specific configurations for caching and Sidekiq are managed via <code>config/cache_redis.yml</code> and <code>config/sidekiq_redis.yml</code> respectively, also supporting environment variable overrides (<code>CACHE_REDIS_URL</code>, <code>SIDEKIQ_REDIS_URL</code>).</p>
+<p>Dependencies include <code>PostgreSQL</code> for transactional data, <code>RabbitMQ</code> for asynchronous message passing (used by <code>Msgr</code>), and <code>Redis</code> instances for both caching (<code>RedisCache</code>) and background job queuing (<code>RedisSidekiq</code>). <code>Minio</code> provides S3-compatible object storage, utilized by <code>Xikolo::S3</code> for file management. <code>Mailpit</code> is a development-time dependency for testing email functionality. Monitoring and observability are achieved through <code>Sentry</code> for error tracking and <code>Telegraf</code> for metric collection, with <code>Xikolo.metrics</code> providing custom application metrics. Internationalization (I18n) supports German (<code>de</code>) and English (<code>en</code>) locales, with brand-specific localizations managed by <code>Makefile</code> tasks for asset and i18n file generation, integrating with <code>i18n-js</code> for frontend translations. <code>Rake Tasks</code> provide utilities for CI setup, API documentation generation, and asset pipeline management.</p>
+<p>Identified technical debt includes the ongoing <code>Acfs</code> to <code>Restify</code> migration, the use of YAML serialization for <code>paper_trail</code> which requires explicit class whitelisting (JSON migration recommended), and the presence of <code>UnicornConfiguration</code> alongside <code>PumaConfiguration</code> potentially indicating a legacy server setup that needs consolidation.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>ApplicationController</strong> <code>app/controllers/application_controller.rb</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>DockerComposeService</strong> <code>RAG: docker/compose.account.yml</code></li>
+<li>📄 <strong>DockerComposeService</strong> <code>RAG: docker/compose.course.yml</code></li>
+<li>📄 <strong>Service Endpoints (config/services.yml)</strong> <code>config/services.yml</code></li>
+<li>📄 <strong>Service Endpoints (config/services.yml)</strong> <code>RAG: config/services.yml</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::Web::Application</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>ApplicationJob</strong> <code>app/jobs/application_job.rb</code></li>
+<li>📄 <strong>ApplicationRecord</strong> <code>app/models/application_record.rb</code></li>
+<li>📄 <strong>ApplicationOperation</strong> <code>app/operations/application_operation.rb</code></li>
+<li>📄 <strong>Procfile</strong> <code>Procfile</code></li>
+<li>📄 <strong>Procfile</strong> <code>Procfile.web</code></li>
+<li>📄 <strong>Xikolo (Global Config/Namespace)</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Xikolo (Global Config/Namespace)</strong> <code>app/controllers/application_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Common::Auth::Middleware</strong> <code>app/controllers/application_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Common::Auth::CurrentUser</strong> <code>app/controllers/application_controller.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Msgr</strong> <code>config/msgr.rb</code></li>
+<li>📄 <strong>Sentry</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Sentry</strong> <code>app/controllers/application_controller.rb</code></li>
+<li>📄 <strong>Telegraf</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Telegraf</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Rack::Attack</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Rack::Cors</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>I18n</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>I18n</strong> <code>Rakefile</code></li>
+<li>📄 <strong>Bootsnap</strong> <code>config/boot.rb</code></li>
+<li>📄 <strong>RubyVM::YJIT</strong> <code>config/initializers/enable_yjit.rb</code></li>
+<li>📄 <strong>Lookbook</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Lookbook</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Imagecrop</strong> <code>app/helpers/application_helper.rb</code></li>
+<li>📄 <strong>Imagecrop</strong> <code>Gemfile</code></li>
+<li>📄 <strong>BrowserSupport</strong> <code>app/helpers/application_helper.rb</code></li>
+<li>📄 <strong>Acfs</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Acfs</strong> <code>app/controllers/application_controller.rb</code></li>
+<li>📄 <strong>Restify</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Restify</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Delayed (Delayed Job)</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Delayed (Delayed Job)</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Sidekiq</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Sidekiq</strong> <code>config/sidekiq_redis.yml</code></li>
+<li>📄 <strong>Xikolo.config</strong> <code>app/xikolo.yml</code></li>
+<li>📄 <strong>Xikolo.config</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Xikolo.metrics</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Puma</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Puma</strong> <code>config/puma.rb</code></li>
+<li>📄 <strong>Delayed Job</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Delayed Job</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Grape</strong> <code>Gemfile</code></li>
+<li>📄 <strong>PumaConfiguration</strong> <code>config/puma.rb</code></li>
+<li>📄 <strong>PumaConfiguration</strong> <code>config/puma.production.rb</code></li>
+<li>📄 <strong>UnicornConfiguration</strong> <code>config/unicorn.rb</code></li>
+<li>📄 <strong>DockerComposeBackground</strong> <code>RAG: docker/compose.background.yml</code></li>
+<li>📄 <strong>DockerComposeInit</strong> <code>RAG: docker/compose.init.yml</code></li>
+<li>📄 <strong>DockerComposeWeb</strong> <code>RAG: docker/compose.web.yml</code></li>
+<li>📄 <strong>DockerComposeNginx</strong> <code>RAG: docker/compose.yml</code></li>
+<li>📄 <strong>DockerComposeMain</strong> <code>RAG: docker/compose.yml</code></li>
+<li>📄 <strong>PostgreSQL</strong> <code>RAG: docker/compose.background.yml</code></li>
+<li>📄 <strong>RabbitMQ</strong> <code>RAG: docker/compose.background.yml</code></li>
+<li>📄 <strong>RedisCache</strong> <code>RAG: docker/compose.background.yml</code></li>
+<li>📄 <strong>RedisSidekiq</strong> <code>RAG: docker/compose.background.yml</code></li>
+<li>📄 <strong>Minio</strong> <code>RAG: docker/compose.background.yml</code></li>
+<li>📄 <strong>Mailpit</strong> <code>RAG: docker/compose.background.yml</code></li>
+<li>📄 <strong>Nginx</strong> <code>RAG: docker/compose.yml</code></li>
+<li>📄 <strong>Xikolo.config (app/xikolo.yml)</strong> <code>app/xikolo.yml</code></li>
+<li>📄 <strong>Xikolo.config (app/xikolo.yml)</strong> <code>config/xikolo.test.yml</code></li>
+<li>📄 <strong>Secrets (config/secrets.yml)</strong> <code>config/secrets.yml</code></li>
+<li>📄 <strong>Secrets (config/secrets.yml)</strong> <code>RAG: config/secrets.yml</code></li>
+<li>📄 <strong>Redis Configuration (Cache &amp; Sidekiq)</strong> <code>config/cache_redis.yml</code></li>
+<li>📄 <strong>Redis Configuration (Cache &amp; Sidekiq)</strong> <code>config/sidekiq_redis.yml</code></li>
+<li>📄 <strong>Rake Tasks</strong> <code>Rakefile</code></li>
+<li>📄 <strong>Middleware::NewsTracker</strong> <code>config/application.rb</code></li>
+<li>📄 <strong>Xikolo::Config</strong> <code>gems/xikolo-config/README.md</code></li>
+<li>📄 <strong>Xikolo::Config</strong> <code>gems/xikolo-config/lib/xikolo/config.yml</code></li>
+<li>📄 <strong>Xikolo::UI::Form</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::Web::Application</strong> <code>RAG: docs/app/development/branding/initializers.md</code></li>
+<li>📄 <strong>Xikolo.metrics</strong> <code>RAG: gems/xikolo-common/README.md</code></li>
+<li>📄 <strong>DockerBakeHCL</strong> <code>RAG: docker/README.md</code></li>
+<li>📄 <strong>PostgreSQL</strong> <code>RAG: docs/app/deployment/opensource/index.md</code></li>
+<li>📄 <strong>RabbitMQ</strong> <code>RAG: docs/app/deployment/opensource/index.md</code></li>
+<li>📄 <strong>RedisCache</strong> <code>RAG: docs/app/deployment/opensource/index.md</code></li>
+<li>📄 <strong>RedisSidekiq</strong> <code>RAG: docs/app/deployment/opensource/index.md</code></li>
+<li>📄 <strong>Minio</strong> <code>RAG: docs/app/deployment/opensource/index.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>Makefile</strong> <code>Makefile</code></li>
+<li>📄 <strong>bin/entrypoint</strong> <code>bin/entrypoint</code></li>
+<li>📄 <strong>Xikolo::S3</strong> <code>gems/xikolo-s3/README.md</code></li>
+<li>📄 <strong>Dockerignore</strong> <code>.dockerignore</code></li>
+<li>📄 <strong>EnvFile</strong> <code>.env</code></li>
+<li>📄 <strong>EnvFile</strong> <code>.env.docker</code></li>
+<li>📄 <strong>DockerBakeHCL</strong> <code>docker-bake.hcl</code></li>
+<li>📄 <strong>Xikolo::Common</strong> <code>gems/xikolo-common/README.md</code></li>
+<li>📄 <strong>Xikolo::Sidekiq</strong> <code>gems/xikolo-sidekiq/README.md</code></li>
+<li>📄 <strong>check-gem-versions</strong> <code>scripts/check-gem-versions</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295076"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

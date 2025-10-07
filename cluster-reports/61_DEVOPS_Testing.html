@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Testing standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#devops" class="breadcrumb-link">DEVOPS</a></li>
+            <li class="breadcrumb-item active">Testing standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-code-quality-enforcement-workflow" class="sidebar-nav-link">1. Code Quality Enforcement Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-development-environment-setup-workflow" class="sidebar-nav-link">2. Development Environment Setup Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-end-to-end-test-execution-workflow" class="sidebar-nav-link">3. End-to-End Test Execution Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#technical-considerations" class="sidebar-nav-link">Technical Considerations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#dependencies-and-integrations" class="sidebar-nav-link">Dependencies and Integrations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#configuration-requirements" class="sidebar-nav-link">Configuration Requirements</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-devops">DEVOPS</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="testing-frameworks%2C-code-quality-tools%2C-and-development-environment-setup---technical-documentation" tabindex="-1"><a class="header-anchor" href="#testing-frameworks%2C-code-quality-tools%2C-and-development-environment-setup---technical-documentation"><span>Testing Frameworks, Code Quality Tools, and Development Environment Setup - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/19/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the comprehensive testing frameworks, code quality enforcement tools, and development environment setup for the Xikolo cluster 61_DEVOPS_Testing. The primary purpose is to provide a standardized overview of how code quality is maintained, applications are tested, and development environments are initialized and updated. Key components include RSpec and Gurke for testing, an array of linters (RuboCop, Slim-Lint, ESLint, Stylelint, Prettier) for code quality, and automated scripts (<code>bin/setup</code>, <code>scripts/check-gem-versions</code>, <code>scripts/rubocop-changed</code>) for environment management. The scope covers the entire lifecycle from development to testing, ensuring robust and maintainable software.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The architecture for Xikolo cluster 61_DEVOPS_Testing is structured around a core application codebase, supported by a suite of testing frameworks, code quality tools, and essential development utilities. The design emphasizes automated quality checks and efficient development environment provisioning. Ruby applications leverage RSpec for unit/integration testing and Gurke/Capybara for end-to-end (E2E) scenarios, ensuring functional correctness across various layers. Static analysis, including RuboCop for Ruby, ESLint for JavaScript/TypeScript, Stylelint for SCSS, and Slim-Lint for templates, rigorously enforces coding standards. Prettier acts as an automated formatter, standardizing code style. Development operations are streamlined through scripts like <code>bin/setup</code> for environment initialization and <code>scripts/check-gem-versions</code> for dependency consistency. Testing dependencies like SimpleCov provide code coverage, while Stubbing Utilities and Minio facilitate isolated and realistic testing by mocking external services such as S3 storage. This integrated approach ensures a high standard of code quality and reliable application behavior.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-architecture-overview"><span>Main Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appCode["Application Codebase"]
+  testingFrameworks["Ruby Testing Frameworks"]
+  codeQuality["Code Quality Toolchain"]
+  devOpsScripts["DevOps Scripts"]
+  mockingServices["Mocking & Coverage Services"]
+  gitRepo["Git Repository"]
+
+  appCode -->|"undergoes tests by"| testingFrameworks
+  appCode -->|"analyzed by"| codeQuality
+  devOpsScripts -->|"prepares environment for"| appCode
+  testingFrameworks -->|"leverages"| mockingServices
+  codeQuality -->|"interacts with"| gitRepo
+  devOpsScripts -->|"reads from"| gitRepo
+  testingFrameworks -->|"reports coverage to"| mockingServices
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>RSpec:</strong> Executes test suites for various application layers.</li>
+<li><strong>RSpec:</strong> Utilizes factories for test data generation.</li>
+<li><strong>SimpleCov:</strong> Analyzes code execution during test runs to determine coverage.</li>
+<li><strong>SimpleCov:</strong> Filters specific directories (e.g., <code>bin/</code>, <code>db/</code>, <code>config/</code>, <code>spec/</code>, <code>services/</code>) from coverage reports.</li>
+<li><strong>RuboCop:</strong> Analyzes Ruby code against a comprehensive set of rules defined in <code>.rubocop.yml</code>.</li>
+<li><strong>RuboCop:</strong> Integrates with <code>rubocop-changed</code> script to check only modified files.</li>
+<li><strong>Slim-Lint:</strong> Analyzes <code>.slim</code> template files.</li>
+<li><strong>Slim-Lint:</strong> Leverages RuboCop for embedded Ruby code linting.</li>
+<li><strong>ESLint:</strong> Analyzes <code>.js</code>, <code>.mjs</code>, <code>.cjs</code>, and <code>.ts</code> files.</li>
+<li><strong>Stylelint:</strong> Analyzes SCSS files.</li>
+<li><strong>Prettier:</strong> Formats code files automatically.</li>
+<li><strong>bin/setup:</strong> Installs Ruby gems via Bundler.</li>
+<li><strong>bin/setup:</strong> Prepares the database using <code>bin/rails db:prepare</code>.</li>
+<li><strong>scripts/check-gem-versions:</strong> Parses <code>Gemfile.lock</code> files from the main app and <code>services/*</code>.</li>
+<li><strong>scripts/rubocop-changed:</strong> Interacts with Git to identify changed files.</li>
+<li><strong>scripts/rubocop-changed:</strong> Executes RuboCop on the identified files.</li>
+<li><strong>Gurke:</strong> Orchestrates the execution of E2E tests defined in <code>integration/features</code>.</li>
+<li><strong>Gurke:</strong> Drives a browser via Capybara to simulate user interactions.</li>
+<li><strong>Capybara:</strong> Drives web browsers (e.g., Chrome, Firefox) to execute user scenarios.</li>
+<li><strong>Capybara:</strong> Used by Gurke for E2E tests and by RSpec for feature tests.</li>
+<li><strong>Stubbing Utilities (xikolo-common/rspec/stub.rb):</strong> Provides methods like <code>stub_user_request</code>, <code>Stub.service()</code>, <code>Stub.request()</code> to mock HTTP responses from microservices.</li>
+<li><strong>Stubbing Utilities (xikolo-common/rspec/stub.rb):</strong> Used to stub external dependencies such as S3 calls.</li>
+<li><strong>Minio:</strong> Automatically launched and configured by the E2E test setup.</li>
+<li><strong>Minio:</strong> Serves as a local mock for S3 storage operations during E2E tests.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-code-quality-enforcement-workflow" tabindex="-1"><a class="header-anchor" href="#1.-code-quality-enforcement-workflow"><span>1. Code Quality Enforcement Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  startDev["Start Code Development"]
+  gitIdentify["Git Identifies Changed Files"]
+  runRuboCop["Execute RuboCop (Ruby)"]
+  runLinters["Execute Multi-Language Linters (JS, SCSS, Slim)"]
+  applyPrettier["Apply Prettier Formatting"]
+  reviewCode["Review & Refactor Code"]
+
+  startDev -->|"commits changes"| gitIdentify
+  gitIdentify -->|"triggers checks for"| runRuboCop
+  runRuboCop -->|"informs other linters"| runLinters
+  runLinters -->|"suggests/applies formatting"| applyPrettier
+  applyPrettier -->|"prepares for"| reviewCode
+  reviewCode -->|"incorporates feedback or merges"| startDev
+</pre></div>
+<p>This workflow outlines the systematic process for maintaining high code quality across various programming languages and template files within the Xikolo cluster. It begins with a developer making changes to the codebase. Upon committing these changes, the <code>scripts/rubocop-changed</code> utility is leveraged to identify only the modified files, optimizing the subsequent static analysis. RuboCop, the primary linter for Ruby, then executes its comprehensive set of rules and plugins, including <code>rubocop-rails</code> and <code>rubocop-rspec</code>, on these Ruby files. Concurrently, or in sequence, other specialized linters target their respective file types: Slim-Lint for <code>.slim</code> templates (which also leverages RuboCop for embedded Ruby), ESLint for JavaScript/TypeScript, and Stylelint for SCSS. After linting identifies potential issues, Prettier steps in to automatically format code files, ensuring consistent style. Any remaining issues or refactoring suggestions are then reviewed by the developer, who iteratively refines the code before it is considered ready for integration.</p>
+<h3 id="2.-development-environment-setup-workflow" tabindex="-1"><a class="header-anchor" href="#2.-development-environment-setup-workflow"><span>2. Development Environment Setup Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  initiateSetup["Initiate Setup (bin/setup)"]
+  installGems["Install Ruby Gems (Bundler)"]
+  prepareDatabase["Prepare Database (Rails db:prepare)"]
+  cleanupFiles["Clear Logs & Temporary Files"]
+  restartApp["Restart Application Server"]
+  envReady["Development Environment Ready"]
+
+  initiateSetup -->|"starts by"| installGems
+  installGems -->|"upon success"| prepareDatabase
+  prepareDatabase -->|"then"| cleanupFiles
+  cleanupFiles -->|"finally"| restartApp
+  restartApp -->|"provides a working"| envReady
+</pre></div>
+<p>The development environment setup workflow is initiated by the <code>bin/setup</code> script, designed to provide an idempotent and consistent environment for all developers. The process commences with the installation of Ruby gem dependencies, managed efficiently by Bundler via <code>bundle install</code>. Following successful gem installation, the database is prepared, which typically involves running migrations and seeding initial data through <code>bin/rails db:prepare</code>. To maintain a clean and performant environment, the script then clears old logs and temporary files using <code>bin/rails log:clear tmp:clear</code>. As a final step, the Rails application server is restarted with <code>bin/rails restart</code> to ensure that all changes and configurations are applied and the application is ready for local development or testing. This standardized sequence guarantees that every developer’s environment is identically configured and up-to-date, reducing ‘it works on my machine’ issues.</p>
+<h3 id="3.-end-to-end-test-execution-workflow" tabindex="-1"><a class="header-anchor" href="#3.-end-to-end-test-execution-workflow"><span>3. End-to-End Test Execution Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  startGurke["Start E2E Test Run (Gurke)"]
+  setupEnvironment["Configure Test Environment (Minio, Stubs)"]
+  capybaraControl["Capybara Controls Browser"]
+  simulateUser["Simulate User Interactions"]
+  validateOutcomes["Validate Test Outcomes"]
+  testExecutionFinish["Test Execution Finish"]
+
+  startGurke -->|"initializes"| setupEnvironment
+  setupEnvironment -->|"prepares for"| capybaraControl
+  capybaraControl -->|"executes"| simulateUser
+  simulateUser -->|"checks against expectations"| validateOutcomes
+  validateOutcomes -->|"reports status, marks"| testExecutionFinish
+</pre></div>
+<p>This workflow details the execution of end-to-end tests, orchestrated primarily by Gurke. The process starts with Gurke initiating the E2E test suite. As part of the environment setup for these tests, Minio, a local S3-compatible object storage server, is automatically launched and configured. This provides a mock S3 service, crucial for testing features involving file storage without relying on external cloud providers. Simultaneously, or in conjunction, Capybara is engaged to drive a web browser, simulating real user interactions. To isolate microservice dependencies and ensure predictable test outcomes, custom Stubbing Utilities are employed within the test setup to mock HTTP responses from various services. With the environment prepared and mocks in place, Gurke proceeds to execute defined user scenarios, driving the browser via Capybara to interact with the application. The outcomes are validated against expected behaviors, and upon completion, the test execution finishes, providing a comprehensive report on the application’s E2E functional integrity.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<h3 id="technical-considerations" tabindex="-1"><a class="header-anchor" href="#technical-considerations"><span>Technical Considerations</span></a></h3>
+<p>The Xikolo cluster leverages several key technical considerations to ensure robust testing and code quality. <strong>RSpec</strong> supports conditional test execution via the <code>BRAND</code> environment variable, enabling brand-specific testing within a multi-brand application. It also utilizes factories for test data generation and integrates with custom stubbing utilities for microservice isolation. <strong>SimpleCov</strong> is configured to provide detailed code coverage reports by filtering non-application directories (<code>bin/</code>, <code>db/</code>, <code>config/</code>, <code>spec/</code>, <code>services/</code>) and categorizing application code into logical groups like ‘API’, ‘Business Logic’, ‘Controllers’, and ‘UI’. <strong>RuboCop</strong> enforces style and best practices for Ruby, targeting Rails 7.2 and Ruby 3.4, with new cops enabled. Its custom <code>bin/rubocop</code> script ensures consistent execution, and <code>scripts/rubocop-changed</code> allows for efficient incremental checks. <strong>Slim-Lint</strong> explicitly forbids embedded engines like <code>coffee</code>, <code>css</code>, <code>sass</code>, <code>scss</code>, and <code>less</code> within <code>.slim</code> templates to maintain separation of concerns. <strong>ESLint</strong> extends <code>pluginJs.configs.recommended</code> and <code>tseslint.configs.recommended</code>, defining <code>__BRAND__</code>, <code>__MODE__</code>, and <code>I18n</code> as <code>readonly</code> globals and warning against <code>no-console</code> usage. <strong>Stylelint</strong> is configured with <code>stylelint-config-recommended-scss</code>, <code>stylelint-config-idiomatic-order</code>, and <code>stylelint-config-two-dash-bem</code>, specifically adjusting rules for <code>ruby-sass</code> compiler limitations, requiring <code>number</code> notation for alpha values and <code>legacy</code> comma-separated syntax for <code>rgb</code> functions. <strong>Prettier</strong> defaults to <code>singleQuote: true</code> but includes overrides for SCSS, YAML, and YML files to use <code>singleQuote: false</code>.</p>
+<h3 id="dependencies-and-integrations" tabindex="-1"><a class="header-anchor" href="#dependencies-and-integrations"><span>Dependencies and Integrations</span></a></h3>
+<p>The testing and quality ecosystem within Xikolo cluster 61_DEVOPS_Testing exhibits a tight web of dependencies and integrations. <strong>RSpec</strong> is integrated with <strong>SimpleCov</strong> for coverage analysis and relies on <strong>Stubbing Utilities</strong> (from <code>xikolo-common/rspec/stub.rb</code>) for mocking external microservice calls and S3 interactions. <strong>RuboCop</strong> heavily integrates with <strong><code>scripts/rubocop-changed</code></strong> for incremental analysis and uses a range of plugins including <code>rubocop-rails</code>, <code>rubocop-rspec</code>, <code>rubocop-capybara</code>, and <code>rubocop-factory_bot</code>. <strong>Slim-Lint</strong> explicitly leverages <strong>RuboCop</strong> for embedded Ruby code within <code>.slim</code> templates. <strong>Gurke</strong>, as the E2E test orchestrator, drives web browser interactions via <strong>Capybara</strong>. Both <strong>Gurke</strong> and <strong>RSpec</strong> feature tests utilize <strong>Capybara</strong>. <strong>Minio</strong> serves as a local mock for S3 storage and is automatically launched by the E2E test setup orchestrated by Gurke. The <strong><code>bin/setup</code></strong> script depends on <strong>Bundler</strong> for gem installation and <strong>Rails</strong> for database preparation (<code>db:prepare</code>) and server management. The <strong><code>scripts/check-gem-versions</code></strong> utility parses <code>Gemfile.lock</code> files from the main application and its <code>services/*</code>.</p>
+<h3 id="configuration-requirements" tabindex="-1"><a class="header-anchor" href="#configuration-requirements"><span>Configuration Requirements</span></a></h3>
+<p>Configuration is decentralized across various tool-specific files. <strong>RuboCop</strong>’s rules are managed in <code>.rubocop.yml</code>, specifying Ruby and Rails versions and plugin configurations. <strong>Slim-Lint</strong> uses <code>.slim-lint.yml</code> to define linter rules and exclusions, noting <code>TODO</code> items for <code>javascript</code> embedded engines and instance variables in views. <strong>ESLint</strong> configuration is found in <code>eslint.config.mjs</code>, where plugin extensions, global variables (<code>__BRAND__</code>, <code>__MODE__</code>, <code>I18n</code>), and specific rules (<code>no-console</code>) are defined, alongside ignored legacy and vendor assets. <strong>Stylelint</strong> rules, extensions, and BEM conventions are set in <code>.stylelintrc.js</code>, including specific rule overrides for <code>ruby-sass</code> compatibility. <strong>Prettier</strong>’s formatting preferences are specified in <code>.prettierrc.yml</code>, primarily for <code>singleQuote</code> settings and overrides. <strong>RSpec</strong> test patterns and exclusions, including brand-specific tests, are configured via <code>.rspec</code>. <strong>SimpleCov</strong> uses <code>.simplecov</code> for its filtering and grouping logic. <strong>Capybara</strong> may require specific environment variables, such as <code>SNAP=1</code>, for certain browser setups as indicated in cluster data.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Slim-Lint</strong> <code>.slim-lint.yml</code></li>
+<li>📄 <strong>Prettier</strong> <code>.prettierrc.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Gurke</strong> <code>RAG: docs/app/development/testing/end_to_end.md</code></li>
+<li>📄 <strong>Capybara</strong> <code>RAG: docs/app/development/testing/end_to_end.md</code></li>
+<li>📄 <strong>Capybara</strong> <code>RAG: docs/app/development/testing/index.md</code></li>
+<li>📄 <strong>Stubbing Utilities (xikolo-common/rspec/stub.rb)</strong> <code>RAG: docs/app/development/testing/rspec.md</code></li>
+<li>📄 <strong>Minio</strong> <code>RAG: docs/app/development/testing/end_to_end.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>RSpec</strong> <code>.rspec</code></li>
+<li>📄 <strong>RSpec</strong> <code>bin/rspec</code></li>
+<li>📄 <strong>SimpleCov</strong> <code>.simplecov</code></li>
+<li>📄 <strong>RuboCop</strong> <code>bin/rubocop</code></li>
+<li>📄 <strong>RuboCop</strong> <code>scripts/rubocop-changed</code></li>
+<li>📄 <strong>ESLint</strong> <code>eslint.config.mjs</code></li>
+<li>📄 <strong>Stylelint</strong> <code>.stylelintrc.js</code></li>
+<li>📄 <strong>bin/setup</strong> <code>bin/setup</code></li>
+<li>📄 <strong>scripts/check-gem-versions</strong> <code>scripts/check-gem-versions</code></li>
+<li>📄 <strong>scripts/rubocop-changed</strong> <code>scripts/rubocop-changed</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294157"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

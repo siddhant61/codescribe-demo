@@ -1,0 +1,657 @@
+{
+  "clusterId": "16_LEARN_PollsSurveys",
+  "featureFocus": "Poll and Survey Creation and Response",
+  "documentationReport": "The feature cluster \"Poll and Survey Creation and Response\" in the Xikolo application primarily revolves around the `PollsController` and its associated ViewComponents and Presenters. This cluster enables users to view, vote on, and review the results of polls.\n\n**Core Functionality:**\n1.  **Displaying the Next Poll:** When a user accesses the dashboard, an AJAX request is made to `next_poll_path` [Source: app/views/dashboard/_polls.html.slim]. The `PollsController#next` action fetches the `upcoming_for_user` poll [Source: app/controllers/polls_controller.rb] and renders it using `Dashboard::Poll::Widget` and `Dashboard::Poll::Question` ViewComponents [Source: app/controllers/polls_controller.rb]. If no upcoming poll is found, a `no_content` header is returned [Source: app/controllers/polls_controller.rb].\n2.  **Voting on a Poll:** Users can submit their choices for a poll via the `PollsController#vote` action [Source: app/controllers/polls_controller.rb]. This action calls `poll.vote!` with the selected choices and the `current_user.id` [Source: app/controllers/polls_controller.rb]. After voting, the system checks for the existence of a `next_poll` [Source: app/controllers/polls_controller.rb] and renders a `Dashboard::Poll::Thanks` ViewComponent, which can display results if `poll.reveal_results?` is true [Source: app/controllers/polls_controller.rb].\n3.  **Poll Archive and Results:** The `PollsController#archive` action retrieves the 20 latest started polls [Source: app/controllers/polls_controller.rb]. Each poll is then processed by a `PollArchivePresenter` to prepare it for display [Source: app/controllers/polls_controller.rb]. The `PollArchivePresenter` determines whether to show results based on the poll's `ended?` status, whether the user has `voted?`, and if `poll.reveal_results?` [Source: app/presenters/poll_archive_presenter.rb]. It also provides localized messages for intermediate or final results, or callouts if results are not yet available or the user hasn't voted [Source: app/presenters/poll_archive_presenter.rb]. Results are rendered using `Dashboard::Poll::Question.results` [Source: app/presenters/poll_archive_presenter.rb].\n\n**Inferred Models and Components:**\n*   **`Poll::Poll` (Model):** This ActiveRecord model is central to the poll functionality. It manages poll questions, options, user responses, and statistical data. It provides methods for finding upcoming polls, processing votes, and determining result visibility [Source: app/controllers/polls_controller.rb, app/presenters/poll_archive_presenter.rb].\n*   **`Poll::Option` (Model):** Represents the individual choices available for a poll question. It is included when fetching polls for the archive [Source: app/controllers/polls_controller.rb].\n*   **`Poll::Response` (Model):** Stores a user's selections for a specific poll. Its existence is checked by `PollArchivePresenter#voted?` [Source: app/presenters/poll_archive_presenter.rb].\n*   **`Dashboard::Poll::Widget` (ViewComponent):** Acts as a wrapper for displaying poll content on the dashboard [Source: app/controllers/polls_controller.rb].\n*   **`Dashboard::Poll::Question` (ViewComponent):** Renders the poll question and its options, used both for voting and displaying results [Source: app/controllers/polls_controller.rb, app/presenters/poll_archive_presenter.rb].\n*   **`Dashboard::Poll::Thanks` (ViewComponent):** Displays a confirmation message after a user votes, potentially including results and a prompt for the next poll [Source: app/controllers/polls_controller.rb].\n*   **`Abstract::FrontendController` (Base Controller):** The parent class for `PollsController`, providing common functionalities like ensuring user login and setting cache headers [Source: app/controllers/polls_controller.rb].\n*   **`Global::Callout` (ViewComponent/Helper):** Used by `PollArchivePresenter` to display general informational messages to the user [Source: app/presenters/poll_archive_presenter.rb].\n\n**Relationship to Surveys (RAG Context):**\nThe `take_survey.feature` documentation [Source: integration/features/xikolo/content/quiz/take_survey.feature] describes a similar user interaction pattern for surveys, involving selecting answers and submitting. While the provided code specifically implements `Poll` functionality, the conceptual workflow of taking a survey (as an 'item' with a deadline) suggests that polls and surveys might share underlying architectural patterns or user experience flows, even if implemented with distinct models (e.g., `Survey` vs. `Poll::Poll`). The RAG context mentions a 'survey item with questions and answers' and 'item deadline', indicating that surveys are likely integrated into the broader `Item` concept within the Xikolo platform, similar to how quizzes are handled.\n\n**Technical Debt:**\nThe `app/views/dashboard/_polls.html.slim` partial uses direct jQuery `$.get` and DOM manipulation (`$('#polls').html(data)`) for loading poll content [Source: app/views/dashboard/_polls.html.slim]. While functional, this approach is less aligned with modern frontend practices, especially in a project that also leverages `ViewComponent` and `React`. Refactoring this into a dedicated ViewComponent or a React component could improve maintainability and consistency with the overall frontend architecture.",
+  "componentMapPatch": {
+    "components": {
+      "PollsController": {
+        "type": "Controller",
+        "description": "Handles user interactions with polls, including fetching the next available poll, processing votes, and displaying poll archives. It ensures users are logged in and sets no-cache headers.",
+        "interactions": {
+          "interaction_0": "Inherits from `Abstract::FrontendController`.",
+          "interaction_1": "Interacts with `Poll::Poll` model to fetch, find, and process votes.",
+          "interaction_2": "Renders `Dashboard::Poll::Widget` to display poll content.",
+          "interaction_3": "Uses `Dashboard::Poll::Question` for displaying poll questions and options.",
+          "interaction_4": "Uses `Dashboard::Poll::Thanks` for displaying post-vote confirmation.",
+          "interaction_5": "Utilizes `PollArchivePresenter` to prepare data for the poll archive view.",
+          "interaction_6": "Relies on `current_user` for user context."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 5,
+              "code": "# frozen_string_literal: true\n\nclass PollsController < Abstract::FrontendController\n  before_action :set_no_cache_headers\n  before_action :ensure_logged_in",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 7,
+              "endLine": 9,
+              "code": "  def archive\n    @polls = Poll::Poll.includes(:options).started.latest_first.take(20)\n      .map { PollArchivePresenter.new(it, current_user) }\n  end",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 16,
+              "code": "  def next\n    poll = Poll::Poll.upcoming_for_user(current_user.id).first!\n\n    render Dashboard::Poll::Widget.new(poll).with_content(\n      Dashboard::Poll::Question.vote(poll).render_in(view_context)\n    ), layout: false\n  rescue ActiveRecord::RecordNotFound\n    head :no_content\n  end",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 27,
+              "code": "  def vote\n    poll = Poll::Poll.find(params[:id])\n    response = poll.vote! choices, user_id: current_user.id\n\n    has_next_poll = Poll::Poll.upcoming_for_user(current_user.id).exists?\n\n    render Dashboard::Poll::Widget.new(poll).with_content(\n      Dashboard::Poll::Thanks.new(\n        poll,\n        choices: response.choices,\n        stats: poll.reveal_results? ? poll.stats : nil,\n        next_pol...",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 16,
+              "code": "    private\n\n    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end",
+              "source": "app/controllers/polls_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/polls_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "PollArchivePresenter": {
+        "type": "Presenter",
+        "description": "Prepares and formats data for displaying polls in the archive view. It encapsulates logic for determining result visibility, user voting status, and provides localized informational messages.",
+        "interactions": {
+          "interaction_0": "Initializes with a `Poll::Poll` object and `current_user`.",
+          "interaction_1": "Delegates `id` and `question` to the `@poll` object.",
+          "interaction_2": "Accesses various methods of `@poll` such as `ended?`, `reveal_results?`, `open?`, `stats`, `end_at`, `response_for`.",
+          "interaction_3": "Uses `Global::Callout` for displaying informational messages.",
+          "interaction_4": "Renders `Dashboard::Poll::Question.results` for displaying poll results."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/poll_archive_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": "# frozen_string_literal: true\n\nclass PollArchivePresenter\n  include Rails.application.routes.url_helpers\n\n  def initialize(poll, current_user)\n    @poll = poll\n\n    @response = @poll.response_for(current_user.id)\n  end\n\n  delegate :id, :question, to: :@poll\n\n  def show_results?\n    return true if @poll.ended?\n\n    voted? && @poll.reveal_results?\n  end",
+              "source": "app/presenters/poll_archive_presenter.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 23,
+              "code": "  def results_info\n    if @poll.open?\n      I18n.t(:'polls.archive.intermediate_results', participants: num_participants)\n    else\n      I18n.t(:'polls.archive.final_results', date: end_at, participants: num_participants)\n    end\n  end",
+              "source": "app/presenters/poll_archive_presenter.rb"
+            },
+            {
+              "startLine": 25,
+              "endLine": 32,
+              "code": "  def no_results_info\n    if !voted?\n      Global::Callout.new(I18n.t(:'polls.archive.place_vote', date: end_at, link: dashboard_path))\n    elsif !@poll.show_intermediate_results?\n      Global::Callout.new(I18n.t(:'polls.archive.not_ended', date: end_at))\n    elsif !@poll.enough_participants?\n      Global::Callout.new(I18n.t(:'polls.archive.not_enough_participants'))\n    end\n  end",
+              "source": "app/presenters/poll_archive_presenter.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 34,
+              "code": "  def results\n    Dashb...",
+              "source": "app/presenters/poll_archive_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/poll_archive_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "app/views/dashboard/_polls.html.slim": {
+        "type": "View Partial (Frontend Integration)",
+        "description": "This Slim partial is responsible for the initial loading of the poll widget on the dashboard. It uses JavaScript (jQuery) to make an AJAX request to fetch the next available poll and dynamically updates the DOM.",
+        "interactions": {
+          "interaction_0": "Makes an AJAX `GET` request to `next_poll_path`.",
+          "interaction_1": "Updates the `#polls` HTML element with the data received from the server."
+        },
+        "techDebt": [
+          "Uses direct jQuery `$.get` and DOM manipulation, which could be refactored into a more modern ViewComponent or a React component for better consistency with other frontend architecture patterns in the project."
+        ],
+        "provenance": {
+          "sources": [
+            "app/views/dashboard/_polls.html.slim"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "#polls.sidebar__component\n\njavascript:\n  ready(function () {\n    // load initial poll\n    $.get(\"#{next_poll_path}\", function (data) {\n      $('#polls').html(data);\n    });\n  });",
+              "source": "app/views/dashboard/_polls.html.slim"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/views/dashboard/_polls.html.slim",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Poll::Poll": {
+        "type": "Model (ActiveRecord)",
+        "description": "Represents a poll or survey. This model manages poll questions, options, user responses, and statistical data. It includes business logic for determining upcoming polls, processing votes, and controlling result visibility.",
+        "interactions": {
+          "interaction_0": "Has many `Poll::Option`s.",
+          "interaction_1": "Has many `Poll::Response`s.",
+          "interaction_2": "Interacts with `User` to track votes and responses.",
+          "interaction_3": "Provides class methods like `upcoming_for_user`, `started`, `latest_first`.",
+          "interaction_4": "Provides instance methods like `vote!`, `response_for`, `stats`, `reveal_results?`, `ended?`, `open?`, `show_intermediate_results?`, `enough_participants?`, `end_at`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb",
+            "app/presenters/poll_archive_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 34,
+              "code": "module Poll\n  class Poll < ::ApplicationRecord\n    validates :question, :start_at, :end_at, presence: true\n    # NOTE: Use comparison with Rails 7\n    validate do\n      errors.add :end_at, :before_start_date if end_at.before? start_at\n    end\n\n    has_many :options, class_name: '::Poll::Option', dependent: :delete_all\n    has_many :responses, class_name: '::Poll::Response', dependent: :delete_all\n\n    class << self\n      def started\n        where(start_at: ...::Time.zone.now)\n      end\n\n      def current\n        started.where('end_at > ?', ::Time.zone.now)\n      end\n\n      def upcoming_for_user(user_id)\n        current.order(:start_at).where.not(\n          id: ::Poll::Response.where(user_id:).select(:poll_id)\n        )\n      end\n\n      def latest_first\n        reorder(start_at: :desc, created_at: :desc)\n      end\n    end\n\n    ## ROUTE HELPERS\n    ## Ensure that Rails routing helpers can be used directly with Poll instances.\n\n    def self.model_name\n      ...",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 7,
+              "endLine": 9,
+              "code": "  def archive\n    @polls = Poll::Poll.includes(:options).started.latest_first.take(20)\n      .map { PollArchivePresenter.new(it, current_user) }\n  end",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 18,
+              "code": "  def next\n    poll = Poll::Poll.upcoming_for_user(current_user.id).first!\n\n    render Dashboard::Poll::Widget.new(poll).with_content(\n      Dashboard::Poll::Question.vote(poll).render_in(view_context)\n    ), layout: false\n  rescue ActiveRecord::RecordNotFound\n    head :no_content\n  end",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 32,
+              "code": "  def vote\n    poll = Poll::Poll.find(params[:id])\n    response = poll.vote! choices, user_id: current_user.id\n\n    has_next_poll = Poll::Poll.upcoming_for_user(current_user.id).exists?\n\n    render Dashboard::Poll::Widget.new(poll).with_content(\n      Dashboard::Poll::Thanks.new(\n        poll,\n        choices: response.choices,\n        stats: poll.reveal_results? ? poll.stats : nil,\n        next_pol...",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 5,
+              "endLine": 9,
+              "code": "  def initialize(poll, current_user)\n    @poll = poll\n\n    @response = @poll.response_for(current_user.id)\n  end",
+              "source": "app/controllers/polls_controller.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 16,
+              "code": "  def show_results?\n    return true if @poll.ended?\n\n    voted? && @poll.reveal_results?\n  end",
+              "source": "app/controllers/polls_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/polls_controller.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/poll/poll.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/presenters/poll_archive_presenter.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Poll::Option": {
+        "type": "Model (ActiveRecord)",
+        "description": "Represents an individual answer option for a poll question. It is associated with a `Poll::Poll`.",
+        "interactions": {
+          "interaction_0": "Belongs to `Poll::Poll`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nmodule Poll\n  class Option < ::ApplicationRecord\n    self.table_name = 'poll_options'\n\n    validates :text, :position, presence: true\n    validates :position, uniqueness: {scope: :poll_id}\n\n    belongs_to :poll\n\n    default_scope { order(position: :asc) }\n\n    before_validation :ensure_position_has_value\n    before_destroy :ensure_poll_is_open\n\n    private\n\n    def ensure_poll_is_open\n      return if poll.start_at.future?\n\n      errors.add(:poll, :open)\n      throw(:abort)\n    end\n\n    def ensure_position_has_value\n      if !position\n        # If no position is given, move it to the end\n        self.position = (other_options.maximum(:position) || 0) + 1\n      elsif other_options.exists?(position:)\n        # If the given option is taken, increment the position of all options\n        # with higher positions to preserve uniqueness\n        # rubocop:disable Rails/SkipsModelValidations\n        other_options\n          .where(position: position..)\n          .reo...",
+              "source": "app/models/poll/option.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 37,
+              "code": "class Admin::PollOptionsController < Abstract::AjaxController\n  require_permission 'helpdesk.polls.manage'\n\n  before_action do\n    head :unprocessable_entity unless poll.editing_allowed?\n  end\n\n  def create\n    poll.add_option(option_params)\n\n    render partial: 'admin/polls/options_form',\n      locals: {\n        poll:,\n        options: poll.options,\n      }\n  end\n\n  def destroy\n    poll.options.delete(params[:id])\n\n    render partial: 'admin/polls/options_form',\n      locals: {\n        poll:,\n        options: poll.options,\n      }\n  end\n\n  private\n\n  def poll\n    @poll ||= Poll::Poll.find params[:poll_id]\n  end\n\n  def option_params\n    params.permit(:text)\n  end\nend",
+              "source": "app/models/poll/option.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/poll/option.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/endpoint/filter/optional.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/controllers/admin/poll_options_controller.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Poll::Response": {
+        "type": "Model (ActiveRecord)",
+        "description": "Records a user's vote(s) for a specific poll. It links a user to their chosen options for a given poll.",
+        "interactions": {
+          "interaction_0": "Belongs to `Poll::Poll`.",
+          "interaction_1": "Belongs to `User` (implicitly via `user_id`).",
+          "interaction_2": "Stores the `choices` made by the user."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb",
+            "app/presenters/poll_archive_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Poll\n  class Response < ::ApplicationRecord\n    self.table_name = 'poll_responses'\n\n    belongs_to :poll\n\n    validates :choices, presence: true\n    validates :user_id, uniqueness: {scope: :poll_id}\n    validates :choices,\n      length: {maximum: 1, unless: -> { poll.allow_multiple_choices? }}\n  end\nend",
+              "source": "app/models/poll/response.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/poll/response.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/dashboard/poll/question.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/components/dashboard/poll/thanks.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Dashboard::Poll::Widget": {
+        "type": "ViewComponent",
+        "description": "The main container ViewComponent for rendering a poll on the dashboard. It acts as a wrapper for other poll-related ViewComponents.",
+        "interactions": {
+          "interaction_0": "Receives a `Poll::Poll` object.",
+          "interaction_1": "Uses `with_content` to embed other ViewComponents like `Dashboard::Poll::Question` or `Dashboard::Poll::Thanks`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  module Poll\n    class Widget < ApplicationComponent\n      def initialize(poll)\n        @poll = poll\n      end\n    end\n  end\nend",
+              "source": "app/components/dashboard/poll/widget.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  module Poll\n    # @display max_width 400px\n    class WidgetPreview < ViewComponent::Preview\n      # @param multiple_choice toggle\n      def vote(multiple_choice: true)\n        poll.allow_multiple_choices = multiple_choice\n\n        render_with_template(\n          template: 'dashboard/poll/widget_preview/vote',\n          locals: {poll:}\n        )\n      end\n\n      # @param next_poll toggle\n      # @param with_stats toggle\n      # @param intermediate_results toggle\n      def thanks(next_poll: true, intermediate_results: false, with_stats: false)\n        poll.show_intermediate_results = intermediate_results\n\n        render_with_template(\n          template: 'dashboard/poll/widget_preview/thanks',\n          locals: {\n            poll:,\n            choices: [poll.options.first.id],\n            stats: (with_stats ? many_participants : nil),\n            next_poll:,\n          }\n        )\n      end\n\n      private\n\n      def poll\n        @poll ||= ...",
+              "source": "app/components/dashboard/poll/widget.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": ".poll\n  .headline\n    h3 = t(:'polls.widget.headline')\n    p = t(:'polls.widget.end_at', date: l(@poll.end_at.to_date, format: :short))\n  hr.divider\n  p\n    b = @poll.question\n\n  = content",
+              "source": "app/components/dashboard/poll/widget.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/poll/widget.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/components/dashboard/poll/widget_preview.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/components/dashboard/poll/widget.html.slim",
+              "relevance": 17
+            }
+          ]
+        }
+      },
+      "Dashboard::Poll::Question": {
+        "type": "ViewComponent",
+        "description": "Renders the poll question and its available options. It can be used both for presenting options for voting and for displaying poll results.",
+        "interactions": {
+          "interaction_0": "Receives a `Poll::Poll` object.",
+          "interaction_1": "Can receive `stats` and `choices` parameters when displaying results."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb",
+            "app/presenters/poll_archive_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  module Poll\n    class Question < ApplicationComponent\n      def self.vote(poll)\n        new(poll, mode: :voting)\n      end\n\n      def self.results(poll, stats:, choices: [])\n        new(poll, mode: :results, stats:, choices:)\n      end\n\n      private\n\n      def initialize(poll, mode:, **opts)\n        @poll = poll\n        @mode = mode\n        @choices = []\n\n        if mode == :results\n          @stats = opts.fetch(:stats)\n          @choices = opts[:choices] || []\n        end\n      end\n\n      def voting?\n        @mode == :voting\n      end\n\n      def results?\n        @mode == :results\n      end\n\n      def chosen?(option)\n        @choices.include?(option.id)\n      end\n\n      def percentage(option)\n        @percentages ||= Hash.new do |h, k|\n          h[k] = if @stats.participants.zero?\n                   0\n                 else\n                   (@stats.responses[k].to_f / @stats.participants * 100).round\n                 end\n        end\n",
+              "source": "app/components/dashboard/poll/question.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/poll/question.rb",
+              "relevance": 44
+            },
+            {
+              "path": "api/xikolo/entities/question.rb",
+              "relevance": 30
+            },
+            {
+              "path": "api/xikolo/v2/quiz/questions.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Dashboard::Poll::Thanks": {
+        "type": "ViewComponent",
+        "description": "Renders a confirmation or thank you message after a user has voted on a poll. It can optionally display poll results and indicate if another poll is available.",
+        "interactions": {
+          "interaction_0": "Receives a `Poll::Poll` object.",
+          "interaction_1": "Receives `choices` (user's selections), `stats` (if results are revealed), and `next_poll` status."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 27,
+              "code": "# frozen_string_literal: true\n\nmodule Dashboard\n  module Poll\n    class Thanks < ApplicationComponent\n      def initialize(poll, choices:, next_poll:, stats: nil)\n        @poll = poll\n        @choices = choices\n        @next_poll = next_poll\n        @stats = stats\n      end\n\n      private\n\n      def reveal_results?\n        @stats.present?\n      end\n\n      def summary\n        if reveal_results?\n          t(:'polls.widget.intermediate_results', participants: number_with_delimiter(@stats.participants))\n        elsif @poll.show_intermediate_results?\n          t(:'polls.widget.not_enough_participants', link: polls_archive_path)\n        else\n          t(:'polls.widget.poll_archive_link', link: polls_archive_path)\n        end\n      end\n    end\n  end\nend",
+              "source": "app/components/dashboard/poll/thanks.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 15,
+              "code": "= render Global::Callout.new(t(:'polls.widget.thanks'), type: :success)\n\n- if reveal_results?\n  .results\n    = render Dashboard::Poll::Question.results(@poll, stats: @stats, choices: @choices)\n\np = summary\n\n.mt10\n  - if @next_poll\n    = link_to t(:'polls.widget.next_poll'), next_poll_path, method: :get, remote: true,\n        data: {'render-to': '#polls', type: 'text'},\n        class: 'btn btn-primary btn-sm mr10'\n  = link_to t(:'polls.widget.recent_results'), polls_archive_path, class: 'btn btn-default btn-sm'",
+              "source": "app/components/dashboard/poll/thanks.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/poll/thanks.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/components/dashboard/poll/thanks.html.slim",
+              "relevance": 17
+            },
+            {
+              "path": "app/components/dashboard/poll/widget_preview/thanks.html.slim",
+              "relevance": 17
+            }
+          ]
+        }
+      },
+      "Abstract::FrontendController": {
+        "type": "Controller (Base Class)",
+        "description": "A foundational controller for frontend-facing actions, providing common functionalities such as ensuring user authentication and setting cache control headers for responses.",
+        "interactions": {
+          "interaction_0": "Parent class for `PollsController`.",
+          "interaction_1": "Provides `ensure_logged_in` and `set_no_cache_headers` before actions."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Abstract\n  ##\n  # A base class for all controllers rendering a full HTML page\n  #\n  # It offers a few helper methods such as +set_page_title+ which are useful\n  # for most controllers rendering HTML.\n  # In addition, it loads a bunch of data necessary to render e.g. the channel\n  # menu or site-wide alert messages.\n  class FrontendController < ::ApplicationController\n    helper LanalyticsHelper\n\n    include LoadsCourseChannels\n\n    before_action :check_primary_email\n    before_action :check_app_request\n    before_action :set_default_title\n    before_action :set_js_data\n    before_action :sanitize_params\n\n    include TracksReferrers\n    include ContentSecurityPolicy\n\n    private\n\n    def check_app_request\n      @in_app = false\n\n      if request.params['in_app'].present? && request.params['in_app'] == 'true'\n        @in_app = true\n        cookies[:in_app] = '1'\n        # redirect to given url but without param, used for sso on mobile\n        redirect...",
+              "source": "app/controllers/abstract/frontend_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/abstract/frontend_controller.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Global::Callout": {
+        "type": "ViewComponent / Helper",
+        "description": "A reusable component or helper designed to display prominent informational messages or alerts to the user.",
+        "interactions": {
+          "interaction_0": "Used by `PollArchivePresenter` to display messages regarding poll status or voting requirements."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/poll_archive_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 9,
+              "code": "    def initialize(text, type: nil, title: nil, icon: nil)\n      @text = text\n      @title = title\n      @type = type\n      @icon = icon\n    end",
+              "source": "app/components/global/callout.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 15,
+              "code": "    def render?\n      @text.present?\n    end",
+              "source": "app/components/global/callout.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 20,
+              "code": "    def css_modifiers\n      css_modifiers = @title ? 'callout--with-title' : nil\n      @type ? \"callout--#{@type} #{css_modifiers} \" : css_modifiers\n    end",
+              "source": "app/components/global/callout.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 31,
+              "code": "    def icon\n      @icon || Global::FaIcon.new(default_icon_name, style: :solid)\n    end\n\n    def default_icon_name\n      {\n        success: 'circle-check',\n        error: 'circle-exclamation',\n        warning: 'triangle-exclamation',\n      }[@type] || 'circle-info'\n    end",
+              "source": "app/components/global/callout.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 14,
+              "code": ".callout class=css_modifiers\n  .callout__indicator\n    = render icon\n    - if @title\n      .callout__title\n        = @title\n\n  .callout__content\n    p == @text\n    - if content\n      .callout__slot\n        = content",
+              "source": "app/components/global/callout.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/global/callout.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/global/callout_preview.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/global/callout.html.slim",
+              "relevance": 14
+            }
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "View Next Available Poll",
+        "description": "When a user navigates to the dashboard, an AJAX request is initiated to fetch and display the next available poll for them to interact with. If no poll is available, no content is displayed.",
+        "involvedComponents": [
+          "app/views/dashboard/_polls.html.slim",
+          "PollsController#next",
+          "Poll::Poll",
+          "Dashboard::Poll::Widget",
+          "Dashboard::Poll::Question"
+        ],
+        "provenance": {
+          "sources": [
+            "app/views/dashboard/_polls.html.slim",
+            "app/controllers/polls_controller.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Vote on a Poll",
+        "description": "A user selects one or more options for a poll and submits their vote. The system records the response, and then displays a confirmation message, potentially revealing poll results and indicating if another poll is available.",
+        "involvedComponents": [
+          "PollsController#vote",
+          "Poll::Poll",
+          "Poll::Response",
+          "Dashboard::Poll::Widget",
+          "Dashboard::Poll::Thanks"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "View Poll Archive and Results",
+        "description": "Users can access an archive of past polls. For each poll, the system determines whether to display results based on the poll's status and the user's participation, or provides informational messages if results are not yet available.",
+        "involvedComponents": [
+          "PollsController#archive",
+          "Poll::Poll",
+          "PollArchivePresenter",
+          "Dashboard::Poll::Question",
+          "Global::Callout"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/polls_controller.rb",
+            "app/presenters/poll_archive_presenter.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Take a Survey (Conceptual)",
+        "description": "As described in the RAG context, this workflow involves a student interacting with a survey item within a course, selecting answers, and submitting the survey. This is conceptually similar to voting on a poll, but likely uses distinct models and potentially different UI components, integrated as a course 'item'.",
+        "involvedComponents": [
+          "Survey (inferred model)",
+          "Question (inferred model)",
+          "Answer (inferred model)",
+          "Item (foundational context)",
+          "SurveyController (inferred controller)"
+        ],
+        "provenance": {
+          "sources": [
+            "integration/features/xikolo/content/quiz/take_survey.feature"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [
+    {
+      "title": "Poll and Survey Creation and Response - Architecture Overview",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 1000\" width=\"100%\">\n  <title>Poll and Survey Creation and Response Architecture</title>\n  <desc>An SVG infographic detailing the architecture and component relationships for the Poll and Survey Creation and Response feature cluster, including workflows for viewing, voting, and archiving polls, as well as conceptual survey interactions.</desc>\n\n  <defs>\n    <!-- Arrowhead marker -->\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n    <!-- Styles for different component types -->\n    <style>\n      .controller { fill: #9b59b6; stroke: #7d3c98; stroke-width: 2; }\n      .frontend { fill: #007BFF; stroke: #0056b3; stroke-width: 2; }\n      .logic { fill: #FFC107; stroke: #e0a800; stroke-width: 2; }\n      .model { fill: #6C757D; stroke: #5a6268; stroke-width: 2; }\n      .text { font-family: 'Arial, sans-serif'; font-size: 16px; fill: #343A40; }\n      .title-text { font-family: 'Arial, sans-serif'; font-size: 30px; font-weight: bold; fill: #343A40; }\n      .component-title { font-size: 18px; font-weight: bold; fill: #343A40; }\n      .description-text { font-size: 14px; fill: #343A40; }\n      .workflow-label { font-size: 13px; font-weight: bold; fill: #343A40; }\n      .arrow { stroke: #343A40; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }\n      .dashed-arrow { stroke: #343A40; stroke-width: 2; marker-end: url(#arrowhead); fill: none; stroke-dasharray: 5 5; }\n    </style>\n  </defs>\n\n  <!-- Title -->\n  <text x=\"800\" y=\"50\" text-anchor=\"middle\" class=\"title-text\">Poll and Survey Creation and Response Architecture</text>\n\n  <!-- Components -->\n  <!-- Abstract::FrontendController (Foundational) -->\n  <rect x=\"50\" y=\"100\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"controller\"/>\n  <text x=\"175\" y=\"130\" text-anchor=\"middle\" class=\"component-title\">Abstract::FrontendController</text>\n  <text x=\"175\" y=\"160\" text-anchor=\"middle\" class=\"description-text\">Foundational controller, <tspan x=\"175\" dy=\"1.2em\">auth, cache control.</tspan></text>\n\n  <!-- PollsController -->\n  <rect x=\"350\" y=\"100\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"controller\"/>\n  <text x=\"475\" y=\"130\" text-anchor=\"middle\" class=\"component-title\">PollsController</text>\n  <text x=\"475\" y=\"160\" text-anchor=\"middle\" class=\"description-text\">Handles poll interactions: <tspan x=\"475\" dy=\"1.2em\">fetch, vote, archive.</tspan></text>\n\n  <!-- app/views/dashboard/_polls.html.slim -->\n  <rect x=\"50\" y=\"250\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"frontend\"/>\n  <text x=\"175\" y=\"280\" text-anchor=\"middle\" class=\"component-title\">app/views/dashboard/_polls.html.slim</text>\n  <text x=\"175\" y=\"310\" text-anchor=\"middle\" class=\"description-text\">Initial poll widget load, <tspan x=\"175\" dy=\"1.2em\">AJAX request for poll.</tspan></text>\n\n  <!-- Dashboard::Poll::Widget -->\n  <rect x=\"50\" y=\"400\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"frontend\"/>\n  <text x=\"175\" y=\"430\" text-anchor=\"middle\" class=\"component-title\">Dashboard::Poll::Widget</text>\n  <text x=\"175\" y=\"460\" text-anchor=\"middle\" class=\"description-text\">Main ViewComponent wrapper <tspan x=\"175\" dy=\"1.2em\">for poll rendering.</tspan></text>\n\n  <!-- Dashboard::Poll::Question -->\n  <rect x=\"50\" y=\"550\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"frontend\"/>\n  <text x=\"175\" y=\"580\" text-anchor=\"middle\" class=\"component-title\">Dashboard::Poll::Question</text>\n  <text x=\"175\" y=\"610\" text-anchor=\"middle\" class=\"description-text\">Renders poll question/options <tspan x=\"175\" dy=\"1.2em\">for voting or results.</tspan></text>\n\n  <!-- Dashboard::Poll::Thanks -->\n  <rect x=\"50\" y=\"700\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"frontend\"/>\n  <text x=\"175\" y=\"730\" text-anchor=\"middle\" class=\"component-title\">Dashboard::Poll::Thanks</text>\n  <text x=\"175\" y=\"760\" text-anchor=\"middle\" class=\"description-text\">Displays confirmation/results <tspan x=\"175\" dy=\"1.2em\">after voting.</tspan></text>\n\n  <!-- Global::Callout -->\n  <rect x=\"350\" y=\"700\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"frontend\"/>\n  <text x=\"475\" y=\"730\" text-anchor=\"middle\" class=\"component-title\">Global::Callout</text>\n  <text x=\"475\" y=\"760\" text-anchor=\"middle\" class=\"description-text\">Reusable component for <tspan x=\"475\" dy=\"1.2em\">informational messages.</tspan></text>\n\n  <!-- PollArchivePresenter -->\n  <rect x=\"650\" y=\"100\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"logic\"/>\n  <text x=\"775\" y=\"130\" text-anchor=\"middle\" class=\"component-title\">PollArchivePresenter</text>\n  <text x=\"775\" y=\"160\" text-anchor=\"middle\" class=\"description-text\">Prepares/formats data <tspan x=\"775\" dy=\"1.2em\">for archive view.</tspan></text>\n\n  <!-- Poll::Poll -->\n  <rect x=\"950\" y=\"100\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"model\"/>\n  <text x=\"1075\" y=\"130\" text-anchor=\"middle\" class=\"component-title\">Poll::Poll</text>\n  <text x=\"1075\" y=\"160\" text-anchor=\"middle\" class=\"description-text\">Model for poll/survey. <tspan x=\"1075\" dy=\"1.2em\">Manages questions, options, <tspan x=\"1075\" dy=\"1.2em\">responses, business logic.</tspan></tspan></text>\n\n  <!-- Poll::Option -->\n  <rect x=\"950\" y=\"250\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"model\"/>\n  <text x=\"1075\" y=\"280\" text-anchor=\"middle\" class=\"component-title\">Poll::Option</text>\n  <text x=\"1075\" y=\"310\" text-anchor=\"middle\" class=\"description-text\">Individual answer option <tspan x=\"1075\" dy=\"1.2em\">for a poll question.</tspan></text>\n\n  <!-- Poll::Response -->\n  <rect x=\"950\" y=\"400\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"model\"/>\n  <text x=\"1075\" y=\"430\" text-anchor=\"middle\" class=\"component-title\">Poll::Response</text>\n  <text x=\"1075\" y=\"460\" text-anchor=\"middle\" class=\"description-text\">Records user's vote(s) <tspan x=\"1075\" dy=\"1.2em\">for a specific poll.</tspan></text>\n\n  <!-- Conceptual Survey Models -->\n  <rect x=\"1300\" y=\"100\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"model\"/>\n  <text x=\"1425\" y=\"130\" text-anchor=\"middle\" class=\"component-title\">Survey::SurveyItem</text>\n  <text x=\"1425\" y=\"160\" text-anchor=\"middle\" class=\"description-text\">Conceptual: Course item for surveys.</text>\n\n  <rect x=\"1300\" y=\"250\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"model\"/>\n  <text x=\"1425\" y=\"280\" text-anchor=\"middle\" class=\"component-title\">Survey::Question</text>\n  <text x=\"1425\" y=\"310\" text-anchor=\"middle\" class=\"description-text\">Conceptual: Survey question.</text>\n\n  <rect x=\"1300\" y=\"400\" width=\"250\" height=\"100\" rx=\"10\" ry=\"10\" class=\"model\"/>\n  <text x=\"1425\" y=\"430\" text-anchor=\"middle\" class=\"component-title\">Survey::Answer</text>\n  <text x=\"1425\" y=\"460\" text-anchor=\"middle\" class=\"description-text\">Conceptual: User's survey answer.</tspan></text>\n\n  <!-- Relationships and Workflows -->\n\n  <!-- General Controller Inheritance -->\n  <path d=\"M475 200 V 220 H 175 V 200\" class=\"arrow\"/>\n  <text x=\"325\" y=\"210\" text-anchor=\"middle\" class=\"workflow-label\">Inherits from</text>\n\n  <!-- Workflow 1: View Next Available Poll -->\n  <!-- 1.1 app/views/dashboard/_polls.html.slim (JS) -> PollsController -->\n  <path d=\"M290 300 H 350\" class=\"arrow\"/>\n  <text x=\"320\" y=\"290\" text-anchor=\"middle\" class=\"workflow-label\">1.1 AJAX: GET /next_poll</text>\n  \n  <!-- 1.2 PollsController -> Poll::Poll (find next) -->\n  <path d=\"M600 150 H 950\" class=\"arrow\"/>\n  <text x=\"775\" y=\"140\" text-anchor=\"middle\" class=\"workflow-label\">1.2 PollsController#next_poll <tspan x=\"775\" dy=\"1.2em\">-> Poll::Poll.next_available</tspan></text>\n  \n  <!-- 1.3 Poll::Poll -> PollsController (returns data) -->\n  <path d=\"M950 170 H 600\" class=\"arrow\"/>\n  <text x=\"775\" y=\"180\" text-anchor=\"middle\" class=\"workflow-label\">1.3 Returns Poll Data</text>\n  \n  <!-- 1.4 PollsController -> app/views/dashboard/_polls.html.slim (renders/responds) -->\n  <path d=\"M475 170 V 250 H 290\" class=\"arrow\"/>\n  <text x=\"380\" y=\"230\" text-anchor=\"middle\" class=\"workflow-label\">1.4 Renders Poll HTML</text>\n  \n  <!-- 1.5 app/views/dashboard/_polls.html.slim -> Dashboard::Poll::Widget (renders) -->\n  <path d=\"M175 350 V 400\" class=\"arrow\"/>\n  <text x=\"195\" y=\"375\" text-anchor=\"start\" class=\"workflow-label\">1.5 Renders Widget</text>\n  \n  <!-- 1.6 Dashboard::Poll::Widget -> Dashboard::Poll::Question (renders) -->\n  <path d=\"M175 500 V 550\" class=\"arrow\"/>\n  <text x=\"195\" y=\"525\" text-anchor=\"start\" class=\"workflow-label\">1.6 Renders Question</text>\n\n  <!-- Workflow 2: Vote on a Poll -->\n  <!-- 2.1 Dashboard::Poll::Question (submit) -> PollsController -->\n  <path d=\"M290 600 H 475 V 200\" class=\"arrow\"/>\n  <text x=\"380\" y=\"590\" text-anchor=\"middle\" class=\"workflow-label\">2.1 AJAX: POST /vote</text>\n  \n  <!-- 2.2 PollsController -> Poll::Poll (process vote) -->\n  <path d=\"M600 170 H 950\" class=\"arrow\"/>\n  <text x=\"775\" y=\"190\" text-anchor=\"middle\" class=\"workflow-label\">2.2 PollsController#vote <tspan x=\"775\" dy=\"1.2em\">-> Poll::Poll#process_vote</tspan></text>\n  \n  <!-- 2.3 Poll::Poll -> Poll::Response (create/update) -->\n  <path d=\"M1075 200 V 400\" class=\"arrow\"/>\n  <text x=\"1095\" y=\"300\" text-anchor=\"start\" class=\"workflow-label\">2.3 Creates/Updates <tspan x=\"1095\" dy=\"1.2em\">Poll::Response</tspan></text>\n  \n  <!-- 2.4 Poll::Response -> Poll::Poll (confirms) -->\n  <path d=\"M1075 400 V 200\" class=\"arrow\"/>\n  <text x=\"1095\" y=\"350\" text-anchor=\"start\" class=\"workflow-label\">2.4 Confirms</text>\n  \n  <!-- 2.5 Poll::Poll -> PollsController (confirms/updates) -->\n  <path d=\"M950 190 H 600\" class=\"arrow\"/>\n  <text x=\"775\" y=\"210\" text-anchor=\"middle\" class=\"workflow-label\">2.5 Confirms Vote</text>\n  \n  <!-- 2.6 PollsController -> Dashboard::Poll::Thanks (renders/responds) -->\n  <path d=\"M475 200 V 700 H 290\" class=\"arrow\"/>\n  <text x=\"380\" y=\"650\" text-anchor=\"middle\" class=\"workflow-label\">2.6 Renders Thanks HTML</text>\n  \n  <!-- 2.7 Dashboard::Poll::Thanks (optionally displays results) -> Dashboard::Poll::Question -->\n  <path d=\"M175 700 V 650 H 290\" class=\"arrow\"/>\n  <text x=\"230\" y=\"680\" text-anchor=\"middle\" class=\"workflow-label\">2.7 Displays Results</text>\n\n  <!-- Workflow 3: View Poll Archive and Results -->\n  <!-- 3.1 User -> PollsController (archive action) - Implied user interaction, entry point to controller -->\n  <text x=\"475\" y=\"240\" text-anchor=\"middle\" class=\"workflow-label\">3.1 User Navigates to /polls/archive</text>\n  \n  <!-- 3.2 PollsController -> PollArchivePresenter -->\n  <path d=\"M600 150 H 650\" class=\"arrow\"/>\n  <text x=\"625\" y=\"140\" text-anchor=\"middle\" class=\"workflow-label\">3.2 Initializes Presenter</text>\n  \n  <!-- 3.3 PollArchivePresenter -> Poll::Poll (fetches polls) -->\n  <path d=\"M900 150 H 950\" class=\"arrow\"/>\n  <text x=\"925\" y=\"140\" text-anchor=\"middle\" class=\"workflow-label\">3.3 Fetches Polls</text>\n  \n  <!-- 3.4 Poll::Poll -> PollArchivePresenter (returns data) -->\n  <path d=\"M950 170 H 900\" class=\"arrow\"/>\n  <text x=\"925\" y=\"180\" text-anchor=\"middle\" class=\"workflow-label\">3.4 Returns Poll Data</text>\n  \n  <!-- 3.5 PollArchivePresenter -> PollsController (prepares data/renders) -->\n  <path d=\"M650 170 H 600\" class=\"arrow\"/>\n  <text x=\"625\" y=\"180\" text-anchor=\"middle\" class=\"workflow-label\">3.5 Prepares for View</text>\n  \n  <!-- 3.6 PollsController -> Dashboard::Poll::Widget (for each archived poll) -->\n  <path d=\"M475 200 V 400 H 290\" class=\"arrow\"/>\n  <text x=\"380\" y=\"300\" text-anchor=\"middle\" class=\"workflow-label\">3.6 Renders Archive <tspan x=\"380\" dy=\"1.2em\">via Widget</tspan></text>\n  \n  <!-- 3.7 Dashboard::Poll::Widget -> Dashboard::Poll::Question (for results/info) -->\n  <path d=\"M175 500 V 550\" class=\"arrow\"/>\n  <text x=\"195\" y=\"525\" text-anchor=\"start\" class=\"workflow-label\">3.7 Renders Question <tspan x=\"195\" dy=\"1.2em\">(Results/Info)</tspan></text>\n  \n  <!-- 3.8 Dashboard::Poll::Question -> Global::Callout (for info messages) -->\n  <path d=\"M290 600 H 350 M 350 600 V 700\" class=\"arrow\"/>\n  <text x=\"320\" y=\"650\" text-anchor=\"middle\" class=\"workflow-label\">3.8 Uses Callout</text>\n\n  <!-- Model relationships -->\n  <path d=\"M1075 200 V 250\" class=\"arrow\"/>\n  <text x=\"1095\" y=\"225\" text-anchor=\"start\" class=\"workflow-label\">has_many options</text>\n  <path d=\"M1075 250 V 200\" class=\"arrow\"/>\n  <text x=\"1095\" y=\"275\" text-anchor=\"start\" class=\"workflow-label\">belongs_to poll</text>\n\n  <path d=\"M1075 200 V 400\" class=\"arrow\"/>\n  <text x=\"1095\" y=\"300\" text-anchor=\"start\" class=\"workflow-label\">has_many responses</text>\n  <path d=\"M1075 400 V 200\" class=\"arrow\"/>\n  <text x=\"1095\" y=\"375\" text-anchor=\"start\" class=\"workflow-label\">belongs_to poll</text>\n\n  <!-- Conceptual Workflow: Take a Survey -->\n  <text x=\"1425\" y=\"550\" text-anchor=\"middle\" class=\"workflow-label\">Conceptual Workflow: Take a Survey</text>\n  <text x=\"1425\" y=\"570\" text-anchor=\"middle\" class=\"description-text\">Mirrors Poll Voting, but with <tspan x=\"1425\" dy=\"1.2em\">distinct models and UI.</tspan></text>\n\n  <path d=\"M1200 150 H 1300\" class=\"dashed-arrow\"/>\n  <text x=\"1250\" y=\"140\" text-anchor=\"middle\" class=\"workflow-label\">Conceptual Link</text>\n  <path d=\"M1200 450 H 1300\" class=\"dashed-arrow\"/>\n  <text x=\"1250\" y=\"440\" text-anchor=\"middle\" class=\"workflow-label\">Conceptual Response</text>\n\n  <path d=\"M1425 200 V 250\" class=\"dashed-arrow\"/>\n  <text x=\"1445\" y=\"225\" text-anchor=\"start\" class=\"workflow-label\">Conceptual has_many</text>\n  <path d=\"M1425 350 V 400\" class=\"dashed-arrow\"/>\n  <text x=\"1445\" y=\"375\" text-anchor=\"start\" class=\"workflow-label\">Conceptual has_many</text>\n\n</svg>\n```"
+    },
+    {
+      "title": "Poll and Survey Creation and Response - Workflow Diagram",
+      "svgContent": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 1800\" width=\"100%\">\n  <title>Poll and Survey Creation and Response Workflows</title>\n  <desc>\n    A detailed SVG flowchart illustrating the business workflows for \"Poll and Survey Creation and Response\".\n    Includes \"View Next Available Poll\", \"Vote on a Poll\", \"View Poll Archive and Results\", and \"Take a Survey (Conceptual)\".\n    Each workflow shows process steps, decision points, and component involvement with specific method calls and models.\n  </desc>\n\n  <defs>\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#6C757D\" />\n    </marker>\n\n    <!-- Common Styles -->\n    <style>\n      .title { font-family: 'Arial, sans-serif'; font-size: 36px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n      .workflow-title { font-family: 'Arial, sans-serif'; font-size: 24px; font-weight: bold; fill: #343A40; text-anchor: middle; }\n      .start-end { fill: #28A745; stroke: #218838; stroke-width: 2; }\n      .process { fill: #F8F9FA; stroke: #6C757D; stroke-width: 2; }\n      .decision { fill: #FFC107; stroke: #E0A800; stroke-width: 2; }\n      .component-frontend { fill: #007BFF; stroke: #0056B3; stroke-width: 1; }\n      .component-controller { fill: #9b59b6; stroke: #7d3c98; stroke-width: 1; }\n      .component-model { fill: #6C757D; stroke: #545B62; stroke-width: 1; }\n      .component-service { fill: #FFC107; stroke: #E0A800; stroke-width: 1; }\n      .text-label { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; text-anchor: middle; }\n      .text-component { font-family: 'Arial, sans-serif'; font-size: 12px; fill: #FFFFFF; text-anchor: middle; }\n      .line { stroke: #6C757D; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }\n      .line-dashed { stroke: #6C757D; stroke-width: 2; stroke-dasharray: 5 5; marker-end: url(#arrowhead); fill: none; }\n    </style>\n  </defs>\n\n  <!-- Main Title -->\n  <text x=\"800\" y=\"50\" class=\"title\">Poll and Survey Creation and Response Workflows</text>\n\n  <!-- Workflow 1: View Next Available Poll -->\n  <text x=\"800\" y=\"120\" class=\"workflow-title\">Workflow: View Next Available Poll</text>\n\n  <!-- Start Node -->\n  <ellipse cx=\"800\" cy=\"180\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"185\" class=\"text-label\">User Navigates<tspan x=\"800\" dy=\"16\">to Dashboard</tspan></text>\n\n  <!-- Step 1: Frontend Initiates AJAX Request -->\n  <line x1=\"800\" y1=\"215\" x2=\"800\" y2=\"260\" class=\"line\" />\n  <rect x=\"675\" y=\"260\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"285\" class=\"text-label\">Initiate AJAX Request<tspan x=\"800\" dy=\"16\">for Next Poll</tspan></text>\n  <rect x=\"950\" y=\"275\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"1040\" y=\"295\" class=\"text-component\">app/views/dashboard/_polls.html.slim</text>\n\n  <!-- Step 2: Controller Receives Request -->\n  <line x1=\"800\" y1=\"330\" x2=\"800\" y2=\"375\" class=\"line\" />\n  <rect x=\"675\" y=\"375\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"400\" class=\"text-label\">Receive Request</text>\n  <rect x=\"950\" y=\"390\" width=\"180\" height=\"30\" class=\"component-controller\" />\n  <text x=\"1040\" y=\"410\" class=\"text-component\">PollsController#next</text>\n\n  <!-- Step 3: Controller Queries Model -->\n  <line x1=\"800\" y1=\"445\" x2=\"800\" y2=\"490\" class=\"line\" />\n  <rect x=\"675\" y=\"490\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"515\" class=\"text-label\">Query for Next Poll</text>\n  <rect x=\"950\" y=\"505\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"525\" class=\"text-component\">Poll::Poll</text>\n\n  <!-- Decision: Is Poll Available? -->\n  <line x1=\"800\" y1=\"560\" x2=\"800\" y2=\"600\" class=\"line\" />\n  <polygon points=\"800,600 890,650 800,700 710,650\" class=\"decision\" />\n  <text x=\"800\" y=\"650\" class=\"text-label\">Poll<tspan x=\"800\" dy=\"16\">Available?</tspan></text>\n\n  <!-- Path: Yes, Poll Available -->\n  <line x1=\"890\" y1=\"650\" x2=\"1010\" y2=\"650\" class=\"line\" />\n  <text x=\"950\" y=\"635\" class=\"text-label\">Yes</text>\n  <rect x=\"1010\" y=\"615\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"1135\" y=\"640\" class=\"text-label\">Render Poll Data</text>\n  <rect x=\"1270\" y=\"630\" width=\"180\" height=\"30\" class=\"component-controller\" />\n  <text x=\"1360\" y=\"650\" class=\"text-component\">PollsController#next</text>\n\n  <line x1=\"1135\" y1=\"685\" x2=\"1135\" y2=\"730\" class=\"line\" />\n  <rect x=\"1010\" y=\"730\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"1135\" y=\"755\" class=\"text-label\">Display Poll</text>\n  <rect x=\"1270\" y=\"745\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"1360\" y=\"765\" class=\"text-component\">Dashboard::Poll::Widget</text>\n  <rect x=\"1270\" y=\"780\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"1360\" y=\"800\" class=\"text-component\">Dashboard::Poll::Question</text>\n\n  <!-- Path: No Poll Available -->\n  <line x1=\"710\" y1=\"650\" x2=\"590\" y2=\"650\" class=\"line\" />\n  <text x=\"650\" y=\"635\" class=\"text-label\">No</text>\n  <rect x=\"340\" y=\"615\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"465\" y=\"640\" class=\"text-label\">No Content Displayed</text>\n\n  <!-- End Node (converging paths) -->\n  <line x1=\"1135\" y1=\"800\" x2=\"1135\" y2=\"840\" class=\"line\" />\n  <polyline points=\"465,685 465,840 800,840\" class=\"line\" />\n  <ellipse cx=\"800\" cy=\"875\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"880\" class=\"text-label\">End</text>\n\n  <!-- Workflow 2: Vote on a Poll -->\n  <text x=\"800\" y=\"950\" class=\"workflow-title\">Workflow: Vote on a Poll</text>\n\n  <!-- Start Node -->\n  <ellipse cx=\"800\" cy=\"1010\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"1015\" class=\"text-label\">User Views Poll</text>\n\n  <!-- Step 1: User Selects Options -->\n  <line x1=\"800\" y1=\"1045\" x2=\"800\" y2=\"1090\" class=\"line\" />\n  <rect x=\"675\" y=\"1090\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"1115\" class=\"text-label\">Select Options</text>\n  <rect x=\"950\" y=\"1105\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"1040\" y=\"1125\" class=\"text-component\">Dashboard::Poll::Widget</text>\n  <rect x=\"950\" y=\"1140\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"1040\" y=\"1160\" class=\"text-component\">Dashboard::Poll::Question</text>\n\n  <!-- Step 2: User Submits Vote -->\n  <line x1=\"800\" y1=\"1160\" x2=\"800\" y2=\"1205\" class=\"line\" />\n  <rect x=\"675\" y=\"1205\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"1230\" class=\"text-label\">Submit Vote</text>\n\n  <!-- Step 3: Controller Receives Vote -->\n  <line x1=\"800\" y1=\"1275\" x2=\"800\" y2=\"1320\" class=\"line\" />\n  <rect x=\"675\" y=\"1320\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"1345\" class=\"text-label\">Receive Vote</text>\n  <rect x=\"950\" y=\"1335\" width=\"180\" height=\"30\" class=\"component-controller\" />\n  <text x=\"1040\" y=\"1355\" class=\"text-component\">PollsController#vote</text>\n\n  <!-- Step 4: Record Response -->\n  <line x1=\"800\" y1=\"1390\" x2=\"800\" y2=\"1435\" class=\"line\" />\n  <rect x=\"675\" y=\"1435\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"1460\" class=\"text-label\">Record Response</text>\n  <rect x=\"950\" y=\"1450\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"1470\" class=\"text-component\">Poll::Response</text>\n  <rect x=\"950\" y=\"1485\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"1505\" class=\"text-component\">Poll::Poll</text>\n\n  <!-- Step 5: Determine Display -->\n  <line x1=\"800\" y1=\"1505\" x2=\"800\" y2=\"1550\" class=\"line\" />\n  <rect x=\"675\" y=\"1550\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"1575\" class=\"text-label\">Determine Results/Next Poll</text>\n\n  <!-- Step 6: Render Confirmation/Results -->\n  <line x1=\"800\" y1=\"1620\" x2=\"800\" y2=\"1665\" class=\"line\" />\n  <rect x=\"675\" y=\"1665\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"1690\" class=\"text-label\">Render Confirmation/<tspan x=\"800\" dy=\"16\">Results</tspan></text>\n\n  <!-- Step 7: Display Confirmation/Results -->\n  <line x1=\"800\" y1=\"1735\" x2=\"800\" y2=\"1780\" class=\"line\" />\n  <rect x=\"675\" y=\"1780\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"1805\" class=\"text-label\">Display Confirmation/<tspan x=\"800\" dy=\"16\">Results</tspan></text>\n  <rect x=\"950\" y=\"1795\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"1040\" y=\"1815\" class=\"text-component\">Dashboard::Poll::Thanks</text>\n\n  <!-- End Node -->\n  <line x1=\"800\" y1=\"1850\" x2=\"800\" y2=\"1895\" class=\"line\" />\n  <ellipse cx=\"800\" cy=\"1930\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"1935\" class=\"text-label\">End</text>\n\n  <!-- Workflow 3: View Poll Archive and Results -->\n  <text x=\"800\" y=\"2005\" class=\"workflow-title\">Workflow: View Poll Archive and Results</text>\n\n  <!-- Start Node -->\n  <ellipse cx=\"800\" cy=\"2065\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"2070\" class=\"text-label\">User Accesses<tspan x=\"800\" dy=\"16\">Poll Archive</tspan></text>\n\n  <!-- Step 1: Frontend Initiates Request -->\n  <line x1=\"800\" y1=\"2105\" x2=\"800\" y2=\"2150\" class=\"line\" />\n  <rect x=\"675\" y=\"2150\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"2175\" class=\"text-label\">Initiate Request<tspan x=\"800\" dy=\"16\">for Archive</tspan></text>\n\n  <!-- Step 2: Controller Receives Request -->\n  <line x1=\"800\" y1=\"2220\" x2=\"800\" y2=\"2265\" class=\"line\" />\n  <rect x=\"675\" y=\"2265\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"2290\" class=\"text-label\">Receive Archive Request</text>\n  <rect x=\"950\" y=\"2280\" width=\"180\" height=\"30\" class=\"component-controller\" />\n  <text x=\"1040\" y=\"2300\" class=\"text-component\">PollsController#archive</text>\n\n  <!-- Step 3: Controller Fetches Poll Data -->\n  <line x1=\"800\" y1=\"2335\" x2=\"800\" y2=\"2380\" class=\"line\" />\n  <rect x=\"675\" y=\"2380\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"2405\" class=\"text-label\">Fetch Poll Data</text>\n  <rect x=\"950\" y=\"2395\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"2415\" class=\"text-component\">Poll::Poll</text>\n\n  <!-- Step 4: Presenter Processes Data -->\n  <line x1=\"800\" y1=\"2450\" x2=\"800\" y2=\"2495\" class=\"line\" />\n  <rect x=\"675\" y=\"2495\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"2520\" class=\"text-label\">Process Poll Data</text>\n  <rect x=\"950\" y=\"2510\" width=\"180\" height=\"30\" class=\"component-service\" />\n  <text x=\"1040\" y=\"2530\" class=\"text-component\">PollArchivePresenter</text>\n\n  <!-- Decision: Display Results? -->\n  <line x1=\"800\" y1=\"2565\" x2=\"800\" y2=\"2605\" class=\"line\" />\n  <polygon points=\"800,2605 890,2655 800,2705 710,2655\" class=\"decision\" />\n  <text x=\"800\" y=\"2655\" class=\"text-label\">Display<tspan x=\"800\" dy=\"16\">Results?</tspan></text>\n\n  <!-- Path: Yes, Display Results -->\n  <line x1=\"890\" y1=\"2655\" x2=\"1010\" y2=\"2655\" class=\"line\" />\n  <text x=\"950\" y=\"2640\" class=\"text-label\">Yes</text>\n  <rect x=\"1010\" y=\"2620\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"1135\" y=\"2645\" class=\"text-label\">Display Poll with Results</text>\n  <rect x=\"1270\" y=\"2635\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"1360\" y=\"2655\" class=\"text-component\">Dashboard::Poll::Question</text>\n\n  <!-- Path: No, Display Informational Message -->\n  <line x1=\"710\" y1=\"2655\" x2=\"590\" y2=\"2655\" class=\"line\" />\n  <text x=\"650\" y=\"2640\" class=\"text-label\">No</text>\n  <rect x=\"340\" y=\"2620\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"465\" y=\"2645\" class=\"text-label\">Display Informational<tspan x=\"465\" dy=\"16\">Message</tspan></text>\n  <rect x=\"150\" y=\"2635\" width=\"180\" height=\"30\" class=\"component-frontend\" />\n  <text x=\"240\" y=\"2655\" class=\"text-component\">Global::Callout</text>\n\n  <!-- End Node (converging paths) -->\n  <line x1=\"1135\" y1=\"2690\" x2=\"1135\" y2=\"2730\" class=\"line\" />\n  <polyline points=\"465,2690 465,2730 800,2730\" class=\"line\" />\n  <ellipse cx=\"800\" cy=\"2765\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"2770\" class=\"text-label\">End</text>\n\n  <!-- Workflow 4: Take a Survey (Conceptual) -->\n  <text x=\"800\" y=\"2835\" class=\"workflow-title\">Workflow: Take a Survey (Conceptual)</text>\n\n  <!-- Start Node -->\n  <ellipse cx=\"800\" cy=\"2895\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"2900\" class=\"text-label\">Student Interacts with<tspan x=\"800\" dy=\"16\">Survey Item</tspan></text>\n\n  <!-- Step 1: Frontend Displays Item -->\n  <line x1=\"800\" y1=\"2930\" x2=\"800\" y2=\"2975\" class=\"line\" />\n  <rect x=\"675\" y=\"2975\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"3000\" class=\"text-label\">Display Survey Item</text>\n  <rect x=\"950\" y=\"2990\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"3010\" class=\"text-component\">Item (foundational context)</text>\n\n  <!-- Step 2: Student Interacts with Questions -->\n  <line x1=\"800\" y1=\"3045\" x2=\"800\" y2=\"3090\" class=\"line\" />\n  <rect x=\"675\" y=\"3090\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"3115\" class=\"text-label\">Select Answers for<tspan x=\"800\" dy=\"16\">Survey Questions</tspan></text>\n  <rect x=\"950\" y=\"3105\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"3125\" class=\"text-component\">Survey (inferred)</text>\n  <rect x=\"950\" y=\"3140\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"3160\" class=\"text-component\">Question (inferred)</text>\n  <rect x=\"950\" y=\"3175\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"3195\" class=\"text-component\">Answer (inferred)</text>\n\n  <!-- Step 3: Student Submits Survey -->\n  <line x1=\"800\" y1=\"3160\" x2=\"800\" y2=\"3205\" class=\"line\" />\n  <rect x=\"675\" y=\"3205\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"3230\" class=\"text-label\">Submit Survey</text>\n\n  <!-- Step 4: Controller Receives Submission -->\n  <line x1=\"800\" y1=\"3275\" x2=\"800\" y2=\"3320\" class=\"line\" />\n  <rect x=\"675\" y=\"3320\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"3345\" class=\"text-label\">Receive Survey Submission</text>\n  <rect x=\"950\" y=\"3335\" width=\"180\" height=\"30\" class=\"component-controller\" />\n  <text x=\"1040\" y=\"3355\" class=\"text-component\">SurveyController (inferred)</text>\n\n  <!-- Step 5: Record Answers -->\n  <line x1=\"800\" y1=\"3390\" x2=\"800\" y2=\"3435\" class=\"line\" />\n  <rect x=\"675\" y=\"3435\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"3460\" class=\"text-label\">Record Answers</text>\n  <rect x=\"950\" y=\"3450\" width=\"180\" height=\"30\" class=\"component-model\" />\n  <text x=\"1040\" y=\"3470\" class=\"text-component\">Answer (inferred)</text>\n\n  <!-- Step 6: Confirm Submission -->\n  <line x1=\"800\" y1=\"3505\" x2=\"800\" y2=\"3550\" class=\"line\" />\n  <rect x=\"675\" y=\"3550\" width=\"250\" height=\"70\" class=\"process\" />\n  <text x=\"800\" y=\"3575\" class=\"text-label\">Confirm Submission</text>\n\n  <!-- End Node -->\n  <line x1=\"800\" y1=\"3620\" x2=\"800\" y2=\"3665\" class=\"line\" />\n  <ellipse cx=\"800\" cy=\"3700\" rx=\"125\" ry=\"35\" class=\"start-end\" />\n  <text x=\"800\" y=\"3705\" class=\"text-label\">End</text>\n\n</svg>\n```"
+    }
+  ],
+  "success": true,
+  "sourceFile": "cluster_polls_surveys_2025-09-15T11-21-30.json",
+  "runId": "run_4",
+  "filePath": "run_4/clusters/cluster_polls_surveys_2025-09-15T11-21-30.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "polls_surveys",
+      "runId": "run_4"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:12:32.256Z"
+  }
+}

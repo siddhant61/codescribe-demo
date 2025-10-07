@@ -1,0 +1,416 @@
+{
+  "clusterId": "61_DEVOPS_Testing",
+  "featureFocus": "Testing Frameworks, Code Quality Tools, and Development Environment Setup",
+  "documentationReport": "{\n  \"title\": \"Comprehensive Software Cluster Documentation Report\",\n  \"description\": \"This report synthesizes documentation for a merged software cluster, covering its testing frameworks, code quality tools, and development environment setup. It integrates insights from primary source documentation with additional context from merged analysis sources to provide a holistic view of the system's capabilities and infrastructure.\",\n  \"sections\": [\n    {\n      \"title\": \"Testing Frameworks and Utilities\",\n      \"content\": \"The project employs a robust testing strategy, primarily utilizing **RSpec** as its core framework for Ruby code. RSpec is configured to support conditional test execution based on the `BRAND` environment variable, enabling brand-specific tests, which highlights the application's multi-brand or white-label capabilities. Integration testing is extensively supported through the use of **Capybara** for web interaction testing, as indicated by `rubocop-capybara` and `rubocop-rspec_rails` plugins. The testing infrastructure also includes **Gurke** as a testing utility, further enhancing the project's testing capabilities.\\n\\nFor comprehensive code coverage analysis, **SimpleCov** is integrated. It is configured to exclude non-application directories such as `bin/`, `db/`, `config/`, `services/`, and `spec/` from its reports. SimpleCov organizes coverage results into logical categories, including 'API', 'Background Processing', 'Business Logic', 'Controllers', 'Forms', 'Helpers', 'Library', and 'UI', providing a structured and detailed overview of code coverage across different architectural layers.\"\n    },\n    {\n      \"title\": \"Code Quality Tools\",\n      \"content\": \"A stringent set of code quality standards is enforced using multiple static analysis tools:\\n\\n*   **RuboCop**: The primary linter for Ruby code, configured with an extensive suite of plugins including `rubocop-capybara`, `rubocop-factory_bot`, `rubocop-performance`, `rubocop-rails`, `rubocop-rspec`, and `rubocop-rspec_rails`. It targets Rails version 7.2 and Ruby version 3.4, with new cops enabled to ensure adherence to modern best practices. A custom `bin/rubocop` script ensures consistent execution with the project's specific configuration, which explicitly excludes various generated or vendor files. The `scripts/rubocop-changed` utility allows for incremental code quality checks on files changed since `origin/master`. RuboCop plays a crucial role in identifying and guiding refactoring for code smells, such as instance variables in helpers.\\n*   **Slim-Lint**: Dedicated to enforcing style and quality in `.slim` template files. It enables linters like `ConsecutiveControlStatements` and `EmbeddedEngines`, explicitly forbidding the use of embedded engines such as `coffee`, `css`, `sass`, `scss`, and `less` within Slim templates to maintain a clear separation of concerns. It integrates with RuboCop by ignoring certain cops to prevent conflicts or redundant checks. A specific violation for `EmbeddedEngines` is explicitly excluded for `app/views/items/lti_exercise/tool_launch.html.slim`.\\n*   **ESLint**: Configured for JavaScript and TypeScript code quality. It extends `pluginJs.configs.recommended` and `tseslint.configs.recommended`, enforcing standard best practices. Global variables like `__BRAND__`, `__MODE__`, and `I18n` are defined as `readonly`. A specific rule warns against `no-console` usage. Legacy and vendor JavaScript assets are ignored to focus linting on application-specific code.\\n*   **Stylelint**: Utilized for enforcing consistent styling in SCSS files. It extends `stylelint-config-recommended-scss`, `stylelint-config-idiomatic-order`, and `stylelint-config-two-dash-bem`, ensuring adherence to recommended SCSS practices, idiomatic property order, and BEM naming conventions. Specific rules are in place to accommodate the `ruby-sass` compiler's limitations, requiring `number` notation for alpha values and `legacy` comma-separated syntax for `rgb` functions.\\n*   **Prettier**: An opinionated code formatter that ensures consistent code style across various file types, including JavaScript, TypeScript, SCSS, YAML, and YML. It is configured to use `singleQuote: true` by default, with specific overrides for SCSS, YAML, and YML files to use `singleQuote: false`.\"\n    },\n    {\n      \"title\": \"Development Environment Setup and Management\",\n      \"content\": \"The project streamlines the development environment setup and ongoing maintenance through automated scripts and utilities:\\n\\n*   **`bin/setup` script**: This idempotent script automates the initial setup and subsequent updates of the development environment, ensuring consistent outcomes. The setup process includes:\\n    1.  Installing `bundler` and running `bundle install` to manage Ruby gem dependencies.\\n    2.  Preparing the database by executing `bin/rails db:prepare`.\\n    3.  Clearing old logs and temporary files using `bin/rails log:clear tmp:clear`.\\n    4.  Restarting the application server with `bin/rails restart`.\\n\\n*   **`scripts/check-gem-versions` utility**: This utility is crucial for maintaining consistency across the main application and its microservices. It parses `Gemfile.lock` files from all services to report on gem versions, highlighting any non-uniform versions. The script supports options to generate a full CSV report, exclude specific services, ignore services in comparisons, and exit with a non-success code if versions do not match, significantly aiding in dependency management across the distributed architecture.\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "RSpec": {
+        "type": "Testing Framework",
+        "description": "The primary testing framework for Ruby applications, used for unit, integration, request, feature, and view specifications. It provides a DSL for writing expressive tests.",
+        "interactions": {
+          "interaction_0": "Executes test suites for various application layers.",
+          "interaction_1": "Utilizes factories for test data generation.",
+          "interaction_2": "Integrates with custom stubbing utilities for isolating microservice interactions.",
+          "interaction_3": "Configured via `.rspec` for test patterns and exclusions, including brand-specific tests.",
+          "interaction_4": "Works with SimpleCov for code coverage analysis."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            ".rspec",
+            "bin/rspec",
+            "docs/app/development/testing/rspec.md",
+            "docs/app/development/testing/index.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 40,
+              "code": "module Xikolo   module Common     module RSpec       require 'xikolo/common/rspec/factory_girl' # @deprecated       require 'xikolo/common/rspec/factory_bot'       require 'xikolo/common/rspec/matchers'       require 'xikolo/common/rspec/stub'        def respond_with(*)         RespondWithMatcher.new(*)       end        def include_header(*)         IncludeHeaderMatcher.new(*)       end        def session_request_headers(session_id)         if session_id           {'Authorization' => \"Xikolo-Session session_id=#{session_id}\"}         else           {}         end       end        def setup_session(user_id, permissions: [], features: {}, user: {}, context_id: 'root')         if user_id.nil?           Stub.request(             :account, :get,             \"/sessions/anonymous?context=#{context_id}&embed=user,permissions,features\"           ).to_return Stub.json({\n            id: nil,\n            user_id: nil,\n      ...",
+              "source": "gems/xikolo-common/lib/xikolo/common/rspec.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 29,
+              "code": "module Xikolo   module Common     module RSpec       class RespondWithMatcher < ::RSpec::Matchers::BuiltIn::Eq         def matches?(subject)           @subject = subject           super(subject.response.status)         end          def failure_message           format 'expected %{subject} to respond with %{expected} but was %{actual}',             subject: @subject.inspect,             expected: status_text(@expected),             actual: status_text(@actual)         end          def description           \"respond with #{status_text(@expected)}\"         end          private          def status_text(status)           status.to_s.tr('_', ' ').upcase         end       end        class IncludeHeaderMatcher < ::RSpec::Matchers::BuiltIn::Include         def initialize(headers)           @headers = headers            headers = headers.each_pair.with_object({}) do |pair, hash|             hash[pair[0].upcase.gsub(/[^A-Z]/, '_')] = pair[1]           end           ...",
+              "source": "gems/xikolo-common/lib/xikolo/common/rspec.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/rspec.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/account/spec/support/restify_rspec.rb",
+              "relevance": 30
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/rspec/matchers.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      },
+      "SimpleCov": {
+        "type": "Testing Utility",
+        "description": "A code coverage tool that generates reports for the Ruby codebase. It is configured to filter out non-application files and group source files into logical categories for better readability.",
+        "interactions": {
+          "interaction_0": "Analyzes code execution during test runs to determine coverage.",
+          "interaction_1": "Filters specific directories (e.g., `bin/`, `db/`, `config/`, `spec/`, `services/`) from coverage reports.",
+          "interaction_2": "Groups application code into categories like 'API', 'Business Logic', 'Controllers', 'UI', etc."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            ".simplecov"
+          ]
+        }
+      },
+      "RuboCop": {
+        "type": "Code Quality Tool",
+        "description": "A static code analyzer and linter for Ruby, enforcing style guidelines and best practices. It is configured with various plugins for Rails, RSpec, Capybara, FactoryBot, and performance checks.",
+        "interactions": {
+          "interaction_0": "Analyzes Ruby code against a comprehensive set of rules defined in `.rubocop.yml`.",
+          "interaction_1": "Integrates with `rubocop-changed` script to check only modified files.",
+          "interaction_2": "Uses plugins like `rubocop-rails`, `rubocop-rspec`, `rubocop-capybara` to provide context-specific linting."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "bin/rubocop",
+            "scripts/rubocop-changed",
+            ".rubocop.yml"
+          ]
+        }
+      },
+      "Slim-Lint": {
+        "type": "Code Quality Tool",
+        "description": "Linter for Slim template files, ensuring consistent style and preventing common issues like embedded engines. Integrates with RuboCop for Ruby code within Slim.",
+        "interactions": {
+          "interaction_0": "Analyzes `.slim` template files.",
+          "interaction_1": "Leverages RuboCop for embedded Ruby code linting."
+        },
+        "techDebt": [
+          "The `javascript` embedded engine is currently not forbidden, marked as 'TODO: Take care of this!' [Source: .slim-lint.yml].",
+          "Instance variables in views are currently disabled, marked as 'TODO: Take care of this!' [Source: .slim-lint.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            ".slim-lint.yml"
+          ]
+        }
+      },
+      "ESLint": {
+        "type": "Code Quality Tool",
+        "description": "Static analysis tool for JavaScript and TypeScript code, enforcing best practices and style guidelines. Configured for browser globals and specific project variables.",
+        "interactions": {
+          "interaction_0": "Analyzes `.js`, `.mjs`, `.cjs`, and `.ts` files."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "eslint.config.mjs"
+          ]
+        }
+      },
+      "Stylelint": {
+        "type": "Code Quality Tool",
+        "description": "Linter for SCSS files, ensuring consistent styling, idiomatic order, and BEM naming conventions. Configured to be compatible with `ruby-sass` compiler limitations.",
+        "interactions": {
+          "interaction_0": "Analyzes SCSS files."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            ".stylelintrc.js"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 21,
+              "code": "module.exports = {\n  defaultSeverity: 'warning',\n  extends: [\n    'stylelint-config-recommended-scss',\n    'stylelint-config-idiomatic-order',\n    'stylelint-config-two-dash-bem',\n  ],\n  rules: {\n    // The ruby-sass compiler (using libsass) doesn't support CSS Color\n    // Level 4, and therefore does not parse the `rbg(0 0 0 / 5%)`\n    // space-separated syntax. Therefore we require numbers for alpha\n    // value, and the comma-separated legacy syntax for the rgb\n    // function. It also does not support the newer non-global\n    // functions.\n    'alpha-value-notation': 'number',\n    'color-function-notation': 'legacy',\n    'scss/no-global-function-names': null,\n    'scss/comment-no-empty': null,\n  },\n};",
+              "source": ".stylelintrc.js"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": ".stylelintrc.js",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Prettier": {
+        "type": "Code Formatter",
+        "description": "An opinionated code formatter that enforces a consistent style across various file types, including JavaScript, TypeScript, SCSS, YAML, and YML.",
+        "interactions": {
+          "interaction_0": "Formats code files automatically."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            ".prettierrc.yml"
+          ]
+        }
+      },
+      "bin/setup": {
+        "type": "Development Utility Script",
+        "description": "An idempotent script to set up and update the local development environment, handling gem installation, database preparation, and cleanup.",
+        "interactions": {
+          "interaction_0": "Installs Ruby gems via Bundler.",
+          "interaction_1": "Prepares the database using `bin/rails db:prepare`.",
+          "interaction_2": "Clears logs and temporary files.",
+          "interaction_3": "Restarts the Rails application server."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "bin/setup"
+          ]
+        }
+      },
+      "scripts/check-gem-versions": {
+        "type": "Development Utility Script",
+        "description": "A script to compare gem versions across `Gemfile.lock` files of the main application and microservices, identifying inconsistencies and generating reports.",
+        "interactions": {
+          "interaction_0": "Parses `Gemfile.lock` files from the main app and `services/*`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "scripts/check-gem-versions"
+          ]
+        }
+      },
+      "scripts/rubocop-changed": {
+        "type": "Development Utility Script",
+        "description": "A utility script to run RuboCop only on files that have changed in the Git repository, optimizing code quality checks for incremental development.",
+        "interactions": {
+          "interaction_0": "Interacts with Git to identify changed files.",
+          "interaction_1": "Executes RuboCop on the identified files."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "scripts/rubocop-changed"
+          ]
+        }
+      },
+      "Gurke": {
+        "type": "E2E Test Runner",
+        "description": "The test runner used for executing end-to-end scenarios. It supports both one-off test runs and a DRb server mode for faster iterative testing against running application services.",
+        "interactions": {
+          "interaction_0": "Orchestrates the execution of E2E tests defined in `integration/features`.",
+          "interaction_1": "Drives a browser via Capybara to simulate user interactions.",
+          "interaction_2": "Manages the lifecycle of application services during E2E test execution.",
+          "interaction_3": "Configurable for different browsers and debugging modes (headless, slow-motion)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docs/app/development/testing/end_to_end.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 8,
+              "code": "require 'gurke'\nrequire 'gurke/rspec'\nrequire 'erb'\n\nENV['GURKE'] = 'true'",
+              "source": "integration/features/gurke.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 13,
+              "code": "$LOAD_PATH << Gurke.root.join('support/lib')\n\nDir[Gurke.root.join('support/*.rb')].each {|path| require path }\nload Gurke.root.join('support/ext/context.rb')",
+              "source": "integration/features/gurke.rb"
+            },
+            {
+              "startLine": 15,
+              "endLine": 17,
+              "code": "RSpec::Expectations.configuration.tap do |config|\n  config.on_potential_false_positives = :raise\nend",
+              "source": "integration/features/gurke.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 35,
+              "code": "Gurke.configure do |config|\n  if ENV.key? 'CI'\n    config.default_retries = 1\n    config.flaky_retries = 3\n  else\n    config.default_retries = 0\n    config.flaky_retries = 0\n  end\n\n  config.before(:features) do\n    # Reload steps for DRb usage\n    Dir[Gurke.root.join('steps/**/*.rb')].each {|path| load path }\n    Dir[Gurke.root.join('support/ext/**/*.rb')].each {|path| load path }\n    Xikolo::Config.reload\n  end\nend",
+              "source": "integration/features/gurke.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "integration/features/gurke.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Capybara": {
+        "type": "Web Automation Tool",
+        "description": "A library used by Gurke and RSpec feature specs to simulate user interactions in a web browser. It enables testing of real, interactive UI behavior.",
+        "interactions": {
+          "interaction_0": "Drives web browsers (e.g., Chrome, Firefox) to execute user scenarios.",
+          "interaction_1": "Used by Gurke for E2E tests and by RSpec for feature tests.",
+          "interaction_2": "Supports headless and non-headless modes, and slow-motion for debugging.",
+          "interaction_3": "Requires specific environment variables (e.g., `SNAP=1`) for certain browser setups."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docs/app/development/testing/end_to_end.md",
+            "docs/app/development/testing/index.md",
+            ".rubocop.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 45,
+              "code": "# \bfrozen_string_literal\b: \btrue\b\\\bn\b\\\bnrequire\b '\bfileutils\b'\\\bn\b\\\bnmodule\b \bCapybaraDownloads\b\\\bn\b  \bdef\b \bdownload_directory\b\\\bn\b    @\bdir\b ||= \bCapybaraDownloads\b.\bdownload_directory\b.\btap\b(&:\bmkpath\b) # \brubocop\b:\bdisable\b \bNaming\b/\bMemoizedInstanceVariableName\b\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bdef\b \bdownload_timeout\b\\\bn\b    \b30\b\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bdef\b \bdownload_files\b\\\bn\b    \bDir\b[\bdownload_directory\b.\bjoin\b('*')]\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bdef\b \bclear_downloads\b!\\\bn\b    \bFileUtils\b.\brm_f\b \bdownload_files\b\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bdef\b \bexpect_download\b\\\bn\b    \bwait_until_downloaded\b\\\bn\b  \brescue\b \bTimeout\b::\bError\b\\\bn\b    \braise\b '\bNo\b \bdownload\b \bfound\b'\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bdef\b \bwait_until_downloaded\b\\\bn\b    \bTimeout\b.\btimeout\b(\bdownload_timeout\b) \bdo\b\\\bn\b      \bsleep\b \b0\b.\b1\b \buntil\b \bdownloaded\b?\\\bn\b    \bend\b\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bdef\b \bdownloaded\b?\\\bn\b    !\bdownloading\b? && \bdownload_files\b.\bany\b?\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bdef\b \bdownloading\b?\\\bn\b    \bdownload_files\b.\bgrep\b(/\\.\bpart\b$/).\bany\b?\\\bn\b  \bend\b\\\bn\b\\\bn\b  \bclass\b << \bself\b\\\bn\b    \bdef\b \bdownload_directory\b\\\bn\b      \bPathname\b.\bpwd\b.\bjoin\b('\btmp\b', '\bdownloads\b')\\\bn\b    \bend\b\\\bn\b  \bend\b\\\bnend\b\\\bn\b\\\bnGurke\b.\bconfigure\b \bdo\b |\bc\b|\\\bn\b  \bc\b.\binclude\b \bCapybaraDownloads\b\\\bn\b\\\bn\b  \bc\b.\bbefore\b(:\bscenario\b) \bdo\b\\\bn\b    \bclear_downloads\b!\\\bn\b  \bend\b\\\bnend\b",
+              "source": "integration/features/support/capybara_downloads.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 38,
+              "code": "\bmodule\b \bCapybaraEMail\b\\\bn\b  \bdef\b \bfetch_emails\b(\bopts\b = {})\\\bn\b    \brecipient\b = \bopts\b.\bfetch\b(:\bto\b) { \bcontext\b.\bfetch\b(:\buser\b).\bfetch\b('\bemail\b') }\\\bn\b    \bsubject\b = \bopts\b.\bfetch\b(:\bsubject\b, \bnil\b)\\\bn\b    \btimeout\b = \bInteger\b \bopts\b.\bfetch\b(:\btimeout\b, \b45\b)\\\bn\b    \bcounter\b = \b0\b\\\bn\b\\\bn\b    \bwhile\b \bcounter\b < \btimeout\b\\\bn\b      \bemails\b = \bCapybaraSmtpServer\b.\bemails\b\\\bn\b\\\bn\b      \bemails\b = \bemails\b.\bselect\b {|\be\b| \be\b.\bto\b.\binclude\b?(\brecipient\b) } \bif\b \brecipient\b\\\bn\b      \bemails\b = \bemails\b.\bselect\b {|\be\b| \be\b.\bsubject\b == \bsubject\b } \bunless\b \bsubject\b.\bnil\b?\\\bn\b\\\bn\b      \bif\b !\bemails\b.\bnil\b? && \bemails\b.\bany\b?\\\bn\b        \breturn\b \bemails\b\\\bn\b      \belse\b\\\bn\b        \bcounter\b += \b1\b\\\bn\b        \bsleep\b \b1\b\\\bn\b      \bend\b\\\bn\b    \bend\b\\\bn\b    \bif\b \bopts\b.\bfetch\b(:\ballow_no_mails\b, \bfalse\b) == \bfalse\b\\\bn\b      \braise\b \bTimeout\b::\bError\b.\bnew\b \\\"\bDid\b \bnot\b \breceive\b \ban\b \bemail\b \bfor\b #{\brecipient\b} \\\" \\\\\\\bn\b                               \\\"\bwithin\b #{\btimeout\b} \bseconds\b.\\\\\bnReceived\b \bemails\b: #{\bCapybaraSmtpServer\b.\bemails\b.\binspect\b}\\\"\\\bn\b    \belse\b\\\bn\b      \bemails\b\\\bn\b    \bend\b\\\bn\b  \bend\b\\\bn\b  # ...",
+              "source": "integration/features/support/capybara_downloads.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 11,
+              "code": "\bmodule\b \bCapybaraMatchers\b\\\bn\b  # \brubocop\b:\bdisable\b \bNaming\b/\bPredicateName\b\\\bn\b  \bdef\b \bhas_notice\b?(\bmessage\b)\\\bn\b    \bfind\b '[\brole\b=\bstatus\b][\baria\b-\blive\b=\bpolite\b]', \btext\b: \bmessage\b\\\bn\b  \bend\b\\\bn\b  # \brubocop\b:\benable\b \bNaming\b/\bPredicateName\b\\\bn\b\\\bn\b  \bCapybara\b::\bSession\b.\binclude\b \bCapybaraMatchers\b\\\bnend\b",
+              "source": "integration/features/support/capybara_downloads.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "integration/features/support/capybara_downloads.rb",
+              "relevance": 30
+            },
+            {
+              "path": "integration/features/support/capybara_email.rb",
+              "relevance": 30
+            },
+            {
+              "path": "integration/features/support/ext/capybara_matchers.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Stubbing Utilities (xikolo-common/rspec/stub.rb)": {
+        "type": "Testing Utility",
+        "description": "Custom helper methods designed to facilitate stubbing of external service requests and microservice interactions within RSpec tests, crucial for isolating components in a distributed architecture.",
+        "interactions": {
+          "interaction_0": "Provides methods like `stub_user_request`, `Stub.service()`, `Stub.request()` to mock HTTP responses from microservices.",
+          "interaction_1": "Used to stub external dependencies such as S3 calls.",
+          "interaction_2": "Integrated within RSpec `before` blocks to set up test environments."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docs/app/development/testing/rspec.md"
+          ]
+        }
+      },
+      "Minio": {
+        "type": "Testing Dependency",
+        "description": "A local S3-compatible object storage server that provides a local S3 API, which is a prerequisite for running end-to-end tests.",
+        "interactions": {
+          "interaction_0": "Automatically launched and configured by the E2E test setup.",
+          "interaction_1": "Serves as a local mock for S3 storage operations during E2E tests."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docs/app/development/testing/end_to_end.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "def self.delete_all\n    Xikolo::S3.resource.buckets.each do |bucket|\n      # First, delete all objects inside the bucket\n      bucket.objects.each(&:delete)\n\n      # Then, delete the empty bucket\n      bucket.delete\n    end\n  end",
+              "source": "integration/features/support/minio.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 32,
+              "code": "def self.setup\n    uploads = Xikolo::S3.resource.bucket 'xikolo-uploads'\n    uploads.create unless uploads.exists?\n    uploads.policy.put policy: JSON.dump(YAML.safe_load(<<~POLICY))\n      Id: uploads\n      Version: '2012-10-17'\n      Statement:\n        - Sid: content\n          Action:\n            - 's3:GetObject'\n            - 's3:DeleteObject'\n          Effect: Allow\n          Resource:\n            - 'arn:aws:s3:::#{uploads.name}/*'\n          Principal: {'AWS': '*'}\n    POLICY\n\n    public = Xikolo::S3.resource.bucket 'xikolo-public'\n    public.create unless public.exists?\n    public.policy.put policy: JSON.dump(YAML.safe_load(<<~POLICY))\n      Id: public\n      Version: '2012-10-17'\n      Statement:\n        - S...\n",
+              "source": "integration/features/support/minio.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "integration/features/support/minio.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Executes Ruby test files (`_spec.rb`).",
+      "interaction_1": "Integrates with `rubocop-capybara` and `rubocop-rspec_rails` for specialized Rails and Capybara testing contexts.",
+      "interaction_2": "Utilizes `SimpleCov` for code coverage reporting.",
+      "interaction_3": "Collects coverage data during RSpec test runs.",
+      "interaction_4": "Analyzes Ruby source files.",
+      "interaction_5": "Integrates with `slim-lint` for combined Ruby/Slim checks.",
+      "interaction_6": "Can be run incrementally on changed files via `scripts/rubocop-changed`.",
+      "interaction_7": "Analyzes `.slim` template files.",
+      "interaction_8": "Leverages RuboCop for embedded Ruby code linting.",
+      "interaction_9": "Analyzes `.js`, `.mjs`, `.cjs`, and `.ts` files.",
+      "interaction_10": "Analyzes SCSS files.",
+      "interaction_11": "Formats code files automatically.",
+      "interaction_12": "Installs Ruby gems via Bundler.",
+      "interaction_13": "Prepares the database using `bin/rails db:prepare`.",
+      "interaction_14": "Clears logs and temporary files.",
+      "interaction_15": "Restarts the Rails application server.",
+      "interaction_16": "Parses `Gemfile.lock` files from the main app and `services/*`.",
+      "interaction_17": "Interacts with Git to identify changed files.",
+      "interaction_18": "Executes RuboCop on the identified files.",
+      "interaction_19": "Executes test suites for various application layers.",
+      "interaction_20": "Utilizes factories for test data generation.",
+      "interaction_21": "Integrates with custom stubbing utilities for isolating microservice interactions.",
+      "interaction_22": "Configured via `.rspec` for test patterns and exclusions, including brand-specific tests.",
+      "interaction_23": "Works with SimpleCov for code coverage analysis.",
+      "interaction_24": "Analyzes code execution during test runs to determine coverage.",
+      "interaction_25": "Filters specific directories (e.g., `bin/`, `db/`, `config/`, `spec/`, `services/`) from coverage reports.",
+      "interaction_26": "Groups application code into categories like 'API', 'Business Logic', 'Controllers', 'UI', etc.",
+      "interaction_27": "Analyzes Ruby code against a comprehensive set of rules defined in `.rubocop.yml`.",
+      "interaction_28": "Integrates with `rubocop-changed` script to check only modified files.",
+      "interaction_29": "Uses plugins like `rubocop-rails`, `rubocop-rspec`, `rubocop-capybara` to provide context-specific linting.",
+      "interaction_30": "Orchestrates the execution of E2E tests defined in `integration/features`.",
+      "interaction_31": "Drives a browser via Capybara to simulate user interactions.",
+      "interaction_32": "Manages the lifecycle of application services during E2E test execution.",
+      "interaction_33": "Configurable for different browsers and debugging modes (headless, slow-motion).",
+      "interaction_34": "Drives web browsers (e.g., Chrome, Firefox) to execute user scenarios.",
+      "interaction_35": "Used by Gurke for E2E tests and by RSpec for feature tests.",
+      "interaction_36": "Supports headless and non-headless modes, and slow-motion for debugging.",
+      "interaction_37": "Requires specific environment variables (e.g., `SNAP=1`) for certain browser setups.",
+      "interaction_38": "Provides methods like `stub_user_request`, `Stub.service()`, `Stub.request()` to mock HTTP responses from microservices.",
+      "interaction_39": "Used to stub external dependencies such as S3 calls.",
+      "interaction_40": "Integrated within RSpec `before` blocks to set up test environments.",
+      "interaction_41": "Automatically launched and configured by the E2E test setup.",
+      "interaction_42": "Serves as a local mock for S3 storage operations during E2E tests."
+    },
+    "technicalDebt": [
+      "The `javascript` embedded engine is currently not forbidden, marked as 'TODO: Take care of this!' [Source: .slim-lint.yml].",
+      "Instance variables in views are currently disabled, marked as 'TODO: Take care of this!' [Source: .slim-lint.yml]."
+    ]
+  }
+}

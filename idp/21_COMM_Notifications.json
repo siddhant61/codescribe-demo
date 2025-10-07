@@ -1,0 +1,469 @@
+{
+  "clusterId": "21_COMM_Notifications",
+  "featureFocus": "Event-Driven Notification Microservice",
+  "documentationReport": "{\n  \"title\": \"Xikolo Notification Service: Comprehensive Documentation\",\n  \"overview\": \"The Xikolo Notification Service is a central microservice within the Xikolo ecosystem, dedicated to managing and delivering user notifications across all Xikolo applications. Its primary function encompasses event-driven email delivery, in-app notification support, and robust user preference management. This service integrates with core Xikolo applications like Account, Course, Learnanalytics, News, and Pinboard, leveraging Msgr for inter-service communication and ensuring a unified notification experience. It also provides capabilities for event and mail log management.\",\n  \"core_functionality\": {\n    \"sending_notifications\": {\n      \"description\": \"Other Xikolo services initiate notifications by publishing event data to Msgr. This data typically includes a timestamp and a link_to hash, which contains resource_key and resource_id for generating frontend and email links. The services.yml configuration defines the URLs for interacting with other core services.\",\n      \"example\": {\n        \"language\": \"ruby\",\n        \"code\": \"data = {\\n  timestamp: DateTime.now,\\n  link_to: {\\n    resource_key: 'Xikolo::Service::Resource',\\n    resource_id:  '00000001-1234-4444-9999-000000000001'\\n  },\\n  # ... additional notification data\\n}\\nMsgr.publish(data, to: 'xikolo.service.resource.action')\"\n      }\n    },\n    \"receiving_processing_notifications\": {\n      \"description\": \"Within the Xikolo::NotificationService, incoming Msgr messages are processed based on routes defined in config/msgr.rb. Each route maps a specific Msgr topic (e.g., xikolo.service.resource.action) to a consumer method (e.g., consumer#method). New consumers or helpers must be created to handle incoming data, create the notification, and ensure the timestamp is forwarded. The Msgr Consumer component is central to this process.\"\n    },\n    \"displaying_notifications\": {\n      \"description\": \"For notifications to be displayed, a corresponding mail template must be added in app/views/{de|en}. Additionally, a description for the topic_exchange needs to be added to the frontend's locales under preferences.show.xikolo.service.resource.action. This allows users to manage their notification preferences directly from the frontend.\"\n    }\n  },\n  \"email_delivery_and_styling\": {\n    \"description\": \"The service employs advanced strategies to ensure broad client compatibility for HTML emails, particularly with challenging clients like Microsoft Outlook.\",\n    \"strategies\": [\n      {\n        \"name\": \"Inline Styles\",\n        \"tool\": \"premailer\",\n        \"detail\": \"Utilized to automatically inline CSS styles directly onto HTML elements, improving rendering consistency.\"\n      },\n      {\n        \"name\": \"Table-based Layouts\",\n        \"tool\": \"inky\",\n        \"detail\": \"Template helpers encapsulate robust table-based alignment techniques, which are fundamental for reliable email layouts.\"\n      },\n      {\n        \"name\": \"Foundation for Emails\",\n        \"tool\": \"foundation\",\n        \"detail\": \"Provides a structured approach and helpers for email design, strongly advising against custom styles, especially for responsiveness, to maintain compatibility.\"\n      }\n    ],\n    \"best_practices\": [\n      \"Adherence to best practices, such as using full six-digit color codes (e.g., #666666) instead of shorthands, is recommended.\"\n    ],\n    \"markdown_processing\": \"The MarkdownService is available for rendering rich content within notifications.\"\n  },\n  \"email_branding_and_customization\": {\n    \"description\": \"To avoid generic email templates and provide a branded experience, the service supports custom layouts. For specific brands, a dedicated folder should be created at services/notification/brand/<name>.\",\n    \"customization_options\": [\n      \"Custom templates in assets/views/layouts.\",\n      \"Custom stylesheets named foundation_<name>.scss in assets/stylesheets.\"\n    ]\n  },\n  \"user_notification_management_and_preferences\": {\n    \"description\": \"The system provides comprehensive tools for users to manage their notification settings:\",\n    \"features\": [\n      \"Preference Management: Users can manage their notification preferences via frontend locales, allowing them to enable or disable specific notification types.\",\n      \"Components: The NotificationUserDisablesController and NotificationUserSettingsHelper are key components facilitating the management and persistence of user notification preferences.\"\n    ]\n  },\n  \"system_components_and_interactions\": {\n    \"description\": \"The Xikolo Notification Service is built upon a set of interconnected components:\",\n    \"components\": [\n      {\n        \"name\": \"Xikolo::NotificationService (Notification Service)\",\n        \"role\": \"The core microservice orchestrating all notification-related functionalities.\"\n      },\n      {\n        \"name\": \"Msgr / Msgr Consumer\",\n        \"role\": \"The messaging backbone for inter-service communication, handling both publishing and consuming notification events.\"\n      },\n      {\n        \"name\": \"Mailer\",\n        \"role\": \"Responsible for constructing and sending email notifications.\"\n      },\n      {\n        \"name\": \"Sidekiq Worker\",\n        \"role\": \"Used for asynchronous processing of tasks, likely including email sending and other background notification jobs, ensuring responsiveness.\"\n      },\n      {\n        \"name\": \"NotificationUserDisablesController\",\n        \"role\": \"Manages user requests to disable or enable specific notification types.\"\n      },\n      {\n        \"name\": \"NotificationUserSettingsHelper\",\n        \"role\": \"Provides utility functions for accessing and manipulating user notification settings.\"\n      },\n      {\n        \"name\": \"MarkdownService\",\n        \"role\": \"Processes Markdown content for inclusion in notifications, ensuring consistent formatting.\"\n      },\n      {\n        \"name\": \"TrackingMailInterceptor\",\n        \"role\": \"Intercepts outgoing emails, likely for tracking delivery status, opens, or clicks.\"\n      },\n      {\n        \"name\": \"premailer\",\n        \"role\": \"A utility for inlining CSS styles into HTML emails.\"\n      },\n      {\n        \"name\": \"inky\",\n        \"role\": \"A templating language/helper for creating responsive email layouts using tables.\"\n      },\n      {\n        \"name\": \"foundation (Foundation for Emails)\",\n        \"role\": \"A framework providing a structured approach and helpers for robust email design.\"\n      }\n    ]\n  },\n  \"event_and_mail_log_management\": {\n    \"description\": \"The service includes capabilities for managing logs related to notification events and sent emails, providing an audit trail and aiding in debugging and monitoring the notification delivery process.\"\n  },\n  \"key_interactions\": [\n    \"External services publish events to Msgr.\",\n    \"Msgr Consumer in Xikolo::NotificationService receives and processes events.\",\n    \"Mailer generates emails, potentially using MarkdownService for content and premailer/inky/foundation for styling.\",\n    \"Sidekiq Worker handles asynchronous email sending and other background tasks.\",\n    \"TrackingMailInterceptor monitors outgoing emails.\",\n    \"NotificationUserDisablesController and NotificationUserSettingsHelper manage user preferences, influencing which notifications are sent.\",\n    \"The service interacts with other core Xikolo services (Account, Course, Learnanalytics, News, Pinboard) as configured in services.yml.\"\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Xikolo::NotificationService": {
+        "type": "Microservice",
+        "description": "A dedicated Ruby on Rails API-only microservice responsible for processing notification events and sending emails across the Xikolo ecosystem. It acts as a central hub for all outgoing email communications.",
+        "interactions": {
+          "interaction_0": "Receives notification events from other Xikolo microservices (e.g., Account, Course, News, Pinboard) via RabbitMQ/Msgr. [Source: services/notification/README.md, services/notification/config/services.yml]",
+          "interaction_1": "Sends email notifications to users based on processed events. [Source: services/notification/README.md]",
+          "interaction_2": "Configured to know the endpoints of other services for potential resource linking or data fetching. [Source: services/notification/config/services.yml]"
+        },
+        "techDebt": [
+          "Ensuring HTML emails render consistently across all email clients, especially Microsoft Outlook, is a known challenge requiring specific tooling and practices. [Source: services/notification/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md",
+            "services/notification/config/services.yml"
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "Messaging Library",
+        "description": "The Ruby gem used for inter-service communication via RabbitMQ. It facilitates publishing and subscribing to messages, forming the backbone of the event-driven architecture for notifications.",
+        "interactions": {
+          "interaction_0": "Other services publish notification event data to Msgr topics. [Source: services/notification/README.md]",
+          "interaction_1": "NotificationService subscribes to Msgr topics to receive event data. [Source: services/notification/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 19,
+              "code": "module MsgrSentryIntegration   def dispatch(*)     Sentry.with_scope do       super     rescue Sentry::Error       raise # Don't capture Sentry errors     rescue Exception => e # rubocop:disable Lint/RescueException       Sentry.capture_exception(e)       raise     end   end end  Msgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Notification Consumers": {
+        "type": "Message Consumer",
+        "description": "Classes within the NotificationService responsible for processing specific incoming Msgr messages. They parse event data and initiate the creation of notifications and subsequent email generation.",
+        "interactions": {
+          "interaction_0": "Receive messages from Msgr based on defined routes in `config/msgr.rb`. [Source: services/notification/README.md]",
+          "interaction_1": "Create notification records and trigger email rendering processes. [Source: services/notification/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md"
+          ]
+        }
+      },
+      "Notification Mail Templates": {
+        "type": "View",
+        "description": "Templates (located in `app/views/{de|en}`) used to render the content of email notifications. These templates are designed with specific styling considerations for email clients.",
+        "interactions": {
+          "interaction_0": "Rendered by the NotificationService when an email needs to be sent. [Source: services/notification/README.md]",
+          "interaction_1": "Can be customized per brand using `assets/views/layouts` within brand-specific folders. [Source: docs/app/development/branding/email.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md",
+            "docs/app/development/branding/email.md"
+          ]
+        }
+      },
+      "Premailer": {
+        "type": "Gem/Library",
+        "description": "A Ruby gem used to inline CSS styles into HTML email templates, a crucial step for ensuring consistent rendering across various email clients.",
+        "interactions": {
+          "interaction_0": "Processes rendered HTML email content to embed CSS directly into `style` attributes. [Source: services/notification/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md"
+          ]
+        }
+      },
+      "Inky": {
+        "type": "Gem/Library",
+        "description": "A templating language and Ruby gem that translates simple HTML-like syntax into complex, table-based HTML structures optimized for email clients.",
+        "interactions": {
+          "interaction_0": "Used within mail templates to define email layouts and components. [Source: services/notification/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md"
+          ]
+        }
+      },
+      "Foundation for Emails": {
+        "type": "CSS Framework",
+        "description": "A responsive email framework that provides a set of pre-built components and styling guidelines to create robust and visually appealing HTML emails.",
+        "interactions": {
+          "interaction_0": "Provides the underlying CSS and structural conventions used in conjunction with Inky for email templating. [Source: services/notification/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md"
+          ]
+        }
+      },
+      "NotificationUserDisablesController": {
+        "type": "Controller",
+        "description": "Handles one-click unsubscribe requests from email notifications. It validates incoming parameters, verifies security hashes, and updates user notification preferences via the Account microservice.",
+        "interactions": {
+          "interaction_0": "Interacts with the Account microservice (via `Xikolo.api(:account)`) to fetch user email details and update user preferences. [Source: app/controllers/notification_user_disables_controller.rb]",
+          "interaction_1": "Utilizes `NotificationUserSettingsHelper` for hash generation and settings key translation. [Source: app/controllers/notification_user_disables_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/notification_user_disables_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nclass NotificationUserDisablesController < Abstract::FrontendController\n  include NotificationUserSettingsHelper\n\n  skip_before_action :verify_authenticity_token\n  before_action :set_no_cache_headers",
+              "source": "app/controllers/notification_user_disables_controller.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 16,
+              "code": "  def show\n    if params.values_at(:email, :hash, :key).any?(&:blank?)\n      add_flash_message :error, t(:'flash.error.email_hash_invalid')\n      redirect\n      return\n    end\n    render\n  end",
+              "source": "app/controllers/notification_user_disables_controller.rb"
+            },
+            {
+              "startLine": 19,
+              "endLine": 25,
+              "code": "  # this is used as a one click disable solution from the newsletter\n  # this will set notification.email.news.announcement to false\n  def create\n    unless disable_notifications\n      add_flash_message :error, t(:'flash.error.email_hash_invalid')\n    end\n    redirect\n  end",
+              "source": "app/controllers/notification_user_disables_controller.rb"
+            },
+            {
+              "startLine": 27,
+              "endLine": 38,
+              "code": "  private\n  def disable_notifications\n    if params.values_at(:email, :hash, :key).any?(&:blank?)\n      # Required parameter is missing\n      return false\n    end\n\n    email = Xikolo.api(:account).value!.rel(:email)\n      .get({id: params[:email]}).value!\n    user = email.rel(:user).get.value!\n\n  ...",
+              "source": "app/controllers/notification_user_disables_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/notification_user_disables_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "NotificationUserSettingsHelper": {
+        "type": "Helper",
+        "description": "Provides utility methods for generating security hashes for email unsubscribe links and translating simplified notification keys into full preference paths.",
+        "interactions": {
+          "interaction_0": "Used by `NotificationUserDisablesController` to validate unsubscribe requests and map preference keys. [Source: app/controllers/notification_user_disables_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/helpers/notification_user_settings_helper.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 18,
+              "code": "module NotificationUserSettingsHelper   # Build a hash from emailID and userID.   # See Notification Service for reference.   def hash_email(id:, user_id:)     Digest::SHA256.hexdigest [id, user_id].join   end    # Translate the key passed in an email back   # to the original settings key.   def settings_key(key_substitute)     sanitized_key = key_substitute.gsub(/[^a-z_]/, '')      {       'global' => 'notification.email.global',       'announcement' => 'notification.email.news.announcement',       'course_announcement' => 'notification.email.course.announcement',       'pinboard' => 'notification.email.pinboard.new_answer',     }.fetch sanitized_key   end end",
+              "source": "app/helpers/notification_user_settings_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/helpers/notification_user_settings_helper.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "NotificationService": {
+        "type": "Microservice",
+        "description": "A dedicated API-only Rails microservice responsible for centralized email notification sending. It consumes events from other services, generates email content, applies styling, and handles tracking.",
+        "interactions": {
+          "interaction_0": "Receives notification events from other Xikolo services via `Msgr` (RabbitMQ). [Source: services/notification/README.md]",
+          "interaction_1": "Utilizes `MarkdownService` to render email content. [Source: services/notification/lib/markdown_service.rb]",
+          "interaction_2": "Employs `TrackingMailInterceptor` to modify outgoing emails for tracking purposes. [Source: services/notification/lib/tracking_mail_interceptor.rb]",
+          "interaction_3": "Interacts with external email clients for delivery."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            
+            "services/notification/README.md",
+            "docs/app/development/branding/email.md",
+            "services/notification/config/locales/de.yml",
+            "services/notification/config/locales/en.yml",
+            "services/notification/lib/markdown_service.rb",
+            "services/notification/lib/tracking_mail_interceptor.rb"
+          ]
+        }
+      },
+      "MarkdownService": {
+        "type": "Service Module",
+        "description": "A utility module within the Notification Service responsible for converting Markdown formatted text into HTML, primarily for use in email content.",
+        "interactions": {
+          "interaction_0": "Used by the `NotificationService` (or its mailers/workers) to render email bodies. [Source: services/notification/lib/markdown_service.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/lib/markdown_service.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 27,
+              "code": "# frozen_string_literal: true\n\nmodule MarkdownService\n  class << self\n    def render_html(text)\n      renderer.render text\n    end\n\n    private\n\n    def renderer\n      @renderer ||= Redcarpet::Markdown.new(\n        Redcarpet::Render::HTML.new(\n          no_images: true,\n          no_links: false,\n          filter_html: true\n        ),\n        autolink: true,\n        space_after_headers: true,\n        strikethrough: true,\n        no_intra_emphasis: true,\n        fenced_code_blocks: true,\n        lax_spacing: true\n      )\n    end\n  end\nend",
+              "source": "services/news/app/lib/markdown_service.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/news/app/lib/markdown_service.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/notification/lib/markdown_service.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "TrackingMailInterceptor": {
+        "type": "Mailer Interceptor",
+        "description": "Intercepts outgoing emails from the Notification Service to inject tracking parameters into local links and images, and to redirect external links through a tracking mechanism.",
+        "interactions": {
+          "interaction_0": "Intercepts emails being delivered by the `NotificationService`'s mailers. [Source: services/notification/lib/tracking_mail_interceptor.rb]",
+          "interaction_1": "Uses `Nokogiri` for HTML parsing and modification. [Source: services/notification/lib/tracking_mail_interceptor.rb]",
+          "interaction_2": "Interacts with `Xikolo::Common::Tracking::ExternalLink` (implied) for external link redirection. [Source: services/notification/lib/tracking_mail_interceptor.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/lib/tracking_mail_interceptor.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 27,
+              "code": "  def self.delivering_email(mail, params)\n    image_params = params.merge(logo: true)\n\n    %w[text/plain text/html].each do |type|\n      next unless mail.find_first_mime_type(type)\n\n      changes = MailChanges.for_type(type, mail)\n\n      # Append the tracking parameters to both link targets and image sources\n      handle_links changes, params\n      handle_images changes, image_params\n\n      # Replace the email's HTML part with the manipulated links\n      changes.apply! mail\n    end\n\n    mail\n  end\n\n  class MailChanges\n    def self.for_type(type, mail)\n      case type\n        when 'text/html'\n          HtmlEmailChanges.new Nokogiri::HTML mail.html_part.body.raw_source\n        when 'text/plain'\n          TextEmailChanges.new mail.text_part.body.to_s\n      end\n    end\n  end\n\n  class HtmlEmailChanges\n    def initialize(html_document)\n      @document = html_document\n    end",
+              "source": "services/notification/lib/tracking_mail_interceptor.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/notification/lib/tracking_mail_interceptor.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Notification Service": {
+        "type": "Microservice",
+        "description": "The central service responsible for generating, styling, and sending all email-based notifications across the Xikolo platform. It acts as an event consumer and email dispatcher.",
+        "interactions": {
+          "interaction_0": "Receives events from other microservices (e.g., account, course, news, pinboard) via RabbitMQ. [Source: services/notification/README.md]",
+          "interaction_1": "Sends emails to users. [Source: services/notification/README.md]",
+          "interaction_2": "Interacts with PostgreSQL for data storage. [Source: services/notification/config/database.yml]",
+          "interaction_3": "Interacts with Redis for Sidekiq job queues. [Source: docker/compose.notification.yml]"
+        },
+        "techDebt": [
+          "The `notification-server` component's purpose is unclear; it's marked \"only for debugging\" but is part of the standard deployment. Its role should be clarified or removed if unused in production. [Source: docker/compose.notification.yml]"
+        ],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md",
+            "docker/compose.notification.yml",
+            "services/notification/config/database.yml",
+            "services/notification/config/rabbitmq.yml",
+            "services/notification/config/services.yml"
+          ]
+        }
+      },
+      "Msgr Consumer": {
+        "type": "Message Consumer",
+        "description": "A component within the Notification Service responsible for subscribing to and processing messages from RabbitMQ. It parses incoming event data and initiates the notification generation process.",
+        "interactions": {
+          "interaction_0": "Receives messages from RabbitMQ. [Source: services/notification/README.md]",
+          "interaction_1": "Invokes `Consumer` and `ConsumerHelper` methods to handle specific event types. [Source: services/notification/README.md]",
+          "interaction_2": "Triggers email generation and queues jobs for `Sidekiq Worker`. [Source: services/notification/README.md, docker/compose.notification.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md",
+            "docker/compose.notification.yml",
+            "services/notification/config/rabbitmq.yml"
+          ]
+        }
+      },
+      "Mailer": {
+        "type": "Email Sender",
+        "description": "Responsible for constructing the actual email content, applying styling, and dispatching emails. It uses localized templates and integrates with email styling libraries.",
+        "interactions": {
+          "interaction_0": "Receives data from `Msgr Consumer` or `Sidekiq Worker`. [Source: services/notification/README.md]",
+          "interaction_1": "Uses locale files (`de.yml`, `en.yml`) for subject and body text. [Source: services/notification/config/locales/de.yml, services/notification/config/locales/en.yml]",
+          "interaction_2": "Utilizes `premailer`, `inky`, and `foundation` for email styling. [Source: services/notification/README.md]",
+          "interaction_3": "Sends emails (likely via an external SMTP service, not detailed in provided context)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/notification/README.md",
+            "services/notification/config/locales/de.yml",
+            "services/notification/config/locales/en.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "  def locale_string_from(hash)\n    hash = ActiveSupport::HashWithIndifferentAccess.new hash\n\n    hash[I18n.locale] ||\n      hash[Xikolo.config.locales['default']] ||\n      hash.values.compact.first\n  end",
+              "source": "services/notification/app/helpers/mailer_helper.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 15,
+              "code": "  def get_language(language)\n    return language if Xikolo.config.locales['available'].include? language\n\n    Xikolo.config.locales['default']\n  end",
+              "source": "services/notification/app/helpers/mailer_helper.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 5,
+              "code": "class ApplicationMailer < ActionMailer::Base\nend",
+              "source": "services/notification/app/helpers/mailer_helper.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 29,
+              "code": "  class TicketMailer < ::ApplicationMailer\n    default from: 'helpdesk-mailer@openhpi.de'\n\n    def new_ticket_email(ticket)\n      @ticket = ticket\n\n      mail(\n        to: Xikolo.config.helpdesk_email,\n        subject: \"#{get_prefix(ticket)}#{ticket.title || 'No Title'}\",\n        reply_to: ticket.mail\n      )\n    end\n\n    private\n\n    def get_prefix(ticket)\n      return '' unless ticket.course\n\n      course = ticket.course\n\n      if course.channel.present?\n        \"#{course.channel.code} - #{course.course_code}: \"\n      else\n        \"#{course.course_code}: \"\n      end\n    end\n  end",
+              "source": "services/notification/app/helpers/mailer_helper.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/notification/app/helpers/mailer_helper.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/mailers/application_mailer.rb",
+              "relevance": 11
+            },
+            {
+              "path": "app/mailers/helpdesk/ticket_mailer.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Sidekiq Worker": {
+        "type": "Background Job Processor",
+        "description": "Handles asynchronous tasks, primarily the actual sending of emails, to avoid blocking the main message consumption process.",
+        "interactions": {
+          "interaction_0": "Receives jobs from `Msgr Consumer` or other parts of the `Notification Service`. [Source: docker/compose.notification.yml]",
+          "interaction_1": "Interacts with Redis for job queuing. [Source: docker/compose.notification.yml]",
+          "interaction_2": "Invokes `Mailer` to send emails. [Source: docker/compose.notification.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "docker/compose.notification.yml",
+            "Foundational Context: Background Jobs"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Receives notification events from other Xikolo microservices (e.g., Account, Course, News, Pinboard) via RabbitMQ/Msgr. [Source: services/notification/README.md, services/notification/config/services.yml]",
+      "interaction_1": "Sends email notifications to users based on processed events. [Source: services/notification/README.md]",
+      "interaction_2": "Configured to know the endpoints of other services for potential resource linking or data fetching. [Source: services/notification/config/services.yml]",
+      "interaction_3": "Other services publish notification event data to Msgr topics. [Source: services/notification/README.md]",
+      "interaction_4": "NotificationService subscribes to Msgr topics to receive event data. [Source: services/notification/README.md]",
+      "interaction_5": "Receive messages from Msgr based on defined routes in `config/msgr.rb`. [Source: services/notification/README.md]",
+      "interaction_6": "Create notification records and trigger email rendering processes. [Source: services/notification/README.md]",
+      "interaction_7": "Rendered by the NotificationService when an email needs to be sent. [Source: services/notification/README.md]",
+      "interaction_8": "Can be customized per brand using `assets/views/layouts` within brand-specific folders. [Source: docs/app/development/branding/email.md]",
+      "interaction_9": "Processes rendered HTML email content to embed CSS directly into `style` attributes. [Source: services/notification/README.md]",
+      "interaction_10": "Used within mail templates to define email layouts and components. [Source: services/notification/README.md]",
+      "interaction_11": "Provides the underlying CSS and structural conventions used in conjunction with Inky for email templating. [Source: services/notification/README.md]",
+      "interaction_12": "Interacts with the Account microservice (via `Xikolo.api(:account)`) to fetch user email details and update user preferences. [Source: app/controllers/notification_user_disables_controller.rb]",
+      "interaction_13": "Utilizes `NotificationUserSettingsHelper` for hash generation and settings key translation. [Source: app/controllers/notification_user_disables_controller.rb]",
+      "interaction_14": "Used by `NotificationUserDisablesController` to validate unsubscribe requests and map preference keys. [Source: app/controllers/notification_user_disables_controller.rb]",
+      "interaction_15": "Receives notification events from other Xikolo services via `Msgr` (RabbitMQ). [Source: services/notification/README.md]",
+      "interaction_16": "Utilizes `MarkdownService` to render email content. [Source: services/notification/lib/markdown_service.rb]",
+      "interaction_17": "Employs `TrackingMailInterceptor` to modify outgoing emails for tracking purposes. [Source: services/notification/lib/tracking_mail_interceptor.rb]",
+      "interaction_18": "Interacts with external email clients for delivery.",
+      "interaction_19": "Used by the `NotificationService` (or its mailers/workers) to render email bodies. [Source: services/notification/lib/markdown_service.rb]",
+      "interaction_20": "Intercepts emails being delivered by the `NotificationService`'s mailers. [Source: services/notification/lib/tracking_mail_interceptor.rb]",
+      "interaction_21": "Uses `Nokogiri` for HTML parsing and modification. [Source: services/notification/lib/tracking_mail_interceptor.rb]",
+      "interaction_22": "Interacts with `Xikolo::Common::Tracking::ExternalLink` (implied) for external link redirection. [Source: services/notification/lib/tracking_mail_interceptor.rb]",
+      "interaction_23": "Receives events from other microservices (e.g., account, course, news, pinboard) via RabbitMQ. [Source: services/notification/README.md]",
+      "interaction_24": "Sends emails to users. [Source: services/notification/README.md]",
+      "interaction_25": "Interacts with PostgreSQL for data storage. [Source: services/notification/config/database.yml]",
+      "interaction_26": "Interacts with Redis for Sidekiq job queues. [Source: docker/compose.notification.yml]",
+      "interaction_27": "Receives messages from RabbitMQ. [Source: services/notification/README.md]",
+      "interaction_28": "Invokes `Consumer` and `ConsumerHelper` methods to handle specific event types. [Source: services/notification/README.md]",
+      "interaction_29": "Triggers email generation and queues jobs for `Sidekiq Worker`. [Source: services/notification/README.md, docker/compose.notification.yml]",
+      "interaction_30": "Receives data from `Msgr Consumer` or `Sidekiq Worker`. [Source: services/notification/README.md]",
+      "interaction_31": "Uses locale files (`de.yml`, `en.yml`) for subject and body text. [Source: services/notification/config/locales/de.yml, services/notification/config/locales/en.yml]",
+      "interaction_32": "Utilizes `premailer`, `inky`, and `foundation` for email styling. [Source: services/notification/README.md]",
+      "interaction_33": "Sends emails (likely via an external SMTP service, not detailed in provided context).",
+      "interaction_34": "Receives jobs from `Msgr Consumer` or other parts of the `Notification Service`. [Source: docker/compose.notification.yml]",
+      "interaction_35": "Interacts with Redis for job queuing. [Source: docker/compose.notification.yml]",
+      "interaction_36": "Invokes `Mailer` to send emails. [Source: docker/compose.notification.yml]"
+    },
+    "technicalDebt": [
+      "Ensuring HTML emails render consistently across all email clients, especially Microsoft Outlook, is a known challenge requiring specific tooling and practices. [Source: services/notification/README.md]",
+      "The `notification-server` component's purpose is unclear; it's marked \"only for debugging\" but is part of the standard deployment. Its role should be clarified or removed if unused in production. [Source: docker/compose.notification.yml]"
+    ]
+  }
+}

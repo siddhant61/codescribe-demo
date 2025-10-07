@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServiceCommunication standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for ServiceCommunication standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#infra" class="breadcrumb-link">INFRA</a></li>
+            <li class="breadcrumb-item active">ServiceCommunication standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-gamification-event-processing" class="sidebar-nav-link">1. Gamification Event Processing</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-centralized-configuration-management" class="sidebar-nav-link">2. Centralized Configuration Management</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-s3-file-management" class="sidebar-nav-link">3. S3 File Management</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#4.-background-job-processing" class="sidebar-nav-link">4. Background Job Processing</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-infra">INFRA</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="internal-ruby-gems-and-inter-service-communication-(rabbitmq)---technical-documentation" tabindex="-1"><a class="header-anchor" href="#internal-ruby-gems-and-inter-service-communication-(rabbitmq)---technical-documentation"><span>Internal Ruby Gems and Inter-Service Communication (RabbitMQ) - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/19/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo project implements a robust microservice architecture with inter-service communication primarily facilitated by RabbitMQ, ensuring asynchronous and decoupled interactions. This foundational approach is complemented by a suite of internal Ruby gems (Xikolo::Common, Xikolo::Config, Xikolo::S3, Xikolo::Sidekiq) that encapsulate shared functionalities, enforce architectural consistency, and streamline development across the main Xikolo application and its various microservices. Key components like the <code>Msgr</code> gem handle message publishing and subscription, while specialized handlers such as the <code>GamificationController</code> react to specific events, demonstrating an event-driven paradigm. The architecture prioritizes modularity, reusability, and maintainability by centralizing common utilities, configuration, file management, and background job processing.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo architecture for service communication revolves around a message broker, RabbitMQ, and a set of internal Ruby gems that standardize common functionalities. The main Xikolo application and various microservices interact using these components to achieve a decoupled and efficient system. <code>Xikolo::Common</code> provides fundamental utilities like HTTP communication via Restify, metric collection for Telegraf/Grafana, and authentication helpers for services. <code>Xikolo::Config</code> serves as the central configuration store, reading settings from YAML files and providing them across the ecosystem. For asynchronous communication, services utilize the <code>Msgr</code> gem to publish and subscribe to messages, which are then routed through <code>RabbitMQ</code>. A specific example of a message consumer is the <code>GamificationController</code>, responsible for processing events received from RabbitMQ to trigger gamification logic. Additionally, <code>Xikolo::S3</code> manages file operations with AWS S3, and <code>Xikolo::Sidekiq</code> handles background job processing through Redis, but these are auxiliary to the core communication diagram’s focus on message flow. This design ensures that services can communicate reliably without direct dependencies, allowing for independent development and scaling.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-architecture-overview"><span>Main Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  xikoloService["Xikolo Service / App"]
+  xikoloCommon["Xikolo::Common Gem"]
+  xikoloConfig["Xikolo::Config Gem"]
+  msgr["Msgr Gem"]
+  rabbitMQ["RabbitMQ Broker"]
+  gamificationController["GamificationController"]
+
+  xikoloService -->|"uses common utils"| xikoloCommon
+  xikoloService -->|"fetches configuration"| xikoloConfig
+  xikoloService -->|"publishes events via"| msgr
+  msgr -->|"sends/receives messages"| rabbitMQ
+  rabbitMQ -->|"delivers to subscriber"| msgr
+  msgr -->|"routes to handler"| gamificationController
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Xikolo::Common:</strong> Installs and configures common libraries like Restify for HTTP communication between services. [Source: RAG: gems/xikolo-common/README.md]</li>
+<li><strong>Xikolo::Common:</strong> Sends custom application metrics to Telegraf via the <code>Xikolo.metrics</code> object for monitoring in Grafana. [Source: RAG: gems/xikolo-common/README.md]</li>
+<li><strong>Xikolo::Config:</strong> Reads configuration values from various YAML files (e.g., <code>config/xikolo.yml</code>, <code>/etc/xikolo.yml</code>) based on a defined merge order. [Source: RAG: gems/xikolo-config/README.md]</li>
+<li><strong>Xikolo::Config:</strong> Provides configuration settings (e.g., <code>Xikolo.brand</code>, <code>Xikolo.base_url</code>, <code>mailsender</code>) to other Xikolo components and services. [Source: RAG: gems/xikolo-config/README.md]</li>
+<li><strong>Xikolo::S3:</strong> Configures the AWS S3 client using settings from <code>xikolo-config</code>. [Source: RAG: gems/xikolo-s3/README.md]</li>
+<li><strong>Xikolo::S3:</strong> Interacts with AWS S3 for storing, retrieving, and managing files (e.g., <code>Aws::S3::Bucket</code>, <code>Aws::S3::Object</code>). [Source: RAG: gems/xikolo-s3/README.md]</li>
+<li><strong>Xikolo::Sidekiq:</strong> Configures the Sidekiq Redis connection using <code>config/sidekiq_redis.yml</code> for environment-specific settings. [Source: RAG: gems/xikolo-sidekiq/README.md]</li>
+<li><strong>Xikolo::Sidekiq:</strong> Integrates Sidekiq with ActiveJob for consistent background job enqueueing. [Source: RAG: gems/xikolo-sidekiq/README.md]</li>
+<li><strong>Msgr:</strong> Publishes messages from services to RabbitMQ. [Source: Gemfile, services/*/Gemfile]</li>
+<li><strong>Msgr:</strong> Subscribes to specific message queues on RabbitMQ based on defined routes. [Source: config/msgr.rb]</li>
+<li><strong>RabbitMQ:</strong> Receives messages published by various Xikolo services and the main application. [Source: RAG: config/rabbitmq.yml, RAG: services/account/config/rabbitmq.yml]</li>
+<li><strong>RabbitMQ:</strong> Routes and delivers messages to subscribing services and applications based on routing keys and queue configurations. [Source: config/msgr.rb]</li>
+<li><strong>GamificationController:</strong> Subscribes to RabbitMQ messages with routing keys like <code>xikolo.pinboard.*</code> and <code>xikolo.course.result.create</code>. [Source: config/msgr.rb]</li>
+<li><strong>GamificationController:</strong> Processes specific events (e.g., <code>vote_create</code>, <code>question_create</code>, <code>answer_accepted</code>, <code>result_create</code>, <code>visit_create</code>) to trigger gamification logic. [Source: config/msgr.rb]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-gamification-event-processing" tabindex="-1"><a class="header-anchor" href="#1.-gamification-event-processing"><span>1. Gamification Event Processing</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  eventPublisher["Xikolo Service (Publisher)"]
+  msgrPublisher["Msgr Gem (Publisher)"]
+  rabbitMQBroker["RabbitMQ Broker"]
+  msgrSubscriber["Msgr Gem (Subscriber)"]
+  gamificationController["GamificationController"]
+  gamificationLogic["Process Gamification Logic"]
+
+  eventPublisher -->|"generates event"| msgrPublisher
+  msgrPublisher -->|"sends to"| rabbitMQBroker
+  rabbitMQBroker -->|"delivers to"| msgrSubscriber
+  msgrSubscriber -->|"dispatches to"| gamificationController
+  gamificationController -->|"executes"| gamificationLogic
+  gamificationLogic -->|"operation done"| gamificationController
+</pre></div>
+<p>This workflow outlines how user activities and service-generated events within the Xikolo ecosystem are asynchronously processed to update gamification states. When a user performs an action, such as creating a vote on a pinboard or completing a course, the responsible Xikolo service (e.g., PinboardService, CourseService) publishes a domain-specific event. This event is routed through the <code>Msgr</code> gem, which acts as the publisher, sending the message to <code>RabbitMQ</code>. RabbitMQ, serving as the central message broker, reliably queues and delivers this message. On the consuming side, another instance of the <code>Msgr</code> gem, configured as a subscriber, receives the message from RabbitMQ. Based on predefined routing keys in <code>config/msgr.rb</code> (e.g., <code>xikolo.pinboard.*</code>, <code>xikolo.course.result.create</code>), <code>Msgr</code> dispatches the message to the appropriate handler, which in this case is the <code>GamificationController</code>. The <code>GamificationController</code> then processes the event, applying specific gamification logic, such as awarding experience points or badges, and updates the relevant user profiles. This decoupled approach ensures that gamification logic reacts to events in real-time without introducing tight coupling between the event-generating services and the gamification system.</p>
+<h3 id="2.-centralized-configuration-management" tabindex="-1"><a class="header-anchor" href="#2.-centralized-configuration-management"><span>2. Centralized Configuration Management</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appService["Xikolo App/Service"]
+  xikoloConfig["Xikolo::Config Gem"]
+  loadOrder["Defined Load Order"]
+  yamlFiles["YAML Configuration Files"]
+  configData["Configuration Data"]
+  serveValue["Serve Config Value"]
+
+  appService -->|"requests setting"| xikoloConfig
+  xikoloConfig -->|"follows"| loadOrder
+  loadOrder -->|"to access"| yamlFiles
+  yamlFiles -->|"provides raw"| configData
+  configData -->|"parsed by"| xikoloConfig
+  xikoloConfig -->|"delivers processed"| serveValue
+  serveValue -->|"to"| appService
+</pre></div>
+<p>This workflow details how all Xikolo applications and services maintain consistent and environment-specific configurations using the <code>Xikolo::Config</code> gem. When any Xikolo application or service requires a configuration value (e.g., <code>Xikolo.brand</code>, <code>Xikolo.base_url</code>, <code>mailsender</code>), it requests this setting from the <code>Xikolo::Config</code> gem. The <code>Xikolo::Config</code> gem then initiates a process to load configuration data from various YAML files. It strictly adheres to a defined merge order, typically starting with <code>config/xikolo.yml</code> and allowing for overrides from environment-specific files or <code>/etc/xikolo.yml</code>, which is managed by tools like Salt in production. After loading and merging all applicable configuration values, <code>Xikolo::Config</code> processes these settings, resolving any dynamic values. Finally, the gem provides the requested, merged, and processed configuration value back to the requesting application or service. This ensures that all components operate with the correct, validated, and environment-aware settings, promoting consistency and reducing configuration errors across the distributed system.</p>
+<h3 id="3.-s3-file-management" tabindex="-1"><a class="header-anchor" href="#3.-s3-file-management"><span>3. S3 File Management</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  serviceRequester["Xikolo Service"]
+  xikoloS3Gem["Xikolo::S3 Gem"]
+  s3ClientSetup["S3 Client Setup"]
+  awsS3Storage["AWS S3 Storage"]
+  uploadValidation["Upload Validation"]
+  finalFileLocation["Final File Location"]
+
+  serviceRequester -->|"initiates S3 operation"| xikoloS3Gem
+  xikoloS3Gem -->|"uses Xikolo::Config for"| s3ClientSetup
+  s3ClientSetup -->|"connects to"| awsS3Storage
+  xikoloS3Gem -->|"manages files in"| awsS3Storage
+  xikoloS3Gem -->|"applies"| uploadValidation
+  uploadValidation -->|"moves to"| finalFileLocation
+  finalFileLocation -->|"completion confirmed"| serviceRequester
+</pre></div>
+<p>This workflow describes the standardized approach to handling file operations within the Xikolo ecosystem, leveraging the <code>Xikolo::S3</code> gem for interaction with AWS S3. When a Xikolo service needs to perform a file operation, such as uploading a user-generated document or retrieving an existing asset, it initiates an action via the <code>Xikolo::S3</code> gem. The <code>Xikolo::S3</code> gem is responsible for configuring the AWS S3 client, drawing necessary settings (like AWS credentials and bucket names) from <code>Xikolo::Config</code>. For uploads, files are initially placed in a temporary S3 bucket. Following this temporary storage, the <code>Xikolo::S3</code> gem performs crucial validation checks, including inspecting metadata fields like <code>xikolo-state</code> and <code>xikolo-purpose</code> to ensure the file’s legitimacy and proper usage. After successful validation, the file is copied from the temporary location to its final, designated S3 bucket and key within AWS S3 storage, adhering to each service’s responsibility for its file management. Upon the successful completion of the S3 operation, including any validation and copying, <code>Xikolo::S3</code> confirms the status back to the requesting service, providing relevant details like the S3 URI for the stored file. This workflow streamlines file handling, enforces security, and maintains data integrity.</p>
+<h3 id="4.-background-job-processing" tabindex="-1"><a class="header-anchor" href="#4.-background-job-processing"><span>4. Background Job Processing</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  serviceApp["Xikolo App/Service"]
+  xikoloSidekiq["Xikolo::Sidekiq Gem"]
+  redisStore["Redis Job Queue"]
+  sidekiqWorker["Sidekiq Worker"]
+  cronConfig["config/cron.yml"]
+  jobExecution["Job Execution"]
+
+  serviceApp -->|"enqueues job"| xikoloSidekiq
+  xikoloSidekiq -->|"pushes to"| redisStore
+  cronConfig -->|"schedules job via"| xikoloSidekiq
+  redisStore -->|"fetches job"| sidekiqWorker
+  sidekiqWorker -->|"performs"| jobExecution
+  jobExecution -->|"completes for"| serviceApp
+</pre></div>
+<p>This workflow outlines how Xikolo services handle asynchronous tasks and scheduled operations through a robust background job processing system, orchestrated by the <code>Xikolo::Sidekiq</code> gem. When a Xikolo application or service needs to perform a task that doesn’t require an immediate response or is resource-intensive (e.g., sending emails, generating reports), it enqueues a background job. This action is facilitated by the <code>Xikolo::Sidekiq</code> gem, which integrates with ActiveJob for consistent job enqueueing. The <code>Xikolo::Sidekiq</code> gem pushes the job details into a <code>Redis</code> job queue, using connection configurations defined in <code>config/sidekiq_redis.yml</code>, which allows for environment-specific Redis database settings. Concurrently, for recurring tasks, the <code>Xikolo::Sidekiq</code> gem also loads and processes <code>config/cron.yml</code> to schedule periodic jobs via <code>sidekiq-cron</code>. <code>Sidekiq Worker</code> processes continuously poll the <code>Redis</code> job queue, fetching available jobs. Once a job is fetched, a <code>Sidekiq Worker</code> executes the encapsulated task. After the job’s successful completion, the <code>Sidekiq Worker</code> updates its status, and this successful execution is often reported back through logging or metric systems, ensuring reliable asynchronous task management and efficient resource utilization by offloading long-running processes from the main application thread.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo infrastructure relies heavily on internal Ruby gems and RabbitMQ for its service communication, each with specific technical considerations and configurations.</p>
+<p><strong>Technical Considerations:</strong></p>
+<ul>
+<li><strong>Xikolo::Common:</strong> This gem centralizes common utilities, installing and configuring <code>Restify</code> for standardized HTTP communication between services. It provides a <code>Xikolo.metrics</code> object for sending custom application metrics to Telegraf for Grafana monitoring. Authentication helpers for interacting with the Account service are also integrated.</li>
+<li><strong>Xikolo::Config:</strong> Configuration values are read from YAML files, with <code>config/xikolo.yml</code> and <code>/etc/xikolo.yml</code> being primary sources, allowing for environment-specific overrides based on a defined merge order. Essential configurations include <code>Xikolo.brand</code> for visual themes and <code>Xikolo.base_url</code> for generating absolute URLs.</li>
+<li><strong>Xikolo::S3:</strong> This gem configures the AWS S3 client using settings sourced from <code>xikolo-config</code>. It enforces the use of S3 URIs (<code>s3://${bucket}/${key}</code>) for file references and recommends a <code>_uri</code> suffix for relevant database columns. File uploads are processed with mandatory metadata like <code>xikolo-state</code> and <code>xikolo-purpose</code>. The <code>UploadByUri</code> approach is the recommended method for new implementations, as the older <code>SingleFileUpload</code> has known drawbacks. The <code>Xikolo::S3::TextWithUploadsProcessor</code> assists in managing S3 file references within markup fields.</li>
+<li><strong>Xikolo::Sidekiq:</strong> This gem configures Sidekiq, integrating it with ActiveJob for background job enqueueing. It manages the Sidekiq Redis connection using <code>config/sidekiq_redis.yml</code> for environment-specific Redis database settings. Additionally, it loads and parses <code>config/cron.yml</code> to schedule periodic background jobs via the <code>sidekiq-cron</code> gem.</li>
+<li><strong>Msgr &amp; RabbitMQ:</strong> <code>Msgr</code> acts as the Ruby client for RabbitMQ, handling message publication and subscription. Messages are routed based on definitions in <code>config/msgr.rb</code>, which includes specific routing keys (e.g., <code>xikolo.pinboard.*</code>, <code>xikolo.course.result.create</code>) for different event types. Test environments utilize <code>Msgr::TestPool</code> for isolation and often set <code>raise_exceptions: true</code> for clearer error handling.</li>
+<li><strong>GamificationController:</strong> This component subscribes to RabbitMQ messages with specific routing keys (e.g., <code>xikolo.pinboard.*</code>, <code>xikolo.course.result.create</code>) and processes the incoming events to trigger gamification logic, demonstrating an event-driven consumer pattern.</li>
+</ul>
+<p><strong>Dependencies and Integrations:</strong></p>
+<ul>
+<li><code>Xikolo::Common</code> integrates with <code>Restify</code> for HTTP communication, <code>Telegraf</code> for metrics, and the <code>Account</code> service for authentication.</li>
+<li><code>Xikolo::Config</code> serves as a core dependency for almost all other Xikolo components and services requiring centralized settings.</li>
+<li><code>Xikolo::S3</code> depends on <code>Xikolo::Config</code> for its AWS S3 client configuration and interacts directly with <code>AWS S3</code> for storage operations.</li>
+<li><code>Xikolo::Sidekiq</code> integrates with <code>ActiveJob</code> for job enqueueing, <code>Redis</code> for job queuing, and <code>sidekiq-cron</code> for scheduling periodic tasks.</li>
+<li><code>Msgr</code> is tightly integrated with <code>RabbitMQ</code> for message brokering and relies on application-specific routing definitions.</li>
+<li><code>GamificationController</code> integrates with <code>Msgr</code> to receive and process messages from <code>RabbitMQ</code>.</li>
+</ul>
+<p><strong>Configuration Requirements:</strong></p>
+<ul>
+<li><strong>RabbitMQ:</strong> Each application and microservice requires a <code>config/rabbitmq.yml</code> file, which typically defines the RabbitMQ URI, defaulting to <code>amqp://localhost/</code> or utilizing the <code>XIKolo_RABBITMQ_URL</code> environment variable. Some configurations explicitly set <code>checkcredentials: false</code>.</li>
+<li><strong>Centralized Config:</strong> <code>Xikolo::Config</code> relies on <code>config/xikolo.yml</code> and <code>/etc/xikolo.yml</code> for its base and overridden configuration values. Adding new configuration values requires explicit team decision.</li>
+<li><strong>Sidekiq:</strong> <code>config/sidekiq_redis.yml</code> is necessary to configure the Sidekiq Redis connection for environment-specific settings. <code>config/cron.yml</code> is used to define periodic background jobs when <code>sidekiq-cron</code> is present.</li>
+<li><strong>S3:</strong> S3 bucket names for various purposes must be configured in <code>Xikolo.config.s3['buckets']</code> for the <code>Xikolo::S3</code> gem to function correctly, as indicated by the error message <code>&quot;Configure the #{name} bucket in Xikolo.config.s3['buckets']!&quot;</code> from the gem’s code. File uploads require <code>xikolo-state</code> and <code>xikolo-purpose</code> metadata for proper processing.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>GamificationController</strong> <code>config/msgr.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::Config</strong> <code>RAG: gems/xikolo-config/README.md</code></li>
+<li>📄 <strong>Msgr</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Msgr</strong> <code>services/*/Gemfile</code></li>
+<li>📄 <strong>RabbitMQ</strong> <code>RAG: config/rabbitmq.yml</code></li>
+<li>📄 <strong>RabbitMQ</strong> <code>RAG: services/account/config/rabbitmq.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::Common</strong> <code>RAG: gems/xikolo-common/README.md</code></li>
+<li>📄 <strong>Xikolo::S3</strong> <code>RAG: gems/xikolo-s3/README.md</code></li>
+<li>📄 <strong>Xikolo::Sidekiq</strong> <code>RAG: gems/xikolo-sidekiq/README.md</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294765"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1091 @@
+{
+  "clusterId": "17_LEARN_LTIIntegration",
+  "featureFocus": "Learning Tools Interoperability (LTI) Provider and Consumer Functionality",
+  "documentationReport": "{\n  \"title\": \"Learning Tools Interoperability (LTI) Integration and Management Cluster\",\n  \"description\": \"The Xikolo platform features a robust Learning Tools Interoperability (LTI) integration, functioning both as an LTI consumer for launching external tools and receiving grades, and as a comprehensive system for managing LTI tool providers. This merged cluster, encompassing various components and functionalities, ensures seamless interaction with third-party educational tools and services, enhancing the platform's extensibility and educational offerings. The system's capabilities span from detailed provider configuration to handling complex grading workflows and secure content management.\",\n  \"functional_domain\": \"Learning Tools Interoperability (LTI) Integration and Management\",\n  \"sections\": [\n    {\n      \"title\": \"LTI Provider Management\",\n      \"description\": \"This section details the management of LTI providers, which can be configured at both global and course-specific levels. Key components involved include `LtiProvidersController` and `Admin::LtiProvidersController`.\",\n      \"sub_sections\": [\n        {\n          \"title\": \"Global LTI Provider Management\",\n          \"content\": \"Administrators manage global LTI providers via the `Admin::LtiProvidersController` (Source: app/controllers/admin/lti_providers_controller.rb). This controller facilitates standard CRUD (Create, Read, Update, Delete) operations for `Lti::Provider` records. Access is secured by the `lti.provider.manage` permission (Source: app/controllers/admin/lti_providers_controller.rb), typically assigned to `xikolo.admins` (Source: services/account/lib/tasks/permissions/lti.yml). The creation and update processes utilize the `Course::Admin::LtiProviderForm` (Source: app/forms/course/admin/lti_provider_form.rb), which defines and validates attributes such as name, domain, consumer key, and shared secret. A critical aspect of this management is the handling of data privacy, highlighted by a confirmation modal for setting the `privacy` option to 'unprotected' (Source: integration/features/xikolo/global/admin/lti_provider.feature). The `PrivacyAlert` component (Source: C19_LTI_Integration) is likely involved in presenting these privacy considerations to the administrator. The listing and viewing of providers are facilitated by functionality akin to an `LtiProvidersIndex` (Source: C19_LTI_Integration), which is part of the `LtiProvidersController`'s read operations.\"\n        },\n        {\n          \"title\": \"Course-Specific LTI Provider Management\",\n          \"content\": \"Within the context of individual courses, LTI providers can be managed by course administrators or users possessing the `lti.provider.manage` permission. This is handled by the `LtiProvidersController` (Source: app/controllers/lti_providers_controller.rb, C19_LTI_Integration), which inherits from `Abstract::FrontendController` and leverages `CourseContextHelper`. It enables the creation, update, and deletion of `Lti::Provider` instances specifically tied to a `course_id`. Modifying the `privacy` setting for course-specific LTI providers requires the `lti.provider.edit_privacy_mode` permission (Source: app/controllers/lti_providers_controller.rb, services/account/lib/tasks/permissions/lti.yml).\"\n        }\n      ]\n    },\n    {\n      \"title\": \"LTI Consumer Functionality\",\n      \"description\": \"The platform's LTI consumer capabilities are primarily managed by the `LtiController` (Source: app/controllers/lti_controller.rb, main_app_lti_integration_web, C19_LTI_Integration), which orchestrates tool launches, grading callbacks, and returns from external LTI tools.\",\n      \"sub_sections\": [\n        {\n          \"title\": \"Tool Launch\",\n          \"content\": \"When a user interacts with a `Course::Item` configured as an LTI exercise, the `LtiController#tool_launch` action is invoked (Source: app/controllers/lti_controller.rb). The `LtiExerciseItemPresenter` (Source: app/presenters/lti_exercise_item_presenter.rb, main_app_lti_integration_web) dynamically determines the display method, either an introductory page with a launch button or an embedded iframe, based on the LTI provider's `presentation_mode` and whether it's an initial click. Subsequently, the `Course::LtiLaunchPresenter` prepares the necessary LTI launch parameters for the external tool (Source: app/controllers/lti_controller.rb).\"\n        },\n        {\n          \"title\": \"Tool Grading\",\n          \"content\": \"External LTI tools communicate grading results to the `LtiController#tool_grading` endpoint (Source: app/controllers/lti_controller.rb). This action is specifically configured to bypass CSRF verification and standard authentication middleware, recognizing its role in backend-to-backend communication. The core logic for processing these callbacks is encapsulated within the `LtiController::ToolGrading` service object (Source: app/controllers/lti_controller.rb, main_app_lti_integration_web, C19_LTI_Integration).\\n\\n**`LtiController::ToolGrading` Responsibilities:** This service object is critical for:\\n*   **Request Validation:** It verifies the `lis_result_sourcedid` (grading ID), authorizes the request using `IMS::LTI::ToolConsumer` with the `Lti::Provider`'s consumer key and shared secret, and checks for session expiry (Source: app/controllers/lti_controller.rb).\\n*   **Grade Submission:** Upon successful validation, it submits the received score to the `Lti::Gradebook` (Source: app/controllers/lti_controller.rb).\\n*   **Event Publishing:** An LTI submission event is published to the `xikolo.web.exp_event.create` topic via `Msgr` for analytics and tracking, including `course_id`, `score`, `provider_name`, and `user_ip` (Source: app/controllers/lti_controller.rb).\\n*   **Response Generation:** An XML response is generated using `IMS::LTI::OutcomeResponse` to acknowledge the grading operation to the external LTI tool (Source: app/controllers/lti_controller.rb).\"\n        },\n        {\n          \"title\": \"Tool Return\",\n          \"content\": \"Following an interaction with an LTI tool, the `LtiController#tool_return` action (Source: app/controllers/lti_controller.rb) manages redirects and displays any informational (`lti_msg`) or error (`lti_errormsg`) messages returned by the LTI tool.\"\n        }\n      ]\n    },\n    {\n      \"title\": \"LTI Grade Processing\",\n      \"description\": \"Once an LTI grade is successfully submitted and recorded, for instance, by `LtiController::ToolGrading`, the `Lti::PublishGradeJob` (Source: app/jobs/lti/publish_grade_job.rb, main_app_lti_integration_web) is enqueued as a background job. This job is responsible for locating the relevant `Lti::Grade` record and invoking its `publish!` method, thereby integrating the grade into the platform's comprehensive course progress and grading system.\"\n    },\n    {\n      \"title\": \"LTI Exercise Content Management\",\n      \"description\": \"The `Lti::Exercise::Store` operation (Source: app/operations/lti/exercise/store.rb) is specifically designed for managing the content, particularly the `instructions`, of `Lti::Exercise` objects. This operation utilizes `Xikolo::S3::TextWithUploadsProcessor` to handle text content that may contain embedded references to files stored in S3. It configures necessary S3 upload parameters (e.g., bucket, key, ACL) and ensures that obsolete S3 files are scheduled for deletion via `S3FileDeletionJob` after a delay, providing fault tolerance for potentially slow connections.\"\n    }\n  ],\n  \"components_overview\": [\n    \"Admin::LtiProvidersController\",\n    \"LtiProvidersController\",\n    \"Course::Admin::LtiProviderForm\",\n    \"LtiController\",\n    \"LtiController::ToolGrading\",\n    \"LtiExerciseItemPresenter\",\n    \"Course::LtiLaunchPresenter\",\n    \"Lti::PublishGradeJob\",\n    \"Lti::Exercise::Store\",\n    \"Xikolo::S3::TextWithUploadsProcessor\",\n    \"S3FileDeletionJob\",\n    \"PrivacyAlert\",\n    \"LtiProvidersIndex\"\n  ],\n  \"key_interactions\": [\n    \"Administrator/User managing LTI providers (CRUD operations)\",\n    \"User launching external LTI tools from Course::Item\",\n    \"External LTI tools sending grading callbacks to Xikolo\",\n    \"Xikolo processing grades and publishing events\",\n    \"LTI tools returning messages/errors to Xikolo\",\n    \"Background job processing for grade publishing\",\n    \"S3 integration for LTI exercise content management\"\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Admin::LtiProvidersController": {
+        "type": "Controller",
+        "description": "Manages global LTI Providers from the administrative interface. It provides standard CRUD operations for Lti::Provider records, allowing administrators to create, view, edit, and delete LTI tool configurations that are available across the platform.",
+        "interactions": {
+          "interaction_0": "Inherits from `Admin::BaseController` for base administrative functionality.",
+          "interaction_1": "Requires `lti.provider.manage` permission for access [Source: app/controllers/admin/lti_providers_controller.rb, services/account/lib/tasks/permissions/lti.yml].",
+          "interaction_2": "Interacts with the `Lti::Provider` model for all data operations (e.g., `Lti::Provider.global.paginate`, `Lti::Provider.new`, `Lti::Provider.find`, `provider.save`, `provider.update`, `provider.destroy`) [Source: app/controllers/admin/lti_providers_controller.rb].",
+          "interaction_3": "Uses `lti_provider_params` for strong parameter filtering, permitting fields like `consumer_key`, `shared_secret`, `domain`, `name`, `description`, `presentation_mode`, `privacy`, and `custom_fields` [Source: app/controllers/admin/lti_providers_controller.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/admin/lti_providers_controller.rb",
+            "services/account/lib/tasks/permissions/lti.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 33,
+              "code": "# frozen_string_literal: true\n\nclass LtiProvidersController < Abstract::FrontendController\n  include CourseContextHelper\n\n  inside_course\n  require_permission 'lti.provider.manage'\n  respond_to :json\n\n  def index\n    Acfs.run # because `inside_course` and before actions need Acfs\n\n    @lti_providers = Lti::Provider.where(course_id: the_course.id)\n    @new_lti_provider = Lti::Provider.new\n  end\n\n  def create\n    filtered_params = filter_privacy(lti_provider_params).merge(course_id: the_course.id)\n    @new_lti_provider = Lti::Provider.new filtered_params\n\n    if @new_lti_provider.save\n      add_flash_message :success, t(:'flash.success.lti_provider_created')\n      redirect_to action: :index\n    else\n      add_flash_message :error, t(:'flash.error.lti_provider_not_created')\n      # Load all existing providers for the index action.\n      @lti_providers = Lti::Provider.where(course_id: the_course.id)\n      render action: :index\n    end\n  end\n\n  def update\n    lti_provider = Lti::Provider.fi...",
+              "source": "app/controllers/lti_providers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/lti_providers_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/admin/ajax/classifiers_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "LtiController": {
+        "type": "Controller",
+        "description": "Handles LTI tool launches and grading callbacks from external LTI tools. It serves as the primary interface for LTI interactions.",
+        "interactions": {
+          "interaction_0": "Receives LTI launch requests (`tool_launch`) and prepares data using `Course::LtiLaunchPresenter`.",
+          "interaction_1": "Receives LTI outcome requests (`tool_grading`) and delegates processing to the nested `ToolGrading` class.",
+          "interaction_2": "Redirects users after LTI interactions (`tool_return`), displaying messages or errors.",
+          "interaction_3": "Interacts with `Course::Item` and `Course::Course` models to retrieve context.",
+          "interaction_4": "Skips CSRF verification and authentication middleware for `tool_grading` to accommodate LTI 1.x callback requirements."
+        },
+        "techDebt": [
+          "The `ToolGrading` class, while nested, is substantial and could be extracted into a dedicated service object for better modularity and testability."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb",
+            "spec/controllers/lti_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 8,
+              "code": "class LtiController < ApplicationController\n  before_action :set_no_cache_headers\n  before_action :ensure_logged_in, only: %i[tool_launch tool_return]\n\n  skip_before_action :verify_authenticity_token, only: %i[tool_grading tool_return]\n  skip_around_action :auth_middleware, only: :tool_grading",
+              "source": "app/controllers/lti_controller.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 14,
+              "code": "  def tool_launch\n    item = Course::Item.find(UUID4(params[:id]))\n    @launch = Course::LtiLaunchPresenter.new(item, current_user)\n\n    render 'items/lti_exercise/tool_launch', layout: 'plain'\n  end",
+              "source": "app/controllers/lti_controller.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 27,
+              "code": "  def tool_grading\n    tg = ToolGrading.new(request, course.id)\n\n    if (err = tg.error)\n      return render(plain: err, status: :unauthorized)\n    end\n\n    if tg.response_successful?\n      tg.grade! # Create score for LTI submission\n      tg.publish_lti_submission_event # Publish xi-lanalytics LTI submission event\n    end\n\n    render plain: tg.xml_response, content_type: 'application/xml'\n  rescue ToolGrading::ValidationError\n    render plain: 'Tool grading failed', ...",
+              "source": "app/controllers/lti_controller.rb"
+            },
+            {
+              "startLine": 14,
+              "endLine": 18,
+              "code": "    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end",
+              "source": "app/controllers/lti_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/lti_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "LtiController::ToolGrading": {
+        "type": "Service Object (nested in Controller)",
+        "description": "Encapsulates the logic for processing LTI outcome requests (grade submissions) from external LTI tools. It validates requests, updates grades, and publishes analytics events.",
+        "interactions": {
+          "interaction_0": "Parses incoming LTI XML using `IMS::LTI::OutcomeRequest`.",
+          "interaction_1": "Verifies LTI OAuth 1.0a signatures and session validity using `IMS::LTI::ToolConsumer`.",
+          "interaction_2": "Interacts with `Lti::Gradebook` to find and update grade entries.",
+          "interaction_3": "Creates `Lti::Grade` records.",
+          "interaction_4": "Publishes `SUBMITTED_LTI_V2` analytics events to RabbitMQ via `Msgr`.",
+          "interaction_5": "Retrieves LTI provider credentials (`consumer_key`, `shared_secret`) from `Lti::Provider`."
+        },
+        "techDebt": [
+          "Could be extracted into a standalone service object (`Lti::ToolGradingService`) for improved separation of concerns and easier testing outside the controller context.",
+          "Error handling for `ValidationError` could provide more specific feedback for debugging."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb",
+            "spec/controllers/lti_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 31,
+              "code": "class LtiController < ApplicationController\n  before_action :set_no_cache_headers\n  before_action :ensure_logged_in, only: %i[tool_launch tool_return]\n\n  skip_before_action :verify_authenticity_token, only: %i[tool_grading tool_return]\n  skip_around_action :auth_middleware, only: :tool_grading\n\n  def tool_launch\n    item = Course::Item.find(UUID4(params[:id]))\n    @launch = Course::LtiLaunchPresenter.new(item, current_user)\n\n    render 'items/lti_exercise/tool_launch', layout: 'plain'\n  end\n\n  def tool_grading\n    tg = ToolGrading.new(request, course.id)\n\n    if (err = tg.error)\n      return render(plain: err, status: :unauthorized)\n    end\n\n    if tg.response_successful?\n      tg.grade! # Create score for LTI submission\n      tg.publish_lti_submission_event # Publish xi-lanalytics LTI submission event\n    end\n\n    render plain: tg.xml_response, content_type: 'application/xml'\n  rescue ToolGrading::ValidationError\n    render plain: 'Tool grading failed', ...",
+              "source": "app/controllers/lti_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/lti_controller.rb",
+              "relevance": 28
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "LtiProvidersController": {
+        "type": "Controller",
+        "description": "Manages CRUD (Create, Read, Update, Delete) operations for LTI Providers within a specific course context. Requires `lti.provider.manage` permission.",
+        "interactions": {
+          "interaction_0": "Interacts with the `Lti::Provider` model for all database operations.",
+          "interaction_1": "Uses `CourseContextHelper` to establish the course context.",
+          "interaction_2": "Filters `privacy` parameters based on the `lti.provider.edit_privacy_mode` permission of the `current_user`.",
+          "interaction_3": "Renders the `index` view, which likely includes forms for new and existing providers.",
+          "interaction_4": "Uses `Acfs.run` to ensure microservice context is available for course-related data."
+        },
+        "techDebt": [
+          "The `filter_privacy` method directly manipulates `params`. A more robust approach might involve a policy object or conditional attribute assignment within the form object."
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_providers_controller.rb",
+            "spec/controllers/lti_providers_controller_spec.rb",
+            "services/account/lib/tasks/permissions/lti.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 37,
+              "code": "# frozen_string_literal: true\n\nclass LtiProvidersController < Abstract::FrontendController\n  include CourseContextHelper\n\n  inside_course\n  require_permission 'lti.provider.manage'\n  respond_to :json\n\n  def index\n    Acfs.run # because `inside_course` and before actions need Acfs\n\n    @lti_providers = Lti::Provider.where(course_id: the_course.id)\n    @new_lti_provider = Lti::Provider.new\n  end\n\n  def create\n    filtered_params = filter_privacy(lti_provider_params).merge(course_id: the_course.id)\n    @new_lti_provider = Lti::Provider.new filtered_params\n\n    if @new_lti_provider.save\n      add_flash_message :success, t(:'flash.success.lti_provider_created')\n      redirect_to action: :index\n    else\n      add_flash_message :error, t(:'flash.error.lti_provider_not_created')\n      # Load all existing providers for the index action.\n      @lti_providers = Lti::Provider.where(course_id: the_course.id)\n      render action: :index\n    end\n  end\n\n  def update\n    lti_provider = Lti::Provider.fi...\n",
+              "source": "app/controllers/lti_providers_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/lti_providers_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Course::Admin::LtiProviderForm": {
+        "type": "Form Object",
+        "description": "A form object for LTI Provider creation and update, inheriting from `XUI::Form`. It defines attributes and validations for LTI Provider parameters.",
+        "interactions": {
+          "interaction_0": "Used by `LtiProvidersController` to handle form submissions and apply validations.",
+          "interaction_1": "Defines attributes like `name`, `domain`, `consumer_key`, `shared_secret`, `presentation_mode`, `privacy`, and `custom_fields`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/forms/course/admin/lti_provider_form.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 19,
+              "code": "class Course::Admin::LtiProviderForm < XUI::Form\n  self.form_name = 'lti_provider'\n\n  attribute :id, :uuid\n  attribute :name, :single_line_string\n  attribute :description, :text\n  attribute :domain, :single_line_string\n  attribute :consumer_key, :single_line_string\n  attribute :shared_secret, :single_line_string\n  attribute :presentation_mode, :single_line_string, default: 'window'\n  attribute :privacy, :single_line_string, default: 'anonymized'\n  attribute :custom_fields, :text\n\n  validates :name, :domain, :consumer_key, :shared_secret, presence: true\nend",
+              "source": "app/forms/admin/course_form.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/forms/admin/course_form.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/forms/course/admin/announcement_form.rb",
+              "relevance": 15
+            },
+            {
+              "path": "app/forms/course/admin/lti_provider_form.rb",
+              "relevance": 15
+            }
+          ]
+        }
+      },
+      "Lti::PublishGradeJob": {
+        "type": "Background Job",
+        "description": "A background job responsible for publishing a user's LTI grade to the course service, likely to be accounted for overall course progress.",
+        "interactions": {
+          "interaction_0": "Finds an `Lti::Grade` record by ID.",
+          "interaction_1": "Calls the `publish!` method on the `Lti::Grade` instance (method implementation not provided in context)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/jobs/lti/publish_grade_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 17,
+              "code": "# frozen_string_literal: true\n\n##\n# Publish the user's LTI grade to the course service to be\n# accounted for the course progress.\n#\nmodule Lti\n  class PublishGradeJob < ApplicationJob\n    queue_as :default\n\n    def perform(grade_id)\n      grade = Lti::Grade.find grade_id\n      grade.publish!\n    end\n  end\nend\n",
+              "source": "app/jobs/lti/publish_grade_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/lti/publish_grade_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "api/xikolo/v2/course_items/lti_exercises.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/controllers/lti_controller.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Lti::Exercise::Store": {
+        "type": "Operation",
+        "description": "An operation class responsible for storing and updating `Lti::Exercise` instances, with specific handling for rich text instructions that may include S3 uploads.",
+        "interactions": {
+          "interaction_0": "Updates attributes of an `Lti::Exercise` model.",
+          "interaction_1": "Uses `Xikolo::S3::TextWithUploadsProcessor` to parse and manage S3 file references within the exercise instructions.",
+          "interaction_2": "Configures S3 upload parameters (bucket, purpose, ACL, cache control).",
+          "interaction_3": "Enqueues `S3FileDeletionJob` for obsolete S3 files after a delay to ensure pages with old references have loaded."
+        },
+        "techDebt": [
+          "The delayed deletion of S3 files, while fault-tolerant, requires careful consideration of eventual consistency and potential race conditions if instructions are rapidly updated."
+        ],
+        "provenance": {
+          "sources": [
+            "app/operations/lti/exercise/store.rb",
+            "spec/operations/lti/exercise/store_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 1,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 36,
+              "code": "# frozen_string_literal: true\n\nmodule Lti\n  class Exercise\n    class Store < ApplicationOperation\n      def initialize(exercise, params)\n        super()\n\n        @exercise = exercise\n        @params = params\n      end\n\n      def call\n        if @params[:instructions]\n          instructions = @params.delete(:instructions)\n          @exercise.assign_attributes @params\n          configure_processor! instructions\n          process_instructions_and_save\n        else\n          @exercise.update @params\n        end\n        @exercise\n      end\n\n      private\n\n      def configure_processor!(input)\n        @processor = Xikolo::S3::TextWithUploadsProcessor.new \\\n          bucket: :lti,\n          purpose: 'lti_exercise_instructions',\n          current: @exercise.instructions,\n          text: input,\n          valid_refs: @exercise.instructions&.file_refs || []\n        @processor.on_new do |upload|\n          eid = UUID4(@exercise.id).to_s(format: :base62)\n          {\n            key: \"ltiexercises/#{",
+              "source": "app/operations/lti/exercise/store.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/operations/lti/exercise/store.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/jobs/proctoring/store_submission_results_job.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/operations/course/metadata/store.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "LtiExerciseItemPresenter": {
+        "type": "Presenter",
+        "description": "Presents an LTI Exercise item within the course context. It determines if an intro page is needed, displays instructions, and calculates scores/percentages for the user.",
+        "interactions": {
+          "interaction_0": "Inherits from `ItemPresenter` and includes `MarkdownHelper` for rendering instructions.",
+          "interaction_1": "Interacts with `Lti::Exercise` to get exercise details and `Lti::Gradebook` to retrieve user-specific grades.",
+          "interaction_2": "Calculates and presents the user's score and percentage for the LTI exercise.",
+          "interaction_3": "Determines the `partial_name` to render, deciding between an intro page or an embedded iframe based on exercise type and presentation mode.",
+          "interaction_4": "Generates `tool_launch_path` and `open_path` for LTI tool interaction."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/lti_exercise_item_presenter.rb",
+            "spec/presenters/lti_exercise_item_presenter_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 39,
+              "code": "class LtiExerciseItemPresenter < ItemPresenter   include MarkdownHelper    def self.build(item, course, user, params:)     new(course:, item:, user:, initial_click: !params[:lti])   end    def lti_grades     @lti_grades ||= if exercise_type == 'survey' || exercise.nil?                       nil                     else                       exercise.gradebooks.where(user_id: @user.id).first&.grades&.order(value: :desc)                     end   end    def score     @score ||= lti_grades.present? ? (lti_grades.first.score * max_points).round(2) : nil   end    def percentage     @percentage ||= lti_grades.present? ? (lti_grades.first.score * 100).floor : nil   end    def error     I18n.t(:'items.lti.not_available') unless provider   end    def instructions_html     render_markdown exercise.instructions&.external   end    def instructions?     exercise.instructions.present?   end    ##   # Decide whether to show an intro page or an embedded launch iframe. ",
+              "source": "app/presenters/lti_exercise_item_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/lti_exercise_item_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Lti::Provider": {
+        "type": "Model (Inferred)",
+        "description": "Represents an external LTI tool provider, storing its configuration details such as name, domain, consumer key, shared secret, presentation mode, and privacy settings. It can be global or course-specific.",
+        "interactions": {
+          "interaction_0": "Created, read, updated, and deleted by `LtiProvidersController`.",
+          "interaction_1": "Provides `consumer_key` and `shared_secret` for LTI OAuth 1.0a signature verification in `ToolGrading`.",
+          "interaction_2": "Determines user data sharing based on its `privacy` attribute during LTI launches.",
+          "interaction_3": "Influences the `presentation_mode` for LTI tool launches."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_providers_controller.rb",
+            "app/forms/course/admin/lti_provider_form.rb",
+            "app/controllers/lti_controller.rb",
+            "spec/controllers/lti_controller_spec.rb",
+            "spec/controllers/lti_providers_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 29,
+              "code": "# frozen_string_literal: true\n\nmodule Lti\n  class Provider < ::ApplicationRecord\n    PRESENTATION_MODES = %i[frame pop-up window].freeze\n    PRIVACY_MODES = %i[anonymized pseudonymized unprotected].freeze\n\n    self.table_name = 'lti_providers'\n\n    has_many :exercises, # rubocop:disable Rails/HasManyOrHasOneDependent\n      class_name: 'Lti::Exercise',\n      foreign_key: :lti_provider_id,\n      inverse_of: :provider\n\n    attribute :presentation_mode, :string, default: 'window'\n    attribute :privacy, :string, default: 'anonymized'\n\n    validates :consumer_key, presence: true\n    validates :name, presence: true\n    validates :domain, format: {with: URI::DEFAULT_PARSER.make_regexp}, presence: true\n    validates :shared_secret, presence: true\n    validates :presentation_mode, presence: true, inclusion: PRESENTATION_MODES.map(&:to_s)\n    validates :privacy, inclusion: PRIVACY_MODES.map(&:to_s)\n\n    scope :global, -> { where(course_id: nil) }\n\n    def tool_consumer\n      IMS::LTI::ToolConsum...\n",
+              "source": "app/models/lti/provider.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/lti/provider.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/video/provider.rb",
+              "relevance": 30
+            },
+            {
+              "path": "integration/features/steps/video/provider.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Lti::Exercise": {
+        "type": "Model (Inferred)",
+        "description": "Represents an LTI-backed exercise within a course. It links to an `Lti::Provider` and can contain rich text `instructions` with S3 file references.",
+        "interactions": {
+          "interaction_0": "Associated with `Course::Item` as its content.",
+          "interaction_1": "Managed by `Lti::Exercise::Store` for creation and updates, especially for `instructions`.",
+          "interaction_2": "Referenced by `LtiExerciseItemPresenter` to display exercise details and instructions.",
+          "interaction_3": "Linked to `Lti::Gradebook` entries for grade tracking."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/lti/exercise/store.rb",
+            "app/presenters/lti_exercise_item_presenter.rb",
+            "spec/operations/lti/exercise/store_spec.rb",
+            "spec/presenters/lti_exercise_item_presenter_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 39,
+              "code": "# frozen_string_literal: true\n\nmodule Lti\n  class Exercise < ::ApplicationRecord\n    self.table_name = 'lti_exercises'\n\n    DEFAULT_WEIGHT = 1\n\n    attribute :instructions, Xikolo::S3::Markup.new(\n      uploads: {purpose: 'lti_exercise_instructions', content_type: 'image/*'}\n    )\n\n    validates :lti_provider_id, presence: true\n\n    belongs_to :provider,\n      optional: true,\n      class_name: 'Lti::Provider',\n      foreign_key: :lti_provider_id,\n      inverse_of: :exercises\n\n    has_one :item,\n      class_name: 'Course::Item',\n      as: :content,\n      dependent: :restrict_with_exception\n\n    has_many :gradebooks,\n      class_name: 'Lti::Gradebook',\n      dependent: :destroy,\n      foreign_key: :lti_exercise_id,\n      inverse_of: :exercise\n\n    def score_for(user_id)\n      gradebooks.find_by(user_id:).try(:highest_grade).try(:score)\n    end\n\n    def deleted_provider?\n      persisted? && reload_provider.nil?\n    end\n\n    def weight\n      self[:weight] || DEFAULT_WEIGHT\n    end\n  end\nend",
+              "source": "app/models/lti/exercise.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 40,
+              "code": "# frozen_string_literal: true\n\nmodule Lti\n  class Exercise\n    class Store < ApplicationOperation\n      def initialize(exercise, params)\n        super()\n\n        @exercise = exercise\n        @params = params\n      end\n\n      def call\n        if @params[:instructions]\n          instructions = @params.delete(:instructions)\n          @exercise.assign_attributes @params\n          configure_processor! instructions\n          process_instructions_and_save\n        else\n          @exercise.update @params\n        end\n        @exercise\n      end\n\n      private\n\n      def configure_processor!(input)\n        @processor = Xikolo::S3::TextWithUploadsProcessor.new \\\n          bucket: :lti,\n          purpose: 'lti_exercise_instructions',\n          current: @exercise.instructions,\n          text: input,\n          valid_refs: @exercise.instructions&.file_refs || []\n        @processor.on_new do |upload|\n          eid = UUID4(@exercise.id).to_s(format: :base62)\n          {\n            key: \"ltiexercises/#{...\n",
+              "source": "app/models/lti/exercise.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 34,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2::CourseItems\n    class LtiExercises < Xikolo::Endpoint::CollectionEndpoint\n      entity do\n        type 'lti-exercises'\n\n        attribute('instructions') {\n          description 'A text with detailed explanation what this task will entail'\n          type :string\n        }\n\n        attribute('weight') {\n          description 'A multiplier (integer) for the LTI score (a number between 0 and 1) to achieve the final score for this exercise'\n          type :integer\n        }\n\n        attribute('allowed_attempts') {\n          description 'The maximum number of attempts allowed per user (0 is infinite)'\n          type :integer\n        }\n\n        attribute('launch_url') {\n          description 'URL to launch the LTI tool'\n          type :string\n          reading {|exercise|\n            next unless exercise.lti_provider_id\n\n            item = ::Course::Item.find_by(content_id: exercise.id)\n            course_id = item&.section&.course_id...\n",
+              "source": "app/models/lti/exercise.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/lti/exercise.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/operations/lti/exercise/store.rb",
+              "relevance": 29
+            },
+            {
+              "path": "api/xikolo/v2/course_items/lti_exercises.rb",
+              "relevance": 18
+            }
+          ]
+        }
+      },
+      "Lti::Gradebook": {
+        "type": "Model (Inferred)",
+        "description": "Acts as a bridge between a user, an LTI exercise, and the grades submitted for it. It is identified by the `sourcedId` provided by the LTI tool.",
+        "interactions": {
+          "interaction_0": "Found by `ToolGrading` using the `lis_result_sourcedid` from LTI outcome requests.",
+          "interaction_1": "Stores `user_id` and `lti_exercise_id`.",
+          "interaction_2": "Manages `Lti::Grade` records for a specific user and exercise.",
+          "interaction_3": "Provides a `submit!` method to record new grades."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb",
+            "spec/controllers/lti_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nmodule Lti\n  class Gradebook < ::ApplicationRecord\n    self.table_name = 'lti_gradebooks'\n\n    belongs_to :exercise,\n      optional: true,\n      class_name: 'Lti::Exercise',\n      foreign_key: :lti_exercise_id,\n      inverse_of: :gradebooks\n\n    has_one :item,\n      -> { where(content_type: 'lti_exercise') },\n      class_name: 'Course::Item',\n      dependent: :restrict_with_exception,\n      foreign_key: :content_id,\n      primary_key: :lti_exercise_id,\n      inverse_of: false",
+              "source": "app/models/lti/gradebook.rb"
+            },
+            {
+              "startLine": 20,
+              "endLine": 28,
+              "code": "    has_many :grades,\n      class_name: 'Lti::Grade',\n      dependent: :destroy,\n      foreign_key: :lti_gradebook_id,\n      inverse_of: :gradebook\n\n    def highest_grade\n      grades.order(value: :desc).first\n    }",
+              "source": "app/models/lti/gradebook.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 38,
+              "code": "    ##\n    # Submit a new score for this user if it is valid and the nonce is unique.\n    #\n    def submit!(score:, nonce:)\n      grade = grades.build(value: score, nonce:)\n\n      grade.save!\n      grade.schedule_publication!\n\n      grade\n    rescue ActiveRecord::Reco...",
+              "source": "app/models/lti/gradebook.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/lti/gradebook.rb",
+              "relevance": 37
+            },
+            {
+              "path": "spec/models/lti/gradebook_spec.rb",
+              "relevance": 14
+            },
+            {
+              "path": "api/xikolo/v2/course_items/lti_exercises.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Lti::Grade": {
+        "type": "Model (Inferred)",
+        "description": "Stores individual grade submissions for a user on an LTI exercise, including the `score`.",
+        "interactions": {
+          "interaction_0": "Created or updated by `Lti::Gradebook#submit!`.",
+          "interaction_1": "Referenced by `LtiExerciseItemPresenter` to display user scores.",
+          "interaction_2": "Processed by `Lti::PublishGradeJob` to update course progress."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/jobs/lti/publish_grade_job.rb",
+            "app/presenters/lti_exercise_item_presenter.rb",
+            "spec/controllers/lti_controller_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 40,
+              "code": "module Lti\n  class Grade < ::ApplicationRecord\n    self.table_name = 'lti_grades'\n\n    belongs_to :gradebook,\n      class_name: 'Lti::Gradebook',\n      foreign_key: :lti_gradebook_id,\n      inverse_of: :grades\n\n    has_one :exercise, through: :gradebook\n\n    validates :value,\n      presence: true,\n      numericality: {greater_than_or_equal_to: 0.0, less_than_or_equal_to: 1.0}\n\n    def score\n      value * exercise.weight\n    end\n\n    def item_score\n      ((gradebook.item.max_dpoints / 10) * value).round(1)\n    end\n\n    # TODO: private / after_commit\n\n    def schedule_publication!\n      PublishGradeJob.perform_later(id)\n    end\n\n    def publish!\n      Xikolo.api(:course).value!.rel(:result).put(\n        {\n          user_id: gradebook.user_id,\n          item_id: gradebook.item.id,\n          points: item_score,\n        },\n        params: {id:}\n      ).value!\n    end\n  end\nend",
+              "source": "app/models/lti/grade.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 28,
+              "code": "    has_many :grades,\n      class_name: 'Lti::Grade',\n      dependent: :destroy,\n      foreign_key: :lti_gradebook_id,\n      inverse_of: :gradebook",
+              "source": "app/models/lti/grade.rb"
+            },
+            {
+              "startLine": 35,
+              "endLine": 43,
+              "code": "    def submit!(score:, nonce:)\n      grade = grades.build(value: score, nonce:)\n\n      grade.save!\n      grade.schedule_publication!\n\n      grade\n    rescue ActiveRecord::Reco...",
+              "source": "app/models/lti/grade.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 12,
+              "code": "    def perform(grade_id)\n      grade = Lti::Grade.find grade_id\n      grade.publish!\n    end",
+              "source": "app/models/lti/grade.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/lti/grade.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/lti/gradebook.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/jobs/lti/publish_grade_job.rb",
+              "relevance": 18
+            }
+          ]
+        }
+      },
+      "Course::Item": {
+        "type": "Model",
+        "description": "Represents an individual content item within a course, which can be configured as an LTI exercise.",
+        "interactions": {
+          "interaction_0": "Found by `LtiController#tool_launch` using its UUID to initiate an LTI launch [Source: app/controllers/lti_controller.rb].",
+          "interaction_1": "Passed to `LtiExerciseItemPresenter` for rendering and data preparation [Source: app/presenters/lti_exercise_item_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb",
+            "app/presenters/lti_exercise_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 12,
+              "code": "    def accessible?(item)\n      item.unlocked? || @user.allowed?('course.content.access')\n    end\n\n    def time_effort_info(item)\n      sanitize(\" (&sim;#{item.formatted_time_effort})\") if item.with_time_effort?\n    end",
+              "source": "app/components/course/item_navigation.rb"
+            },
+            {
+              "startLine": 16,
+              "endLine": 18,
+              "code": "        def title\n          @item['title']\n        end",
+              "source": "app/components/course/item_navigation.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 33,
+              "code": "        def path\n          Rails.application.routes.url_helpers.course_item_path(@course.course_code, short_uuid(@item['id']))\n        end",
+              "source": "app/components/course/item_navigation.rb"
+            },
+            {
+              "startLine": 35,
+              "endLine": 35,
+              "code": "        def icon\n          ::Course::Item::Ic...",
+              "source": "app/components/course/item_navigation.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 33,
+              "code": "module Course\n  class Item < ::ApplicationRecord\n    belongs_to :content,\n      polymorphic: true,\n      optional: true,\n      dependent: :destroy\n    belongs_to :section\n\n    has_one :node,\n      class_name: '::Course::Structure::Item',\n      dependent: :destroy\n\n    has_many :results,\n      class_name: '::Course::Result',\n      dependent: :delete_all\n    has_many :visits,\n      class_name: '::Course::Visit',\n      dependent: :delete_all\n\n    delegate :course, to: :section\n\n    acts_as_list scope: :section\n\n    STI_CLASS_TO_TYPE = {\n      'lti_exercise' => ::Lti::Exercise,\n      'video' => ::Video::Video,\n      'rich_text' => ::Course::Richtext,\n    }.freeze\n\n    # Returns the model's class name of the corresponding content resource\n    # based on the value stored in the polymorphic type column `content_type`.\n    def self.polymorphic_class_for(name)\n      if STI_CLASS_TO_TYPE.key?(name)\n        STI_CLASS_TO_TYPE[name]\n      else\n        super\n      end",
+              "source": "app/components/course/item_navigation.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/course/item_navigation.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/components/course/learner_dashboard/section_progress/item.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/course/item.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Course::Course": {
+        "type": "Model",
+        "description": "Represents a course within the platform, providing the context for course-specific LTI providers and LTI-enabled items.",
+        "interactions": {
+          "interaction_0": "Used by `LtiController` to retrieve the course context (`course.context_id`) and find courses by identifier (`Course::Course.by_identifier`) [Source: app/controllers/lti_controller.rb].",
+          "interaction_1": "Used by `LtiProvidersController` to scope LTI providers to a specific course (`course_id: the_course.id`) [Source: app/controllers/lti_providers_controller.rb].",
+          "interaction_2": "Passed to `LtiExerciseItemPresenter` to generate course-specific URLs [Source: app/presenters/lti_exercise_item_presenter.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb",
+            "app/controllers/lti_providers_controller.rb",
+            "app/presenters/lti_exercise_item_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Model\n    class CourseRepository\n      def courses_for(user, course_id)\n        courses = course_api.rel(:courses).get({\n          per_page: 100,\n          user_id: user.id,\n        }).value!\n        if course_id.present?\n          courses.select {|c| c['id'] == course_id }\n        else\n          courses\n        end\n      end\n\n      private\n\n      def course_api\n        @course_api ||= Xikolo.api(:course).value!\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 16,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2\n    class CourseAPI < Grape::API::Instance\n      namespace 'courses' do\n        route_param :course_id, type: String, desc: 'The course UUID' do\n          namespace 'time_effort' do\n            mount Endpoint::GetCourseTimeEffort\n          end\n        end\n      end\n\n      namespace 'next_dates' do\n        mount Endpoint::ListNextDates\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/course_date.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/model/course_repository.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/course_api.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Xikolo::S3::TextWithUploadsProcessor": {
+        "type": "Service",
+        "description": "A service for processing text content that may contain embedded references to files stored in S3. It manages the lifecycle of these S3 files, including configuration for uploads and tracking obsolete files.",
+        "interactions": {
+          "interaction_0": "Instantiated by `Lti::Exercise::Store` to handle the `instructions` field of an `Lti::Exercise` [Source: app/operations/lti/exercise/store.rb].",
+          "interaction_1": "Configured with `bucket`, `purpose`, `current` text, `text` input, and `valid_refs` [Source: app/operations/lti/exercise/store.rb].",
+          "interaction_2": "Defines `on_new` callback to specify S3 key, ACL, cache control, content disposition, and content type for new uploads [Source: app/operations/lti/exercise/store.rb].",
+          "interaction_3": "Provides methods like `parse!`, `result`, `valid?`, `commit!`, `rollback!`, and `obsolete_uris` [Source: app/operations/lti/exercise/store.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/lti/exercise/store.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 37,
+              "code": "module Xikolo::S3\n  class TextWithUploadsProcessor\n    attr_reader :result, :errors\n\n    def initialize(bucket:, purpose:, text:, current:, valid_refs: [], check_override: true) # rubocop:disable Metrics/ParameterLists\n      @bucket = bucket\n      @purpose = purpose\n      @text = text\n      @current_text = current\n      @errors = []\n      @uploaded = []\n      @replaced = []\n      @current_refs = if current\n                        Xikolo::S3.extract_file_refs(current)\n                      else\n                        []\n                      end\n      @valid_refs = valid_refs\n      @check_override = check_override\n    end\n\n    def on_new(&block)\n      @new_callback = block\n    end\n\n    def parse!\n      return unless @text # simply skip nil as value\n\n      processed_uploads = {}\n      @text.scan Xikolo::S3.url_regex do |match|\n        validate_ref! match\n      end\n      @result = @text.gsub %r{upload://[-a-zA-Z0-9./_]*} do |match|\n        if processed_uplo...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/text_with_uploads_processor.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 14
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "S3FileDeletionJob": {
+        "type": "Background Job",
+        "description": "A background job responsible for asynchronously deleting files from S3. It's used to clean up obsolete files, typically after their references have been removed from content.",
+        "interactions": {
+          "interaction_0": "Scheduled by `Lti::Exercise::Store` to delete obsolete S3 files associated with LTI exercise instructions. The job is set to wait for 1 minute before performing [Source: app/operations/lti/exercise/store.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/lti/exercise/store.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 14,
+              "code": "class S3FileDeletionJob < ApplicationJob\n  queue_as :default\n  queue_with_priority :eventual\n\n  def perform(uri)\n    Xikolo::S3.object(uri).delete if uri.present?\n  rescue URI::InvalidURIError, ArgumentError\n    # No valid URI, no deletion\n  rescue Aws::S3::Errors::ServiceError => e\n    ::Mnemosyne.attach_error(e)\n    ::Sentry.capture_exception(e)\n  end\nend",
+              "source": "app/jobs/s3_file_deletion_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "Library/Service",
+        "description": "A messaging library or service used for inter-service communication, specifically for publishing messages to RabbitMQ.",
+        "interactions": {
+          "interaction_0": "Used by `LtiController::ToolGrading` to publish LTI submission events to the `xikolo.web.exp_event.create` topic [Source: app/controllers/lti_controller.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 19,
+              "code": "module MsgrSentryIntegration   def dispatch(*)     Sentry.with_scope do       super     rescue Sentry::Error       raise # Don't capture Sentry errors     rescue Exception => e # rubocop:disable Lint/RescueException       Sentry.capture_exception(e)       raise     end   end end  Msgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "IMS::LTI::OutcomeRequest": {
+        "type": "Library Class",
+        "description": "A class from the IMS LTI library used to parse and represent incoming LTI outcome requests, which typically contain grading information.",
+        "interactions": {
+          "interaction_0": "Used by `LtiController::ToolGrading` to parse the raw HTTP request into a structured LTI outcome request object (`IMS::LTI::OutcomeRequest.from_post_request(request)`) [Source: app/controllers/lti_controller.rb].",
+          "interaction_1": "Provides access to request parameters like `lis_result_sourcedid` (grading ID), `score`, `message_identifier`, and `operation` [Source: app/controllers/lti_controller.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb"
+          ]
+        }
+      },
+      "IMS::LTI::ToolConsumer": {
+        "type": "Library Class",
+        "description": "A class from the IMS LTI library used to represent the LTI tool consumer (i.e., the Xikolo platform) and perform authentication/authorization checks for incoming LTI requests.",
+        "interactions": {
+          "interaction_0": "Instantiated by `LtiController::ToolGrading` with the `Lti::Provider`'s `consumer_key` and `shared_secret` [Source: app/controllers/lti_controller.rb].",
+          "interaction_1": "Used to validate the authenticity of incoming LTI requests via `consumer.valid_request? @request` [Source: app/controllers/lti_controller.rb].",
+          "interaction_2": "Provides access to OAuth parameters like `request_oauth_timestamp` and `request_oauth_nonce` for session expiry checks and nonce generation [Source: app/controllers/lti_controller.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb"
+          ]
+        }
+      },
+      "IMS::LTI::OutcomeResponse": {
+        "type": "Library Class",
+        "description": "A class from the IMS LTI library used to construct and generate XML responses for LTI outcome requests, indicating the success or failure of a grading operation.",
+        "interactions": {
+          "interaction_0": "Instantiated by `LtiController::ToolGrading` to build the response XML [Source: app/controllers/lti_controller.rb].",
+          "interaction_1": "Configured with `message_ref_identifier`, `operation`, `severity`, `code_major` (e.g., 'success', 'failure', 'unsupported'), based on the processing outcome [Source: app/controllers/lti_controller.rb].",
+          "interaction_2": "Generates the final XML response via `generate_response_xml` [Source: app/controllers/lti_controller.rb]."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/lti_controller.rb"
+          ]
+        }
+      },
+      "PrivacyAlert": {
+        "type": "Frontend JavaScript Module",
+        "description": "Client-side logic for LTI Provider privacy setting. Displays a confirmation dialog when 'unprotected' privacy is selected to inform the user about data sharing implications.",
+        "interactions": {
+          "interaction_0": "Interacts with the DOM to find privacy radio buttons.",
+          "interaction_1": "Uses `swal` (SweetAlert2) to display a confirmation dialog.",
+          "interaction_2": "Utilizes `I18n` for localized messages in the dialog."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/assets/admin/lti_providers/privacy-alert.js"
+          ]
+        }
+      },
+      "LtiProvidersIndex": {
+        "type": "Frontend JavaScript Module",
+        "description": "Client-side logic for managing LTI Providers on the teacher/admin index page. Handles showing and hiding forms for adding and editing LTI providers.",
+        "interactions": {
+          "interaction_0": "Interacts with the DOM to toggle visibility of 'add new provider' and 'edit provider' forms.",
+          "interaction_1": "Attaches event listeners to buttons and links for form manipulation."
+        },
+        "techDebt": [
+          "Direct DOM manipulation could be refactored using a more declarative UI framework (e.g., React, ViewComponents) for improved maintainability and robustness."
+        ],
+        "provenance": {
+          "sources": [
+            "app/assets/teacher/lti-providers/index.js"
+          ]
+        }
+      },
+      "Course::LtiLaunchPresenter": {
+        "type": "Presenter",
+        "description": "Prepares data for rendering the LTI tool launch form. It determines the target URL, presentation mode, and the data hash to be sent to the LTI tool.",
+        "interactions": {
+          "interaction_0": "Initializes with a `Course::Item` and `User`.",
+          "interaction_1": "Delegates to `item.content.launch_for(user)` to retrieve LTI launch details.",
+          "interaction_2": "Determines the HTML form `target` attribute (`_blank` or `_self`) based on the LTI provider's `presentation_mode`.",
+          "interaction_3": "Provides localized messages for the launch page."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/presenters/course/lti_launch_presenter.rb",
+            "spec/controllers/lti_controller_spec.rb"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Inherits from `Admin::BaseController` for base administrative functionality.",
+      "interaction_1": "Requires `lti.provider.manage` permission for access [Source: app/controllers/admin/lti_providers_controller.rb, services/account/lib/tasks/permissions/lti.yml].",
+      "interaction_2": "Interacts with the `Lti::Provider` model for all data operations (e.g., `Lti::Provider.global.paginate`, `Lti::Provider.new`, `Lti::Provider.find`, `provider.save`, `provider.update`, `provider.destroy`) [Source: app/controllers/admin/lti_providers_controller.rb].",
+      "interaction_3": "Uses `lti_provider_params` for strong parameter filtering, permitting fields like `consumer_key`, `shared_secret`, `domain`, `name`, `description`, `presentation_mode`, `privacy`, and `custom_fields` [Source: app/controllers/admin/lti_providers_controller.rb].",
+      "interaction_4": "Inherits from `ApplicationController`.",
+      "interaction_5": "Uses `before_action :set_no_cache_headers` to prevent caching.",
+      "interaction_6": "Requires `ensure_logged_in` for `tool_launch` and `tool_return` actions [Source: app/controllers/lti_controller.rb].",
+      "interaction_7": "Skips `verify_authenticity_token` for `tool_grading` and `tool_return` [Source: app/controllers/lti_controller.rb].",
+      "interaction_8": "Skips `auth_middleware` for `tool_grading` [Source: app/controllers/lti_controller.rb].",
+      "interaction_9": "`tool_launch` action finds `Course::Item` by UUID, uses `Course::LtiLaunchPresenter` to prepare launch data, and renders a plain layout view `items/lti_exercise/tool_launch` [Source: app/controllers/lti_controller.rb].",
+      "interaction_10": "`tool_grading` action initializes `LtiController::ToolGrading` to process LTI outcome requests, handles errors, and renders an XML response [Source: app/controllers/lti_controller.rb].",
+      "interaction_11": "`tool_return` action processes LTI messages/errors from external tools and redirects to the course item URL [Source: app/controllers/lti_controller.rb].",
+      "interaction_12": "Interacts with `Course::Course` to retrieve course context [Source: app/controllers/lti_controller.rb].",
+      "interaction_13": "Initialized with the `request` object and `course_id` [Source: app/controllers/lti_controller.rb].",
+      "interaction_14": "Parses LTI outcome requests using `IMS::LTI::OutcomeRequest.from_post_request(request)` [Source: app/controllers/lti_controller.rb].",
+      "interaction_15": "Authorizes requests using `IMS::LTI::ToolConsumer` with `Lti::Provider`'s `consumer_key` and `shared_secret` [Source: app/controllers/lti_controller.rb].",
+      "interaction_16": "Validates request ID and checks for session expiry based on `MAXIMUM_SESSION_AGE` [Source: app/controllers/lti_controller.rb].",
+      "interaction_17": "Submits scores to `Lti::Gradebook` via `gradebook.submit!` [Source: app/controllers/lti_controller.rb].",
+      "interaction_18": "Publishes LTI submission events to `xikolo.web.exp_event.create` via `Msgr` for analytics, including `user` (UUID), `verb` (SUBMITTED_LTI_V2), `resource` (LTI exercise UUID), and `in_context` (course_id, score, provider details, user_ip) [Source: app/controllers/lti_controller.rb].",
+      "interaction_19": "Generates XML responses for the LTI tool using `IMS::LTI::OutcomeResponse` [Source: app/controllers/lti_controller.rb].",
+      "interaction_20": "Interacts with `Lti::Gradebook`, `Lti::Exercise`, and `Lti::Provider` models [Source: app/controllers/lti_controller.rb].",
+      "interaction_21": "Inherits from `Abstract::FrontendController` and includes `CourseContextHelper` [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_22": "Requires `lti.provider.manage` permission for access [Source: app/controllers/lti_providers_controller.rb, services/account/lib/tasks/permissions/lti.yml].",
+      "interaction_23": "Responds to JSON requests (`respond_to :json`) [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_24": "Uses `Acfs.run` due to `inside_course` and before actions needing Acfs [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_25": "Interacts with `Lti::Provider` model, specifically `Lti::Provider.where(course_id: the_course.id)` for course-scoped operations [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_26": "Filters `privacy` parameter based on `current_user.allowed?('lti.provider.edit_privacy_mode')`, restricting who can change this setting [Source: app/controllers/lti_providers_controller.rb, services/account/lib/tasks/permissions/lti.yml].",
+      "interaction_27": "Uses `lti_provider_params` for strong parameter filtering, including `course_id` [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_28": "Inherits from `XUI::Form` [Source: app/forms/course/admin/lti_provider_form.rb].",
+      "interaction_29": "Defines attributes such as `id` (uuid), `name`, `description`, `domain`, `consumer_key`, `shared_secret`, `presentation_mode`, `privacy`, and `custom_fields` [Source: app/forms/course/admin/lti_provider_form.rb].",
+      "interaction_30": "Includes validations for `name`, `domain`, `consumer_key`, and `shared_secret` to ensure their presence [Source: app/forms/course/admin/lti_provider_form.rb].",
+      "interaction_31": "Queued with `queue_as :default` [Source: app/jobs/lti/publish_grade_job.rb].",
+      "interaction_32": "Performs by finding an `Lti::Grade` record by `grade_id` [Source: app/jobs/lti/publish_grade_job.rb].",
+      "interaction_33": "Calls the `publish!` method on the found `Lti::Grade` object, which integrates the grade into the course progress [Source: app/jobs/lti/publish_grade_job.rb].",
+      "interaction_34": "Initializes with an `Lti::Exercise` object and `params` [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_35": "If `instructions` are present in params, it uses `Xikolo::S3::TextWithUploadsProcessor` to manage the text and associated S3 files [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_36": "Configures S3 upload properties like `bucket`, `purpose`, `key`, `acl`, `cache_control`, `content_disposition`, and `content_type` [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_37": "Schedules `S3FileDeletionJob` to remove obsolete S3 files after a 1-minute delay, providing fault tolerance [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_38": "Handles saving the `Lti::Exercise` and committing/rolling back `Xikolo::S3::TextWithUploadsProcessor` changes based on validation success [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_39": "Inherits from `ItemPresenter` and includes `MarkdownHelper` for rendering markdown content [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_40": "Builds presenter instances with `item`, `course`, `user`, and `params` [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_41": "Determines if an intro page or an embedded launch iframe (`items/lti_exercise/launch_iframe`) should be shown based on `needs_intro?` logic, which considers `external?`, `exercise_without_points?`, and `@initial_click` [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_42": "Calculates `score` and `percentage` based on `lti_grades` retrieved from `Lti::Gradebook` and `Lti::Grade` for the current user [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_43": "Provides `instructions_html` by rendering markdown from `exercise.instructions` [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_44": "Generates `tool_launch_path` and `open_path` using `Rails.application.routes.url_helpers` [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_45": "Interacts with `Lti::Exercise` to get exercise details and `Lti::Provider` (via exercise) for presentation mode [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_46": "Managed by `Admin::LtiProvidersController` for global instances [Source: app/controllers/admin/lti_providers_controller.rb].",
+      "interaction_47": "Managed by `LtiProvidersController` for course-specific instances [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_48": "Attributes include `consumer_key`, `shared_secret`, `domain`, `name`, `description`, `presentation_mode`, `privacy`, and `custom_fields` [Source: app/controllers/admin/lti_providers_controller.rb, app/controllers/lti_providers_controller.rb, app/forms/course/admin/lti_provider_form.rb].",
+      "interaction_49": "Used by `LtiController::ToolGrading` to authorize incoming LTI requests via `IMS::LTI::ToolConsumer` [Source: app/controllers/lti_controller.rb].",
+      "interaction_50": "Referenced by `Lti::Exercise` to determine the associated tool provider [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_51": "Content and instructions managed by `Lti::Exercise::Store` operation [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_52": "Referenced by `LtiExerciseItemPresenter` to display exercise details, instructions, and retrieve its associated `Lti::Provider` [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_53": "Associated with `Lti::Gradebook` records [Source: app/controllers/lti_controller.rb (via gradebook.exercise.provider)].",
+      "interaction_54": "Used by `LtiController::ToolGrading` to find and submit grades (`gradebook.submit!`) [Source: app/controllers/lti_controller.rb].",
+      "interaction_55": "Associated with `Lti::Grade` records [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_56": "Associated with `Lti::Exercise` and `User` models [Source: app/controllers/lti_controller.rb, app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_57": "Created or updated via `Lti::Gradebook` (`gradebook.submit!`) [Source: app/controllers/lti_controller.rb].",
+      "interaction_58": "Processed by `Lti::PublishGradeJob` to publish the grade to the course service (`grade.publish!`) [Source: app/jobs/lti/publish_grade_job.rb].",
+      "interaction_59": "Queried by `LtiExerciseItemPresenter` to display user scores (`gradebooks.where(user_id: @user.id).first&.grades`) [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_60": "Found by `LtiController#tool_launch` using its UUID to initiate an LTI launch [Source: app/controllers/lti_controller.rb].",
+      "interaction_61": "Passed to `LtiExerciseItemPresenter` for rendering and data preparation [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_62": "Used by `LtiController` to retrieve the course context (`course.context_id`) and find courses by identifier (`Course::Course.by_identifier`) [Source: app/controllers/lti_controller.rb].",
+      "interaction_63": "Used by `LtiProvidersController` to scope LTI providers to a specific course (`course_id: the_course.id`) [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_64": "Passed to `LtiExerciseItemPresenter` to generate course-specific URLs [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_65": "Instantiated by `Lti::Exercise::Store` to handle the `instructions` field of an `Lti::Exercise` [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_66": "Configured with `bucket`, `purpose`, `current` text, `text` input, and `valid_refs` [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_67": "Defines `on_new` callback to specify S3 key, ACL, cache control, content disposition, and content type for new uploads [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_68": "Provides methods like `parse!`, `result`, `valid?`, `commit!`, `rollback!`, and `obsolete_uris` [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_69": "Scheduled by `Lti::Exercise::Store` to delete obsolete S3 files associated with LTI exercise instructions. The job is set to wait for 1 minute before performing [Source: app/operations/lti/exercise/store.rb].",
+      "interaction_70": "Used by `LtiController::ToolGrading` to publish LTI submission events to the `xikolo.web.exp_event.create` topic [Source: app/controllers/lti_controller.rb].",
+      "interaction_71": "Used by `LtiController::ToolGrading` to parse the raw HTTP request into a structured LTI outcome request object (`IMS::LTI::OutcomeRequest.from_post_request(request)`) [Source: app/controllers/lti_controller.rb].",
+      "interaction_72": "Provides access to request parameters like `lis_result_sourcedid` (grading ID), `score`, `message_identifier`, and `operation` [Source: app/controllers/lti_controller.rb].",
+      "interaction_73": "Instantiated by `LtiController::ToolGrading` with the `Lti::Provider`'s `consumer_key` and `shared_secret` [Source: app/controllers/lti_controller.rb].",
+      "interaction_74": "Used to validate the authenticity of incoming LTI requests via `consumer.valid_request? @request` [Source: app/controllers/lti_controller.rb].",
+      "interaction_75": "Provides access to OAuth parameters like `request_oauth_timestamp` and `request_oauth_nonce` for session expiry checks and nonce generation [Source: app/controllers/lti_controller.rb].",
+      "interaction_76": "Instantiated by `LtiController::ToolGrading` to build the response XML [Source: app/controllers/lti_controller.rb].",
+      "interaction_77": "Configured with `message_ref_identifier`, `operation`, `severity`, `code_major` (e.g., 'success', 'failure', 'unsupported'), based on the processing outcome [Source: app/controllers/lti_controller.rb].",
+      "interaction_78": "Generates the final XML response via `generate_response_xml` [Source: app/controllers/lti_controller.rb].",
+      "interaction_79": "Interacts with `Course::Item` to find the LTI exercise for launch [Source: app/controllers/lti_controller.rb].",
+      "interaction_80": "Uses `Course::LtiLaunchPresenter` to prepare launch data [Source: app/controllers/lti_controller.rb].",
+      "interaction_81": "Delegates LTI grade processing and validation to `LtiController::ToolGrading` [Source: app/controllers/lti_controller.rb].",
+      "interaction_82": "Publishes analytics events via `Msgr` for LTI submissions [Source: app/controllers/lti_controller.rb].",
+      "interaction_83": "Redirects users to course item URLs after LTI tool returns [Source: app/controllers/lti_controller.rb].",
+      "interaction_84": "Interacts with `Course::Course` to determine authentication context [Source: app/controllers/lti_controller.rb].",
+      "interaction_85": "Receives `request` and `course_id` from `LtiController` [Source: app/controllers/lti_controller.rb].",
+      "interaction_86": "Uses `IMS::LTI::OutcomeRequest` to parse the incoming LTI request [Source: app/controllers/lti_controller.rb].",
+      "interaction_87": "Interacts with `Lti::Gradebook` to find the relevant gradebook entry and submit the score [Source: app/controllers/lti_controller.rb].",
+      "interaction_88": "Uses `IMS::LTI::ToolConsumer` for OAuth signature verification with `Lti::Provider` credentials [Source: app/controllers/lti_controller.rb].",
+      "interaction_89": "Publishes `SUBMITTED_LTI_V2` events via `Msgr` [Source: app/controllers/lti_controller.rb].",
+      "interaction_90": "Uses `CourseContextHelper` to operate within a course context [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_91": "Requires `lti.provider.manage` permission for access [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_92": "Interacts with `Lti::Provider` model for CRUD operations [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_93": "Filters `lti_provider_params` based on `current_user` permissions, specifically for the `privacy` attribute [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_94": "Finds an `Lti::Grade` by ID [Source: app/jobs/lti/publish_grade_job.rb].",
+      "interaction_95": "Calls the `publish!` method on the `Lti::Grade` instance, which is expected to interact with the `CourseService` for grade integration [Source: app/jobs/lti/publish_grade_job.rb].",
+      "interaction_96": "Interacts with `Lti::Exercise` to retrieve exercise details [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_97": "Interacts with `Lti::Provider` to determine presentation mode and retrieve provider details [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_98": "Retrieves `Lti::Gradebook` and `Lti::Grade` records for the current user and exercise to display scores [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_99": "Generates URLs for LTI tool launches using `Rails.application.routes.url_helpers` [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_100": "Managed by `LtiProvidersController` (CRUD operations) [Source: app/controllers/lti_providers_controller.rb].",
+      "interaction_101": "Used by `LtiController::ToolGrading` for OAuth signature verification [Source: app/controllers/lti_controller.rb].",
+      "interaction_102": "Referenced by `Lti::Exercise` to link an exercise to its provider [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_103": "Used by `LtiExerciseItemPresenter` to determine presentation mode and display provider details [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_104": "Referenced by `LtiExerciseItemPresenter` to retrieve exercise details and instructions [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_105": "Has a `provider` association [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_106": "Used by `LtiController::ToolGrading` to find the correct gradebook entry and submit scores [Source: app/controllers/lti_controller.rb].",
+      "interaction_107": "Has `grades` association, used by `LtiExerciseItemPresenter` to retrieve user scores [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_108": "Created/updated by `LtiController::ToolGrading` via `Lti::Gradebook` [Source: app/controllers/lti_controller.rb].",
+      "interaction_109": "Retrieved by `LtiExerciseItemPresenter` to display user scores [Source: app/presenters/lti_exercise_item_presenter.rb].",
+      "interaction_110": "Processed by `Lti::PublishGradeJob` to publish grades to the course service [Source: app/jobs/lti/publish_grade_job.rb].",
+      "interaction_111": "Interacts with the DOM to find privacy radio buttons.",
+      "interaction_112": "Uses `swal` (SweetAlert2) to display a confirmation dialog.",
+      "interaction_113": "Utilizes `I18n` for localized messages in the dialog.",
+      "interaction_114": "Interacts with the DOM to toggle visibility of 'add new provider' and 'edit provider' forms.",
+      "interaction_115": "Attaches event listeners to buttons and links for form manipulation.",
+      "interaction_116": "Receives LTI launch requests (`tool_launch`) and prepares data using `Course::LtiLaunchPresenter`.",
+      "interaction_117": "Receives LTI outcome requests (`tool_grading`) and delegates processing to the nested `ToolGrading` class.",
+      "interaction_118": "Redirects users after LTI interactions (`tool_return`), displaying messages or errors.",
+      "interaction_119": "Interacts with `Course::Item` and `Course::Course` models to retrieve context.",
+      "interaction_120": "Skips CSRF verification and authentication middleware for `tool_grading` to accommodate LTI 1.x callback requirements.",
+      "interaction_121": "Parses incoming LTI XML using `IMS::LTI::OutcomeRequest`.",
+      "interaction_122": "Verifies LTI OAuth 1.0a signatures and session validity using `IMS::LTI::ToolConsumer`.",
+      "interaction_123": "Interacts with `Lti::Gradebook` to find and update grade entries.",
+      "interaction_124": "Creates `Lti::Grade` records.",
+      "interaction_125": "Publishes `SUBMITTED_LTI_V2` analytics events to RabbitMQ via `Msgr`.",
+      "interaction_126": "Retrieves LTI provider credentials (`consumer_key`, `shared_secret`) from `Lti::Provider`.",
+      "interaction_127": "Interacts with the `Lti::Provider` model for all database operations.",
+      "interaction_128": "Uses `CourseContextHelper` to establish the course context.",
+      "interaction_129": "Filters `privacy` parameters based on the `lti.provider.edit_privacy_mode` permission of the `current_user`.",
+      "interaction_130": "Renders the `index` view, which likely includes forms for new and existing providers.",
+      "interaction_131": "Uses `Acfs.run` to ensure microservice context is available for course-related data.",
+      "interaction_132": "Used by `LtiProvidersController` to handle form submissions and apply validations.",
+      "interaction_133": "Defines attributes like `name`, `domain`, `consumer_key`, `shared_secret`, `presentation_mode`, `privacy`, and `custom_fields`.",
+      "interaction_134": "Finds an `Lti::Grade` record by ID.",
+      "interaction_135": "Calls the `publish!` method on the `Lti::Grade` instance (method implementation not provided in context).",
+      "interaction_136": "Updates attributes of an `Lti::Exercise` model.",
+      "interaction_137": "Uses `Xikolo::S3::TextWithUploadsProcessor` to parse and manage S3 file references within the exercise instructions.",
+      "interaction_138": "Configures S3 upload parameters (bucket, purpose, ACL, cache control).",
+      "interaction_139": "Enqueues `S3FileDeletionJob` for obsolete S3 files after a delay to ensure pages with old references have loaded.",
+      "interaction_140": "Initializes with a `Course::Item` and `User`.",
+      "interaction_141": "Delegates to `item.content.launch_for(user)` to retrieve LTI launch details.",
+      "interaction_142": "Determines the HTML form `target` attribute (`_blank` or `_self`) based on the LTI provider's `presentation_mode`.",
+      "interaction_143": "Provides localized messages for the launch page.",
+      "interaction_144": "Inherits from `ItemPresenter` and includes `MarkdownHelper` for rendering instructions.",
+      "interaction_145": "Interacts with `Lti::Exercise` to get exercise details and `Lti::Gradebook` to retrieve user-specific grades.",
+      "interaction_146": "Calculates and presents the user's score and percentage for the LTI exercise.",
+      "interaction_147": "Determines the `partial_name` to render, deciding between an intro page or an embedded iframe based on exercise type and presentation mode.",
+      "interaction_148": "Generates `tool_launch_path` and `open_path` for LTI tool interaction.",
+      "interaction_149": "Created, read, updated, and deleted by `LtiProvidersController`.",
+      "interaction_150": "Provides `consumer_key` and `shared_secret` for LTI OAuth 1.0a signature verification in `ToolGrading`.",
+      "interaction_151": "Determines user data sharing based on its `privacy` attribute during LTI launches.",
+      "interaction_152": "Influences the `presentation_mode` for LTI tool launches.",
+      "interaction_153": "Associated with `Course::Item` as its content.",
+      "interaction_154": "Managed by `Lti::Exercise::Store` for creation and updates, especially for `instructions`.",
+      "interaction_155": "Referenced by `LtiExerciseItemPresenter` to display exercise details and instructions.",
+      "interaction_156": "Linked to `Lti::Gradebook` entries for grade tracking.",
+      "interaction_157": "Found by `ToolGrading` using the `lis_result_sourcedid` from LTI outcome requests.",
+      "interaction_158": "Stores `user_id` and `lti_exercise_id`.",
+      "interaction_159": "Manages `Lti::Grade` records for a specific user and exercise.",
+      "interaction_160": "Provides a `submit!` method to record new grades.",
+      "interaction_161": "Created or updated by `Lti::Gradebook#submit!`.",
+      "interaction_162": "Referenced by `LtiExerciseItemPresenter` to display user scores.",
+      "interaction_163": "Processed by `Lti::PublishGradeJob` to update course progress."
+    },
+    "technicalDebt": [
+      "The `ToolGrading` class is an inner class; extracting it into a dedicated service object would improve modularity and testability [Source: app/controllers/lti_controller.rb].",
+      "Hardcoded constants like `MAXIMUM_SESSION_AGE` and `SCORE_REGEXP` within `ToolGrading` could be externalized for better configuration management [Source: app/controllers/lti_controller.rb].",
+      "The `user_agent` is unavailable for backend LTI submission requests, leading to a gap in analytics data [Source: app/controllers/lti_controller.rb].",
+      "Being an inner class limits its reusability and makes testing slightly more cumbersome than a standalone service object [Source: app/controllers/lti_controller.rb].",
+      "Hardcoded `MAXIMUM_SESSION_AGE` and `SCORE_REGEXP` could be configurable [Source: app/controllers/lti_controller.rb].",
+      "The client-side logic for the privacy confirmation modal (as per RAG) is not visible in the controller, which is expected but means the full interaction flow is split [Source: integration/features/xikolo/global/admin/lti_provider.feature].",
+      "The implementation of `Lti::Grade#publish!` is not provided, making it difficult to assess its robustness, error handling, and interaction with other services (e.g., `CourseService`) [Source: app/jobs/lti/publish_grade_job.rb].",
+      "The `publish!` method's implementation is not provided, which is a critical part of the grade integration workflow [Source: app/jobs/lti/publish_grade_job.rb].",
+      "Direct DOM manipulation could be refactored using a more declarative UI framework (e.g., React, ViewComponents) for improved maintainability and robustness.",
+      "The `ToolGrading` class, while nested, is substantial and could be extracted into a dedicated service object for better modularity and testability.",
+      "Could be extracted into a standalone service object (`Lti::ToolGradingService`) for improved separation of concerns and easier testing outside the controller context.",
+      "Error handling for `ValidationError` could provide more specific feedback for debugging.",
+      "The `filter_privacy` method directly manipulates `params`. A more robust approach might involve a policy object or conditional attribute assignment within the form object.",
+      "The delayed deletion of S3 files, while fault-tolerant, requires careful consideration of eventual consistency and potential race conditions if instructions are rapidly updated."
+    ]
+  }
+}

@@ -1,0 +1,923 @@
+{
+  "clusterId": "42_INFRA_BackgroundJobs",
+  "featureFocus": "Background Job Processing and Message Consumers",
+  "documentationReport": "{\n  \"title\": \"Asynchronous Processing and Background Task Management\",\n  \"description\": \"This documentation report details the comprehensive asynchronous processing architecture of the merged software cluster, leveraging a dual strategy for event-driven interactions and background task execution. The system integrates message-driven consumers for real-time event handling via RabbitMQ and robust background job processors, Delayed Job and Sidekiq, for deferred and scheduled tasks. This setup ensures efficient, scalable, and resilient task management across various microservices.\",\n  \"functional_domain\": \"Asynchronous Task Execution and Background Processing\",\n  \"architecture_overview\": \"The application employs a dual strategy for asynchronous processing: message-driven consumers for real-time event handling via RabbitMQ and background jobs for deferred and scheduled tasks using Delayed Job and Sidekiq. This architecture provides clear separation of concerns, enabling efficient inter-service communication and robust task execution.\",\n  \"components\": [\n    {\n      \"name\": \"Message Consumers (Msgr)\",\n      \"description\": \"Inter-service communication and event processing are handled by `Msgr::Consumer` classes, which subscribe to RabbitMQ queues. Each consumer defines methods corresponding to specific message routes or event types, processing the message `payload` and acknowledging the message (`message.ack`) to prevent re-delivery.\",\n      \"sub_components\": [\n        {\n          \"name\": \"GamificationConsumer\",\n          \"details\": \"Processes gamification-related events, checking `Xikolo.config.gamification['enabled']` before processing. It dispatches to specific `Gamification::Rules` based on `exercise_type` (e.g., `main`, `selftest` for `result_create`) or `votable_type` (e.g., `Answer`, `Question` for `vote_create`). It also handles events for visiting items, creating comments, creating questions, accepting answers, and creating answers.\"\n        },\n        {\n          \"name\": \"CourseConsumer\",\n          \"details\": \"Handles course-related events, specifically the `clone` event. Upon receiving a `clone` message with `old_course_id` and `new_course_code`, it delegates the cloning logic to `Course::Clone.call`.\"\n        },\n        {\n          \"name\": \"NewsConsumer\",\n          \"details\": \"Processes `update_state` messages, typically from the notification service. It extracts a `news_id` (UUID) and other payload data to update the corresponding `News` record.\"\n        }\n      ],\n      \"key_features\": [\n        \"Real-time event handling\",\n        \"Inter-service communication\",\n        \"Message acknowledgment\",\n        \"Event-driven interactions\"\n      ]\n    },\n    {\n      \"name\": \"Background Jobs (Delayed Job)\",\n      \"description\": \"The main application utilizes `delayed_job` for asynchronous task execution. Jobs inherit from `ApplicationJob` and can specify their queue, maximum attempts, and maximum run time. The `Delayed::Worker` manages the execution of these jobs.\",\n      \"sub_components\": [\n        {\n          \"name\": \"Configuration\",\n          \"details\": \"`config/initializers/delayed.rb` sets global `Delayed::Worker` parameters, restricting work to specific queues (`default`, `long_running`, `mails`), setting a global `max_attempts` to 25, and a `max_run_time` of 10 hours. It integrates with `ActiveSupport::Notifications` to publish metrics about delayed jobs to `Xikolo.metrics`.\"\n        },\n        {\n          \"name\": \"LongRunningApplicationJob\",\n          \"details\": \"A base class for jobs expected to run for extended periods. It sets its queue to `'long_running'` and explicitly defines `max_run_time` to 10 hours and `max_attempts` to 5.\"\n        },\n        {\n          \"name\": \"Lti::PublishGradeJob\",\n          \"details\": \"Publishes a user's LTI grade to the course service, contributing to course progress. Operates on the `default` queue and calls the `publish!` method of an `Lti::Grade` record.\"\n        },\n        {\n          \"name\": \"Proctoring::StoreSubmissionResultsJob\",\n          \"details\": \"Loads proctoring results for a quiz from an external vendor and stores them in the submission's vendor data attribute. Triggered after learners submit proctored quizzes, it uses the `default` queue with an `eventual` priority and includes robust retry logic for `Proctoring::ServiceError` (up to 10 attempts) and `ExpectedRetry` (48 attempts).\"\n        },\n        {\n          \"name\": \"Proctoring::UploadCertificateImageJob\",\n          \"details\": \"Fetches a user's proctoring image from SMOWL and uploads it to S3 for certificate printing. Runs on the `default` queue with `eventual` priority and includes retry logic for `Proctoring::ServiceError`.\"\n        },\n        {\n          \"name\": \"RefreshSitemapJob\",\n          \"details\": \"A deprecated job that performs no action but is retained to allow any pending jobs to complete.\"\n        }\n      ],\n      \"key_features\": [\n        \"Deferred tasks\",\n        \"Configurable job queues\",\n        \"Global and job-specific retry logic\",\n        \"Metrics integration\",\n        \"Long-running task support\"\n      ]\n    },\n    {\n      \"name\": \"Background Jobs (Sidekiq)\",\n      \"description\": \"Sidekiq is utilized for scheduled tasks, with `sidekiq-cron` managing cron job definitions. The `xikolo-sidekiq` gem centralizes Sidekiq setup and configuration, including Redis connection settings and cron job loading. Sidekiq jobs are `ActiveJob` compatible.\",\n      \"sub_components\": [\n        {\n          \"name\": \"Redis Configuration\",\n          \"details\": \"Each service (main app, account, course, news, notification, pinboard, quiz, timeeffort) has a `config/sidekiq_redis.yml` file. These files define common Redis connection settings and specify different Redis databases (`db`) for each environment (development, test, integration, production) to isolate data.\"\n        },\n        {\n          \"name\": \"Cron Jobs\",\n          \"details\": \"`config/cron.yml` files define recurring tasks across services. The main application schedules `Voucher::DeleteClaimantIPJob` (daily at 4:15 a.m.) and `Video::SyncVideosJob` (every 2 hours). The Account Service schedules `UnconfirmedAccountsDeletionWorker` (daily at 3 a.m.) to delete old, unconfirmed accounts.\"\n        }\n      ],\n      \"key_features\": [\n        \"Scheduled tasks\",\n        \"Cron job definitions\",\n        \"Redis database isolation for services\",\n        \"Centralized Sidekiq configuration via `xikolo-sidekiq`\",\n        \"ActiveJob compatibility\"\n      ]\n    }\n  ],\n  \"overall_summary\": \"This robust asynchronous processing architecture effectively leverages the strengths of both message queues for real-time, event-driven interactions and background job processors for deferred and scheduled tasks. With clear separation of concerns across microservices, centralized Sidekiq configuration via the `xikolo-sidekiq` gem, and comprehensive retry and monitoring capabilities, the system ensures reliable and scalable task execution for a wide range of application functionalities.\"\n}",
+  "componentMapPatch": {
+    "components": {
+      "Msgr::Consumer": {
+        "type": "Framework Component",
+        "description": "Base class for message consumers that subscribe to RabbitMQ queues to process events and messages from other services. It provides the core mechanism for receiving and acknowledging messages.",
+        "interactions": {
+          "interaction_0": "Receives messages from RabbitMQ queues.",
+          "interaction_1": "Dispatches message payloads to specific consumer methods.",
+          "interaction_2": "Acknowledges messages to RabbitMQ."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "app/consumers/gamification_consumer.rb",
+            "services/course/app/consumers/course_consumer.rb",
+            "services/news/app/consumers/news_consumer.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 28,
+              "code": "class GamificationConsumer < Msgr::Consumer   # In general, there are two ways to deactivate a rule:   # 1. Remove or comment the rule in the config file   #    Then, check if the rule is active/exists: rule_active?(:attended_section).   #    Be careful as some rules serve as the basis for other rules, also for the badges.   #    If you choose this option, side effects may occur.   # 2. Award 0 points for the rule   #    This only affects the rule at hand. No side effects will be caused for other rules.    ##   # COURSE-RELATED ROUTES    def result_create     return unless Xikolo.config.gamification['enabled']      # Make sure we have a rule matching the exercise type     case payload.fetch(:exercise_type)       when 'main'         Gamification::Rules::Course::TakeExam.new(payload).create_score!       when 'selftest'         Gamification::Rules::Course::TakeSelftest.new(payload).create_score!     end   end    def visit_create     return unless Xikolo.conf...",
+              "source": "app/consumers/gamification_consumer.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 18,
+              "code": "class CourseConsumer < Msgr::Consumer   def clone     return unless payload \\\n      && payload[:old_course_id] \\\n      && payload[:new_course_code]      # were the node that will take care, avoid multiple nodes taking care     message.ack     # lets do the job     Course::Clone.call(       payload[:old_course_id],       payload[:new_course_code]     )   end end",
+              "source": "app/consumers/gamification_consumer.rb"
+            },
+            {
+              "startLine": 4,
+              "endLine": 31,
+              "code": "describe CourseConsumer do   before { Msgr.client.start }    let(:consumer) { described_class.new }   let(:old_course_id) { '81187fa1-6cfd-4b90-a547-b546e24258b7' }   let(:new_course_code) { 'course-CLONE' }    let(:payload) { {old_course_id:, new_course_code:} }   let(:publish) { -> { Msgr.publish(payload, to: 'xikolo.course.clone') } }    describe '#clone' do     it 'passes old_course_id and new_course_code to the handler' do       operation_double = instance_double(Course::Clone)        allow(Course::Clone).to receive(:new)         .with(old_course_id, new_course_code)         .and_return(operation_double)        expect(operation_double).to receive(:call)        publish.call       Msgr::TestPool.run count: 1     end   end end",
+              "source": "app/consumers/gamification_consumer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/consumers/gamification_consumer.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/course/app/consumers/course_consumer.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/course/spec/consumers/course_consumer_spec.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "GamificationConsumer": {
+        "type": "Message Consumer",
+        "description": "Processes gamification-related events received via RabbitMQ. It dispatches to specific `Gamification::Rules` based on the event type (e.g., exercise results, item visits, pinboard interactions) to award points.",
+        "interactions": {
+          "interaction_0": "Receives messages from RabbitMQ (e.g., `result_create`, `visit_create`, `vote_create`, `comment_create`, `question_create`, `answer_accepted`, `answer_create`).",
+          "interaction_1": "Interacts with `Xikolo.config` to check if gamification is enabled. [Source: app/consumers/gamification_consumer.rb]",
+          "interaction_2": "Instantiates and calls `create_score!` on various `Gamification::Rules` classes (e.g., `Gamification::Rules::Course::TakeExam`, `Gamification::Rules::Pinboard::UpvoteAnswer`) based on payload content. [Source: app/consumers/gamification_consumer.rb]"
+        },
+        "techDebt": [
+          "The extensive `case` statements for `exercise_type` and `votable_type` could potentially be refactored using a more dynamic dispatch mechanism or a registry pattern if the number of rules grows significantly. [Source: app/consumers/gamification_consumer.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/consumers/gamification_consumer.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 24,
+              "code": "class GamificationConsumer < Msgr::Consumer\n  def result_create\n    return unless Xikolo.config.gamification['enabled']\n\n    # Make sure we have a rule matching the exercise type\n    case payload.fetch(:exercise_type)\n      when 'main'\n        Gamification::Rules::Course::TakeExam.new(payload).create_score!\n      when 'selftest'\n        Gamification::Rules::Course::TakeSelftest.new(payload).create_score!\n    end\n  end",
+              "source": "app/consumers/gamification_consumer.rb"
+            },
+            {
+              "startLine": 26,
+              "endLine": 27,
+              "code": "  def visit_create\n    return unless Xikolo.conf...",
+              "source": "app/consumers/gamification_consumer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/consumers/gamification_consumer.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "CourseConsumer": {
+        "type": "Message Consumer",
+        "description": "Handles messages related to course operations, specifically the cloning of courses. It acknowledges the message and delegates the actual cloning logic to a service object.",
+        "interactions": {
+          "interaction_0": "Receives `clone` messages from RabbitMQ with `old_course_id` and `new_course_code` in the payload. [Source: services/course/app/consumers/course_consumer.rb]",
+          "interaction_1": "Invokes `Course::Clone.call` with the provided course IDs. [Source: services/course/app/consumers/course_consumer.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/course/app/consumers/course_consumer.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 16,
+              "code": "class CourseConsumer < Msgr::Consumer\n  def clone\n    return unless payload \\\n      && payload[:old_course_id] \\\n      && payload[:new_course_code]\n\n    # were the node that will take care, avoid multiple nodes taking care\n    message.ack\n    # lets do the job\n    Course::Clone.call(\n      payload[:old_course_id],\n      payload[:new_course_code]\n    )\n  end\nend",
+              "source": "services/course/app/consumers/course_consumer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/app/consumers/course_consumer.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "NewsConsumer": {
+        "type": "Message Consumer",
+        "description": "Processes messages to update the state and recipient numbers of news items, typically from the notification service.",
+        "interactions": {
+          "interaction_0": "Receives `update_state` messages from RabbitMQ with `news_id` and other update attributes. [Source: services/news/app/consumers/news_consumer.rb]",
+          "interaction_1": "Interacts with the `News` model to find and update a news record. [Source: services/news/app/consumers/news_consumer.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/news/app/consumers/news_consumer.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass NewsConsumer < Msgr::Consumer\n  # this is for  state and recipient number update from otification service\n  def update_state\n    payload = @message.payload\n    @message.ack\n    uuid = UUID(payload.fetch(:news_id)).to_s\n    News.find(uuid).update(payload.except(:news_id))\n  end\nend",
+              "source": "services/news/app/consumers/news_consumer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/news/app/consumers/news_consumer.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "ApplicationJob": {
+        "type": "Framework Component",
+        "description": "Base class for all Active Job-compatible background jobs in the application. It provides common functionality for job queuing, retries, and error handling.",
+        "interactions": {
+          "interaction_0": "Inherited by specific job classes to define asynchronous tasks.",
+          "interaction_1": "Interacts with the underlying queuing backend (Delayed Job in this context). [Source: Gemfile, config/initializers/delayed.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/jobs/long_running_application_job.rb",
+            "app/jobs/lti/publish_grade_job.rb",
+            "app/jobs/proctoring/store_submission_results_job.rb",
+            "app/jobs/proctoring/upload_certificate_image_job.rb",
+            "app/jobs/refresh_sitemap_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 23,
+              "code": "class ApplicationJob < ActiveJob::Base\n  queue_as 'default'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Allow a regular job to run for 20 minutes, which is the delayed gem default.\n  def max_run_time\n    20.minutes\n  end\n\n  # Automatically retry jobs that encountered a deadlock.\n  # retry_on ActiveRecord::Deadlocked\n\n  # Most jobs are safe to ignore if the underlying records are no longer available.\n  # discard_on ActiveJob::DeserializationError\n\n  # Should be used to indicate explicit retries to ActiveJob.\n  # This error is ignored by Sentry.\n  class ExpectedRetry < StandardError; end\nend",
+              "source": "app/jobs/application_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/account/app/jobs/application_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "services/pinboard/app/jobs/application_job.rb",
+              "relevance": 24
+            }
+          ]
+        }
+      },
+      "LongRunningApplicationJob": {
+        "type": "Delayed Job",
+        "description": "A specialized base class for `ApplicationJob` instances that are expected to have longer execution times. It configures a dedicated queue and extended run time limits.",
+        "interactions": {
+          "interaction_0": "Sets `queue_as` to 'long_running'. [Source: app/jobs/long_running_application_job.rb]",
+          "interaction_1": "Overrides `max_run_time` to 10 hours and `max_attempts` to 5. [Source: app/jobs/long_running_application_job.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/jobs/long_running_application_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 18,
+              "code": "# frozen_string_literal: true\n\nclass LongRunningApplicationJob < ApplicationJob\n  queue_as 'long_running'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Long-running jobs are allowed to run for 10 hours, which is the globally\n  # configured maximum runtime.\n  def max_run_time\n    10.hours\n  end\n\n  def max_attempts\n    5\n  end\nend",
+              "source": "app/jobs/long_running_application_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/long_running_application_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Lti::PublishGradeJob": {
+        "type": "Delayed Job",
+        "description": "An asynchronous job responsible for publishing a user's LTI grade to the course service to update their course progress.",
+        "interactions": {
+          "interaction_0": "Queued on the `default` queue. [Source: app/jobs/lti/publish_grade_job.rb]",
+          "interaction_1": "Finds an `Lti::Grade` record by ID. [Source: app/jobs/lti/publish_grade_job.rb]",
+          "interaction_2": "Invokes the `publish!` method on the `Lti::Grade` instance. [Source: app/jobs/lti/publish_grade_job.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/jobs/lti/publish_grade_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 13,
+              "code": "# frozen_string_literal: true\n\n##\n# Publish the user's LTI grade to the course service to be\n# accounted for the course progress.\n#\nmodule Lti\n  class PublishGradeJob < ApplicationJob\n    queue_as :default\n\n    def perform(grade_id)\n      grade = Lti::Grade.find grade_id\n      grade.publish!\n    end\n  end\n}",
+              "source": "app/jobs/lti/publish_grade_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/lti/publish_grade_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "api/xikolo/v2/course_items/lti_exercises.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/controllers/lti_controller.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Proctoring::StoreSubmissionResultsJob": {
+        "type": "Delayed Job",
+        "description": "Asynchronously fetches proctoring results for a quiz submission from an external proctoring vendor and stores them locally to reduce external communication.",
+        "interactions": {
+          "interaction_0": "Queued on the `default` queue with `eventual` priority. [Source: app/jobs/proctoring/store_submission_results_job.rb]",
+          "interaction_1": "Includes retry logic for `Proctoring::ServiceError` and `ExpectedRetry` with exponential backoff and fixed waits. [Source: app/jobs/proctoring/store_submission_results_job.rb]",
+          "interaction_2": "Expected to interact with a `Proctoring` service to fetch results and a `Submission` model to store them (implementation not shown). [Source: app/jobs/proctoring/store_submission_results_job.rb]"
+        },
+        "techDebt": [
+          "The `perform` method is empty, suggesting the core logic for fetching and storing results is either missing or handled elsewhere (e.g., in a callback or a service object not provided). This could lead to confusion or incomplete functionality. [Source: app/jobs/proctoring/store_submission_results_job.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/jobs/proctoring/store_submission_results_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\n##\n# Load the user's proctoring results for a quiz from the proctoring vendor and\n# store it in the vendor data attribute of the submission to reduce the amount\n# of communication with the external vendor.\n#\n# This job is supposed to be triggered after learners submit solutions to\n# proctored quizzes. At this point, the user registration is valid. We can also\n# safely assume that the course and quiz item must have been proctored.\n#\nmodule Proctoring\n  class StoreSubmissionResultsJob < ApplicationJob\n    queue_as :default\n    queue_with_priority :eventual\n\n    # If there are (temporary?) service issues, give the provider some time.\n    retry_on Proctoring::ServiceError, wait: ->(executions) { executions.hours }, attempts: 10\n\n    retry_on ExpectedRetry, wait: 1.hour, attempts: 48\n\n    def perform(_submission_id); end\n  end\nend",
+              "source": "app/jobs/proctoring/store_submission_results_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/proctoring/store_submission_results_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/jobs/proctoring/upload_certificate_image_job.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/lib/proctoring/course_context.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Proctoring::UploadCertificateImageJob": {
+        "type": "Delayed Job",
+        "description": "Asynchronously loads a user's proctoring image from SMOWL and uploads it to S3 for use on certificates.",
+        "interactions": {
+          "interaction_0": "Queued on the `default` queue with `eventual` priority. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+          "interaction_1": "Includes retry logic for `Proctoring::ServiceError`. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+          "interaction_2": "Expected to interact with SMOWL API to fetch images and AWS S3 for storage (implementation not shown). [Source: app/jobs/proctoring/upload_certificate_image_job.rb]"
+        },
+        "techDebt": [
+          "The `perform` method is empty, suggesting the core logic for fetching and uploading the image is either missing or handled elsewhere. This could lead to confusion or incomplete functionality. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/jobs/proctoring/upload_certificate_image_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "# frozen_string_literal: true\n\n##\n# Load the user's proctoring image to be printed on the\n# certificate from SMOWL and upload it to S3.\n#\n# This job is supposed to be triggered after a user submits\n# any proctored quiz. At this point, the user registration\n# is valid. The job does not need to be triggered if the\n# user image for a course already exists in S3.\n#\nmodule Proctoring\n  class UploadCertificateImageJob < ApplicationJob\n    queue_as :default\n    queue_with_priority :eventual\n\n    # On provider errors, we give them a bit of time before we retry, but also\n    # limit the number of retries.\n    retry_on Proctoring::ServiceError, wait: ->(executions) { executions.hours }, attempts: 10\n\n    def perform(_enrollment_id); end\n  end\nend",
+              "source": "app/jobs/proctoring/upload_certificate_image_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/proctoring/upload_certificate_image_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/jobs/proctoring/store_submission_results_job.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/lib/proctoring/course_context.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "RefreshSitemapJob": {
+        "type": "Delayed Job",
+        "description": "A deprecated background job that previously refreshed the sitemap. It now performs no action but is retained to allow any scheduled instances to complete without error.",
+        "interactions": {
+          "interaction_0": "Queued on the `default` queue with `reporting` priority. [Source: app/jobs/refresh_sitemap_job.rb]",
+          "interaction_1": "The `perform` method is empty. [Source: app/jobs/refresh_sitemap_job.rb]"
+        },
+        "techDebt": [
+          "The job is deprecated but still exists in the codebase. It should ideally be removed or clearly marked for removal to avoid confusion and unnecessary processing overhead if still scheduled. [Source: app/jobs/refresh_sitemap_job.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/jobs/refresh_sitemap_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nclass RefreshSitemapJob < ApplicationJob\n  queue_as :default\n  queue_with_priority :reporting\n\n  def perform\n    # Do nothing since the job has been deprecated but allow\n    # pending/scheduled/queued job to run to completion.\n  end\nend",
+              "source": "app/jobs/refresh_sitemap_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/refresh_sitemap_job.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Delayed::Worker": {
+        "type": "Background Job Processor",
+        "description": "The worker process responsible for executing ActiveJob tasks configured to use the `delayed` backend. It manages job attempts, run times, and queue assignments.",
+        "interactions": {
+          "interaction_0": "Processes jobs from ActiveJob.",
+          "interaction_1": "Reports job metrics (run, error, failure) to `Xikolo.metrics`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/delayed.rb",
+            "Gemfile"
+          ]
+        }
+      },
+      "UnconfirmedAccountsDeletionWorker": {
+        "type": "Sidekiq Worker",
+        "description": "A scheduled Sidekiq worker in the Account service responsible for deleting old, unconfirmed user accounts.",
+        "interactions": {
+          "interaction_0": "Scheduled to run daily at 3 a.m. via `sidekiq-cron`. [Source: services/account/config/cron.yml]",
+          "interaction_1": "Processes jobs on the `default` queue. [Source: services/account/config/cron.yml]",
+          "interaction_2": "Interacts with the Account service's database to identify and delete unconfirmed accounts (implementation not shown). [Source: services/account/config/cron.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "services/account/config/cron.yml",
+            "services/account/config/cron.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 10,
+              "code": "class UnconfirmedAccountsDeletionWorker\n  include Sidekiq::Job\n\n  def perform\n    User\n      .unconfirmed\n      .where(archived: false)\n      .where(created_at: ...3.days.ago)\n      .in_batches(of: 200).destroy_all\n  end\nend",
+              "source": "services/account/app/workers/unconfirmed_accounts_deletion_worker.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/account/app/workers/unconfirmed_accounts_deletion_worker.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Voucher::DeleteClaimantIPJob": {
+        "type": "Scheduled Job",
+        "description": "A scheduled job responsible for deleting IP addresses of voucher claimants, likely for privacy or data retention purposes.",
+        "interactions": {
+          "interaction_0": "Executed periodically by Sidekiq via `sidekiq-cron`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/cron.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 1,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 27,
+              "code": "module Voucher\n  class DeleteClaimantIPJob < ApplicationJob\n    queue_as :default\n    queue_with_priority :reporting\n\n    def perform\n      # Clear all `claimant_ip` fields where it is not yet cleared\n      # and where the voucher has been claimed more than a year ago.\n      #\n      # age() is a PostgreSQL function that returns the interval between two\n      # timestamps.\n      # See https://www.postgresql.org/docs/current/functions-datetime.html.\n      ActiveRecord::Base.connection.execute(\n        <<~SQL.squish\n          UPDATE vouchers\n          SET claimant_ip = NULL\n          WHERE claimant_ip IS NOT NULL\n            AND age(now(), claimed_at) > '1 year';\n        SQL\n      )\n    end\n  end\nend",
+              "source": "app/jobs/voucher/delete_claimant_ip_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/voucher/delete_claimant_ip_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "spec/jobs/voucher/delete_claimant_ip_job_spec.rb",
+              "relevance": 8
+            },
+            {
+              "path": "app/controllers/bridges/shop/vouchers_controller.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Video::SyncVideosJob": {
+        "type": "Scheduled Job",
+        "description": "A scheduled job that synchronizes newly added videos, ensuring consistency or processing for availability.",
+        "interactions": {
+          "interaction_0": "Executed periodically by Sidekiq via `sidekiq-cron`."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/cron.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "# frozen_string_literal: true\n\nmodule Video\n  class SyncVideosJob < LongRunningApplicationJob\n    queue_with_priority :eventual\n\n    # When the authentication with the video provider fails, this\n    # - often can be considered a configuration error (invalid token or\n    #   expired account) and the job shall not be retried,\n    # - or is a temporary issue, which is covered by retries via cron.\n    #\n    # The (domain-specific) error is reported to the monitoring systems so\n    # it will not go unnoticed.\n    discard_on ::Video::Provider::AuthenticationFailed,\n      ::Video::Provider::AccountInactive do |_job, e|\n      ::Mnemosyne.attach_error(e)\n      ::Sentry.capture_exception(e)\n    end\n\n    # Since this job is scheduled via cron anyway, the number of retries can\n    # be reduced.\n    def max_attempts\n      3\n    end\n\n    def perform(provider: nil, full: false)\n      return Provider.find(provider).sync(full:) if provider\n\n      Provider.ids.each do |id|\n        self.class.perform_lat...\n",
+              "source": "app/jobs/video/sync_videos_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/video/sync_videos_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/jobs/video/extract_audio_job.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/jobs/video/sync_subtitles_job.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Xikolo::Sidekiq": {
+        "type": "Internal Gem",
+        "description": "A custom gem that centralizes the setup and configuration of Sidekiq within Rails projects, including Redis connection settings and cron job loading.",
+        "interactions": {
+          "interaction_0": "Configures Sidekiq Redis connection using `config/sidekiq_redis.yml`. [Source: gems/xikolo-sidekiq/README.md]",
+          "interaction_1": "Loads and parses `config/cron.yml` for `sidekiq-cron` job definitions. [Source: gems/xikolo-sidekiq/README.md]",
+          "interaction_2": "Integrates Sidekiq with ActiveJob. [Source: gems/xikolo-sidekiq/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "gems/xikolo-sidekiq/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nrequire 'yaml'\n\nmodule Xikolo\n  module Sidekiq\n    require 'xikolo/sidekiq/railtie' if defined? Rails\n  end\nend\n...",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nif Rails.env.integration?\n  require 'sidekiq/api'\n\n  XiIntegration.hook :test_setup do\n    Sidekiq::Queue.new.clear\n    Sidekiq::ScheduledSet.new.clear\n    Sidekiq::RetrySet.new.clear\n  end\nend\n...",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb",
+              "relevance": 37
+            },
+            {
+              "path": "integration/features/support/lib/server.rb",
+              "relevance": 19
+            },
+            {
+              "path": "integration/features/support/lib/initializers/integration_sidekiq.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Delayed::Job": {
+        "type": "Background Job Processor",
+        "description": "The primary background job processing system used in the main application. It handles asynchronous task execution, managing job queues, retries, and execution time limits.",
+        "interactions": {
+          "interaction_0": "Processes jobs enqueued via ActiveJob (e.g., Voucher::DeleteClaimantIPJob, Video::SyncVideosJob).",
+          "interaction_1": "Publishes job events to ActiveSupport::Notifications.",
+          "interaction_2": "Sends metrics to Xikolo.metrics for monitoring."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/delayed.rb",
+            "config/cron.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 13,
+              "code": "class CreateDelayedJobs < ActiveRecord::Migration[6.0]\n  def self.up\n    create_table :delayed_jobs do |table|\n      table.integer :priority, default: 0, null: false # Allows some jobs to jump to the front of the queue\n      table.integer :attempts, default: 0, null: false # Provides for retries, but still fail eventually.\n      table.text :handler,                 null: false # YAML-encoded string of the object that will do work\n      table.text :last_error                           # reason for last failure (See Note below)\n      table.datetime :run_at                           # When to run. Could be Time.zone.now for immediately, or sometime in the future.\n      table.datetime :locked_at                        # Set when a client is working on this object\n      table.datetime :failed_at                        # Set when all retries have failed\n      table.string :locked_by                          # Who is working on this object (if locked)",
+              "source": "db/migrate/20220706134328_create_delayed_jobs.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 12,
+              "code": "class ApplicationJob < ActiveJob::Base\n  queue_as 'default'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Allow a regular job to run for 20 minutes, which is the delayed gem default.\n  def max_run_time\n    20.minutes\n  end",
+              "source": "db/migrate/20220706134328_create_delayed_jobs.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "db/migrate/20220706134328_create_delayed_jobs.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 16
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 16
+            }
+          ]
+        }
+      },
+      "Sidekiq": {
+        "type": "Background Job Processor",
+        "description": "A Ruby background job framework used for processing asynchronous tasks and, in conjunction with `sidekiq-cron`, for executing scheduled jobs. Configured via `xikolo-sidekiq` gem.",
+        "interactions": {
+          "interaction_0": "Processes background jobs (implied by `sidekiq-cron` and `xikolo-sidekiq` gem).",
+          "interaction_1": "Executes scheduled jobs defined in `config/cron.yml`.",
+          "interaction_2": "Uses Redis for job queue management (configured via `config/sidekiq_redis.yml`)."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "gems/xikolo-sidekiq/README.md",
+            "config/sidekiq_redis.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 7,
+              "code": "# frozen_string_literal: true\n\nrequire 'yaml'\n\nmodule Xikolo\n  module Sidekiq\n    require 'xikolo/sidekiq/railtie' if defined? Rails\n  end\nend",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nif Rails.env.integration?\n  require 'sidekiq/api'\n\n  XiIntegration.hook :test_setup do\n    Sidekiq::Queue.new.clear\n    Sidekiq::ScheduledSet.new.clear\n    Sidekiq::RetrySet.new.clear\n  end\nend",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb",
+              "relevance": 30
+            },
+            {
+              "path": "integration/features/support/lib/server.rb",
+              "relevance": 19
+            },
+            {
+              "path": "integration/features/support/lib/initializers/integration_sidekiq.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "ActiveJob": {
+        "type": "Abstraction Layer",
+        "description": "A framework for declaring, enqueuing, and running background jobs. It provides a common interface, allowing the application to switch between different backend job processors (like Delayed::Job or Sidekiq) without modifying job code.",
+        "interactions": {
+          "interaction_0": "Jobs defined as ActiveJob classes are enqueued for processing.",
+          "interaction_1": "Jobs are processed by either Delayed::Job or Sidekiq depending on the environment and configuration."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/cron.yml",
+            "config/initializers/delayed.rb",
+            "gems/xikolo-sidekiq/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 22,
+              "code": "class ApplicationJob < ActiveJob::Base\n  queue_as 'default'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Allow a regular job to run for 20 minutes, which is the delayed gem default.\n  def max_run_time\n    20.minutes\n  end\n\n  # Automatically retry jobs that encountered a deadlock.\n  # retry_on ActiveRecord::Deadlocked\n\n  # Most jobs are safe to ignore if the underlying records are no longer available.\n  # discard_on ActiveJob::DeserializationError\n\n  # Should be used to indicate explicit retries to ActiveJob.\n  # This error is ignored by Sentry.\n  class ExpectedRetry < StandardError; end\nend",
+              "source": "app/assets/admin/reports/report-jobs.js"
+            },
+            {
+              "startLine": 3,
+              "endLine": 19,
+              "code": "class LongRunningApplicationJob < ApplicationJob\n  queue_as 'long_running'\n\n  # The max amount of time a job is allowed to run before it is stopped.\n  # Must be less than the global `max_run_time` default,\n  # see config/initializers/delayed.rb.\n  # Long-running jobs are allowed to run for 10 hours, which is the globally\n  # configured maximum runtime.\n  def max_run_time\n    10.hours\n  end\n\n  def max_attempts\n    5\n  end\nend",
+              "source": "app/assets/admin/reports/report-jobs.js"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/assets/admin/reports/report-jobs.js",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/application_job.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/jobs/long_running_application_job.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "Xikolo.metrics": {
+        "type": "Monitoring System",
+        "description": "A custom metrics system used to capture and record performance and event data, specifically for Delayed::Job execution.",
+        "interactions": {
+          "interaction_0": "Receives job execution events (run, error, failure) from ActiveSupport::Notifications.",
+          "interaction_1": "Records detailed metrics including job ID, attempts, run time, and duration."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/delayed.rb"
+          ]
+        }
+      },
+      "sidekiq-cron": {
+        "type": "Scheduling Gem",
+        "description": "A gem that enables scheduling of Sidekiq workers (and ActiveJobs) using cron expressions defined in `config/cron.yml`. It provides the mechanism for recurring background tasks.",
+        "interactions": {
+          "interaction_0": "Reads and parses `config/cron.yml` to set up scheduled jobs.",
+          "interaction_1": "Enqueues ActiveJobs (like Voucher::DeleteClaimantIPJob, Video::SyncVideosJob) into the background job processor."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-sidekiq/README.md",
+            "config/cron.yml"
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "Message Queue Consumer",
+        "description": "A component that consumes messages from RabbitMQ, routing them to specific internal handlers based on predefined topics. It enables event-driven communication between services.",
+        "interactions": {
+          "interaction_0": "Consumes messages from RabbitMQ (configured via `config/rabbitmq.yml`).",
+          "interaction_1": "Routes messages to the `Gamification` component (e.g., `gamification#vote_create`).",
+          "interaction_2": "Receives events from `Xikolo::Pinboard` and `Xikolo::Course` services."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/msgr.rb",
+            "Gemfile",
+            "config/rabbitmq.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 19,
+              "code": "module MsgrSentryIntegration   def dispatch(*)     Sentry.with_scope do       super     rescue Sentry::Error       raise # Don't capture Sentry errors     rescue Exception => e # rubocop:disable Lint/RescueException       Sentry.capture_exception(e)       raise     end   end end  Msgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Gamification": {
+        "type": "Service/Consumer",
+        "description": "A component responsible for processing events related to user activity (e.g., votes, questions, course results) and awarding experience points (XP) or other gamification elements.",
+        "interactions": {
+          "interaction_0": "Receives and processes messages routed by `Msgr` from `xikolo.pinboard` and `xikolo.course` events."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/msgr.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 45,
+              "code": "module Dashboard   class GamificationBadge < ApplicationComponent     # @param badge [Gamification::Badge]     def initialize(badge)       @badge = badge     end      def call       helpers.image_tag image_source, alt: title     end      private      def title       # TODO: Move to locale file       if gained?         \"#{@badge.name.titleize} (#{level_title})\"       else         @badge.name.titleize       end     end      def image_source       if gained?         \"gamification/badges/#{@badge.name.downcase}_#{@badge.level}.png\"       else         \"gamification/badges/#{@badge.name.downcase}_not_gained.png\"       end     end      def gained?       @badge.persisted?     end      def level_title       lookup = [         :\"gamification.badge.level.#{@badge.name.downcase}.#{@badge.level}\",         :\"gamification.badge.level.default.#{@badge.level}\",         @badge.level,       ]        I18n.t(lookup.shift, default: lookup)     end   end end",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 28,
+              "code": "  def result_create     return unless Xikolo.config.gamification['enabled']      # Make sure we have a rule matching the exercise type     case payload.fetch(:exercise_type)       when 'main'         Gamification::Rules::Course::TakeExam.new(payload).create_score!       when 'selftest'         Gamification::Rules::Course::TakeSelftest.new(payload).create_score!     end   end",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 17,
+              "code": "module Gamification   class Badge < ::ApplicationRecord     default_scope { order(level: :desc) }      belongs_to :course, class_name: 'Course::Course', optional: true     belongs_to :user, class_name: 'Account::User'      class << self       def types         @types ||= YAML.load_file(File.expand_path('./badge_types.yml', __dir__))       end     end   end end",
+              "source": "app/components/dashboard/gamification_badge.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/components/dashboard/gamification_badge.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/consumers/gamification_consumer.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/gamification/badge.rb",
+              "relevance": 22
+            }
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Receives messages from RabbitMQ queues.",
+      "interaction_1": "Dispatches message payloads to specific consumer methods.",
+      "interaction_2": "Acknowledges messages to RabbitMQ.",
+      "interaction_3": "Receives messages from RabbitMQ (e.g., `result_create`, `visit_create`, `vote_create`, `comment_create`, `question_create`, `answer_accepted`, `answer_create`).",
+      "interaction_4": "Interacts with `Xikolo.config` to check if gamification is enabled. [Source: app/consumers/gamification_consumer.rb]",
+      "interaction_5": "Instantiates and calls `create_score!` on various `Gamification::Rules` classes (e.g., `Gamification::Rules::Course::TakeExam`, `Gamification::Rules::Pinboard::UpvoteAnswer`) based on payload content. [Source: app/consumers/gamification_consumer.rb]",
+      "interaction_6": "Receives `clone` messages from RabbitMQ with `old_course_id` and `new_course_code` in the payload. [Source: services/course/app/consumers/course_consumer.rb]",
+      "interaction_7": "Invokes `Course::Clone.call` with the provided course IDs. [Source: services/course/app/consumers/course_consumer.rb]",
+      "interaction_8": "Receives `update_state` messages from RabbitMQ with `news_id` and other update attributes. [Source: services/news/app/consumers/news_consumer.rb]",
+      "interaction_9": "Interacts with the `News` model to find and update a news record. [Source: services/news/app/consumers/news_consumer.rb]",
+      "interaction_10": "Inherited by specific job classes to define asynchronous tasks.",
+      "interaction_11": "Interacts with the underlying queuing backend (Delayed Job in this context). [Source: Gemfile, config/initializers/delayed.rb]",
+      "interaction_12": "Sets `queue_as` to 'long_running'. [Source: app/jobs/long_running_application_job.rb]",
+      "interaction_13": "Overrides `max_run_time` to 10 hours and `max_attempts` to 5. [Source: app/jobs/long_running_application_job.rb]",
+      "interaction_14": "Queued on the `default` queue. [Source: app/jobs/lti/publish_grade_job.rb]",
+      "interaction_15": "Finds an `Lti::Grade` record by ID. [Source: app/jobs/lti/publish_grade_job.rb]",
+      "interaction_16": "Invokes the `publish!` method on the `Lti::Grade` instance. [Source: app/jobs/lti/publish_grade_job.rb]",
+      "interaction_17": "Queued on the `default` queue with `eventual` priority. [Source: app/jobs/proctoring/store_submission_results_job.rb]",
+      "interaction_18": "Includes retry logic for `Proctoring::ServiceError` and `ExpectedRetry` with exponential backoff and fixed waits. [Source: app/jobs/proctoring/store_submission_results_job.rb]",
+      "interaction_19": "Expected to interact with a `Proctoring` service to fetch results and a `Submission` model to store them (implementation not shown). [Source: app/jobs/proctoring/store_submission_results_job.rb]",
+      "interaction_20": "Queued on the `default` queue with `eventual` priority. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "interaction_21": "Includes retry logic for `Proctoring::ServiceError`. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "interaction_22": "Expected to interact with SMOWL API to fetch images and AWS S3 for storage (implementation not shown). [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "interaction_23": "Queued on the `default` queue with `reporting` priority. [Source: app/jobs/refresh_sitemap_job.rb]",
+      "interaction_24": "The `perform` method is empty. [Source: app/jobs/refresh_sitemap_job.rb]",
+      "interaction_25": "Processes jobs from configured queues (`default`, `long_running`, `mails`). [Source: config/initializers/delayed.rb]",
+      "interaction_26": "Applies global `max_attempts` and `max_run_time` settings. [Source: config/initializers/delayed.rb]",
+      "interaction_27": "Publishes metrics about job execution via `ActiveSupport::Notifications`. [Source: config/initializers/delayed.rb]",
+      "interaction_28": "Scheduled to run daily at 3 a.m. via `sidekiq-cron`. [Source: services/account/config/cron.yml]",
+      "interaction_29": "Processes jobs on the `default` queue. [Source: services/account/config/cron.yml]",
+      "interaction_30": "Interacts with the Account service's database to identify and delete unconfirmed accounts (implementation not shown). [Source: services/account/config/cron.yml]",
+      "interaction_31": "Scheduled to run daily at 4:15 a.m. via `sidekiq-cron`. [Source: config/cron.yml]",
+      "interaction_32": "Processes jobs on the `default` queue. [Source: config/cron.yml]",
+      "interaction_33": "Is an `ActiveJob` compatible worker. [Source: config/cron.yml]",
+      "interaction_34": "Scheduled to run every 2 hours via `sidekiq-cron`. [Source: config/cron.yml]",
+      "interaction_35": "Processes jobs on the `long_running` queue. [Source: config/cron.yml]",
+      "interaction_36": "Is an `ActiveJob` compatible worker. [Source: config/cron.yml]",
+      "interaction_37": "Configures Sidekiq Redis connection using `config/sidekiq_redis.yml`. [Source: gems/xikolo-sidekiq/README.md]",
+      "interaction_38": "Loads and parses `config/cron.yml` for `sidekiq-cron` job definitions. [Source: gems/xikolo-sidekiq/README.md]",
+      "interaction_39": "Integrates Sidekiq with ActiveJob. [Source: gems/xikolo-sidekiq/README.md]",
+      "interaction_40": "Processes jobs enqueued via ActiveJob (e.g., Voucher::DeleteClaimantIPJob, Video::SyncVideosJob).",
+      "interaction_41": "Publishes job events to ActiveSupport::Notifications.",
+      "interaction_42": "Sends metrics to Xikolo.metrics for monitoring.",
+      "interaction_43": "Processes jobs, often via ActiveJob.",
+      "interaction_44": "Interacts with Redis for job queue management.",
+      "interaction_45": "Integrates with `sidekiq-cron` for scheduled job execution.",
+      "interaction_46": "Jobs defined as ActiveJob classes are enqueued for processing.",
+      "interaction_47": "Jobs are processed by either Delayed::Job or Sidekiq depending on the environment and configuration.",
+      "interaction_48": "Enqueued by the cron scheduler (e.g., `sidekiq-cron`).",
+      "interaction_49": "Processed by Delayed::Job on the 'default' queue.",
+      "interaction_50": "Enqueued by the cron scheduler (e.g., `sidekiq-cron`).",
+      "interaction_51": "Processed by Delayed::Job on the 'long_running' queue.",
+      "interaction_52": "Receives job execution events (run, error, failure) from ActiveSupport::Notifications.",
+      "interaction_53": "Records detailed metrics including job ID, attempts, run time, and duration.",
+      "interaction_54": "Reads and parses `config/cron.yml` to set up scheduled jobs.",
+      "interaction_55": "Enqueues ActiveJobs (like Voucher::DeleteClaimantIPJob, Video::SyncVideosJob) into the background job processor.",
+      "interaction_56": "Processes jobs from ActiveJob.",
+      "interaction_57": "Reports job metrics (run, error, failure) to `Xikolo.metrics`.",
+      "interaction_58": "Consumes messages from RabbitMQ (configured via `config/rabbitmq.yml`).",
+      "interaction_59": "Routes messages to the `Gamification` component (e.g., `gamification#vote_create`).",
+      "interaction_60": "Receives events from `Xikolo::Pinboard` and `Xikolo::Course` services.",
+      "interaction_61": "Processes background jobs (implied by `sidekiq-cron` and `xikolo-sidekiq` gem).",
+      "interaction_62": "Executes scheduled jobs defined in `config/cron.yml`.",
+      "interaction_63": "Uses Redis for job queue management (configured via `config/sidekiq_redis.yml`).",
+      "interaction_64": "Executed periodically by Sidekiq via `sidekiq-cron`.",
+      "interaction_65": "Executed periodically by Sidekiq via `sidekiq-cron`.",
+      "interaction_66": "Receives and processes messages routed by `Msgr` from `xikolo.pinboard` and `xikolo.course` events."
+    },
+    "technicalDebt": [
+      "The extensive `case` statements for `exercise_type` and `votable_type` could potentially be refactored using a more dynamic dispatch mechanism or a registry pattern if the number of rules grows significantly. [Source: app/consumers/gamification_consumer.rb]",
+      "The `perform` method is empty, suggesting the core logic for fetching and storing results is either missing or handled elsewhere (e.g., in a callback or a service object not provided). This could lead to confusion or incomplete functionality. [Source: app/jobs/proctoring/store_submission_results_job.rb]",
+      "The `perform` method is empty, suggesting the core logic for fetching and uploading the image is either missing or handled elsewhere. This could lead to confusion or incomplete functionality. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "The job is deprecated but still exists in the codebase. It should ideally be removed or clearly marked for removal to avoid confusion and unnecessary processing overhead if still scheduled. [Source: app/jobs/refresh_sitemap_job.rb]"
+    ]
+  }
+}

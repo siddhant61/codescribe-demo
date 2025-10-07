@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourseService standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for CourseService standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#core" class="breadcrumb-link">CORE</a></li>
+            <li class="breadcrumb-item active">CourseService standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-course-creation-and-content-tree-management" class="sidebar-nav-link">1. Course Creation and Content Tree Management</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-enrollment-and-prerequisite-validation" class="sidebar-nav-link">2. User Enrollment and Prerequisite Validation</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-learning-progress-and-evaluation-recalculation" class="sidebar-nav-link">3. Learning Progress and Evaluation Recalculation</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-core">CORE</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="core-course-management%2C-enrollments%2C-and-structure-microservice---technical-documentation" tabindex="-1"><a class="header-anchor" href="#core-course-management%2C-enrollments%2C-and-structure-microservice---technical-documentation"><span>Core Course Management, Enrollments, and Structure Microservice - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo 03_CORE_CourseService cluster represents a unified and robust microservice environment designed for comprehensive course management, student enrollment tracking, and sophisticated learning evaluation. This system orchestrates the entire lifecycle of educational content, from creation and structured delivery to in-depth performance analytics. It integrates foundational course management capabilities, including the definition of courses, sections, and individual learning items, with advanced features for monitoring student progress, calculating grades, and generating insightful statistics. The service leverages a modern technical stack centered on Ruby on Rails, PostgreSQL for data persistence, RabbitMQ for event-driven inter-service communication, and Sidekiq for asynchronous background processing. Its primary objective is to provide a holistic platform that supports educators in designing effective courses and offers learners a structured and engaging educational experience, all while enabling data-driven pedagogical improvements.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo 03_CORE_CourseService architecture is built upon a modular and event-driven design, ensuring scalability, resilience, and maintainability. At its core, the system utilizes Ruby on Rails for Application Programming Interface (API) endpoints, interacting with a PostgreSQL database for persistent storage. Asynchronous operations and inter-service communication are critical components, handled by Sidekiq for background jobs and RabbitMQ for message passing. Key controllers manage public API interactions for courses, enrollments, and learning items, while models define the data structures and business logic. Workers perform resource-intensive tasks such as search indexing and data synchronization, preventing bottlenecks in the main request-response cycle. This setup facilitates a responsive user experience and allows for complex computations and integrations to occur without impacting real-time performance.</p>
+<p><strong>Component Descriptions:</strong></p>
+<ul>
+<li><strong>CoursesController:</strong> The primary interface for managing <code>Course</code> resources, handling CRUD operations and offering extensive filtering capabilities to retrieve courses based on various criteria like status, language, and user enrollment. It delegates complex operations like course creation and updates to dedicated service objects.</li>
+<li><strong>EnrollmentsController:</strong> Manages user <code>Enrollment</code> in courses, allowing for creation, updates, and deletion. It supports filtering enrollments by course, user, and learning evaluation status, and interacts with <code>Course</code> and <code>LearningEvaluation</code> for data retrieval.</li>
+<li><strong>Item:</strong> Represents an individual learning content unit within a <code>Section</code>. This model includes attributes for title, content type, availability, and exercise specifics, and tracks user <code>Result</code>s and <code>Visit</code>s. It supports <code>paper_trail</code> for versioning and publishes events via <code>Msgr</code>.</li>
+<li><strong>Course:</strong> The central model defining an educational course. It manages structural relationships with <code>Section</code>s and <code>Item</code>s, categorizations via <code>Channel</code>s and <code>Classifier</code>s, and enrollment relationships. It also integrates with a <code>Structure::Root</code> node for content tree management and publishes critical lifecycle events.</li>
+<li><strong>UpdateCourseSearchIndexWorker:</strong> A Sidekiq background job responsible for asynchronously updating the full-text search index for <code>Course</code> entities. This ensures that course search results are consistently up-to-date without blocking real-time operations.</li>
+<li><strong>PostgreSQL Database:</strong> The primary data store for all persistent data within the Course Service, including course definitions, user enrollments, learning progress, and metadata.</li>
+</ul>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  apiGateway["API Gateway / Frontend"] -->|"HTTP Requests"| courseServiceCore["Course Service Core (Rails)"]
+  courseServiceCore -->|"reads/writes"| postgresDB["PostgreSQL Database"]
+  courseServiceCore -->|"publishes events"| rabbitMQ["RabbitMQ (Msgr)"]
+  rabbitMQ -->|"processes messages"| sidekiqWorkers["Sidekiq Workers"]
+  sidekiqWorkers -->|"updates/syncs"| courseServiceCore
+  sidekiqWorkers -->|"interacts with"| xikoloS3["Xikolo S3 (File Storage)"]
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>CourseConsumer:</strong> Processes <code>clone</code> messages from RabbitMQ. [Source: services/course/app/consumers/course_consumer.rb]</li>
+<li><strong>CourseConsumer:</strong> Delegates course cloning logic to <code>Course::Clone</code>. [Source: services/course/app/consumers/course_consumer.rb]</li>
+<li><strong>AchievementsController:</strong> Responds to <code>GET /achievements</code> to list achievements for a given course and user. [Source: services/course/app/controllers/achievements_controller.rb]</li>
+<li><strong>AchievementsController:</strong> Sets locale based on <code>http_accept_language</code>. [Source: services/course/app/controllers/achievements_controller.rb]</li>
+<li><strong>ChannelsController:</strong> Manages CRUD operations for <code>Channel</code> models. [Source: services/course/app/controllers/channels_controller.rb]</li>
+<li><strong>ChannelsController:</strong> Uses <code>UUID4</code> for generating new channel IDs. [Source: services/course/app/controllers/channels_controller.rb]</li>
+<li><strong>ClassifiersController:</strong> Retrieves <code>Classifier</code> records based on various filters. [Source: services/course/app/controllers/classifiers_controller.rb]</li>
+<li><strong>CoursesController:</strong> Manages CRUD operations for <code>Course</code> models. [Source: services/course/app/controllers/courses_controller.rb]</li>
+<li><strong>CoursesController:</strong> Filters courses by <code>cat_id</code> (classifier), <code>user_id</code> (enrollment status), <code>status</code>, <code>lang</code>, <code>course_code</code>, <code>channel_id</code>, <code>document_id</code>, <code>upcoming</code>, <code>current</code>, <code>finished</code>, <code>public</code>, <code>hidden</code>, <code>only_hidden</code>, <code>exclude_external</code>, <code>latest_first</code>, <code>alphabetic</code>, <code>promoted_for</code>, <code>not_enrolled</code>, <code>autocomplete</code>, <code>active_after</code>, and <code>sort</code> parameters. [Source: services/course/app/controllers/courses_controller.rb]</li>
+<li><strong>EnrollmentsController:</strong> Manages CRUD operations for <code>Enrollment</code> models. [Source: services/course/app/controllers/enrollments_controller.rb]</li>
+<li><strong>EnrollmentsController:</strong> Filters enrollments by <code>course_id</code>, <code>user_id</code>, <code>learning_evaluation</code>, <code>deleted</code>, <code>current_course</code>, and <code>proctored</code>. [Source: services/course/app/controllers/enrollments_controller.rb]</li>
+<li><strong>ItemsController:</strong> Manages CRUD operations for <code>Item</code> models. [Source: services/course/app/controllers/items_controller.rb]</li>
+<li><strong>ItemsController:</strong> Filters items by <code>content_type</code>, <code>exercise_type</code>, <code>section_id</code>, <code>content_id</code>, <code>id</code>, <code>available</code>, <code>all_available</code>, <code>was_available</code>, <code>published</code>, <code>course_id</code>, <code>featured</code>, <code>open_mode</code>, <code>required_items</code>, <code>state_for</code>, <code>proctored</code>, <code>user_id</code>, and <code>new_for</code>. [Source: services/course/app/controllers/items_controller.rb]</li>
+<li><strong>NextDatesController:</strong> Retrieves <code>NextDate</code> records, filtering by <code>user_id</code>, <code>course_id</code>, <code>resource_type</code>, and <code>type</code>. [Source: services/course/app/controllers/next_dates_controller.rb]</li>
+<li><strong>NextDatesController:</strong> Interacts with <code>Enrollment</code> and <code>Course</code> to determine the course filter for a user. [Source: services/course/app/controllers/next_dates_controller.rb]</li>
+<li><strong>PrerequisiteStatusController:</strong> Responds to <code>GET /prerequisite_status</code> with the fulfillment status. [Source: services/course/app/controllers/prerequisite_status_controller.rb]</li>
+<li><strong>PrerequisiteStatusController:</strong> Interacts with <code>Course</code> to retrieve prerequisites. [Source: services/course/app/controllers/prerequisite_status_controller.rb]</li>
+<li><strong>ProgressesController:</strong> Responds to <code>GET /progresses</code> with detailed progress information. [Source: services/course/app/controllers/progresses_controller.rb]</li>
+<li><strong>ProgressesController:</strong> Interacts with <code>Course</code>, <code>Section</code>, <code>Item</code>, <code>Result</code>, and <code>SectionChoice</code> models. [Source: services/course/app/controllers/progresses_controller.rb]</li>
+<li><strong>ReactivationsController:</strong> Responds to <code>POST /reactivations</code> to reactivate an enrollment. [Source: services/course/app/controllers/reactivations_controller.rb]</li>
+<li><strong>ReactivationsController:</strong> Interacts with <code>Enrollment</code> to find the target enrollment. [Source: services/course/app/controllers/reactivations_controller.rb]</li>
+<li><strong>RepetitionSuggestionsController:</strong> Responds to <code>GET /repetition_suggestions</code> with a list of suggested items. [Source: services/course/app/controllers/repetition_suggestions_controller.rb]</li>
+<li><strong>RepetitionSuggestionsController:</strong> Queries <code>Result</code> and <code>Item</code> models to identify repetition candidates. [Source: services/course/app/controllers/repetition_suggestions_controller.rb]</li>
+<li><strong>SectionChoicesController:</strong> Responds to <code>GET /section_choices</code> to list choices for a user/section. [Source: services/course/app/controllers/section_choices_controller.rb]</li>
+<li><strong>SectionChoicesController:</strong> Responds to <code>POST /section_choices</code> to create or update a user’s section choice. [Source: services/course/app/controllers/section_choices_controller.rb]</li>
+<li><strong>SectionsController:</strong> Manages CRUD operations for <code>Section</code> models. [Source: services/course/app/controllers/sections_controller.rb]</li>
+<li><strong>SectionsController:</strong> Filters sections by <code>course_id</code>, <code>published</code>, <code>available</code>, <code>id</code>, <code>position</code>, <code>parent_id</code>, and <code>include_alternatives</code>. [Source: services/course/app/controllers/sections_controller.rb]</li>
+<li><strong>TeachersController:</strong> Manages CRUD operations for <code>Teacher</code> models. [Source: services/course/app/controllers/teachers_controller.rb]</li>
+<li><strong>TeachersController:</strong> Filters teachers by <code>course</code>, <code>user_id</code>, and <code>query</code>. [Source: services/course/app/controllers/teachers_controller.rb]</li>
+<li><strong>AlternativeSectionProgress:</strong> Interacts with <code>SectionProgress</code> to find and update progress records. [Source: services/course/app/models/alternative_section_progress.rb]</li>
+<li><strong>AlternativeSectionProgress:</strong> Interacts with <code>Section</code> to get children and their goals. [Source: services/course/app/models/alternative_section_progress.rb]</li>
+<li><strong>Branch:</strong> Belongs to <code>Duplicated::Group</code> and <code>Fork</code>. [Source: services/course/app/models/branch.rb]</li>
+<li><strong>Branch:</strong> Has one <code>Structure::Branch</code> node, which is destroyed on deletion. [Source: services/course/app/models/branch.rb]</li>
+<li><strong>Channel:</strong> Has many <code>Course</code>s. [Source: services/course/app/models/channel.rb]</li>
+<li><strong>Channel:</strong> Uses <code>FileReference</code> concern for S3 integration. [Source: services/course/app/models/channel.rb]</li>
+<li><strong>Classifier:</strong> Has and belongs to many <code>Course</code>s. [Source: services/course/app/models/classifier.rb]</li>
+<li><strong>Classifier:</strong> Belongs to <code>Cluster</code>. [Source: services/course/app/models/classifier.rb]</li>
+<li><strong>Cluster:</strong> Has many <code>Classifier</code>s. [Source: services/course/app/models/cluster.rb]</li>
+<li><strong>ContentTest:</strong> Belongs to <code>Course</code>. [Source: services/course/app/models/content_test.rb]</li>
+<li><strong>ContentTest:</strong> Has many <code>Fork</code>s. [Source: services/course/app/models/content_test.rb]</li>
+<li><strong>Course:</strong> Has one <code>Structure::Root</code> node (for content tree). [Source: services/course/app/models/course.rb]</li>
+<li><strong>Course:</strong> Has many <code>Section</code>s and <code>Item</code>s (through sections). [Source: services/course/app/models/course.rb]</li>
+<li><strong>CourseGoals:</strong> Interacts with <code>Course</code>, <code>Section</code>, and <code>Item</code> models to aggregate data. [Source: services/course/app/models/course_goals.rb]</li>
+<li><strong>CourseProgress:</strong> Belongs to Course.</li>
+<li><strong>CourseProgress:</strong> Has one FixedLearningEvaluation.</li>
+<li><strong>CourseProvider:</strong> Triggers <code>CourseProviderWorker</code> to perform synchronization for enabled providers. [Source: services/course/app/models/course_provider.rb]</li>
+<li><strong>CourseSet:</strong> Has many <code>CourseSetEntry</code>s and <code>Course</code>s (through entries). [Source: services/course/app/models/course_set.rb]</li>
+<li><strong>CourseSet:</strong> Has many <code>CourseSetRelation</code>s (as source sets) and <code>linked_sets</code> (as target sets). [Source: services/course/app/models/course_set.rb]</li>
+<li><strong>CourseSetEntry:</strong> Belongs to <code>Course</code> and <code>CourseSet</code>. [Source: services/course/app/models/course_set_entry.rb]</li>
+<li><strong>CourseSetRelation:</strong> Belongs to <code>source_set</code> and <code>target_set</code> (both <code>CourseSet</code>s). [Source: services/course/app/models/course_set_relation.rb]</li>
+<li><strong>CourseSetRelation:</strong> Has many <code>target_courses</code> through the target set. [Source: services/course/app/models/course_set_relation.rb]</li>
+<li><strong>Enrollment:</strong> Belongs to Course.</li>
+<li><strong>Enrollment:</strong> Has one FixedLearningEvaluation and CourseProgress.</li>
+<li><strong>Fork:</strong> Belongs to <code>ContentTest</code> and <code>Section</code>. [Source: services/course/app/models/fork.rb]</li>
+<li><strong>Fork:</strong> Has many <code>Branch</code>es. [Source: services/course/app/models/fork.rb]</li>
+<li><strong>Item:</strong> Belongs to <code>Section</code>. [Source: services/course/app/models/item.rb]</li>
+<li><strong>Item:</strong> Has one <code>Structure::Item</code> node. [Source: services/course/app/models/item.rb]</li>
+<li><strong>NextDate:</strong> Belongs to <code>Course</code>. [Source: services/course/app/models/next_date.rb]</li>
+<li><strong>Prerequisites:</strong> Interacts with <code>CourseSetRelation</code> to retrieve prerequisite relations. [Source: services/course/app/models/prerequisites.rb]</li>
+<li><strong>Prerequisites:</strong> Uses nested <code>UserStatus</code>, <code>CopStatus</code>, and <code>RoaStatus</code> classes to evaluate fulfillment. [Source: services/course/app/models/prerequisites.rb]</li>
+<li><strong>Progress:</strong> Initialized with a resource (Course or Section), items, and results. [Source: services/course/app/models/progress.rb]</li>
+<li><strong>Relation:</strong> Inherits from <code>CourseSetRelation</code>. [Source: services/course/app/models/relation.rb]</li>
+<li><strong>Section:</strong> Belongs to <code>Course</code>. [Source: services/course/app/models/section.rb]</li>
+<li><strong>Section:</strong> Has one <code>Structure::Section</code> node. [Source: services/course/app/models/section.rb]</li>
+<li><strong>SectionChoice:</strong> Belongs to <code>Section</code>. [Source: services/course/app/models/section_choice.rb]</li>
+<li><strong>SectionGoals:</strong> Interacts with <code>Section</code> and <code>Item</code> models. [Source: services/course/app/models/section_goals.rb]</li>
+<li><strong>SectionGoals:</strong> Uses <code>Structure::UserItemsSelector</code> for courses with content trees. [Source: services/course/app/models/section_goals.rb]</li>
+<li><strong>Teacher:</strong> Has many <code>Course</code>s (via <code>teacher_ids</code> array column on Course). [Source: services/course/app/models/teacher.rb]</li>
+<li><strong>Teacher:</strong> Interacts with <code>Xikolo::S3</code> for picture uploads and <code>FileDeletionWorker</code> for cleanup. [Source: services/course/app/models/teacher.rb]</li>
+<li><strong>CourseProgress::Calculate:</strong> Interacts with CourseProgress model.</li>
+<li><strong>Section::Destroy:</strong> Recursively calls itself to destroy child sections if the target section is a parent. [Source: services/course/app/operations/section/destroy.rb]</li>
+<li><strong>Section::Destroy:</strong> Calls <code>destroy</code> on the <code>Section</code> instance within a transaction. [Source: services/course/app/operations/section/destroy.rb]</li>
+<li><strong>CourseProviderWorker:</strong> Finds the <code>Course</code> by ID. [Source: services/course/app/workers/course_provider_worker.rb]</li>
+<li><strong>CourseProviderWorker:</strong> Instantiates and calls <code>sync</code> on a <code>#{type}::Adapter</code> (e.g., <code>Lti::Adapter</code>). [Source: services/course/app/workers/course_provider_worker.rb]</li>
+<li><strong>EnrollmentCompletionWorker:</strong> Finds the <code>Course</code> and relevant <code>Enrollment</code>s. [Source: services/course/app/workers/enrollment_completion_worker.rb]</li>
+<li><strong>EnrollmentCompletionWorker:</strong> Uses <code>Enrollment.with_learning_evaluation</code> to get completion data. [Source: services/course/app/workers/enrollment_completion_worker.rb]</li>
+<li><strong>EnrollmentGroupWorker:</strong> Finds the <code>Enrollment</code> by course and user ID. [Source: services/course/app/workers/enrollment_group_worker.rb]</li>
+<li><strong>EnrollmentGroupWorker:</strong> Calls <code>create_membership!</code> on the enrollment, which interacts with the <code>account</code> service. [Source: services/course/app/workers/enrollment_group_worker.rb]</li>
+<li><strong>PersistRankingWorker:</strong> Updates <code>Enrollment</code> records, clearing previous quantiles. [Source: services/course/app/workers/persist_ranking_worker.rb]</li>
+<li><strong>PersistRankingWorker:</strong> Uses <code>Enrollment.with_learning_evaluation</code> to get current scores. [Source: services/course/app/workers/persist_ranking_worker.rb]</li>
+<li><strong>Structure::CreateCourseContentTreeWorker:</strong> Finds the <code>Course</code> by identifier. [Source: services/course/app/workers/structure/create_course_content_tree_worker.rb]</li>
+<li><strong>Structure::CreateCourseContentTreeWorker:</strong> Creates <code>Structure::Root</code> node for the course. [Source: services/course/app/workers/structure/create_course_content_tree_worker.rb]</li>
+<li><strong>UpdateCourseSearchIndexWorker:</strong> Finds the <code>Course</code> by ID. [Source: services/course/app/workers/update_course_search_index_worker.rb]</li>
+<li><strong>UpdateCourseSearchIndexWorker:</strong> Calls <code>update_search_index</code> on the <code>Course</code> instance. [Source: services/course/app/workers/update_course_search_index_worker.rb]</li>
+<li><strong>ItemGradeController:</strong> Interacts with Item model to find the item.</li>
+<li><strong>ItemGradeController:</strong> Calls Item#user_grade to retrieve the grade.</li>
+<li><strong>ItemResultsController:</strong> Interacts with Item model to find the item.</li>
+<li><strong>ItemResultsController:</strong> Queries Result model for item results, supporting ‘best_per_user’ scope.</li>
+<li><strong>ItemStatisticsController:</strong> Interacts with Item model to find the item.</li>
+<li><strong>ItemStatisticsController:</strong> Calls Item#stats to retrieve statistics.</li>
+<li><strong>LastVisitsController:</strong> Interacts with Enrollment model to find the enrollment.</li>
+<li><strong>LastVisitsController:</strong> Calls Enrollment#last_visit to get the visit.</li>
+<li><strong>LearningEvaluation::RecalculationsController:</strong> Interacts with Course model.</li>
+<li><strong>LearningEvaluation::RecalculationsController:</strong> Enqueues LearningEvaluation::PersistForCourseWorker for background processing.</li>
+<li><strong>PersistRankingTasksController:</strong> Interacts with Course model.</li>
+<li><strong>PersistRankingTasksController:</strong> Enqueues PersistRankingWorker for background processing.</li>
+<li><strong>ResultsController:</strong> Interacts with Result model.</li>
+<li><strong>ResultsController:</strong> Uses PointsProcessor concern for point parsing.</li>
+<li><strong>StatisticsController:</strong> Interacts with Course and Enrollment models.</li>
+<li><strong>StatisticsController:</strong> Uses rfc6570_params for enrollment_stats method.</li>
+<li><strong>StatsController:</strong> Interacts with Stat service object.</li>
+<li><strong>StatsController:</strong> Uses Rails.cache for caching statistics.</li>
+<li><strong>VisitsController:</strong> Interacts with Visit model.</li>
+<li><strong>VisitsController:</strong> Triggers Msgr events and various Sidekiq workers (EnrollmentCompletionWorker, LearningEvaluation::UpdateSectionProgressWorker) via Visit model callbacks.</li>
+<li><strong>FixedLearningEvaluation:</strong> Belongs to Course.</li>
+<li><strong>ItemStatistics:</strong> Initializes with an Item.</li>
+<li><strong>ItemStatistics:</strong> Queries Result records associated with the item.</li>
+<li><strong>LearningEvaluation (Module):</strong> Uses Xikolo.config for configuration.</li>
+<li><strong>LearningEvaluation (Module):</strong> SoftLaunch uses Scientist gem for A/B testing/comparison of implementations.</li>
+<li><strong>Result:</strong> Belongs to Item.</li>
+<li><strong>Result:</strong> Publishes Msgr events.</li>
+<li><strong>SectionProgress:</strong> Belongs to Section.</li>
+<li><strong>SectionProgress:</strong> Triggers LearningEvaluation::UpdateCourseProgressWorker on destroy.</li>
+<li><strong>Stat:</strong> Initializes with attributes including course_id and key.</li>
+<li><strong>Stat:</strong> Queries Course, Enrollment, Visit, Result, FixedLearningEvaluation models.</li>
+<li><strong>Visit:</strong> Belongs to Item.</li>
+<li><strong>Visit:</strong> Publishes Msgr events on touch/create.</li>
+<li><strong>SectionProgress::Calculate:</strong> Interacts with SectionProgress model.</li>
+<li><strong>SectionProgress::Calculate:</strong> Triggers LearningEvaluation::UpdateCourseProgressWorker.</li>
+<li><strong>learning_evaluation.rake:compare:</strong> Uses Enrollment model.</li>
+<li><strong>learning_evaluation.rake:compare:</strong> Uses LearningEvaluation module (Dynamic and Persisted implementations).</li>
+<li><strong>stats.rake:no_shows:</strong> Queries Course, Enrollment, and Visit models.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-course-creation-and-content-tree-management" tabindex="-1"><a class="header-anchor" href="#1.-course-creation-and-content-tree-management"><span>1. Course Creation and Content Tree Management</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRequest["User Request: Create Course"] -->|"HTTP POST"| coursesController["CoursesController"]
+  coursesController -->|"delegates to"| courseCreateOperation["Course::Create Operation"]
+  courseCreateOperation -->|"persists course data"| courseModel["Course Model"]
+  courseModel -->|"triggers async job"| createContentTreeWorker["Structure::CreateCourseContentTreeWorker"]
+  courseModel -->|"triggers async index"| updateSearchIndexWorker["UpdateCourseSearchIndexWorker"]
+  createContentTreeWorker -->|"builds hierarchy"| sectionItemModels["Section & Item Models"]
+</pre></div>
+<p>This workflow outlines the process of creating a new course, structuring its content with sections and items, and establishing its content tree. When a new course is initiated via the <code>CoursesController</code>, the system delegates the creation process to an operation. Following successful creation, background workers are immediately engaged to build the hierarchical content structure and update the search index, ensuring the course is discoverable and properly organized for learners.</p>
+<h3 id="2.-user-enrollment-and-prerequisite-validation" tabindex="-1"><a class="header-anchor" href="#2.-user-enrollment-and-prerequisite-validation"><span>2. User Enrollment and Prerequisite Validation</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userInitiatesEnrollment["User Initiates Enrollment"] -->|"HTTP POST"| enrollmentsController["EnrollmentsController"]
+  enrollmentsController -->|"delegates to"| enrollmentCreateOperation["Enrollment::Create Operation"]
+  enrollmentCreateOperation -->|"creates record"| enrollmentModel["Enrollment Model"]
+  enrollmentModel -->|"triggers prerequisite check"| prerequisitesService["Prerequisites Service"]
+  prerequisitesService -->|"evaluates status"| courseSetRelation["CourseSetRelation"]
+  prerequisitesService --|"if fulfilled"|--> enrollmentGroupWorker["EnrollmentGroupWorker"]
+  enrollmentGroupWorker -->|"creates membership"| accountServiceAPI["Account Service (API)"]
+</pre></div>
+<p>The enrollment workflow covers how users register for courses, including a crucial step for checking prerequisites. When an <code>Enrollment</code> request is submitted via the <code>EnrollmentsController</code>, the system first attempts to create the enrollment. Subsequently, it queries the <code>Prerequisites</code> service to determine if the user meets all necessary conditions from linked courses. If these conditions are satisfied, a background job is triggered to establish the user’s membership in associated groups, facilitating access control and further course progression.</p>
+<h3 id="3.-learning-progress-and-evaluation-recalculation" tabindex="-1"><a class="header-anchor" href="#3.-learning-progress-and-evaluation-recalculation"><span>3. Learning Progress and Evaluation Recalculation</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userAction["User Action (e.g., Item Result/Visit)"] -->|"HTTP POST/PUT"| resultsVisitsController["ResultsController / VisitsController"]
+  resultsVisitsController -->|"updates record"| resultVisitModel["Result / Visit Models"]
+  resultVisitModel -->|"triggers async job"| updateSectionProgressWorker["LearningEvaluation::UpdateSectionProgressWorker"]
+  updateSectionProgressWorker -->|"calculates progress"| sectionProgressCalculate["SectionProgress::Calculate Operation"]
+  sectionProgressCalculate -->|"updates record"| sectionProgressModel["SectionProgress Model"]
+  sectionProgressModel -->|"triggers async job"| updateCourseProgressWorker["LearningEvaluation::UpdateCourseProgressWorker"]
+  updateCourseProgressWorker -->|"calculates total progress"| courseProgressCalculate["CourseProgress::Calculate Operation"]
+  courseProgressCalculate -->|"updates record"| courseProgressModel["CourseProgress Model"]
+</pre></div>
+<p>This workflow describes how a user’s learning progress and evaluations are computed and kept up-to-date. Actions such as submitting an item’s result or recording a visit trigger a series of asynchronous tasks. These tasks update individual section progress, which in turn informs the overall course progress. The entire evaluation can also be manually triggered for recalculation for a given course, ensuring all aggregated metrics are current for reporting and user display.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo 03_CORE_CourseService is implemented using Ruby on Rails 7.2.0, running on Ruby 3.4.0, which provides a robust framework for its API-driven functionality. PostgreSQL serves as the primary relational database, ensuring reliable data persistence for all course-related information, enrollments, and learning evaluations. Inter-service communication is primarily handled by RabbitMQ, facilitated by the <code>Msgr</code> gem, enabling asynchronous and event-driven interactions. This is critical for propagating course and enrollment lifecycle events to other services. Sidekiq is extensively used for background job processing, offloading computationally intensive or time-consuming tasks such as <code>UpdateCourseSearchIndexWorker</code>, <code>EnrollmentCompletionWorker</code>, and <code>CourseProviderWorker</code>, which synchronize external course data or calculate complex metrics. This approach ensures that user-facing API responses remain fast and responsive.</p>
+<p>Technical considerations include the significant complexity of filtering logic within controllers like <code>CoursesController</code> and <code>ItemsController</code>, which could benefit from refactoring into more modular query objects, as indicated by technical debt comments. Operations such as <code>CourseProgress::Calculate</code> and <code>SectionProgress::Calculate</code> include retry mechanisms to handle <code>ActiveRecord::RecordNotUnique</code> errors, mitigating race conditions during concurrent record creation. The presence of <code>rubocop:disable Rails/SkipsModelValidations</code> comments, particularly in models like <code>Course</code>, <code>Item</code>, and <code>Section</code> for <code>mark_for_recalculation!</code>, points to performance optimizations where validations are intentionally bypassed, requiring careful management to avoid data inconsistencies. Furthermore, the <code>legacy?</code> method on the <code>Course</code> model signals the presence of older course structures that predate the content tree (<code>Structure::Root</code>) implementation, representing an area of technical debt that may require migration or careful compatibility maintenance. <code>Xikolo::S3</code> is integrated for handling file uploads for components like <code>Teacher</code> profiles and <code>Channel</code> assets, with <code>FileDeletionWorker</code> for cleanup. The service also interacts with the <code>account</code> service via <code>Xikolo.api(:account)</code> to create user group memberships, as seen in <code>EnrollmentGroupWorker</code>. IDs for new channels are generated using <code>UUID4</code> for uniqueness, as indicated in <code>ChannelsController</code>.</p>
+<p>Specific configuration requirements are not explicitly detailed within the provided cluster data. However, given the use of <code>Xikolo.config</code> by components like <code>LearningEvaluation</code> and <code>AchievementsController</code> (for locales), it is evident that system-wide configuration is managed through a central configuration object, likely external to the service for environment-specific settings. Database connection strings, RabbitMQ endpoint details, and Sidekiq concurrency settings would be externalized configurations typical for this architecture, though not specified here. Similarly, <code>Xikolo::S3</code> integration would require AWS credentials and bucket names, which are not provided in this specific data chunk.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>AchievementsController</strong> <code>services/course/app/controllers/achievements_controller.rb</code></li>
+<li>📄 <strong>ChannelsController</strong> <code>services/course/app/controllers/channels_controller.rb</code></li>
+<li>📄 <strong>ClassifiersController</strong> <code>services/course/app/controllers/classifiers_controller.rb</code></li>
+<li>📄 <strong>CoursesController</strong> <code>services/course/app/controllers/courses_controller.rb</code></li>
+<li>📄 <strong>CoursesController</strong> <code>docs/app/features/courses/classifiers.md</code></li>
+<li>📄 <strong>EnrollmentsController</strong> <code>services/course/app/controllers/enrollments_controller.rb</code></li>
+<li>📄 <strong>ItemsController</strong> <code>services/course/app/controllers/items_controller.rb</code></li>
+<li>📄 <strong>ItemsController</strong> <code>docs/app/features/courses/open_mode.md</code></li>
+<li>📄 <strong>NextDatesController</strong> <code>services/course/app/controllers/next_dates_controller.rb</code></li>
+<li>📄 <strong>PrerequisiteStatusController</strong> <code>services/course/app/controllers/prerequisite_status_controller.rb</code></li>
+<li>📄 <strong>PrerequisiteStatusController</strong> <code>docs/app/features/courses/relations.md</code></li>
+<li>📄 <strong>ProgressesController</strong> <code>services/course/app/controllers/progresses_controller.rb</code></li>
+<li>📄 <strong>ReactivationsController</strong> <code>services/course/app/controllers/reactivations_controller.rb</code></li>
+<li>📄 <strong>ReactivationsController</strong> <code>docs/app/features/reactivation.md</code></li>
+<li>📄 <strong>RepetitionSuggestionsController</strong> <code>services/course/app/controllers/repetition_suggestions_controller.rb</code></li>
+<li>📄 <strong>SectionChoicesController</strong> <code>services/course/app/controllers/section_choices_controller.rb</code></li>
+<li>📄 <strong>SectionsController</strong> <code>services/course/app/controllers/sections_controller.rb</code></li>
+<li>📄 <strong>TeachersController</strong> <code>services/course/app/controllers/teachers_controller.rb</code></li>
+<li>📄 <strong>ItemGradeController</strong> <code>services/course/app/controllers/item_grade_controller.rb</code></li>
+<li>📄 <strong>ItemResultsController</strong> <code>services/course/app/controllers/item_results_controller.rb</code></li>
+<li>📄 <strong>ItemStatisticsController</strong> <code>services/course/app/controllers/item_statistics_controller.rb</code></li>
+<li>📄 <strong>LastVisitsController</strong> <code>services/course/app/controllers/last_visits_controller.rb</code></li>
+<li>📄 <strong>LearningEvaluation::RecalculationsController</strong> <code>services/course/app/controllers/learning_evaluation/recalculations_controller.rb</code></li>
+<li>📄 <strong>PersistRankingTasksController</strong> <code>services/course/app/controllers/persist_ranking_tasks_controller.rb</code></li>
+<li>📄 <strong>ResultsController</strong> <code>services/course/app/controllers/results_controller.rb</code></li>
+<li>📄 <strong>StatisticsController</strong> <code>services/course/app/controllers/statistics_controller.rb</code></li>
+<li>📄 <strong>StatsController</strong> <code>services/course/app/controllers/stats_controller.rb</code></li>
+<li>📄 <strong>VisitsController</strong> <code>services/course/app/controllers/visits_controller.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>CourseConsumer</strong> <code>services/course/app/consumers/course_consumer.rb</code></li>
+<li>📄 <strong>AlternativeSectionProgress</strong> <code>services/course/app/models/alternative_section_progress.rb</code></li>
+<li>📄 <strong>Branch</strong> <code>services/course/app/models/branch.rb</code></li>
+<li>📄 <strong>Channel</strong> <code>services/course/app/models/channel.rb</code></li>
+<li>📄 <strong>Classifier</strong> <code>services/course/app/models/classifier.rb</code></li>
+<li>📄 <strong>Cluster</strong> <code>services/course/app/models/cluster.rb</code></li>
+<li>📄 <strong>ContentTest</strong> <code>services/course/app/models/content_test.rb</code></li>
+<li>📄 <strong>Course</strong> <code>services/course/app/models/course.rb</code></li>
+<li>📄 <strong>CourseGoals</strong> <code>services/course/app/models/course_goals.rb</code></li>
+<li>📄 <strong>CourseProgress</strong> <code>services/course/app/models/course_progress.rb</code></li>
+<li>📄 <strong>CourseProvider</strong> <code>services/course/app/models/course_provider.rb</code></li>
+<li>📄 <strong>CourseSet</strong> <code>services/course/app/models/course_set.rb</code></li>
+<li>📄 <strong>CourseSetEntry</strong> <code>services/course/app/models/course_set_entry.rb</code></li>
+<li>📄 <strong>CourseSetRelation</strong> <code>services/course/app/models/course_set_relation.rb</code></li>
+<li>📄 <strong>Enrollment</strong> <code>services/course/app/models/enrollment.rb</code></li>
+<li>📄 <strong>Fork</strong> <code>services/course/app/models/fork.rb</code></li>
+<li>📄 <strong>Item</strong> <code>services/course/app/models/item.rb</code></li>
+<li>📄 <strong>NextDate</strong> <code>services/course/app/models/next_date.rb</code></li>
+<li>📄 <strong>Prerequisites</strong> <code>services/course/app/models/prerequisites.rb</code></li>
+<li>📄 <strong>Progress</strong> <code>services/course/app/models/progress.rb</code></li>
+<li>📄 <strong>Relation</strong> <code>services/course/app/models/relation.rb</code></li>
+<li>📄 <strong>Section</strong> <code>services/course/app/models/section.rb</code></li>
+<li>📄 <strong>SectionChoice</strong> <code>services/course/app/models/section_choice.rb</code></li>
+<li>📄 <strong>SectionGoals</strong> <code>services/course/app/models/section_goals.rb</code></li>
+<li>📄 <strong>Teacher</strong> <code>services/course/app/models/teacher.rb</code></li>
+<li>📄 <strong>CourseProgress::Calculate</strong> <code>services/course/app/operations/course_progress/calculate.rb</code></li>
+<li>📄 <strong>Section::Destroy</strong> <code>services/course/app/operations/section/destroy.rb</code></li>
+<li>📄 <strong>CourseProviderWorker</strong> <code>services/course/app/workers/course_provider_worker.rb</code></li>
+<li>📄 <strong>EnrollmentCompletionWorker</strong> <code>services/course/app/workers/enrollment_completion_worker.rb</code></li>
+<li>📄 <strong>EnrollmentGroupWorker</strong> <code>services/course/app/workers/enrollment_group_worker.rb</code></li>
+<li>📄 <strong>PersistRankingWorker</strong> <code>services/course/app/workers/persist_ranking_worker.rb</code></li>
+<li>📄 <strong>Structure::CreateCourseContentTreeWorker</strong> <code>services/course/app/workers/structure/create_course_content_tree_worker.rb</code></li>
+<li>📄 <strong>UpdateCourseSearchIndexWorker</strong> <code>services/course/app/workers/update_course_search_index_worker.rb</code></li>
+<li>📄 <strong>FixedLearningEvaluation</strong> <code>services/course/app/models/fixed_learning_evaluation.rb</code></li>
+<li>📄 <strong>ItemStatistics</strong> <code>services/course/app/models/item_statistics.rb</code></li>
+<li>📄 <strong>LearningEvaluation (Module)</strong> <code>services/course/app/models/learning_evaluation.rb</code></li>
+<li>📄 <strong>Result</strong> <code>services/course/app/models/result.rb</code></li>
+<li>📄 <strong>SectionProgress</strong> <code>services/course/app/models/section_progress.rb</code></li>
+<li>📄 <strong>Stat</strong> <code>services/course/app/models/stat.rb</code></li>
+<li>📄 <strong>Visit</strong> <code>services/course/app/models/visit.rb</code></li>
+<li>📄 <strong>SectionProgress::Calculate</strong> <code>services/course/app/operations/section_progress/calculate.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Classifier</strong> <code>docs/app/features/courses/classifiers.md</code></li>
+<li>📄 <strong>Cluster</strong> <code>docs/app/features/courses/classifiers.md</code></li>
+<li>📄 <strong>CourseSet</strong> <code>docs/app/features/courses/relations.md</code></li>
+<li>📄 <strong>CourseSetRelation</strong> <code>docs/app/features/courses/relations.md</code></li>
+<li>📄 <strong>Item</strong> <code>docs/app/features/courses/open_mode.md</code></li>
+<li>📄 <strong>Prerequisites</strong> <code>docs/app/features/courses/relations.md</code></li>
+<li>📄 <strong>Relation</strong> <code>docs/app/features/courses/relations.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>Course</strong> <code>services/course/README.md</code></li>
+<li>📄 <strong>Enrollment</strong> <code>services/course/README.md</code></li>
+<li>📄 <strong>learning_evaluation.rake:compare</strong> <code>services/course/lib/tasks/learning_evaluation.rake</code></li>
+<li>📄 <strong>stats.rake:no_shows</strong> <code>services/course/lib/tasks/stats.rake</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740297068"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+{
+  "clusterId": "43_INFRA_ServiceCommunication",
+  "featureFocus": "Internal Ruby Gems and Inter-Service Communication (RabbitMQ)",
+  "documentationReport": "The Xikolo project leverages a robust microservice architecture, with inter-service communication primarily handled by RabbitMQ and shared functionalities encapsulated in a suite of internal Ruby gems. This approach ensures modularity, reusability, and consistent practices across the ecosystem.\n\n### Internal Ruby Gems\n\nSeveral internal Ruby gems provide foundational utilities and configurations shared across the main `Xikolo::Web` application and its various microservices. These gems streamline development and enforce architectural standards.\n\n1.  **`xikolo-common`**\n    This gem serves as a central repository for common Ruby-based utilities. It installs and configures libraries used universally, such as `Restify` for HTTP communication between services [Source: gems/xikolo-common/README.md]. It also provides helpers under the `Xikolo` namespace, including methods for paginating `Restify` requests and authenticating with the account service [Source: gems/xikolo-common/README.md]. A key feature is the `Xikolo.metrics` object, which allows applications to send custom metrics to a pre-configured Telegraf data collector for monitoring in Grafana. Metrics are written with a series name, tags (for filtering and grouping, with limited cardinality), and values (for display and aggregation) [Source: gems/xikolo-common/README.md].\n\n2.  **`xikolo-config`**\n    The `xikolo-config` gem provides a simple, site-specific key-value store for configuration. It reads values from YAML files, which can be overwritten in production environments [Source: gems/xikolo-config/README.md]. Primary configuration options include `Xikolo.brand` for visual themes and `Xikolo.base_url` for generating absolute URLs in contexts without an HTTP request (e.g., services, mailers, background workers) [Source: gems/xikolo-config/README.md]. Other configurable options include mail sender, site name, available locales, and UI primary color. Configuration files are loaded in a specific order, allowing for environment-specific and machine-specific overrides, with `/etc/xikolo.yml` being managed by Salt for production platforms [Source: gems/xikolo-config/README.md]. Adding new configuration values is discouraged without explicit team decision [Source: gems/xikolo-config/README.md].\n\n3.  **`xikolo-s3`**\n    This gem simplifies common S3 file operations, handling S3 client instantiation and configuration via `xikolo-config` [Source: gems/xikolo-s3/README.md]. The core philosophy is that each service manages its own files within a dedicated S3 bucket or prefix, handling organization, tracking, metadata, ACLs, and deletion. Files are referenced using S3 URIs (`s3://${bucket}/${key}`), and database columns referencing S3 files should end with a `_uri` suffix [Source: gems/xikolo-s3/README.md]. The gem provides methods like `Xikolo::S3.bucket_for(purpose)` and `Xikolo::S3.object(uri)` to interact with S3 resources. Uploads are initially placed in a temporary bucket, then validated and copied to their final location by services. Uploads include metadata fields like `xikolo-state` (e.g., `accepted`) and `xikolo-purpose` to ensure proper processing and prevent misuse [Source: gems/xikolo-s3/README.md]. Two upload contracts are supported: `SingleFileUpload` (an older approach with some drawbacks) and `UploadByUri` (the recommended approach for new implementations). The `Xikolo::S3::TextWithUploadsProcessor` class assists in managing markup fields containing S3 file references, handling updates, deletions, and generating external download URLs [Source: gems/xikolo-s3/README.md].\n\n4.  **`xikolo-sidekiq`**\n    The `xikolo-sidekiq` gem configures Sidekiq for Rails projects, integrating it with ActiveJob and providing useful Rake tasks. It manages the Sidekiq Redis connection via `config/sidekiq_redis.yml`, allowing for environment-specific Redis database configurations [Source: gems/xikolo-sidekiq/README.md]. Additionally, if the `sidekiq-cron` gem is present, `xikolo-sidekiq` loads and parses `config/cron.yml` to define periodic Sidekiq worker execution, such as daily `StatMailWorker` or `PinboardDigestWorker` jobs [Source: gems/xikolo-sidekiq/README.md].\n\n### Inter-Service Communication (RabbitMQ)\n\nRabbitMQ serves as the primary message broker for asynchronous inter-service communication across the Xikolo ecosystem, facilitated by the `msgr` gem [Source: Gemfile, services/*/Gemfile].\n\n**Configuration:**\nEach application and microservice configures its RabbitMQ connection using a `config/rabbitmq.yml` file. These files typically define a common URI, defaulting to `amqp://localhost/` or using the `XIKOLO_RABBITMQ_URL` environment variable [Source: config/rabbitmq.yml, services/account/config/rabbitmq.yml, services/course/config/rabbitmq.yml, services/news/config/rabbitmq.yml, services/notification/config/rabbitmq.yml, services/pinboard/config/rabbitmq.yml, services/quiz/config/rabbitmq.yml, services/timeeffort/config/rabbitmq.yml]. Test environments often include specific prefixes (e.g., `web-test`, `account-test`) and use `Msgr::TestPool` for isolated testing, with `raise_exceptions: true` for clearer error handling [Source: config/rabbitmq.yml, services/account/config/rabbitmq.yml, services/course/config/rabbitmq.yml, services/news/config/rabbitmq.yml, services/notification/config/rabbitmq.yml, services/pinboard/config/rabbitmq.yml, services/quiz/config/rabbitmq.yml, services/timeeffort/config/rabbitmq.yml]. Some configurations explicitly set `checkcredentials: false` [Source: config/rabbitmq.yml, services/news/config/rabbitmq.yml, services/notification/config/rabbitmq.yml].\n\n**Message Routing and Gamification:**\nThe main `Xikolo::Web` application defines specific message routes in `config/msgr.rb` to handle gamification events. For instance, messages related to pinboard activity (`xikolo.pinboard.vote.create`, `xikolo.pinboard.question.create`, `xikolo.pinboard.comment.create`, `xikolo.pinboard.question.update`, `xikolo.pinboard.answer.create`) and course results (`xikolo.course.result.create`, `xikolo.course.visit.create`) are routed to corresponding actions within a `gamification` handler (e.g., `gamification#vote_create`, `gamification#question_create`, `gamification#answer_accepted`, `gamification#result_create`, `gamification#visit_create`) [Source: config/msgr.rb]. This demonstrates a clear pattern where services publish domain-specific events, and other services or the main application subscribe to and react to these events, enabling decoupled communication and feature implementation like gamification.",
+  "componentMapPatch": {
+    "components": {
+      "Xikolo::Common": {
+        "type": "Gem",
+        "description": "Provides common utilities, libraries (like Restify), and helpers (e.g., pagination, account service authentication) used across all Ruby-based Xikolo services and the main application. It also integrates with Telegraf for custom application metrics.",
+        "interactions": {
+          "interaction_0": "Installs and configures common libraries like Restify for HTTP communication between services. [Source: gems/xikolo-common/README.md]",
+          "interaction_1": "Sends custom application metrics to Telegraf via the `Xikolo.metrics` object for monitoring in Grafana. [Source: gems/xikolo-common/README.md]",
+          "interaction_2": "Provides authentication helpers for interacting with the Account service. [Source: gems/xikolo-common/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-common/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 26,
+              "code": "# frozen_string_literal: true\n\nrequire 'yaml'\n\nmodule Xikolo\n  module Common\n    require 'xikolo/common/api'\n    require 'xikolo/common/metrics'\n    require 'xikolo/common/secrets'\n    require 'xikolo/common/nomad'\n    require 'xikolo/common/railtie' if defined? Rails\n    require 'xikolo/common/restify'\n\n    module Auth\n      require 'xikolo/common/auth/current_user'\n      require 'xikolo/common/auth/middleware'\n    end\n\n    module Rack\n      require 'xikolo/common/rack/always_continue'\n    end\n\n    module Tracking\n      require 'xikolo/common/tracking/external_link'\n    end\n  end\nend",
+              "source": "gems/xikolo-common/lib/xikolo/common.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 33,
+              "code": "# frozen_string_literal: true\n\nrequire 'xikolo/common/auth/current_user'\n\nmodule Xikolo\n  module Common\n    module Auth\n      class Middleware\n        TOKEN_AUTH_REGEX = /^(Legacy-)?Token token=(?<token>[0-9a-f]+)$/ # rubocop:disable Lint/MixedRegexpCaptureTypes\n        SESSION_ID_REGEX = /^Xikolo-Session session_id=(?<session_id>[-0-9a-fA-F]+)$/\n\n        def initialize(app, path: '/')\n          @app = app\n          @path = path\n        end\n\n        def call(env)\n          env['current_user'] = current_user_promise(env) if env['PATH_INFO'].to_s.start_with? @path\n\n          @app.call(env)\n        end\n\n        def current_user_promise(env)\n          Xikolo.api(:account).value!.rel(:session).get({\n            id: session_id(env),\n            embed: 'user,permissions,features',\n            context: context_id(env),\n          }).then do |session|\n            Xikolo::Common::Auth::CurrentUser.from_session session\n          end\n        end\n\n        private",
+              "source": "gems/xikolo-common/lib/xikolo/common.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nrequire 'active_support/concern'\n\nmodule Xikolo\n  module Common\n    # Load configurations from `/local/config` too, since that directory\n    # is used by Nomad to inject templates, and we will not need to bind\n    # mount all config additionally into `/app/config`.\n    module Nomad\n      extend ActiveSupport::Concern\n\n      included do\n        prepend LocalConfigFor\n\n        unless Rails.env.local?\n          config.paths['config'].unshift '/local/config'\n          config.paths['config/database'].unshift '/local/config/database.yml'\n          config.paths['config/secrets'] << '/local/config'\n        end\n      end\n\n      module LocalConfigFor\n        def lookup_config_for(name)\n          return name if name.is_a?(Pathname)\n\n          files = paths['config'].existent.map {|path| Pathname.new(path).join(\"#{name}.yml\") }\n          if (file = files.find(&:file?))\n            $stdout.puts \"Loading config for #{name}: #{file}\" if Rails.env.production?\n",
+              "source": "gems/xikolo-common/lib/xikolo/common.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common.rb",
+              "relevance": 37
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/auth/middleware.rb",
+              "relevance": 29
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/nomad.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "Xikolo::Config": {
+        "type": "Gem",
+        "description": "A centralized key-value store for site-specific configuration, allowing values to be read from YAML files and overridden per environment. It provides essential configuration like brand identifier and base URL.",
+        "interactions": {
+          "interaction_0": "Reads configuration values from various YAML files (e.g., `config/xikolo.yml`, `/etc/xikolo.yml`) based on a defined merge order. [Source: gems/xikolo-config/README.md]",
+          "interaction_1": "Provides configuration settings (e.g., `Xikolo.brand`, `Xikolo.base_url`, `mailsender`) to other Xikolo components and services. [Source: gems/xikolo-config/README.md]"
+        },
+        "techDebt": [
+          "New configuration values should not be added without explicit team decision to maintain consistency and prevent sprawl. [Source: gems/xikolo-config/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-config/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 8,
+              "endLine": 11,
+              "code": "module Xikolo   include ActiveSupport::Configurable    config_accessor :site, :brand, :base_url",
+              "source": "gems/xikolo-config/lib/xikolo/config.rb"
+            },
+            {
+              "startLine": 13,
+              "endLine": 32,
+              "code": "class Configuration < ActiveSupport::Configurable::Configuration     def load_file(path)       if (data = parse_file(path))         merge(data)       end     end      def parse_file(path)       $stdout.puts \"[xikolo.config] Load file: #{path}\" if ENV['RAILS_ENV'] == 'production'       YAML.safe_load(ERB.new(::File.read(path)).result)     end      def merge(opts)       opts.each do |k, v|         send :\"#{k}\"=\", v       end        compile_methods!     end   end",
+              "source": "gems/xikolo-config/lib/xikolo/config.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 38,
+              "code": "  class GlobalConfiguration < Configuration     %w[site brand].each do |string_inquirer_option|       class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1 # rubocop:disable Style/DocumentDynamicEvalDefinition         # StringInquirer the string argument         def #{string_inqu...",
+              "source": "gems/xikolo-config/lib/xikolo/config.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-config/lib/xikolo/config.rb",
+              "relevance": 37
+            },
+            {
+              "path": "gems/xikolo-common/lib/xikolo/common/secrets.rb",
+              "relevance": 26
+            },
+            {
+              "path": "gems/xikolo-config/spec/lib/xikolo/config_spec.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Xikolo::S3": {
+        "type": "Gem",
+        "description": "Implements common S3 file operations, handling client instantiation, configuration, and providing high-level methods for managing files. It enforces a philosophy where each service manages its own S3 files and provides helpers for upload processing and markup integration.",
+        "interactions": {
+          "interaction_0": "Configures the AWS S3 client using settings from `xikolo-config`. [Source: gems/xikolo-s3/README.md]",
+          "interaction_1": "Interacts with AWS S3 for storing, retrieving, and managing files (e.g., `Aws::S3::Bucket`, `Aws::S3::Object`). [Source: gems/xikolo-s3/README.md]",
+          "interaction_2": "Processes and validates file uploads, handling temporary storage, metadata (`xikolo-state`, `xikolo-purpose`), and copying to final destinations. [Source: gems/xikolo-s3/README.md]",
+          "interaction_3": "Assists services in managing file references within markup fields, including converting S3 URIs to external URLs and handling file lifecycle (creation, deletion). [Source: gems/xikolo-s3/README.md]"
+        },
+        "techDebt": [
+          "The `SingleFileUpload` approach has drawbacks (e.g., HTTP call even if empty, fails on multiple files) and `UploadByUri` is recommended for new implementations. [Source: gems/xikolo-s3/README.md]",
+          "The `TextWithUploadsProcessor` class, while powerful, introduces complexity in managing file lifecycle (commit/rollback) and callbacks. [Source: gems/xikolo-s3/README.md]"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-s3/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 7,
+              "endLine": 29,
+              "code": "      def bucket_for(name)\n        configured_name = bucket_config[name.to_s]\n        if configured_name.blank?\n          raise ArgumentError.new \\\n            \"Configure the #{name} bucket in Xikolo.config.s3['buckets']!\"\n        end\n        resource.bucket configured_name\n      end\n\n      def object(uri)\n        parsed = URI.parse uri\n        unless parsed.scheme == 's3'\n          raise \"unknown storage schema in uri: #{uri}\"\n        end\n\n        resource.bucket(parsed.host).object(parsed.path[1..].to_s)\n      end\n\n      def resource\n        @resource ||= Aws::S3::Resource.new \\\n          client: (Aws::S3::Client.new(client_config).tap do |client|\n            client.handlers.add(Seahorse::MnemosyneHandler, step: :build) if defined?(::Mnemosyne)\n          end)\n      end",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 12,
+              "code": "  def perform(uri)\n    Xikolo::S3.object(uri).delete if uri.present?\n  rescue URI::InvalidURIError, ArgumentError\n    # No valid URI, no deletion\n  rescue Aws::S3::Errors::ServiceError => e\n    ::Mnemosyne.attach_error(e)\n    ::Sentry.capture_exception(e)",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 36,
+              "code": "    class Markup < ActiveModel::Type::Value\n      attr_reader :uploads\n\n      def initialize(uploads: nil)\n        @uploads = uploads\n        super()\n      end\n\n      def type\n        :xikolo_s3_markup\n      end\n\n      def cast_value(value)\n        Field.new(value)\n      end\n\n      def serialize(value)\n        value.to_s.presence\n      end\n\n      class Field\n        def initialize(markup)\n          @markup = markup\n        end\n\n        def file_refs\n          S3.extract_file_refs(@markup)\n        end\n\n        def url_mapping\n          media_refs[:url_mapping]\n        end\n\n        def other_files\n          media_refs[:other_files]\n        end\n\n        def external\n          @external ||= Xikolo::S3.externalize_file_refs(@markup, public: true)\n        end\n\n        def to_s\n          @markup\n        end\n\n        def to_hash\n          {\n            'markup' => @markup,\n            'url_mapping' => url_mapping,...",
+              "source": "gems/xikolo-s3/lib/xikolo/s3.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/jobs/s3_file_deletion_job.rb",
+              "relevance": 30
+            },
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/markup.rb",
+              "relevance": 29
+            }
+          ]
+        }
+      },
+      "Xikolo::Sidekiq": {
+        "type": "Gem",
+        "description": "Sets up and configures Sidekiq for background job processing in Rails projects, including Redis connection management, ActiveJob integration, and cron job scheduling.",
+        "interactions": {
+          "interaction_0": "Configures the Sidekiq Redis connection using `config/sidekiq_redis.yml` for environment-specific settings. [Source: gems/xikolo-sidekiq/README.md]",
+          "interaction_1": "Integrates Sidekiq with ActiveJob for consistent background job enqueueing. [Source: gems/xikolo-sidekiq/README.md]",
+          "interaction_2": "Loads and parses `config/cron.yml` to schedule periodic background jobs via `sidekiq-cron`. [Source: gems/xikolo-sidekiq/README.md]",
+          "interaction_3": "Manages the execution of background workers for various services. [Source: gems/xikolo-sidekiq/README.md]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-sidekiq/README.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 8,
+              "code": "# frozen_string_literal: true\n\nrequire 'yaml'\n\nmodule Xikolo\n  module Sidekiq\n    require 'xikolo/sidekiq/railtie' if defined? Rails\n  end\nend",
+              "source": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-sidekiq/lib/xikolo/sidekiq.rb",
+              "relevance": 37
+            },
+            {
+              "path": "integration/features/support/lib/server.rb",
+              "relevance": 19
+            },
+            {
+              "path": "integration/features/support/lib/initializers/integration_sidekiq.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Msgr": {
+        "type": "Library",
+        "description": "A Ruby gem that serves as the client for inter-service communication via RabbitMQ, handling message publishing, subscription, and routing to application handlers.",
+        "interactions": {
+          "interaction_0": "Publishes messages from services to RabbitMQ. [Source: Gemfile, services/*/Gemfile]",
+          "interaction_1": "Subscribes to specific message queues on RabbitMQ based on defined routes. [Source: config/msgr.rb]",
+          "interaction_2": "Routes incoming RabbitMQ messages to designated application controllers or handlers (e.g., `gamification#vote_create`). [Source: config/msgr.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "Gemfile",
+            "services/*/Gemfile",
+            "config/msgr.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 18,
+              "code": "module MsgrSentryIntegration   def dispatch(*)     Sentry.with_scope do       super     rescue Sentry::Error       raise # Don't capture Sentry errors     rescue Exception => e # rubocop:disable Lint/RescueException       Sentry.capture_exception(e)       raise     end   end end  Msgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "RabbitMQ": {
+        "type": "Message Broker",
+        "description": "The central message broker facilitating asynchronous, decoupled communication between the main Xikolo application and its microservices.",
+        "interactions": {
+          "interaction_0": "Receives messages published by various Xikolo services and the main application. [Source: config/rabbitmq.yml, services/account/config/rabbitmq.yml]",
+          "interaction_1": "Routes and delivers messages to subscribing services and applications based on routing keys and queue configurations. [Source: config/msgr.rb]",
+          "interaction_2": "Provides reliable message queuing for background processing and event-driven architectures. [Source: config/rabbitmq.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/rabbitmq.yml",
+            "services/account/config/rabbitmq.yml",
+            "services/course/config/rabbitmq.yml",
+            "services/news/config/rabbitmq.yml",
+            "services/notification/config/rabbitmq.yml",
+            "services/pinboard/config/rabbitmq.yml",
+            "services/quiz/config/rabbitmq.yml",
+            "services/timeeffort/config/rabbitmq.yml",
+            "config/msgr.rb"
+          ]
+        }
+      },
+      "GamificationController": {
+        "type": "Controller/Handler",
+        "description": "A component within the main Xikolo application responsible for processing gamification-related events received via RabbitMQ, such as user activity on pinboards or course results, to award experience points.",
+        "interactions": {
+          "interaction_0": "Subscribes to RabbitMQ messages with routing keys like `xikolo.pinboard.*` and `xikolo.course.result.create`. [Source: config/msgr.rb]",
+          "interaction_1": "Processes specific events (e.g., `vote_create`, `question_create`, `answer_accepted`, `result_create`, `visit_create`) to trigger gamification logic. [Source: config/msgr.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/msgr.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 7,
+              "code": "    rescue_from Status::Unauthorized do\n      render status: :forbidden, json: {errors: 'forbidden'}\n    end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 11,
+              "endLine": 15,
+              "code": "    def ensure_logged_in\n      return true if current_user.logged_in?\n\n      head :forbidden\n    end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 17,
+              "endLine": 20,
+              "code": "    def fetch_metric(name:, **params)\n      return lanalytics_api.rel(:metric).get({**params, name:}) if metrics_available?(name)\n\n      Restify::Promise.fulfilled(nil)\n    end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 24,
+              "code": "    def metrics_available?(*names)\n      names.map(&:underscore).all? {|name| available_metrics.include?(name) }\n    end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 26,
+              "endLine": 30,
+              "code": "    def available_metrics\n      @available_metrics ||= begin\n        metrics_list = lanalytics_api.rel(:metrics).get.value!\n        metrics_list.select {|metric| metric['available'] }.pluck('name')\n      end\n    end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            },
+            {
+              "startLine": 32,
+              "endLine": 34,
+              "code": "    def lanalytics_api\n      @lanalytics_api ||= Xikolo.api(:learnanalytics).value!\n    end",
+              "source": "app/controllers/abstract/ajax_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/frontend_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "Gamification Event Processing",
+        "description": "This workflow involves services publishing events related to user activity (e.g., pinboard interactions, course completions) to RabbitMQ. The main application's GamificationController subscribes to these events and processes them to award experience points or trigger other gamification logic.",
+        "involvedComponents": [
+          "PinboardService",
+          "CourseService",
+          "RabbitMQ",
+          "Msgr",
+          "GamificationController"
+        ],
+        "provenance": {
+          "sources": [
+            "config/msgr.rb",
+            "gems/xikolo-common/README.md"
+          ]
+        }
+      },
+      {
+        "workflowName": "Centralized Configuration Management",
+        "description": "Ensures that all Xikolo applications and services access consistent, environment-aware configuration values. The `xikolo-config` gem manages the loading and merging of configuration from various YAML files, allowing for platform-specific overrides.",
+        "involvedComponents": [
+          "Xikolo::Config",
+          "All Xikolo services and the main application"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-config/README.md"
+          ]
+        }
+      },
+      {
+        "workflowName": "S3 File Management",
+        "description": "Standardizes the handling of file uploads, storage, and retrieval across the Xikolo ecosystem. Services use the `xikolo-s3` gem to interact with AWS S3, managing their dedicated file spaces, validating uploads, and processing file references within content.",
+        "involvedComponents": [
+          "Xikolo::S3",
+          "AWS S3",
+          "Services requiring file storage (e.g., CourseService, PinboardService)"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-s3/README.md"
+          ]
+        }
+      },
+      {
+        "workflowName": "Background Job Processing",
+        "description": "Manages asynchronous task execution and scheduled jobs across the Xikolo ecosystem. The `xikolo-sidekiq` gem configures Sidekiq and Redis for background processing, including cron jobs, ensuring tasks are handled reliably outside the main request-response cycle.",
+        "involvedComponents": [
+          "Xikolo::Sidekiq",
+          "Sidekiq",
+          "Redis",
+          "Services with background workers"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-sidekiq/README.md"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [
+    {
+      "title": "Internal Ruby Gems and Inter-Service Communication (RabbitMQ) - Architecture Overview",
+      "svgContent": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1600 1800\" width=\"100%\">\n  <title>Internal Ruby Gems and Inter-Service Communication (RabbitMQ) Architecture</title>\n  <desc>\n    An SVG infographic detailing the architecture and component relationships for Xikolo's internal Ruby gems and inter-service communication via RabbitMQ.\n    It includes components like Xikolo::Common, Xikolo::Config, Xikolo::S3, Xikolo::Sidekiq, Msgr, RabbitMQ, and GamificationController.\n    Workflows covered are Gamification Event Processing (sequence diagram), Centralized Configuration Management, S3 File Management, and Background Job Processing.\n  </desc>\n\n  <defs>\n    <style>\n      .title { font-family: 'Arial, sans-serif'; font-size: 36px; font-weight: bold; fill: #343A40; }\n      .subtitle { font-family: 'Arial, sans-serif'; font-size: 24px; font-weight: bold; fill: #343A40; }\n      .component-name { font-family: 'Arial, sans-serif'; font-size: 20px; font-weight: bold; fill: #343A40; }\n      .component-desc { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; }\n      .workflow-title { font-family: 'Arial, sans-serif'; font-size: 22px; font-weight: bold; fill: #343A40; }\n      .workflow-step { font-family: 'Arial, sans-serif'; font-size: 16px; fill: #343A40; }\n      .label { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; }\n      .lifeline-label { font-family: 'Arial, sans-serif'; font-size: 16px; font-weight: bold; fill: #343A40; }\n      .message-text { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; }\n\n      /* Component Colors */\n      .controller-box { fill: #9b59b6; stroke: #8e44ad; stroke-width: 2; } /* Controller */\n      .service-box { fill: #FFC107; stroke: #E0A800; stroke-width: 2; } /* Service/Logic (Ruby Gems) */\n      .infra-box { fill: #28A745; stroke: #218838; stroke-width: 2; } /* Infra/DevOps */\n      .app-box { fill: #007BFF; stroke: #0056b3; stroke-width: 2; } /* Generic Application */\n      .external-box { fill: #6C757D; stroke: #5A6268; stroke-width: 2; } /* External Services like S3, Redis */\n\n      .arrow { stroke: #343A40; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }\n      .dashed-arrow { stroke: #343A40; stroke-width: 2; fill: none; marker-end: url(#arrowhead); stroke-dasharray: 5 5; }\n      .line { stroke: #343A40; stroke-width: 2; }\n      .dashed-line { stroke: #343A40; stroke-width: 2; stroke-dasharray: 5 5; }\n      .activation-box { fill: #f0f0f0; stroke: #343A40; stroke-width: 1; }\n    </style>\n\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n  </defs>\n\n  <!-- Main Title -->\n  <text x=\"800\" y=\"50\" text-anchor=\"middle\" class=\"title\">Internal Ruby Gems and Inter-Service Communication (RabbitMQ)</text>\n  <text x=\"800\" y=\"85\" text-anchor=\"middle\" class=\"subtitle\">Architecture Overview</text>\n\n  <!-- Global Components (Overall Architecture) -->\n  <g transform=\"translate(0, 120)\">\n    <!-- Xikolo Application/Service (Generic User) -->\n    <rect x=\"100\" y=\"100\" width=\"220\" height=\"100\" rx=\"10\" ry=\"10\" class=\"app-box\"/>\n    <text x=\"210\" y=\"135\" text-anchor=\"middle\" class=\"component-name\">Xikolo Application</text>\n    <text x=\"210\" y=\"155\" text-anchor=\"middle\" class=\"component-name\">/ Service</text>\n\n    <!-- Ruby Gems -->\n    <rect x=\"100\" y=\"250\" width=\"220\" height=\"100\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"210\" y=\"280\" text-anchor=\"middle\" class=\"component-name\">Xikolo::Common</text>\n    <text x=\"210\" y=\"300\" text-anchor=\"middle\" class=\"component-desc\"><tspan x=\"210\" dy=\"0\">Common utilities, libraries,</tspan><tspan x=\"210\" dy=\"16\">helpers (Restify, pagination)</tspan></text>\n\n    <rect x=\"100\" y=\"400\" width=\"220\" height=\"100\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"210\" y=\"430\" text-anchor=\"middle\" class=\"component-name\">Xikolo::Config</text>\n    <text x=\"210\" y=\"450\" text-anchor=\"middle\" class=\"component-desc\"><tspan x=\"210\" dy=\"0\">Centralized key-value store</tspan><tspan x=\"210\" dy=\"16\">YAML, env overrides</tspan></text>\n\n    <rect x=\"100\" y=\"550\" width=\"220\" height=\"100\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"210\" y=\"580\" text-anchor=\"middle\" class=\"component-name\">Xikolo::S3</text>\n    <text x=\"210\" y=\"600\" text-anchor=\"middle\" class=\"component-desc\"><tspan x=\"210\" dy=\"0\">Common S3 file operations</tspan><tspan x=\"210\" dy=\"16\">Client, config, high-level methods</tspan></text>\n\n    <rect x=\"100\" y=\"700\" width=\"220\" height=\"100\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"210\" y=\"730\" text-anchor=\"middle\" class=\"component-name\">Xikolo::Sidekiq</text>\n    <text x=\"210\" y=\"750\" text-anchor=\"middle\" class=\"component-desc\"><tspan x=\"210\" dy=\"0\">Sets up/configures Sidekiq</tspan><tspan x=\"210\" dy=\"16\">Redis, ActiveJob, cron jobs</tspan></text>\n\n    <rect x=\"400\" y=\"400\" width=\"220\" height=\"100\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"510\" y=\"430\" text-anchor=\"middle\" class=\"component-name\">Msgr</text>\n    <text x=\"510\" y=\"450\" text-anchor=\"middle\" class=\"component-desc\"><tspan x=\"510\" dy=\"0\">RabbitMQ client gem</tspan><tspan x=\"510\" dy=\"16\">Publish, subscribe, route</tspan></text>\n\n    <!-- RabbitMQ (Central) -->\n    <rect x=\"700\" y=\"350\" width=\"220\" height=\"150\" rx=\"10\" ry=\"10\" class=\"infra-box\"/>\n    <text x=\"810\" y=\"400\" text-anchor=\"middle\" class=\"component-name\">RabbitMQ</text>\n    <text x=\"810\" y=\"420\" text-anchor=\"middle\" class=\"component-desc\"><tspan x=\"810\" dy=\"0\">Central message broker</tspan><tspan x=\"810\" dy=\"16\">Async, decoupled communication</tspan><tspan x=\"810\" dy=\"16\">between services</tspan></text>\n\n    <!-- GamificationController -->\n    <rect x=\"1000\" y=\"380\" width=\"220\" height=\"100\" rx=\"10\" ry=\"10\" class=\"controller-box\"/>\n    <text x=\"1110\" y=\"410\" text-anchor=\"middle\" class=\"component-name\">GamificationController</text>\n    <text x=\"1110\" y=\"430\" text-anchor=\"middle\" class=\"component-desc\"><tspan x=\"1110\" dy=\"0\">Main app component.</tspan><tspan x=\"1110\" dy=\"16\">Processes gamification events.</tspan></text>\n\n    <!-- External Services -->\n    <rect x=\"1300\" y=\"550\" width=\"180\" height=\"80\" rx=\"10\" ry=\"10\" class=\"external-box\"/>\n    <text x=\"1390\" y=\"580\" text-anchor=\"middle\" class=\"component-name\">AWS S3</text>\n    <text x=\"1390\" y=\"600\" text-anchor=\"middle\" class=\"component-desc\">Cloud Storage</text>\n\n    <rect x=\"1300\" y=\"700\" width=\"180\" height=\"80\" rx=\"10\" ry=\"10\" class=\"external-box\"/>\n    <text x=\"1390\" y=\"730\" text-anchor=\"middle\" class=\"component-name\">Redis</text>\n    <text x=\"1390\" y=\"750\" text-anchor=\"middle\" class=\"component-desc\">Job Queue / Cache</text>\n\n    <!-- General Relationships -->\n    <path d=\"M210,200 V250\" class=\"arrow\"/>\n    <text x=\"220\" y=\"225\" class=\"label\">uses</text>\n    <path d=\"M210,350 V400\" class=\"arrow\"/>\n    <text x=\"220\" y=\"375\" class=\"label\">uses</text>\n    <path d=\"M210,500 V550\" class=\"arrow\"/>\n    <text x=\"220\" y=\"525\" class=\"label\">uses</text>\n    <path d=\"M210,650 V700\" class=\"arrow\"/>\n    <text x=\"220\" y=\"675\" class=\"label\">uses</text>\n\n    <path d=\"M320,450 H400\" class=\"arrow\"/>\n    <text x=\"360\" y=\"440\" class=\"label\">uses</text>\n\n    <path d=\"M620,450 H700\" class=\"arrow\"/>\n    <text x=\"660\" y=\"440\" class=\"label\">connects to</text>\n\n    <path d=\"M920,450 H1000\" class=\"arrow\"/>\n    <text x=\"960\" y=\"440\" class=\"label\">receives from</text>\n\n    <path d=\"M320,590 H1300\" class=\"arrow\"/>\n    <text x=\"810\" y=\"580\" class=\"label\">interacts with</text>\n\n    <path d=\"M320,740 H1300\" class=\"arrow\"/>\n    <text x=\"810\" y=\"730\" class=\"label\">stores jobs in</text>\n  </g>\n\n  <!-- Workflows Section -->\n  <g transform=\"translate(0, 900)\">\n    <text x=\"800\" y=\"50\" text-anchor=\"middle\" class=\"subtitle\">Workflows</text>\n\n    <!-- Workflow 1: Gamification Event Processing (Sequence Diagram) -->\n    <text x=\"100\" y=\"100\" class=\"workflow-title\">1. Gamification Event Processing</text>\n\n    <!-- Lifelines -->\n    <line x1=\"150\" y1=\"150\" x2=\"150\" y2=\"450\" class=\"dashed-line\"/>\n    <text x=\"150\" y=\"140\" text-anchor=\"middle\" class=\"lifeline-label\">Other Xikolo Service</text>\n\n    <line x1=\"450\" y1=\"150\" x2=\"450\" y2=\"450\" class=\"dashed-line\"/>\n    <text x=\"450\" y=\"140\" text-anchor=\"middle\" class=\"lifeline-label\">Msgr</text>\n\n    <line x1=\"750\" y1=\"150\" x2=\"750\" y2=\"450\" class=\"dashed-line\"/>\n    <text x=\"750\" y=\"140\" text-anchor=\"middle\" class=\"lifeline-label\">RabbitMQ</text>\n\n    <line x1=\"1050\" y1=\"150\" x2=\"1050\" y2=\"450\" class=\"dashed-line\"/>\n    <text x=\"1050\" y=\"140\" text-anchor=\"middle\" class=\"lifeline-label\">GamificationController</text>\n\n    <!-- Messages -->\n    <path d=\"M150,200 H450\" class=\"arrow\"/>\n    <text x=\"300\" y=\"190\" text-anchor=\"middle\" class=\"message-text\">1. publish_event('user_activity', data)</text>\n    <rect x=\"440\" y=\"195\" width=\"20\" height=\"30\" class=\"activation-box\"/>\n\n    <path d=\"M450,220 H750\" class=\"arrow\"/>\n    <text x=\"600\" y=\"210\" text-anchor=\"middle\" class=\"message-text\">2. publish_message(exchange, routing_key, payload)</text>\n    <rect x=\"740\" y=\"215\" width=\"20\" height=\"30\" class=\"activation-box\"/>\n\n    <path d=\"M750,280 H450\" class=\"arrow\"/>\n    <text x=\"600\" y=\"270\" text-anchor=\"middle\" class=\"message-text\">3. deliver_message(payload)</text>\n    <rect x=\"440\" y=\"275\" width=\"20\" height=\"30\" class=\"activation-box\"/>\n\n    <path d=\"M450,300 H1050\" class=\"arrow\"/>\n    <text x=\"750\" y=\"290\" text-anchor=\"middle\" class=\"message-text\">4. handle_event(event_data)</text>\n    <rect x=\"1040\" y=\"295\" width=\"20\" height=\"50\" class=\"activation-box\"/>\n\n    <path d=\"M1050,320 L1070,320 L1070,340 L1050,340\" class=\"line\"/>\n    <text x=\"1060\" y=\"330\" text-anchor=\"start\" class=\"message-text\">5. award_experience_points(user, activity)</text>\n\n    <!-- Workflow 2: Centralized Configuration Management -->\n    <text x=\"100\" y=\"500\" class=\"workflow-title\">2. Centralized Configuration Management</text>\n    <rect x=\"100\" y=\"550\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"app-box\"/>\n    <text x=\"200\" y=\"580\" text-anchor=\"middle\" class=\"component-name\">Xikolo App/Service</text>\n    <rect x=\"400\" y=\"550\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"500\" y=\"580\" text-anchor=\"middle\" class=\"component-name\">Xikolo::Config</text>\n    <rect x=\"700\" y=\"550\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"external-box\"/>\n    <text x=\"800\" y=\"580\" text-anchor=\"middle\" class=\"component-name\">YAML Config Files</text>\n\n    <path d=\"M300,590 H400\" class=\"arrow\"/>\n    <text x=\"350\" y=\"580\" text-anchor=\"middle\" class=\"workflow-step\">`Xikolo::Config.get('key')`</text>\n    <path d=\"M600,590 H700\" class=\"arrow\"/>\n    <text x=\"650\" y=\"580\" text-anchor=\"middle\" class=\"workflow-step\">loads/merges config</text>\n\n    <!-- Workflow 3: S3 File Management -->\n    <text x=\"100\" y=\"680\" class=\"workflow-title\">3. S3 File Management</text>\n    <rect x=\"100\" y=\"730\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"app-box\"/>\n    <text x=\"200\" y=\"760\" text-anchor=\"middle\" class=\"component-name\">Xikolo App/Service</text>\n    <rect x=\"400\" y=\"730\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"500\" y=\"760\" text-anchor=\"middle\" class=\"component-name\">Xikolo::S3</text>\n    <rect x=\"700\" y=\"730\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"external-box\"/>\n    <text x=\"800\" y=\"760\" text-anchor=\"middle\" class=\"component-name\">AWS S3</text>\n\n    <path d=\"M300,770 H400\" class=\"arrow\"/>\n    <text x=\"350\" y=\"760\" text-anchor=\"middle\" class=\"workflow-step\">`upload_file(data)`, `get_url(key)`</text>\n    <path d=\"M600,770 H700\" class=\"arrow\"/>\n    <text x=\"650\" y=\"760\" text-anchor=\"middle\" class=\"workflow-step\">performs S3 operations</text>\n\n    <!-- Workflow 4: Background Job Processing -->\n    <text x=\"100\" y=\"860\" class=\"workflow-title\">4. Background Job Processing</text>\n    <rect x=\"100\" y=\"910\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"app-box\"/>\n    <text x=\"200\" y=\"940\" text-anchor=\"middle\" class=\"component-name\">Xikolo App/Service</text>\n    <rect x=\"400\" y=\"910\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"service-box\"/>\n    <text x=\"500\" y=\"940\" text-anchor=\"middle\" class=\"component-name\">Xikolo::Sidekiq</text>\n    <rect x=\"700\" y=\"910\" width=\"200\" height=\"80\" rx=\"10\" ry=\"10\" class=\"external-box\"/>\n    <text x=\"800\" y=\"940\" text-anchor=\"middle\" class=\"component-name\">Redis</text>\n\n    <path d=\"M300,950 H400\" class=\"arrow\"/>\n    <text x=\"350\" y=\"940\" text-anchor=\"middle\" class=\"workflow-step\">`MyWorker.perform_async(args)`</text>\n    <path d=\"M600,950 H700\" class=\"arrow\"/>\n    <text x=\"650\" y=\"940\" text-anchor=\"middle\" class=\"workflow-step\">queues/retrieves jobs</text>\n  </g>\n\n</svg>\n```"
+    },
+    {
+      "title": "Internal Ruby Gems and Inter-Service Communication (RabbitMQ) - Workflow Diagram",
+      "svgContent": "```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1700 1800\" width=\"100%\">\n  <title>Internal Ruby Gems and Inter-Service Communication Workflows</title>\n  <desc>\n    A detailed SVG flowchart diagram illustrating four key business workflows: Gamification Event Processing, Centralized Configuration Management, S3 File Management, and Background Job Processing.\n    It shows the interaction between various Xikolo services, internal Ruby gems (xikolo-config, xikolo-s3, xikolo-sidekiq, Msgr), and infrastructure components (RabbitMQ, AWS S3, Sidekiq, Redis).\n    Each workflow includes start/end nodes, process steps with component involvement, specific method calls, and clear flow direction.\n  </desc>\n\n  <defs>\n    <marker id=\"arrowhead\" markerWidth=\"10\" markerHeight=\"7\" refX=\"0\" refY=\"3.5\" orient=\"auto\">\n      <polygon points=\"0 0, 10 3.5, 0 7\" fill=\"#343A40\" />\n    </marker>\n  </defs>\n\n  <style>\n    .title { font-family: 'Arial, sans-serif'; font-size: 36px; font-weight: bold; fill: #343A40; }\n    .subtitle { font-family: 'Arial, sans-serif'; font-size: 24px; font-weight: bold; fill: #343A40; }\n    .node-text { font-family: 'Arial, sans-serif'; font-size: 14px; fill: #343A40; text-anchor: middle; }\n    .start-end { fill: #F8F9FA; stroke: #6C757D; stroke-width: 2; }\n    .process-rect { stroke: #6C757D; stroke-width: 1; rx: 8; ry: 8; }\n    .controller { fill: #9b59b6; }\n    .service { fill: #FFC107; }\n    .infra { fill: #28A745; }\n    .arrow { stroke: #343A40; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }\n    .component-label { font-family: 'Arial, sans-serif'; font-size: 12px; fill: #343A40; text-anchor: middle; font-weight: bold; }\n  </style>\n\n  <text x=\"850\" y=\"50\" class=\"title\" text-anchor=\"middle\">Internal Ruby Gems &amp; Inter-Service Communication Workflows</text>\n\n  <!-- Workflow 1: Gamification Event Processing -->\n  <g transform=\"translate(100, 100)\">\n    <text x=\"350\" y=\"50\" class=\"subtitle\" text-anchor=\"middle\">1. Gamification Event Processing</text>\n\n    <!-- Nodes -->\n    <ellipse cx=\"350\" cy=\"120\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"125\" class=\"node-text\">Start: User Action</text>\n\n    <rect x=\"250\" y=\"180\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"200\" class=\"node-text\">PinboardService /</text>\n    <text x=\"350\" y=\"220\" class=\"node-text\">CourseService</text>\n    <text x=\"350\" y=\"240\" class=\"component-label\">(publish_event)</text>\n\n    <rect x=\"250\" y=\"280\" width=\"200\" height=\"70\" class=\"process-rect infra\" />\n    <text x=\"350\" y=\"315\" class=\"node-text\">RabbitMQ</text>\n\n    <rect x=\"250\" y=\"380\" width=\"200\" height=\"70\" class=\"process-rect infra\" />\n    <text x=\"350\" y=\"400\" class=\"node-text\">Msgr (Ruby Gem)</text>\n    <text x=\"350\" y=\"420\" class=\"component-label\">(receive_event)</text>\n\n    <rect x=\"250\" y=\"480\" width=\"200\" height=\"70\" class=\"process-rect controller\" />\n    <text x=\"350\" y=\"500\" class=\"node-text\">GamificationController</text>\n    <text x=\"350\" y=\"520\" class=\"component-label\">(process_event)</text>\n\n    <rect x=\"250\" y=\"580\" width=\"200\" height=\"70\" class=\"process-rect controller\" />\n    <text x=\"350\" y=\"600\" class=\"node-text\">Award XP / Trigger</text>\n    <text x=\"350\" y=\"620\" class=\"node-text\">Gamification Logic</text>\n    <text x=\"350\" y=\"640\" class=\"component-label\">(award_experience_points)</text>\n\n    <ellipse cx=\"350\" cy=\"700\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"705\" class=\"node-text\">End: Processed</text>\n\n    <!-- Arrows -->\n    <line x1=\"350\" y1=\"150\" x2=\"350\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"250\" x2=\"350\" y2=\"280\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"350\" x2=\"350\" y2=\"380\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"450\" x2=\"350\" y2=\"480\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"550\" x2=\"350\" y2=\"580\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"650\" x2=\"350\" y2=\"670\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 4: Background Job Processing (Placed top-right) -->\n  <g transform=\"translate(900, 100)\">\n    <text x=\"350\" y=\"50\" class=\"subtitle\" text-anchor=\"middle\">4. Background Job Processing</text>\n\n    <ellipse cx=\"350\" cy=\"120\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"125\" class=\"node-text\">Start: Service Needs Async Task</text>\n\n    <rect x=\"250\" y=\"180\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"200\" class=\"node-text\">Services with</text>\n    <text x=\"350\" y=\"220\" class=\"node-text\">Background Workers</text>\n    <text x=\"350\" y=\"240\" class=\"component-label\">(MyWorker.perform_async)</text>\n\n    <rect x=\"250\" y=\"280\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"300\" class=\"node-text\">Xikolo::Sidekiq Gem</text>\n    <text x=\"350\" y=\"320\" class=\"component-label\">(configure_sidekiq_client)</text>\n\n    <rect x=\"250\" y=\"380\" width=\"200\" height=\"70\" class=\"process-rect infra\" />\n    <text x=\"350\" y=\"415\" class=\"node-text\">Redis</text>\n\n    <rect x=\"250\" y=\"480\" width=\"200\" height=\"70\" class=\"process-rect infra\" />\n    <text x=\"350\" y=\"500\" class=\"node-text\">Sidekiq Worker</text>\n    <text x=\"350\" y=\"520\" class=\"component-label\">(fetch_job_from_queue)</text>\n\n    <rect x=\"250\" y=\"580\" width=\"200\" height=\"70\" class=\"process-rect infra\" />\n    <text x=\"350\" y=\"615\" class=\"node-text\">Sidekiq Executes Job</text>\n    <text x=\"350\" y=\"640\" class=\"component-label\">(execute_worker_perform)</text>\n\n    <ellipse cx=\"350\" cy=\"710\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"715\" class=\"node-text\">End: Job Completed</text>\n\n    <line x1=\"350\" y1=\"150\" x2=\"350\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"250\" x2=\"350\" y2=\"280\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"350\" x2=\"350\" y2=\"380\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"450\" x2=\"350\" y2=\"480\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"550\" x2=\"350\" y2=\"580\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"650\" x2=\"350\" y2=\"680\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 2: Centralized Configuration Management (Placed bottom-left) -->\n  <g transform=\"translate(100, 950)\">\n    <text x=\"350\" y=\"50\" class=\"subtitle\" text-anchor=\"middle\">2. Centralized Configuration Management</text>\n\n    <ellipse cx=\"350\" cy=\"120\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"125\" class=\"node-text\">Start: Service Needs Config</text>\n\n    <rect x=\"250\" y=\"180\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"200\" class=\"node-text\">All Xikolo Services /</text>\n    <text x=\"350\" y=\"220\" class=\"node-text\">Main Application</text>\n    <text x=\"350\" y=\"240\" class=\"component-label\">(Xikolo::Config.get)</text>\n\n    <rect x=\"250\" y=\"280\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"300\" class=\"node-text\">Xikolo::Config Gem</text>\n    <text x=\"350\" y=\"320\" class=\"component-label\">(load_base_config)</text>\n\n    <rect x=\"250\" y=\"380\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"400\" class=\"node-text\">Xikolo::Config Gem</text>\n    <text x=\"350\" y=\"420\" class=\"component-label\">(merge_environment_overrides)</text>\n\n    <rect x=\"250\" y=\"480\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"515\" class=\"node-text\">Return Config Value</text>\n\n    <ellipse cx=\"350\" cy=\"580\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"585\" class=\"node-text\">End: Config Used</text>\n\n    <line x1=\"350\" y1=\"150\" x2=\"350\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"250\" x2=\"350\" y2=\"280\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"350\" x2=\"350\" y2=\"380\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"450\" x2=\"350\" y2=\"480\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"550\" x2=\"350\" y2=\"580\" class=\"arrow\" />\n  </g>\n\n  <!-- Workflow 3: S3 File Management (Placed bottom-right) -->\n  <g transform=\"translate(900, 950)\">\n    <text x=\"350\" y=\"50\" class=\"subtitle\" text-anchor=\"middle\">3. S3 File Management</text>\n\n    <ellipse cx=\"350\" cy=\"120\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"125\" class=\"node-text\">Start: Service Needs File Op</text>\n\n    <rect x=\"250\" y=\"180\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"200\" class=\"node-text\">Services Requiring</text>\n    <text x=\"350\" y=\"220\" class=\"node-text\">File Storage</text>\n    <text x=\"350\" y=\"240\" class=\"component-label\">(Xikolo::S3.upload/get_url)</text>\n\n    <rect x=\"250\" y=\"280\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"300\" class=\"node-text\">Xikolo::S3 Gem</text>\n    <text x=\"350\" y=\"320\" class=\"component-label\">(validate_file/process_ref)</text>\n\n    <rect x=\"250\" y=\"380\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"400\" class=\"node-text\">Xikolo::S3 Gem</text>\n    <text x=\"350\" y=\"420\" class=\"component-label\">(send_to_s3/fetch_from_s3)</text>\n\n    <rect x=\"250\" y=\"480\" width=\"200\" height=\"70\" class=\"process-rect infra\" />\n    <text x=\"350\" y=\"515\" class=\"node-text\">AWS S3</text>\n\n    <rect x=\"250\" y=\"580\" width=\"200\" height=\"70\" class=\"process-rect service\" />\n    <text x=\"350\" y=\"615\" class=\"node-text\">Return Result</text>\n\n    <ellipse cx=\"350\" cy=\"680\" rx=\"100\" ry=\"30\" class=\"start-end\" />\n    <text x=\"350\" y=\"685\" class=\"node-text\">End: File Op Completed</text>\n\n    <line x1=\"350\" y1=\"150\" x2=\"350\" y2=\"180\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"250\" x2=\"350\" y2=\"280\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"350\" x2=\"350\" y2=\"380\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"450\" x2=\"350\" y2=\"480\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"550\" x2=\"350\" y2=\"580\" class=\"arrow\" />\n    <line x1=\"350\" y1=\"650\" x2=\"350\" y2=\"680\" class=\"arrow\" />\n  </g>\n</svg>\n```"
+    }
+  ],
+  "success": true,
+  "sourceFile": "cluster_shared_gems_cross_service_communication_2025-09-15T11-21-30.json",
+  "runId": "run_4",
+  "filePath": "run_4/clusters/cluster_shared_gems_cross_service_communication_2025-09-15T11-21-30.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "shared_gems_cross_service_communication",
+      "runId": "run_4"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:13:49.997Z"
+  }
+}

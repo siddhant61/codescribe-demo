@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Notifications standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#comm" class="breadcrumb-link">COMM</a></li>
+            <li class="breadcrumb-item active">Notifications standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-event-driven-email-notification-flow" class="sidebar-nav-link">1. Event-Driven Email Notification Flow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-notification-preference-management-flow" class="sidebar-nav-link">2. User Notification Preference Management Flow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-comm">COMM</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="event-driven-notification-microservice---technical-documentation" tabindex="-1"><a class="header-anchor" href="#event-driven-notification-microservice---technical-documentation"><span>Event-Driven Notification Microservice - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo Notification Service (cluster 21_COMM_Notifications) is a purpose-built microservice responsible for orchestrating and delivering all event-driven user notifications across the Xikolo ecosystem. Its primary function centers on processing incoming notification events via a robust messaging backbone and dispatching formatted email notifications to users. Key components include Msgr for inter-service communication, a dedicated Notification Service for event processing and email generation, and specialized tools for comprehensive user preference management and email styling. The service aims to provide a unified and customizable notification experience, ensuring timely and consistent communication while allowing users granular control over their preferences.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo Notification Service operates as a central microservice within the broader Xikolo architecture, designed for high availability and scalability in managing user communications. Its architecture is fundamentally event-driven, relying on a robust messaging system to ingest notification triggers from various source microservices. Processed events lead to the generation, styling, and dispatch of emails, often asynchronously to maintain system responsiveness. Data persistence for notification records and user preferences is handled by a PostgreSQL database, while asynchronous job processing is facilitated by Sidekiq, utilizing Redis for its queues. The service is also equipped with specialized components to manage email templating, styling, and tracking, ensuring a professional and trackable communication output. This modular design allows for clear separation of concerns and facilitates independent development and deployment of components.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  xikoloServices["Xikolo Microservices"]
+  rabbitMQ["RabbitMQ / Msgr"]
+  notificationService["Notification Service (Core)"]
+  postgreSQL["PostgreSQL Database"]
+  sidekiq["Sidekiq Worker"]
+  emailClient["External Email Client"]
+
+  xikoloServices -->|"publishes events"| rabbitMQ
+  rabbitMQ -->|"delivers events"| notificationService
+  notificationService -->|"stores data"| postgreSQL
+  notificationService -->|"queues email jobs"| sidekiq
+  sidekiq -->|"sends emails asynchronously"| emailClient
+  notificationService --"configured with endpoints"--> xikoloServices
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Xikolo::NotificationService:</strong> Receives notification events from other Xikolo microservices (e.g., Account, Course, News, Pinboard) via RabbitMQ/Msgr. [Source: services/notification/README.md, services/notification/config/services.yml]</li>
+<li><strong>Xikolo::NotificationService:</strong> Sends email notifications to users based on processed events. [Source: services/notification/README.md]</li>
+<li><strong>Msgr:</strong> Other services publish notification event data to Msgr topics. [Source: services/notification/README.md]</li>
+<li><strong>Msgr:</strong> NotificationService subscribes to Msgr topics to receive event data. [Source: services/notification/README.md]</li>
+<li><strong>Notification Consumers:</strong> Receive messages from Msgr based on defined routes in <code>config/msgr.rb</code>. [Source: services/notification/README.md]</li>
+<li><strong>Notification Consumers:</strong> Create notification records and trigger email rendering processes. [Source: services/notification/README.md]</li>
+<li><strong>Notification Mail Templates:</strong> Rendered by the NotificationService when an email needs to be sent. [Source: services/notification/README.md]</li>
+<li><strong>Notification Mail Templates:</strong> Can be customized per brand using <code>assets/views/layouts</code> within brand-specific folders. [Source: RAG: docs/app/development/branding/email.md]</li>
+<li><strong>Premailer:</strong> Processes rendered HTML email content to embed CSS directly into <code>style</code> attributes. [Source: services/notification/README.md]</li>
+<li><strong>Inky:</strong> Used within mail templates to define email layouts and components. [Source: services/notification/README.md]</li>
+<li><strong>Foundation for Emails:</strong> Provides the underlying CSS and structural conventions used in conjunction with Inky for email templating. [Source: services/notification/README.md]</li>
+<li><strong>NotificationUserDisablesController:</strong> Interacts with the Account microservice (via <code>Xikolo.api(:account)</code>) to fetch user email details and update user preferences. [Source: app/controllers/notification_user_disables_controller.rb]</li>
+<li><strong>NotificationUserDisablesController:</strong> Utilizes <code>NotificationUserSettingsHelper</code> for hash generation and settings key translation. [Source: app/controllers/notification_user_disables_controller.rb]</li>
+<li><strong>NotificationUserSettingsHelper:</strong> Used by <code>NotificationUserDisablesController</code> to validate unsubscribe requests and map preference keys. [Source: app/controllers/notification_user_disables_controller.rb]</li>
+<li><strong>NotificationService:</strong> Receives notification events from other Xikolo services via <code>Msgr</code> (RabbitMQ). [Source: RAG: services/notification/README.md]</li>
+<li><strong>NotificationService:</strong> Utilizes <code>MarkdownService</code> to render email content. [Source: services/notification/lib/markdown_service.rb]</li>
+<li><strong>MarkdownService:</strong> Used by the <code>NotificationService</code> (or its mailers/workers) to render email bodies. [Source: services/notification/lib/markdown_service.rb]</li>
+<li><strong>TrackingMailInterceptor:</strong> Intercepts emails being delivered by the <code>NotificationService</code>’s mailers. [Source: services/notification/lib/tracking_mail_interceptor.rb]</li>
+<li><strong>TrackingMailInterceptor:</strong> Uses <code>Nokogiri</code> for HTML parsing and modification. [Source: services/notification/lib/tracking_mail_interceptor.rb]</li>
+<li><strong>Notification Service:</strong> Receives events from other microservices (e.g., account, course, news, pinboard) via RabbitMQ. [Source: RAG: services/notification/README.md]</li>
+<li><strong>Notification Service:</strong> Sends emails to users. [Source: RAG: services/notification/README.md]</li>
+<li><strong>Msgr Consumer:</strong> Receives messages from RabbitMQ. [Source: RAG: services/notification/README.md]</li>
+<li><strong>Msgr Consumer:</strong> Invokes <code>Consumer</code> and <code>ConsumerHelper</code> methods to handle specific event types. [Source: RAG: services/notification/README.md]</li>
+<li><strong>Mailer:</strong> Receives data from <code>Msgr Consumer</code> or <code>Sidekiq Worker</code>. [Source: RAG: services/notification/README.md]</li>
+<li><strong>Mailer:</strong> Uses locale files (<code>de.yml</code>, <code>en.yml</code>) for subject and body text. [Source: RAG: services/notification/config/locales/de.yml, RAG: services/notification/config/locales/en.yml]</li>
+<li><strong>Sidekiq Worker:</strong> Receives jobs from <code>Msgr Consumer</code> or other parts of the <code>Notification Service</code>. [Source: RAG: docker/compose.notification.yml]</li>
+<li><strong>Sidekiq Worker:</strong> Interacts with Redis for job queuing. [Source: RAG: docker/compose.notification.yml]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-event-driven-email-notification-flow" tabindex="-1"><a class="header-anchor" href="#1.-event-driven-email-notification-flow"><span>1. Event-Driven Email Notification Flow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  eventSource["External Service Event"]
+  msgrSystem["Msgr Messaging System"]
+  msgrConsumerProc["Msgr Consumer Process"]
+  emailRenderer["Email Renderer (Mailer)"]
+  asyncSender["Sidekiq Async Sender"]
+  deliveryFinal["Email Delivery Finish"]
+
+  eventSource -->|"publishes data"| msgrSystem
+  msgrSystem -->|"delivers message"| msgrConsumerProc
+  msgrConsumerProc -->|"triggers email generation"| emailRenderer
+  emailRenderer -->|"queues for async dispatch"| asyncSender
+  asyncSender -->|"dispatches email"| deliveryFinal
+</pre></div>
+<p>This workflow details the comprehensive process from an event originating in another Xikolo microservice to the final delivery of a styled and tracked email notification to a user. It highlights the asynchronous and component-rich nature of the notification generation.</p>
+<p>Upon an event occurring in a source microservice (e.g., Account, Course, News, Pinboard), relevant notification data is packaged and published to a designated Msgr topic. The Msgr Messaging System acts as the central hub, reliably relaying this event. Within the Notification Service, a dedicated Msgr Consumer Process is configured to subscribe to these topics as defined in <code>config/msgr.rb</code>. This consumer receives and parses the incoming message, initiating the creation of a notification record. Subsequently, the Mailer component, acting as the Email Renderer, is invoked. It retrieves locale-specific content from <code>de.yml</code> or <code>en.yml</code> files, renders the mail templates (which may utilize <code>MarkdownService</code> for content), and then applies advanced styling transformations using <code>Inky</code> for layout structures and <code>Premailer</code> for CSS inlining, adhering to <code>Foundation for Emails</code> conventions. The <code>TrackingMailInterceptor</code> then steps in to modify the outgoing email, embedding tracking parameters and redirecting external links for analytical purposes. Finally, the constructed email is handed off to a <code>Sidekiq Async Sender</code>, which queues the job in Redis. The Sidekiq Worker then asynchronously processes this job, invoking the Mailer again to perform the actual dispatch to the External Email Client, completing the notification delivery.</p>
+<h3 id="2.-user-notification-preference-management-flow" tabindex="-1"><a class="header-anchor" href="#2.-user-notification-preference-management-flow"><span>2. User Notification Preference Management Flow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRequest["User Unsubscribe Request"]
+  disableController["User Disables Controller"]
+  settingsHelper["Settings Helper"]
+  accountServiceAPI["Account Service API"]
+  preferenceUpdate["User Preference Update"]
+  notificationLogic["Notification Service Logic"]
+
+  userRequest -->|"receives request"| disableController
+  disableController -->|"validates & translates key"| settingsHelper
+  disableController -->|"updates preferences"| accountServiceAPI
+  accountServiceAPI -->|"persists new preferences"| preferenceUpdate
+  notificationLogic -->|"respects user settings"| preferenceUpdate
+  preferenceUpdate -->|"informs future decisions"| notificationLogic
+</pre></div>
+<p>This workflow describes how users interact with the system to manage their notification preferences, specifically focusing on disabling certain notification types, and how these changes are processed and respected by the Notification Service.</p>
+<p>When a user initiates an unsubscribe request, typically through a one-click link in an email or via a frontend interface, this User Request is routed to the <code>NotificationUserDisablesController</code>. This controller, acting as the User Disables Controller, receives the request parameters, including email, a security hash, and a notification key. It then leverages the <code>NotificationUserSettingsHelper</code> (the Settings Helper) to validate the provided hash and translate the simplified notification key (e.g., ‘announcement’) into a full preference path (e.g., ‘notification.email.news.announcement’). Following validation, the <code>NotificationUserDisablesController</code> interacts with the <code>Account Service API</code> to update the user’s notification preferences. This <code>Account Service API</code> is responsible for persisting the updated user preferences, effectively performing the User Preference Update. Although not explicitly detailed as a direct push, the <code>Notification Service Logic</code> is designed to be aware of and respect these preferences. When generating subsequent notifications, the Notification Service will either query the Account Service or have an updated view of user preferences, ensuring that emails are only sent for notification types the user has enabled, thus concluding the preference management cycle.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo Notification Service is implemented as a Ruby on Rails API-only microservice, leveraging an event-driven architectural pattern for inter-service communication.</p>
+<p><strong>Technical Considerations:</strong></p>
+<ul>
+<li><strong>Email Client Compatibility:</strong> A significant technical consideration is ensuring consistent HTML email rendering across diverse and often challenging email clients, particularly Microsoft Outlook. To address this, the service employs <code>Premailer</code> for inline CSS styling, <code>Inky</code> for robust table-based layouts, and <code>Foundation for Emails</code> for a structured, responsive email design framework. This combination helps overcome many cross-client rendering inconsistencies. Adherence to best practices, such as using full six-digit color codes, is also recommended.</li>
+<li><strong>Content Rendering:</strong> For dynamic content within notifications, the <code>MarkdownService</code> is utilized to render Markdown formatted text into HTML, providing rich content capabilities while maintaining a consistent visual style.</li>
+<li><strong>Tracking:</strong> Outgoing emails are intercepted by the <code>TrackingMailInterceptor</code>. This component, using <code>Nokogiri</code> for HTML parsing, modifies email content to inject tracking parameters into links and images and to redirect external links through a dedicated tracking mechanism, enabling analytics on email engagement.</li>
+<li><strong>Technical Debt:</strong> The documentation highlights technical debt concerning the persistent challenge of HTML email client compatibility. Additionally, the purpose of the <code>notification-server</code> component, marked “only for debugging” but present in standard deployments, is unclear and requires clarification or removal if not utilized in production environments.</li>
+</ul>
+<p><strong>Dependencies and Integrations:</strong></p>
+<ul>
+<li><strong>Messaging:</strong> The service heavily depends on <code>Msgr</code> (a Ruby gem for RabbitMQ) for its messaging backbone. It receives notification events from other Xikolo microservices (e.g., Account, Course, News, Pinboard) via RabbitMQ topics. Other services also publish their event data to Msgr topics.</li>
+<li><strong>Data Storage:</strong> Persistent data, such as notification records and potentially user preferences (or references to them), is stored in a <code>PostgreSQL</code> database, as indicated by <code>config/database.yml</code>.</li>
+<li><strong>Asynchronous Processing:</strong> <code>Sidekiq Worker</code> is integral for asynchronous task processing, primarily email sending. It relies on <code>Redis</code> for job queuing, ensuring the main message consumption process remains responsive.</li>
+<li><strong>Microservice Interactions:</strong> The <code>NotificationUserDisablesController</code> directly interacts with the <code>Account</code> microservice (via <code>Xikolo.api(:account)</code>) to fetch user email details and update notification preferences. The <code>services.yml</code> configuration file explicitly defines the endpoints for interacting with other core Xikolo services, enabling resource linking and data fetching.</li>
+</ul>
+<p><strong>Configuration Requirements:</strong></p>
+<ul>
+<li><strong>Msgr Routes:</strong> Message consumption is governed by routes defined in <code>config/msgr.rb</code>, mapping specific Msgr topics to consumer methods.</li>
+<li><strong>Service Endpoints:</strong> The <code>services.yml</code> file within the Notification Service configures the endpoints of other Xikolo microservices, essential for cross-service communication and data retrieval.</li>
+<li><strong>Mail Templates:</strong> Email content is rendered from templates located in <code>app/views/{de|en}</code>. Branding customization is supported via <code>assets/views/layouts</code> within brand-specific folders and <code>foundation_.scss</code> stylesheets in <code>assets/stylesheets</code>.</li>
+<li><strong>Localization:</strong> The <code>Mailer</code> component utilizes locale files, specifically <code>config/locales/de.yml</code> and <code>config/locales/en.yml</code>, for localized subject lines and body text within emails.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>NotificationUserDisablesController</strong> <code>app/controllers/notification_user_disables_controller.rb</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::NotificationService</strong> <code>services/notification/README.md</code></li>
+<li>📄 <strong>Xikolo::NotificationService</strong> <code>services/notification/config/services.yml</code></li>
+<li>📄 <strong>NotificationService</strong> <code>foundational_context</code></li>
+<li>📄 <strong>NotificationService</strong> <code>RAG: services/notification/README.md</code></li>
+<li>📄 <strong>MarkdownService</strong> <code>services/notification/lib/markdown_service.rb</code></li>
+<li>📄 <strong>Notification Service</strong> <code>RAG: services/notification/README.md</code></li>
+<li>📄 <strong>Notification Service</strong> <code>RAG: docker/compose.notification.yml</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>NotificationUserSettingsHelper</strong> <code>app/helpers/notification_user_settings_helper.rb</code></li>
+<li>📄 <strong>TrackingMailInterceptor</strong> <code>services/notification/lib/tracking_mail_interceptor.rb</code></li>
+<li>📄 <strong>Msgr Consumer</strong> <code>RAG: docker/compose.notification.yml</code></li>
+<li>📄 <strong>Mailer</strong> <code>RAG: services/notification/config/locales/de.yml</code></li>
+<li>📄 <strong>Sidekiq Worker</strong> <code>RAG: docker/compose.notification.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Notification Mail Templates</strong> <code>RAG: docs/app/development/branding/email.md</code></li>
+<li>📄 <strong>Msgr Consumer</strong> <code>RAG: services/notification/README.md</code></li>
+<li>📄 <strong>Mailer</strong> <code>RAG: services/notification/README.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>Msgr</strong> <code>services/notification/README.md</code></li>
+<li>📄 <strong>Notification Consumers</strong> <code>services/notification/README.md</code></li>
+<li>📄 <strong>Notification Mail Templates</strong> <code>services/notification/README.md</code></li>
+<li>📄 <strong>Premailer</strong> <code>services/notification/README.md</code></li>
+<li>📄 <strong>Inky</strong> <code>services/notification/README.md</code></li>
+<li>📄 <strong>Foundation for Emails</strong> <code>services/notification/README.md</code></li>
+<li>📄 <strong>Sidekiq Worker</strong> <code>Foundational Context: Background Jobs</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295731"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

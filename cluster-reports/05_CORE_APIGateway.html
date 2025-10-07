@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APIGateway standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for APIGateway standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#core" class="breadcrumb-link">CORE</a></li>
+            <li class="breadcrumb-item active">APIGateway standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-core-api-request-processing-workflow" class="sidebar-nav-link">1. Core API Request Processing Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-chatbot-api-user-authentication-and-data-retrieval-workflow" class="sidebar-nav-link">2. Chatbot API User Authentication and Data Retrieval Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-portal-api-enrollment-creation-workflow" class="sidebar-nav-link">3. Portal API Enrollment Creation Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-core">CORE</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="main-application-application-programming-interface-(api)-gateway-and-grape-api---technical-documentation" tabindex="-1"><a class="header-anchor" href="#main-application-application-programming-interface-(api)-gateway-and-grape-api---technical-documentation"><span>Main Application Application Programming Interface (API) Gateway and Grape API - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo API cluster serves as the central API gateway for all platform interactions, facilitating communication for mobile applications, external customer portals, and various external service integrations. It is designed around modern API principles, emphasizing JSON-API and Representational State Transfer (REST) compliance, robust versioning, and a declarative endpoint structure. Key components include the <code>Xikolo::API</code> for core public access, specialized Bridge APIs (<code>Chatbot</code>, <code>Shop</code>, <code>TransPipe</code>, <code>MOOChub</code>, <code>Lanalytics</code>) for external integrations, and a <code>Portal API Gateway</code> for external application management. This architecture ensures secure, scalable, and version-controlled data exchange across a diverse ecosystem of clients and services.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo API architecture is composed of a central API Gateway that directs incoming requests to specific API implementations based on their purpose. The <code>Rails API Gateway</code> acts as the initial entry point, routing traffic to either the core <code>Xikolo Core API (Grape)</code>, the <code>Portal API Gateway</code>, or one of the specialized <code>Bridge APIs</code>. This modular approach allows for tailored authentication, versioning, and resource exposure for different client types. Backend services, represented by a generic <code>Backend Services</code> layer, provide the fundamental data and business logic that all API layers consume and interact with to fulfill requests. Versioning and authentication middlewares are integral to <code>Xikolo Core API</code>, ensuring secure and backward-compatible communication for mobile clients. The Portal API and Bridge APIs each have their own specific security and routing contexts, interacting directly with underlying data models or microservices.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-api-gateway-architecture" tabindex="-1"><a class="header-anchor" href="#main-api-gateway-architecture"><span>Main API Gateway Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  externalClient["External API Client"]
+  railsGateway["Rails API Gateway"]
+  xikoloAPI["Xikolo Core API (Grape)"]
+  portalApiGW["Portal API Gateway"]
+  bridgeAPIs["Bridge APIs (Chatbot, Shop, Transpipe etc.)"]
+  backendServices["Backend Services (Course, User, Video, etc.)"]
+
+  externalClient -->|"requests"| railsGateway
+  railsGateway -->|"routes public API"| xikoloAPI
+  railsGateway -->|"routes portal API"| portalApiGW
+  railsGateway -->|"routes bridge API"| bridgeAPIs
+  xikoloAPI -->|"fetches/stores data"| backendServices
+  portalApiGW -->|"manages data"| backendServices
+  bridgeAPIs -->|"exchanges data"| backendServices
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Xikolo::API:</strong> Uses <code>Xikolo::Versioning::Middleware</code> for API version negotiation.</li>
+<li><strong>Xikolo::API:</strong> Uses <code>Auth::Middleware::LegacyToken</code> and <code>Auth::Middleware::Session</code> for authentication.</li>
+<li><strong>Xikolo::Endpoint::CollectionEndpoint:</strong> Extended by specific API endpoint classes (e.g., <code>Users</code> in documentation example) to define resource-specific logic.</li>
+<li><strong>Xikolo::Endpoint::CollectionEndpoint:</strong> Utilized by the <code>Xikolo::API</code> to process incoming requests and generate responses.</li>
+<li><strong>API Gateway (Rails Routes):</strong> Receives all incoming API requests to the main application.</li>
+<li><strong>API Gateway (Rails Routes):</strong> Routes requests to the <code>Xikolo::API</code> for general mobile app consumption.</li>
+<li><strong>Portal API:</strong> Consumed by external customer portal applications.</li>
+<li><strong>Portal API:</strong> Interacts with underlying services to manage course, user, and enrollment data.</li>
+<li><strong>Transpipe Bridge API:</strong> Used by internal services requiring video and subtitle manipulation.</li>
+<li><strong>Transpipe Bridge API:</strong> Interacts with video storage and processing components.</li>
+<li><strong>Lanalytics Bridge API:</strong> Consumed by internal analytics and reporting tools.</li>
+<li><strong>Lanalytics Bridge API:</strong> Aggregates and exposes statistical data from various learning components.</li>
+<li><strong>Moochub Bridge API:</strong> Interacts with external MOOC hub platforms or internal components related to MOOCs.</li>
+<li><strong>Moochub Bridge API:</strong> Provides course listings.</li>
+<li><strong>Chatbot Bridge API:</strong> Authenticates external chatbot systems using a shared secret (Bearer token) for initial access to the authentication endpoint. [Source: app/controllers/bridges/chatbot/authentications_controller.rb, app/controllers/bridges/chatbot/base_controller.rb]</li>
+<li><strong>Chatbot Bridge API:</strong> Issues user-specific authentication tokens based on a provided SAML <code>uid</code> (NameID). [Source: app/controllers/bridges/chatbot/authentications_controller.rb]</li>
+<li><strong>Shop Bridge API:</strong> Authenticates external shop systems using a shared secret provided as a Bearer token. [Source: app/controllers/bridges/shop/base_controller.rb]</li>
+<li><strong>Shop Bridge API:</strong> Allows for the bulk creation of vouchers with specified quantities, product types, countries, and tags via a POST request to <code>/vouchers</code>. [Source: app/controllers/bridges/shop/vouchers_controller.rb]</li>
+<li><strong>API Changelog:</strong> Informs API consumers (e.g., mobile app developers, internal service developers) about changes to the API. [Source: API versioning documentation]</li>
+<li><strong>API Changelog:</strong> Supports the API versioning strategy by documenting specific changes per version. [Source: API versioning documentation]</li>
+<li><strong>PortalApi:</strong> Provides <code>index</code>, <code>show</code> for <code>courses</code>, <code>update</code>, <code>destroy</code> for <code>users</code>, and <code>index</code>, <code>create</code> for <code>enrollments</code>. [Source: config/routes.rb]</li>
+<li><strong>PortalApi:</strong> Requires bearer token authentication. [Source: app/controllers/portal_api/, config/routes.rb]</li>
+<li><strong>Bridges:</strong> <code>Transpipe</code>: Manages courses and video subtitles. [Source: config/routes.rb]</li>
+<li><strong>Bridges:</strong> <code>Lanalytics</code>: Provides course and video statistics. [Source: config/routes.rb]</li>
+<li><strong>Xi::Controllers::RequireBearerToken:</strong> Included in Bridge API controllers to secure endpoints requiring bearer token authentication.</li>
+<li><strong>Rails.application.routes:</strong> Directs incoming HTTP requests to the appropriate controllers. [Source: config/routes.rb]</li>
+<li><strong>Rails.application.routes:</strong> Mounts the <code>Xikolo::API</code> Grape application. [Source: config/routes.rb]</li>
+<li><strong>TokenSigning:</strong> Used by Chatbot API controllers to issue and validate user-specific Paseto tokens.</li>
+<li><strong>TokenSigning:</strong> Utilizes application secrets for private key and configuration for public keys.</li>
+<li><strong>Abstract::BridgeAPIController:</strong> Inherited by concrete Bridge API controllers (e.g., Chatbot, Shop, TransPipe controllers).</li>
+<li><strong>ChatbotBridgeAPI:</strong> Receives authentication requests via <code>POST /authenticate</code> (shared secret).</li>
+<li><strong>ChatbotBridgeAPI:</strong> Provides user data via <code>GET /user</code>.</li>
+<li><strong>ShopBridgeAPI:</strong> Receives requests to create vouchers via <code>POST /vouchers</code>.</li>
+<li><strong>ShopBridgeAPI:</strong> Responds to requests for listing vouchers via <code>GET /vouchers</code>.</li>
+<li><strong>MoochubBridgeAPI:</strong> Exposes course data via <code>/bridges/moochub/courses</code>.</li>
+<li><strong>TransPipeBridgeAPI:</strong> Provides lists of courses via <code>GET /courses</code>.</li>
+<li><strong>TransPipeBridgeAPI:</strong> Provides detailed course information via <code>GET /courses/{id}</code>.</li>
+<li><strong>LanalyticsBridgeAPI:</strong> Expected to expose data relevant for analytics consumption.</li>
+<li><strong>PortalApiBeta:</strong> Routes requests to CourseCatalogAPI for course information.</li>
+<li><strong>PortalApiBeta:</strong> Routes requests to UserManagementAPI for user profile operations.</li>
+<li><strong>CourseCatalogAPI:</strong> Exposes GET /courses to retrieve a list of courses.</li>
+<li><strong>CourseCatalogAPI:</strong> Exposes GET /courses/{id} to retrieve a single course.</li>
+<li><strong>UserManagementAPI:</strong> Exposes PATCH /users/{id} for updating user attributes.</li>
+<li><strong>UserManagementAPI:</strong> Exposes DELETE /users/{id} for deleting user accounts.</li>
+<li><strong>EnrollmentManagementAPI:</strong> Exposes GET /enrollments to retrieve user enrollments.</li>
+<li><strong>EnrollmentManagementAPI:</strong> Exposes POST /enrollments to create new enrollments.</li>
+<li><strong>Course:</strong> Provides data to CourseCatalogAPI for course retrieval.</li>
+<li><strong>Course:</strong> Referenced by Enrollment for linking users to courses.</li>
+<li><strong>User:</strong> Data is updated and deleted via UserManagementAPI.</li>
+<li><strong>User:</strong> Referenced by Enrollment to associate enrollments with specific users.</li>
+<li><strong>Enrollment:</strong> Data is retrieved and created via EnrollmentManagementAPI.</li>
+<li><strong>Enrollment:</strong> Links a User to a Course.</li>
+<li><strong>Versioning::Version:</strong> Instantiated and managed by <code>Xikolo::API</code> for version tracking.</li>
+<li><strong>Xikolo::Versioning::Middleware:</strong> Used by <code>Xikolo::API</code> to process incoming requests.</li>
+<li><strong>Xikolo::Versioning::Middleware:</strong> Interacts with API clients by interpreting <code>Accept</code> headers and potentially adding <code>Sunset</code> headers to responses.</li>
+<li><strong>Auth::Helpers:</strong> Included as helpers within <code>Xikolo::API</code> and its mounted endpoints.</li>
+<li><strong>Model::Helpers:</strong> Included as helpers within <code>Xikolo::API</code> and its mounted endpoints.</li>
+<li><strong>Auth::Middleware::LegacyToken:</strong> Used by <code>Xikolo::API</code> to authenticate incoming requests.</li>
+<li><strong>Auth::Middleware::LegacyToken:</strong> Interacts with API clients by processing <code>Authorization</code> headers.</li>
+<li><strong>Auth::Middleware::Session:</strong> Used by <code>Xikolo::API</code> to authenticate incoming requests.</li>
+<li><strong>Auth::Middleware::Session:</strong> Interacts with API clients by processing session information.</li>
+<li><strong>Error::Base:</strong> Inherited by specific API error classes.</li>
+<li><strong>Error::Base:</strong> Caught by <code>Xikolo::API</code>’s <code>rescue_from</code> block to generate standardized error responses.</li>
+<li><strong>V2::Base:</strong> Mounted by <code>Xikolo::API</code> to make its endpoints accessible.</li>
+<li><strong>V2::Base:</strong> Used by <code>Xikolo::Docs::Generator</code> for documentation generation.</li>
+<li><strong>Xikolo::Docs::Generator:</strong> Called by <code>Xikolo::API.make_docs!</code> to generate documentation for <code>V2::Base</code>.</li>
+<li><strong>Format::PrettyJSON:</strong> Used by <code>Xikolo::API</code> as the formatter for <code>json</code> content type.</li>
+<li><strong>Grape::Parser::Json:</strong> Used by <code>Xikolo::API</code> as the parser for <code>json_api</code> content type.</li>
+<li><strong>Transpipe::URL:</strong> Reads configuration settings from <code>Xikolo.config.transpipe</code> to retrieve URL templates. [Source: app/lib/transpipe.rb]</li>
+<li><strong>Transpipe::URL:</strong> Generates fully qualified URLs for courses and video content, intended for use by the TransPipe service. [Source: app/lib/transpipe.rb]</li>
+<li><strong>MOOChub Bridge API:</strong> Exposes course data via the <code>/bridges/moochub/courses</code> endpoint. [Source: app/controllers/bridges/moochub/courses_controller.rb]</li>
+<li><strong>MOOChub Bridge API:</strong> Interacts with MOOChub for data exchange, aggregating course information. [Source: app/controllers/bridges/moochub/courses_controller.rb]</li>
+<li><strong>TransPipe Bridge API:</strong> Authenticates external systems using a Bearer token. [Source: app/controllers/bridges/transpipe/base_controller.rb]</li>
+<li><strong>TransPipe Bridge API:</strong> Provides paginated lists of courses and detailed course information, including sections, videos within sections, and teacher details. [Source: app/controllers/bridges/transpipe/courses_controller.rb, app/controllers/bridges/transpipe/videos_controller.rb]</li>
+<li><strong>Chatbot API (Controller/Service Layer):</strong> Interacts with <code>TokenSigning</code> for issuing and verifying user-specific Paseto tokens. [Source: app/controllers/bridges/chatbot/authentications_controller.rb]</li>
+<li><strong>Chatbot API (Controller/Service Layer):</strong> Interacts with the ‘Account’ microservice for user data and ‘Course’ microservice for course and enrollment data. [Source: app/controllers/bridges/chatbot/my_courses_controller.rb, app/controllers/bridges/chatbot/users_controller.rb]</li>
+<li><strong>MOOChub API (Controller/Service Layer):</strong> Interacts with the ‘Course’ microservice for course data. [Source: app/controllers/bridges/moochub/courses_controller.rb]</li>
+<li><strong>MOOChub API (Controller/Service Layer):</strong> Communicates with external MOOChub systems. [Source: app/controllers/bridges/moochub/courses_controller.rb]</li>
+<li><strong>Shop API (Controller/Service Layer):</strong> Interacts with a ‘Voucher’ domain within the application to manage voucher lifecycle. [Source: app/controllers/bridges/shop/vouchers_controller.rb]</li>
+<li><strong>Shop API (Controller/Service Layer):</strong> Communicates with external shop systems. [Source: app/controllers/bridges/shop/base_controller.rb]</li>
+<li><strong>TransPipe API (Controller/Service Layer):</strong> Interacts with ‘Course’ and ‘Video’ models/services to fetch and update data. [Source: app/controllers/bridges/transpipe/courses_controller.rb, app/controllers/bridges/transpipe/videos_controller.rb]</li>
+<li><strong>TransPipe API (Controller/Service Layer):</strong> Communicates with external translation pipeline systems. [Source: app/controllers/bridges/transpipe/subtitles_controller.rb]</li>
+<li><strong>Portal API Gateway:</strong> Receives authenticated HTTP requests from external applications using OAuth 2.0 Bearer Tokens. [Source: app/controllers/portal_api/, config/routes.rb]</li>
+<li><strong>Portal API Gateway:</strong> Responds with JSON data, adhering to the HTTP Problem Details specification for errors. [Source: app/controllers/portal_api/]</li>
+<li><strong>Courses API Resource:</strong> Exposes <code>GET /courses</code> to retrieve a paginated list of courses. [Source: app/controllers/portal_api/courses_controller.rb]</li>
+<li><strong>Courses API Resource:</strong> Exposes <code>GET /courses/{id}</code> to retrieve a single course by its unique identifier. [Source: app/controllers/portal_api/courses_controller.rb]</li>
+<li><strong>Users API Resource:</strong> Exposes <code>PATCH /users/{id}</code> to update user attributes such as email, full_name, display_name, born_at, language, and avatar. [Source: app/controllers/portal_api/users_controller.rb]</li>
+<li><strong>Users API Resource:</strong> Exposes <code>DELETE /users/{id}</code> to remove a user account. [Source: app/controllers/portal_api/users_controller.rb]</li>
+<li><strong>Enrollments API Resource:</strong> Exposes <code>GET /enrollments</code> to retrieve all enrollments for a given user, with optional filtering by <code>course_id</code>. [Source: app/controllers/portal_api/enrollments_controller.rb]</li>
+<li><strong>Enrollments API Resource:</strong> Exposes <code>POST /enrollments</code> to create a new enrollment for a user in a specified course, requiring <code>user_id</code> and <code>course_id</code>. [Source: app/controllers/portal_api/enrollments_controller.rb]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-core-api-request-processing-workflow" tabindex="-1"><a class="header-anchor" href="#1.-core-api-request-processing-workflow"><span>1. Core API Request Processing Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  externalClient["External API Client"]
+  railsGateway["Rails API Gateway"]
+  xikoloAPI["Xikolo Core API (Grape)"]
+  versioningMiddleware["Versioning Middleware"]
+  authMiddleware["Auth Middleware"]
+  backendServices["Backend Services"]
+
+  externalClient -->|"sends API request"| railsGateway
+  railsGateway -->|"routes to"| xikoloAPI
+  xikoloAPI -->|"negotiates version with Accept header"| versioningMiddleware
+  versioningMiddleware -->|"authenticates request"| authMiddleware
+  authMiddleware -->|"processes request"| xikoloAPI
+  xikoloAPI -->|"interacts with"| backendServices
+  backendServices -->|"returns data"| xikoloAPI
+  xikoloAPI -->|"sends response"| externalClient
+</pre></div>
+<p>When an external API client, such as a mobile application, initiates a request, it first hits the <code>Rails API Gateway</code>. This gateway, defined by <code>Rails.application.routes</code>, is responsible for directing the request to the appropriate primary API. For general mobile app consumption, requests are routed to the <code>Xikolo Core API (Grape)</code>. Upon reception, the <code>Xikolo Core API</code> first passes the request through the <code>Versioning Middleware</code>, which inspects the <code>Accept</code> header to determine the client’s requested API version. Concurrently or subsequently, the <code>Auth Middleware</code> (<code>Auth::Middleware::LegacyToken</code> or <code>Auth::Middleware::Session</code>) authenticates the client using <code>Authorization</code> headers or session information. If both version negotiation and authentication succeed, the request proceeds to a specific <code>Collection Endpoint</code> (e.g., <code>Xikolo::Endpoint::CollectionEndpoint</code> extended for users or courses). This endpoint then interacts with <code>Backend Services</code> to fetch or store the requested data, before formatting the response (e.g., using <code>Format::PrettyJSON</code>) and returning it to the client.</p>
+<h3 id="2.-chatbot-api-user-authentication-and-data-retrieval-workflow" tabindex="-1"><a class="header-anchor" href="#2.-chatbot-api-user-authentication-and-data-retrieval-workflow"><span>2. Chatbot API User Authentication and Data Retrieval Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  chatbotSystem["External Chatbot System"]
+  chatbotBridgeAPI["Chatbot Bridge API"]
+  requireBearerToken["RequireBearerToken (Auth)"]
+  tokenSigning["TokenSigning (PASETO)"]
+  accountMicroservice["Account Microservice"]
+  courseMicroservice["Course Microservice"]
+
+  chatbotSystem -->|"POST /authenticate (shared secret)"| chatbotBridgeAPI
+  chatbotBridgeAPI -->|"validates token"| requireBearerToken
+  requireBearerToken -->|"issues PASETO token (based on SAML uid)"| tokenSigning
+  tokenSigning -->|"returns PASETO token"| chatbotBridgeAPI
+  chatbotBridgeAPI -->|"returns PASETO token"| chatbotSystem
+
+  chatbotSystem --o|"GET /user or /courses (with PASETO token)"| chatbotBridgeAPI
+  chatbotBridgeAPI --o|"verifies PASETO token"| tokenSigning
+  tokenSigning --o|"fetches user data"| accountMicroservice
+  tokenSigning --o|"fetches course data"| courseMicroservice
+  accountMicroservice -->|"returns data"| chatbotBridgeAPI
+  courseMicroservice -->|"returns data"| chatbotBridgeAPI
+  chatbotBridgeAPI -->|"sends data response"| chatbotSystem
+</pre></div>
+<p>An <code>External Chatbot System</code> begins its interaction by authenticating with the <code>Chatbot Bridge API</code>. This authentication typically involves sending a <code>POST /authenticate</code> request with a shared secret as a Bearer token. The <code>Chatbot Bridge API</code> leverages <code>Xi::Controllers::RequireBearerToken</code> to validate this initial shared secret. Upon successful validation, the API uses <code>TokenSigning</code> to issue a user-specific PASETO token based on a provided SAML <code>uid</code>. This PASETO token is then returned to the <code>External Chatbot System</code>. For subsequent data retrieval requests (e.g., <code>GET /user</code> or <code>GET /courses</code>), the chatbot includes this user-specific PASETO token in the <code>Authorization</code> header. The <code>Chatbot Bridge API</code> verifies this token using <code>TokenSigning</code> and then interacts with either the <code>Account Microservice</code> for user data or the <code>Course Microservice</code> for course listings and enrollments, before returning the requested information to the chatbot.</p>
+<h3 id="3.-portal-api-enrollment-creation-workflow" tabindex="-1"><a class="header-anchor" href="#3.-portal-api-enrollment-creation-workflow"><span>3. Portal API Enrollment Creation Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  externalPortalApp["External Portal Application"]
+  portalApiGW["Portal API Gateway"]
+  enrollmentMgmtAPI["EnrollmentManagementAPI"]
+  userModel["User Model"]
+  courseModel["Course Model"]
+  enrollmentModel["Enrollment Model"]
+
+  externalPortalApp -->|"POST /enrollments (OAuth Bearer Token)"| portalApiGW
+  portalApiGW -->|"authenticates & routes"| enrollmentMgmtAPI
+  enrollmentMgmtAPI -->|"validates user_id"| userModel
+  enrollmentMgmtAPI -->|"validates course_id"| courseModel
+  userModel -->|"user verified"| enrollmentMgmtAPI
+  courseModel -->|"course verified"| enrollmentMgmtAPI
+  enrollmentMgmtAPI -->|"creates enrollment"| enrollmentModel
+  enrollmentModel -->|"enrollment created"| enrollmentMgmtAPI
+  enrollmentMgmtAPI -->|"returns success/conflict (409)"| portalApiGW
+  portalApiGW -->|"sends API response"| externalPortalApp
+</pre></div>
+<p>An <code>External Portal Application</code> aims to create a new user enrollment. The request is sent to the <code>Portal API Gateway</code> (specifically <code>/portalapi-beta</code>), which acts as the entry point for external applications. The <code>Portal API Gateway</code> handles authentication using OAuth 2.0 Bearer Tokens and performs content negotiation based on the <code>Accept</code> header for versioning. Once authenticated and version-negotiated, the request is routed to the <code>EnrollmentManagementAPI</code>. This API endpoint, upon receiving a <code>POST /enrollments</code> request with <code>user_id</code> and <code>course_id</code>, interacts with the <code>User Model</code> to verify the user and the <code>Course Model</code> to validate the course. If both are valid and an enrollment doesn’t already exist (otherwise a <code>409 Conflict</code> is returned), the <code>EnrollmentManagementAPI</code> then creates a new record in the <code>Enrollment Model</code>, linking the specified user and course. A success response is then returned to the <code>External Portal Application</code>.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The <code>05_CORE_APIGateway</code> cluster relies on a Ruby on Rails application for its foundational routing and API infrastructure. The primary API, <code>Xikolo::API</code>, is built using the Grape framework, enabling a declarative approach to endpoint definition via <code>Xikolo::Endpoint::CollectionEndpoint</code>. This allows for explicit definition of representation structures, attributes, relationships, and supported HTTP methods.</p>
+<p><strong>Technical Considerations:</strong></p>
+<ul>
+<li><strong>Versioning:</strong> API versioning is managed by <code>Xikolo::Versioning::Middleware</code> and <code>Versioning::Version</code> objects, primarily through the <code>Accept</code> header, with <code>Sunset</code> headers used for deprecated versions. This helps ensure backward compatibility for mobile clients.</li>
+<li><strong>Authentication:</strong> The main <code>Xikolo::API</code> utilizes <code>Auth::Middleware::LegacyToken</code> and <code>Auth::Middleware::Session</code>. Bridge APIs, such as <code>ChatbotBridgeAPI</code> and <code>ShopBridgeAPI</code>, typically employ <code>Xi::Controllers::RequireBearerToken</code> for shared secret authentication. The Chatbot API specifically uses <code>TokenSigning</code> for generating and validating user-specific PASETO tokens, configured with application secrets for private keys and public keys for verification.</li>
+<li><strong>Error Handling:</strong> <code>Xikolo::API</code> centralizes error handling by rescuing from <code>Error::Base</code> exceptions to provide standardized <code>application/problem+json</code> error responses, as indicated for the <code>Portal API Gateway</code> as well.</li>
+<li><strong>Documentation Generation:</strong> <code>Xikolo::Docs::Generator</code> is used to produce API documentation from the <code>V2::Base</code> API definitions, aiding API consumers.</li>
+<li><strong>URL Generation:</strong> <code>Transpipe::URL</code> generates fully qualified URLs for courses and videos for the TransPipe service, reading templates from <code>Xikolo.config.transpipe</code>.</li>
+</ul>
+<p><strong>Dependencies and Integrations:</strong></p>
+<ul>
+<li><strong>Rails.application.routes:</strong> Acts as the central routing hub, mounting <code>Xikolo::API</code> and defining routes for <code>PortalApi</code> and various <code>Bridges</code> modules.</li>
+<li><strong>Grape:</strong> The core framework used for building <code>Xikolo::API</code> and other API endpoint groups.</li>
+<li><strong>Backend Services:</strong> All API layers interact with underlying <code>Course</code>, <code>User</code>, and <code>Enrollment</code> models/services, and implicitly other backend microservices (e.g., Account, Video, Analytics services) to fetch and store data.</li>
+<li><strong>Abstract::BridgeAPIController:</strong> Serves as the base class for all concrete Bridge API controllers, promoting consistent structure and behavior.</li>
+<li><strong>Auth::Helpers and Model::Helpers:</strong> Provide common utility methods across API endpoints.</li>
+</ul>
+<p><strong>Configuration Requirements:</strong></p>
+<ul>
+<li><strong>Token Signing:</strong> Requires <code>chatbot_bridge_private_key</code> from application secrets for signing, and <code>chatbot['bridge_public_keys']</code> from application configuration for token verification by <code>TokenSigning</code> as used by <code>ChatbotBridgeAPI</code>.</li>
+<li><strong>Transpipe::URL:</strong> Requires URL templates to be configured under <code>Xikolo.config.transpipe</code> for dynamic URL generation.</li>
+<li>Other specific configuration details for various bridge APIs (e.g., shared secrets for <code>ShopBridgeAPI</code> authentication) are managed as application secrets or environment variables, though precise keys are not specified in the cluster data beyond <code>chatbot_bridge_private_key</code>.</li>
+</ul>
+<p><strong>Missing Information:</strong></p>
+<ul>
+<li>Specific database schema details for <code>Course</code>, <code>User</code>, and <code>Enrollment</code> models are not specified in cluster data, beyond their conceptual role as models.</li>
+<li>Detailed configurations for <code>LanalyticsBridgeAPI</code> are not specified in cluster data.</li>
+<li>Specific implementation details (direct code for controllers and services) for <code>Chatbot API (Controller/Service Layer)</code>, <code>MOOChub API (Controller/Service Layer)</code>, <code>Shop API (Controller/Service Layer)</code>, and <code>TransPipe API (Controller/Service Layer)</code> are not provided in cluster data; functionality is inferred from OpenAPI specifications.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Chatbot API Controllers</strong> <code>app/controllers/bridges/chatbot/authentications_controller.rb, app/controllers/bridges/chatbot/courses_controller.rb</code></li>
+<li>📄 <strong>Shop API Controllers</strong> <code>app/controllers/bridges/shop/vouchers_controller.rb, app/controllers/bridges/shop/base_controller.rb</code></li>
+<li>📄 <strong>PortalApi Controllers</strong> <code>app/controllers/portal_api/</code></li>
+<li>📄 <strong>Xi::Controllers::RequireBearerToken</strong> <code>app/controllers/concerns/</code></li>
+<li>📄 <strong>Abstract::BridgeAPIController</strong> <code>app/controllers/abstract/bridge_api_controller.rb</code></li>
+<li>📄 <strong>Model::Helpers</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>TransPipe API Controllers</strong> <code>app/controllers/bridges/transpipe/courses_controller.rb, app/controllers/bridges/transpipe/videos_controller.rb, app/controllers/bridges/transpipe/subtitles_controller.rb</code></li>
+<li>📄 <strong>Chatbot API (Controller/Service Layer)</strong> <code>app/controllers/bridges/chatbot/authentications_controller.rb</code></li>
+<li>📄 <strong>MOOChub API (Controller/Service Layer)</strong> <code>app/controllers/bridges/moochub/courses_controller.rb</code></li>
+<li>📄 <strong>Shop API (Controller/Service Layer)</strong> <code>app/controllers/bridges/shop/vouchers_controller.rb</code></li>
+<li>📄 <strong>TransPipe API (Controller/Service Layer)</strong> <code>app/controllers/bridges/transpipe/courses_controller.rb, app/controllers/bridges/transpipe/videos_controller.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::API</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Xikolo::Endpoint::CollectionEndpoint</strong> <code>api/xikolo/endpoint/collection_endpoint.rb, api/README.md</code></li>
+<li>📄 <strong>API Gateway (Rails Routes)</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Portal API</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Transpipe Bridge API</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Lanalytics Bridge API</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Moochub Bridge API</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>PortalApi</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Bridges</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Rails.application.routes</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>TokenSigning</strong> <code>config/initializers/chatbot.rb</code></li>
+<li>📄 <strong>ChatbotBridgeAPI</strong> <code>config/initializers/chatbot.rb</code></li>
+<li>📄 <strong>ShopBridgeAPI</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>MoochubBridgeAPI</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>TransPipeBridgeAPI</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>LanalyticsBridgeAPI</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>PortalApiBeta</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Course</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>User</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Enrollment</strong> <code>db/schema.rb</code></li>
+<li>📄 <strong>Versioning::Version</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Xikolo::Versioning::Middleware</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Auth::Helpers</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Auth::Middleware::LegacyToken</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Auth::Middleware::Session</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Error::Base</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>V2::Base</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Xikolo::Docs::Generator</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Format::PrettyJSON</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Grape::Parser::Json</strong> <code>api/xikolo/api.rb</code></li>
+<li>📄 <strong>Transpipe::URL</strong> <code>app/lib/transpipe.rb</code></li>
+<li>📄 <strong>MOOChub Bridge API</strong> <code>app/controllers/bridges/moochub/courses_controller.rb</code></li>
+<li>📄 <strong>MOOChub Bridge API</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>TransPipe Bridge API</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Chatbot API Components</strong> <code>app/controllers/bridges/chatbot/my_courses_controller.rb, app/controllers/bridges/chatbot/users_controller.rb</code></li>
+<li>📄 <strong>Portal API Gateway</strong> <code>app/controllers/portal_api/, config/routes.rb</code></li>
+<li>📄 <strong>Portal API Components</strong> <code>app/controllers/portal_api/courses_controller.rb, app/controllers/portal_api/users_controller.rb, app/controllers/portal_api/enrollments_controller.rb</code></li>
+<li>📄 <strong>Courses API Resource</strong> <code>app/controllers/portal_api/courses_controller.rb</code></li>
+<li>📄 <strong>Users API Resource</strong> <code>app/controllers/portal_api/users_controller.rb</code></li>
+<li>📄 <strong>Enrollments API Resource</strong> <code>app/controllers/portal_api/enrollments_controller.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>ChatbotBridgeAPI</strong> <code>RAG: docs/bridges/chatbot/reference/chatbot-api.v1.yaml</code></li>
+<li>📄 <strong>ShopBridgeAPI</strong> <code>RAG: docs/bridges/shop/reference/shop-api.v1.yaml</code></li>
+<li>📄 <strong>MoochubBridgeAPI</strong> <code>RAG: docs/bridges/moochub/docs/moochub-api.md</code></li>
+<li>📄 <strong>TransPipeBridgeAPI</strong> <code>RAG: docs/bridges/transpipe/reference/transpipe-api.v1.yaml</code></li>
+<li>📄 <strong>PortalApiBeta</strong> <code>RAG: docs/portalapi/reference/portalapi-beta.v1.yaml</code></li>
+<li>📄 <strong>CourseCatalogAPI</strong> <code>RAG: docs/portalapi/reference/portalapi-beta.v1.yaml</code></li>
+<li>📄 <strong>UserManagementAPI</strong> <code>RAG: docs/portalapi/reference/portalapi-beta.v1.yaml</code></li>
+<li>📄 <strong>EnrollmentManagementAPI</strong> <code>RAG: docs/portalapi/reference/portalapi-beta.v1.yaml</code></li>
+<li>📄 <strong>Course</strong> <code>RAG: docs/portalapi/reference/portalapi-beta.v1.yaml</code></li>
+<li>📄 <strong>User</strong> <code>RAG: docs/portalapi/reference/portalapi-beta.v1.yaml</code></li>
+<li>📄 <strong>Enrollment</strong> <code>RAG: docs/portalapi/reference/portalapi-beta.v1.yaml</code></li>
+<li>📄 <strong>Auth::Middleware::LegacyToken</strong> <code>docs/portalapi/docs/authentication.md</code></li>
+<li>📄 <strong>Auth::Middleware::Session</strong> <code>docs/portalapi/docs/authentication.md</code></li>
+<li>📄 <strong>Error::Base</strong> <code>docs/portalapi/docs/errors.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::API</strong> <code>api/README.md</code></li>
+<li>📄 <strong>Chatbot Bridge API</strong> <code>app/controllers/bridges/chatbot/</code></li>
+<li>📄 <strong>Shop Bridge API</strong> <code>app/controllers/bridges/shop/</code></li>
+<li>📄 <strong>API Changelog</strong> <code>api/CHANGELOG.md</code></li>
+<li>📄 <strong>Versioning::Version</strong> <code>api/VERSIONING.md</code></li>
+<li>📄 <strong>Xikolo::Versioning::Middleware</strong> <code>api/VERSIONING.md</code></li>
+<li>📄 <strong>Xikolo::Docs::Generator</strong> <code>api/README.md</code></li>
+<li>📄 <strong>TransPipe Bridge API</strong> <code>app/controllers/bridges/transpipe/</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740296835"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

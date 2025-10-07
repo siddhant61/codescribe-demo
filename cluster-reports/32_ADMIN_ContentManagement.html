@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ContentManagement standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for ContentManagement standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#admin" class="breadcrumb-link">ADMIN</a></li>
+            <li class="breadcrumb-item active">ContentManagement standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-static-page-creation-and-update-workflow" class="sidebar-nav-link">1. Static Page Creation and Update Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-course-rich-text-content-management-workflow" class="sidebar-nav-link">2. Course Rich Text Content Management Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-general-document-and-localization-management-workflow" class="sidebar-nav-link">3. General Document and Localization Management Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-admin">ADMIN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="static-pages-and-rich-text-content-management---technical-documentation" tabindex="-1"><a class="header-anchor" href="#static-pages-and-rich-text-content-management---technical-documentation"><span>Static Pages and Rich Text Content Management - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the Xikolo cluster <code>32_ADMIN_ContentManagement</code>, a robust system designed for managing diverse content types, including static platform pages, rich text within courses, and general documents. The core purpose of this system is to provide comprehensive capabilities for content creation, editing, and display, deeply integrated with S3 for scalable file storage and supporting multi-locale content. Key components include dedicated models for pages and rich text, administrative and public-facing controllers, and specialized S3 utility services that handle file uploads, processing, and scheduled deletion, ensuring a streamlined and resilient content management workflow across the Xikolo platform. The architecture is designed to support both application-level content and interaction with a dedicated Course API microservice for document management, enhancing flexibility and scalability.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The <code>32_ADMIN_ContentManagement</code> cluster exhibits a multi-layered architecture, integrating client-side interfaces with backend controllers, domain-specific models, and external services like S3 and a Course API microservice. Frontend interactions are facilitated by rich text editors, while controllers orchestrate data flow and business logic. Core content models manage structured data and interact with specialized S3 services for file handling. Background jobs ensure data consistency and resource cleanup, particularly for S3-hosted assets. The overall design emphasizes modularity, allowing distinct management workflows for static pages, course-embedded rich text, and general documents, while leveraging common infrastructure components for S3 integration and messaging.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-content-management-architecture" tabindex="-1"><a class="header-anchor" href="#main-content-management-architecture"><span>Main Content Management Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  clientUI["Client User Interface"]
+  appControllers["Application Controllers (Home::PagesController)"]
+  adminControllers["Admin Controllers (PagesController, Admin::DocumentsController)"]
+  contentModels["Content Models (Page, Course::Richtext)"]
+  documentModels["Document Models (Document, DocumentLocalization)"]
+  s3Services["Xikolo::S3 File Services"]
+  courseAPIMicroservice["Course API Microservice"]
+  backgroundJobs["Background Jobs (S3FileDeletionJob)"]
+
+  clientUI -->|"views pages"| appControllers
+  clientUI -->|"manages content (via MarkdownInput)"| adminControllers
+  appControllers -->|"retrieves/formats"| contentModels
+  adminControllers -->|"manages data and uploads"| contentModels
+  adminControllers -->|"interacts with"| courseAPIMicroservice
+  courseAPIMicroservice -->|"manages"| documentModels
+  contentModels -->|"stores files via Xikolo::S3::Markup"| s3Services
+  documentModels -->|"stores files via FileReference"| s3Services
+  s3Services -->|"initiates cleanup"| backgroundJobs
+  adminControllers -->|"enqueues cleanup"| backgroundJobs
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Page:</strong> Is created, read, updated, and deleted by <code>PagesController</code>.</li>
+<li><strong>Page:</strong> Its <code>text</code> attribute is processed by <code>Xikolo::S3::TextWithUploadsProcessor</code> for embedded file management.</li>
+<li><strong>Course::Richtext:</strong> Belongs to <code>Course::Course</code>.</li>
+<li><strong>Course::Richtext:</strong> Has one <code>Course::Item</code> polymorphically as its content.</li>
+<li><strong>Home::PagesController:</strong> Retrieves Page records using <code>Page.preferred_locales</code>.</li>
+<li><strong>Home::PagesController:</strong> Instantiates <code>PagePresenter</code> to format page data.</li>
+<li><strong>PagesController:</strong> Interacts with the <code>Page</code> model to find, initialize, and save page data.</li>
+<li><strong>PagesController:</strong> Delegates embedded file processing to <code>Xikolo::S3::TextWithUploadsProcessor</code>.</li>
+<li><strong>MarkdownInput:</strong> Renders HTML for the rich text editor and file upload dropzone.</li>
+<li><strong>MarkdownInput:</strong> Generates S3 upload parameters using <code>::FileUpload</code>.</li>
+<li><strong>Xikolo::S3::Markup:</strong> Used by the <code>Page</code> model to define the behavior of its <code>text</code> attribute.</li>
+<li><strong>Xikolo::S3::Markup:</strong> Interacts implicitly with <code>Xikolo::S3::TextWithUploadsProcessor</code> during content updates.</li>
+<li><strong>Xikolo::S3::TextWithUploadsProcessor:</strong> Invoked by <code>PagesController</code> to process page content before saving.</li>
+<li><strong>Xikolo::S3::TextWithUploadsProcessor:</strong> Interacts with S3 (via <code>xikolo-s3</code> gem) to upload and manage files.</li>
+<li><strong>S3FileDeletionJob:</strong> Enqueued by <code>PagesController</code> after a successful page update that results in obsolete S3 files.</li>
+<li><strong>Course::Richtext::Store:</strong> Receives <code>Course::Richtext</code> instance and parameters.</li>
+<li><strong>Course::Richtext::Store:</strong> Uses <code>Xikolo::S3::TextWithUploadsProcessor</code> to manage text and S3 uploads.</li>
+<li><strong>initializeMarkdownEditor:</strong> Called by <code>initMarkdownEditorOnSelector</code>.</li>
+<li><strong>initializeMarkdownEditor:</strong> Likely initializes <code>@toast-ui/editor</code> based on project dependencies.</li>
+<li><strong>initMarkdownEditorOnSelector:</strong> Calls <code>initializeMarkdownEditor</code>.</li>
+<li><strong>Admin::DocumentLocalizationsController:</strong> Interacts with <code>Xikolo.api(:course)</code> to manage <code>DocumentLocalization</code> records. [Source: app/controllers/admin/document_localizations_controller.rb]</li>
+<li><strong>Admin::DocumentLocalizationsController:</strong> Uses <code>DocumentHelper</code> for file upload related functionalities. [Source: app/controllers/admin/document_localizations_controller.rb]</li>
+<li><strong>Admin::DocumentsController:</strong> Interacts with <code>Xikolo.api(:course)</code> to manage <code>Document</code> records, fetch courses, and document tags. [Source: app/controllers/admin/documents_controller.rb]</li>
+<li><strong>Admin::DocumentsController:</strong> Uses <code>DocumentsListPresenter</code> to build the document list for display. [Source: app/controllers/admin/documents_controller.rb]</li>
+<li><strong>Course::DocumentsController:</strong> Inherits from <code>Abstract::FrontendController</code> and includes <code>CourseContextHelper</code> and <code>DocumentHelper</code>. [Source: app/controllers/course/documents_controller.rb]</li>
+<li><strong>Course::DocumentsController:</strong> Requires <code>Xikolo.config.beta_features['documents']</code> to be enabled for access. [Source: app/controllers/course/documents_controller.rb]</li>
+<li><strong>Document:</strong> Interacts with <code>Course</code> (has_and_belongs_to_many).</li>
+<li><strong>Document:</strong> Interacts with <code>Item</code> via <code>DocumentsItem</code> (has_many through).</li>
+<li><strong>DocumentLocalization:</strong> Belongs to <code>Document</code>.</li>
+<li><strong>DocumentLocalization:</strong> Includes <code>FileReference</code> concern for S3 file management.</li>
+<li><strong>DocumentsListPresenter:</strong> Delegates document properties to <code>DocumentPresenter</code> for individual document display. [Source: app/presenters/documents_list_presenter.rb]</li>
+<li><strong>DocumentsListPresenter:</strong> Extracts unique languages from <code>document['localizations']</code> and tags from <code>@tags</code> for filter options. [Source: app/presenters/documents_list_presenter.rb]</li>
+<li><strong>Course::DocumentsPresenter:</strong> Initializes with <code>user_id</code>, <code>course</code>, and <code>current_user</code>. [Source: app/presenters/course/documents_presenter.rb]</li>
+<li><strong>Course::DocumentsPresenter:</strong> Finds <code>Xikolo::Course::Enrollment</code> to check learning evaluation status. [Source: app/presenters/course/documents_presenter.rb]</li>
+<li><strong>DocumentsPresenter:</strong> Fetches course details from <code>course_api</code> using <code>enrollment.course_id</code>. [Source: app/presenters/documents_presenter.rb]</li>
+<li><strong>DocumentsPresenter:</strong> Finds <code>Certificate::Template</code> and <code>Certificate::OpenBadgeTemplate</code> based on course and certificate type. [Source: app/presenters/documents_presenter.rb]</li>
+<li><strong>Xikolo::S3::SingleFileUpload:</strong> Interacts with <code>Xikolo::S3.bucket_for(:uploads)</code> to access the temporary upload bucket. [Source: gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb]</li>
+<li><strong>Xikolo::S3::SingleFileUpload:</strong> Checks S3 object metadata (<code>xikolo-state</code>, <code>xikolo-purpose</code>) for validity. [Source: gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb]</li>
+<li><strong>Xikolo::S3::UploadByUri:</strong> Parses <code>upload://</code> URIs to locate files in the temporary upload bucket. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]</li>
+<li><strong>Xikolo::S3::UploadByUri:</strong> Interacts with <code>Xikolo::S3.bucket_for(:uploads)</code> and other specified buckets. [Source: gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb]</li>
+<li><strong>DocumentHelper:</strong> Defines <code>Document</code> and <code>Localization</code> <code>Struct</code>s with <code>ActiveModel</code> concerns for data representation. [Source: app/helpers/document_helper.rb]</li>
+<li><strong>DocumentHelper:</strong> Performs <code>POST</code>, <code>PATCH</code>, <code>DELETE</code> requests to <code>Xikolo.api(:course)</code> (Course API) for document and localization management. [Source: app/helpers/document_helper.rb]</li>
+<li><strong>Course::Documents::FilterBar:</strong> Renders a form for filtering documents, submitting to <code>course_documents_path</code>.</li>
+<li><strong>Course::Documents::FilterBar:</strong> Renders <code>Global::FilterBar::Controls</code> for filter management.</li>
+<li><strong>PagePresenter:</strong> Receives a <code>Page</code> object and its translations for presentation.</li>
+<li><strong>PagePresenter:</strong> Utilizes <code>MarkdownHelper</code> to convert Markdown text to HTML.</li>
+<li><strong>MarkdownHelper:</strong> Included and used by <code>PagePresenter</code> to render page content for display.</li>
+<li><strong>DocumentsItem:</strong> Belongs to <code>Document</code>.</li>
+<li><strong>DocumentsItem:</strong> Belongs to <code>Item</code>.</li>
+<li><strong>DocumentsController:</strong> Interacts with <code>Document</code> model for data access and manipulation.</li>
+<li><strong>DocumentsController:</strong> Uses <code>ApplicationController</code> as its base.</li>
+<li><strong>DocumentLocalizationsController:</strong> Interacts with <code>DocumentLocalization</code> model for data access and manipulation.</li>
+<li><strong>DocumentLocalizationsController:</strong> Uses <code>ApplicationController</code> as its base.</li>
+<li><strong>DocumentsTagsController:</strong> Interacts with <code>Document.all_tags</code> to fetch tag data.</li>
+<li><strong>DocumentsTagsController:</strong> Uses <code>ApplicationController</code> as its base.</li>
+<li><strong>Duplicated::Visual:</strong> Belongs to <code>Course</code>.</li>
+<li><strong>Duplicated::Visual:</strong> Optionally belongs to <code>Duplicated::Video</code>.</li>
+<li><strong>Course::Visual::Clone:</strong> Takes <code>Duplicated::Visual</code> and <code>Course</code> objects as input.</li>
+<li><strong>Course::Visual::Clone:</strong> Interacts with <code>Xikolo::S3</code> to copy image files.</li>
+<li><strong>FileDeletionWorker:</strong> Includes <code>Sidekiq::Job</code> module.</li>
+<li><strong>FileDeletionWorker:</strong> Interacts with <code>Xikolo::S3</code> to perform file deletion.</li>
+<li><strong>Msgr:</strong> Receives messages from <code>Document</code> model (after_create, after_update, soft_delete).</li>
+<li><strong>Msgr:</strong> Receives messages from <code>DocumentLocalization</code> model (after_create, after_update, soft_delete).</li>
+<li><strong>Xikolo::S3:</strong> Used by <code>DocumentLocalization</code> for file uploads and key generation.</li>
+<li><strong>Xikolo::S3:</strong> Used by <code>Duplicated::Visual</code> to generate public image URLs.</li>
+<li><strong>FileReference:</strong> Included in <code>DocumentLocalization</code> to handle file uploads and S3 key generation.</li>
+<li><strong>PaperTrail:</strong> Included in <code>DocumentLocalization</code> to track changes.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-static-page-creation-and-update-workflow" tabindex="-1"><a class="header-anchor" href="#1.-static-page-creation-and-update-workflow"><span>1. Static Page Creation and Update Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUser["Admin User"]
+  pagesController["PagesController (Admin)"]
+  markdownInput["MarkdownInput Editor"]
+  s3TextProcessor["Xikolo::S3::TextWithUploadsProcessor"]
+  pageModel["Page Model"]
+  s3DeletionJob["S3FileDeletionJob"]
+
+  adminUser -->|"accesses editor"| pagesController
+  pagesController -->|"renders HTML for"| markdownInput
+  markdownInput -->|"submits text & upload:// URIs"| pagesController
+  pagesController -->|"processes content & S3 files"| s3TextProcessor
+  s3TextProcessor -->|"provides processed text"| pagesController
+  pagesController -->|"saves page data"| pageModel
+  pageModel -->|"updates text attribute"| s3TextProcessor
+  pagesController -->|"enqueues for obsolete URIs"| s3DeletionJob
+  s3DeletionJob -->|"deletes from S3 after 1 min"| s3TextProcessor
+</pre></div>
+<p>This workflow details how administrators manage static pages on the Xikolo platform, including text content and embedded file uploads. An <code>Admin User</code> initiates the process by accessing the <code>PagesController</code>, which is responsible for administrative editing and updates of <code>Page</code> records. The frontend renders a <code>MarkdownInput</code> editor, which supports rich text and a file upload dropzone. When content, including potential <code>upload://</code> URIs for new files, is submitted, the <code>PagesController</code> delegates the processing to <code>Xikolo::S3::TextWithUploadsProcessor</code>. This service parses the text, moves files from a temporary S3 bucket to a permanent one, and updates <code>s3://</code> URIs within the page’s <code>text</code> attribute. If the processing and <code>Page</code> model save successfully, <code>S3FileDeletionJob</code> is asynchronously scheduled with a 1-minute delay to remove any previously referenced S3 files that are no longer part of the updated content, ensuring fault tolerance and efficient storage management.</p>
+<h3 id="2.-course-rich-text-content-management-workflow" tabindex="-1"><a class="header-anchor" href="#2.-course-rich-text-content-management-workflow"><span>2. Course Rich Text Content Management Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  courseAdmin["Course Administrator"]
+  richtextStoreOp["Course::Richtext::Store Operation"]
+  s3TextProcessor["Xikolo::S3::TextWithUploadsProcessor"]
+  richtextModel["Course::Richtext Model"]
+  s3CleanupLogic["S3 Cleanup Logic (referenced?)"]
+  s3DeletionJob["S3FileDeletionJob"]
+
+  courseAdmin -->|"initiates create/update"| richtextStoreOp
+  richtextStoreOp -->|"uses for S3 file & text handling"| s3TextProcessor
+  s3TextProcessor -->|"provides processed data"| richtextStoreOp
+  richtextStoreOp -->|"saves content"| richtextModel
+  richtextModel -->|"uses Xikolo::S3::Markup"| s3TextProcessor
+  richtextStoreOp -->|"checks for references"| s3CleanupLogic
+  s3CleanupLogic -->|"if unreferenced, enqueues"| s3DeletionJob
+  s3DeletionJob -->|"deletes from S3 after 1 hour"| s3TextProcessor
+</pre></div>
+<p>This workflow focuses on managing rich text content embedded within courses, such as learning materials. A <code>Course Administrator</code> initiates content creation or updates, which are encapsulated by the <code>Course::Richtext::Store</code> operation. This operation receives the <code>Course::Richtext</code> instance and content parameters. Similar to static pages, <code>Course::Richtext::Store</code> utilizes <code>Xikolo::S3::TextWithUploadsProcessor</code> to handle the rich text content and any embedded S3 file uploads. This involves parsing the text, configuring S3 keys specific to courses (e.g., <code>courses/{cid}/rtfiles/{upload.unique_sanitized_name}</code>), and managing the transition of files to permanent S3 storage. Upon a successful save of the <code>Course::Richtext</code> model, <code>Course::Richtext::Store</code> schedules <code>S3FileDeletionJob</code> for any obsolete URIs. Crucially, before deletion, a check is performed to ensure that these URIs are not referenced by other <code>Course::Richtext</code> instances or by <code>Course::Course</code> descriptions, preventing accidental deletion of shared assets. This job is scheduled with a longer delay of 1 hour to further ensure content availability.</p>
+<h3 id="3.-general-document-and-localization-management-workflow" tabindex="-1"><a class="header-anchor" href="#3.-general-document-and-localization-management-workflow"><span>3. General Document and Localization Management Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUser["Admin User"]
+  adminDocCtrl["Admin::DocumentsController"]
+  adminDocLocalCtrl["Admin::DocumentLocalizationsController"]
+  documentHelper["DocumentHelper"]
+  courseAPIMicroservice["Course API Microservice"]
+  documentModel["Document Model"]
+  documentLocalizationModel["DocumentLocalization Model"]
+  xikoloS3["Xikolo::S3"]
+  msgrPublisher["Msgr Messaging System"]
+
+  adminUser -->|"manages documents"| adminDocCtrl
+  adminUser -->|"manages localizations"| adminDocLocalCtrl
+  adminDocCtrl -->|"delegates file prep"| documentHelper
+  adminDocLocalCtrl -->|"delegates file prep"| documentHelper
+  documentHelper -->|"performs POST/PATCH/DELETE"| courseAPIMicroservice
+  courseAPIMicroservice -->|"manages"| documentModel
+  courseAPIMicroservice -->|"manages"| documentLocalizationModel
+  documentLocalizationModel -->|"uses for file storage"| xikoloS3
+  documentModel -->|"publishes events"| msgrPublisher
+  documentLocalizationModel -->|"publishes events"| msgrPublisher
+</pre></div>
+<p>This workflow outlines the administrative process for managing general documents and their localized versions, leveraging a microservice architecture. An <code>Admin User</code> interacts with <code>Admin::DocumentsController</code> and <code>Admin::DocumentLocalizationsController</code> to create, update, or delete <code>Document</code> and <code>DocumentLocalization</code> records. These administrative controllers interact directly with the <code>Xikolo.api(:course)</code> endpoint, which represents a ‘Course-specific Document and Media Asset Management Microservice’. The microservice, in turn, manages the <code>Document</code> and <code>DocumentLocalization</code> models. For localized documents, the <code>DocumentLocalization</code> model includes the <code>FileReference</code> concern, which handles S3 file management, including file uploads and S3 key generation, in conjunction with the <code>Xikolo::S3</code> utility module. The <code>DocumentHelper</code> assists in preparing file uploads and handling API requests. Furthermore, <code>Msgr</code> is used to publish messages (e.g., after_create, after_update, soft_delete) from both <code>Document</code> and <code>DocumentLocalization</code> models to RabbitMQ, enabling other parts of the system to react to document lifecycle events. This distributed approach ensures specialized management and event-driven integration.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The <code>32_ADMIN_ContentManagement</code> cluster leverages several technical components and considerations for its operations. The <code>Page</code> model’s associations for <code>translations</code> and <code>other_translations</code> use <code>inverse_of: false</code>, which, as indicated in cluster data, could potentially lead to N+1 query issues if not carefully managed within the application logic. Similarly, the <code>Course::Richtext.referenced?</code> method, critical for preventing premature S3 file deletions, relies on <code>LIKE</code> queries on text columns. While functional, this implementation could become a performance bottleneck with larger datasets, highlighting the recommendation to consider leveraging PostgreSQL’s <code>pg_trgm</code> extension for improved performance, as it is already enabled in the schema.</p>
+<p>Custom S3 logic, particularly within <code>Xikolo::S3::Markup</code> and <code>Xikolo::S3::TextWithUploadsProcessor</code>, provides powerful integration for handling embedded files but introduces a maintenance burden due to its bespoke nature, necessitating thorough testing and documentation. The delayed S3 object deletion, implemented via <code>S3FileDeletionJob</code> with delays of 1 minute for pages and 1 hour for richtext content, is a deliberate design choice for fault tolerance, allowing users with slow connections to complete loading before files are permanently removed. This, however, means obsolete files temporarily reside in S3 storage.</p>
+<p>Dependencies and integrations are central to the system’s operation. The <code>MarkdownInput</code> component, a SimpleForm input, directly renders HTML for the rich text editor and integrates with frontend JavaScript functions like <code>initializeMarkdownEditor</code> to activate <code>@toast-ui/editor</code>. This component generates S3 upload parameters using <code>::FileUpload</code>. For general document management, administrative controllers (<code>Admin::DocumentLocalizationsController</code>, <code>Admin::DocumentsController</code>) and <code>Course::DocumentsController</code> interact extensively with <code>Xikolo.api(:course)</code>, acting as a <code>Restify</code> client to a ‘Course-specific Document and Media Asset Management Microservice’. The <code>DocumentHelper</code> further facilitates these interactions by defining <code>Struct</code>s for data representation and performing API requests. The <code>Document</code> and <code>DocumentLocalization</code> models utilize <code>Msgr</code> for publishing lifecycle events to RabbitMQ, enabling an event-driven architecture. <code>DocumentLocalization</code> also includes the <code>FileReference</code> concern for S3 file management and <code>PaperTrail</code> for versioning. <code>Xikolo::S3</code> serves as a fundamental shared utility module for all S3 interactions, including file uploads, copying, and deletions, further utilized by components such as <code>Duplicated::Visual</code> and <code>Course::Visual::Clone</code>.</p>
+<p>Configuration requirements include enabling <code>Xikolo.config.beta_features['documents']</code> for access to course document features. Furthermore, <code>Xikolo.config.locales['available']</code> is accessed by <code>PagePresenter</code> to determine available locales for new translations. The S3 bucket names and purposes, such as <code>:pages</code> with <code>'helpdesk_page_file'</code> and <code>:course</code> with <code>'course_richtext'</code>, are hardcoded in certain controllers (e.g., <code>PagesController</code>) and utilities, as indicated in the cluster data, implying that these are specific, non-dynamic configurations. The <code>Xikolo::S3</code> module expects S3 buckets to be configured via <code>Xikolo.config.s3['buckets']</code> for proper operation.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Home::PagesController</strong> <code>app/controllers/home/pages_controller.rb</code></li>
+<li>📄 <strong>PagesController</strong> <code>app/controllers/pages_controller.rb</code></li>
+<li>📄 <strong>Admin::DocumentLocalizationsController</strong> <code>app/controllers/admin/document_localizations_controller.rb</code></li>
+<li>📄 <strong>Admin::DocumentsController</strong> <code>app/controllers/admin/documents_controller.rb</code></li>
+<li>📄 <strong>Admin::DocumentsController</strong> <code>app/presenters/documents_list_presenter.rb</code></li>
+<li>📄 <strong>Course::DocumentsController</strong> <code>app/controllers/course/documents_controller.rb</code></li>
+<li>📄 <strong>DocumentsListPresenter</strong> <code>app/presenters/documents_list_presenter.rb</code></li>
+<li>📄 <strong>Course::DocumentsPresenter</strong> <code>app/presenters/course/documents_presenter.rb</code></li>
+<li>📄 <strong>DocumentsPresenter</strong> <code>app/presenters/documents_presenter.rb</code></li>
+<li>📄 <strong>PagePresenter</strong> <code>app/presenters/page_presenter.rb</code></li>
+<li>📄 <strong>DocumentsController</strong> <code>services/course/app/controllers/documents_controller.rb</code></li>
+<li>📄 <strong>DocumentLocalizationsController</strong> <code>services/course/app/controllers/document_localizations_controller.rb</code></li>
+<li>📄 <strong>DocumentsTagsController</strong> <code>services/course/app/controllers/documents_tags_controller.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Page</strong> <code>app/models/page.rb</code></li>
+<li>📄 <strong>Course::Richtext</strong> <code>app/models/course/richtext.rb</code></li>
+<li>📄 <strong>Course::Richtext</strong> <code>spec/models/course/richtext_spec.rb</code></li>
+<li>📄 <strong>MarkdownInput</strong> <code>app/inputs/markdown_input.rb</code></li>
+<li>📄 <strong>Xikolo::S3::Markup</strong> <code>app/models/page.rb</code></li>
+<li>📄 <strong>Xikolo::S3::TextWithUploadsProcessor</strong> <code>app/controllers/pages_controller.rb</code></li>
+<li>📄 <strong>S3FileDeletionJob</strong> <code>app/controllers/pages_controller.rb</code></li>
+<li>📄 <strong>Course::Richtext::Store</strong> <code>app/operations/course/richtext/store.rb</code></li>
+<li>📄 <strong>Course::Richtext::Store</strong> <code>spec/operations/course/richtext/store_spec.rb</code></li>
+<li>📄 <strong>Document</strong> <code>services/course/app/models/document.rb</code></li>
+<li>📄 <strong>DocumentLocalization</strong> <code>services/course/app/models/document_localization.rb</code></li>
+<li>📄 <strong>Xikolo::S3::SingleFileUpload</strong> <code>gems/xikolo-s3/lib/xikolo/s3/single_file_upload.rb</code></li>
+<li>📄 <strong>Xikolo::S3::UploadByUri</strong> <code>gems/xikolo-s3/lib/xikolo/s3/upload_by_uri.rb</code></li>
+<li>📄 <strong>DocumentHelper</strong> <code>app/helpers/document_helper.rb</code></li>
+<li>📄 <strong>Course::Documents::FilterBar</strong> <code>app/components/course/documents/filter_bar.rb</code></li>
+<li>📄 <strong>MarkdownHelper</strong> <code>app/presenters/page_presenter.rb</code></li>
+<li>📄 <strong>DocumentsItem</strong> <code>services/course/app/models/documents_item.rb</code></li>
+<li>📄 <strong>Duplicated::Visual</strong> <code>services/course/app/models/duplicated/visual.rb</code></li>
+<li>📄 <strong>Course::Visual::Clone</strong> <code>services/course/app/operations/course/visual/clone.rb</code></li>
+<li>📄 <strong>FileDeletionWorker</strong> <code>services/course/app/workers/file_deletion_worker.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>services/course/app/models/document.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>services/course/app/models/document_localization.rb</code></li>
+<li>📄 <strong>Xikolo::S3</strong> <code>services/course/app/models/document_localization.rb</code></li>
+<li>📄 <strong>Xikolo::S3</strong> <code>services/course/app/models/duplicated/visual.rb</code></li>
+<li>📄 <strong>FileReference</strong> <code>services/course/app/models/document_localization.rb</code></li>
+<li>📄 <strong>PaperTrail</strong> <code>services/course/app/models/document_localization.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::S3::SingleFileUpload</strong> <code>RAG: gems/xikolo-s3/README.md</code></li>
+<li>📄 <strong>Xikolo::S3::UploadByUri</strong> <code>RAG: gems/xikolo-s3/README.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>initializeMarkdownEditor</strong> <code>app/assets/util/markdown-editor.ts</code></li>
+<li>📄 <strong>initializeMarkdownEditor</strong> <code>foundational_context: package.json</code></li>
+<li>📄 <strong>initMarkdownEditorOnSelector</strong> <code>app/assets/util/markdown-editor.ts</code></li>
+<li>📄 <strong>Course::Documents::FilterBar</strong> <code>app/components/course/documents/filter_bar.html.slim</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295346"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

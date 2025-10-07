@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourseContent standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for CourseContent standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#core" class="breadcrumb-link">CORE</a></li>
+            <li class="breadcrumb-item active">CourseContent standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-course-content-creation-workflow" class="sidebar-nav-link">1. Course Content Creation Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-enrollment-and-access-workflow" class="sidebar-nav-link">2. User Enrollment and Access Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-learner-progress-tracking-and-visualization-workflow" class="sidebar-nav-link">3. Learner Progress Tracking and Visualization Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#technical-considerations" class="sidebar-nav-link">Technical Considerations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#dependencies-and-integrations" class="sidebar-nav-link">Dependencies and Integrations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#configuration-requirements" class="sidebar-nav-link">Configuration Requirements</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-core">CORE</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="course-creation%2C-structure%2C-content-items-(rich-text%2C-documents)%2C-enrollment%2C-and-progress-tracking---technical-documentation" tabindex="-1"><a class="header-anchor" href="#course-creation%2C-structure%2C-content-items-(rich-text%2C-documents)%2C-enrollment%2C-and-progress-tracking---technical-documentation"><span>Course Creation, Structure, Content Items (Rich Text, Documents), Enrollment, and Progress Tracking - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report provides a standardized overview of the Xikolo 02_CORE_CourseContent cluster, which encompasses core functionalities for Course Management, Enrollment, and Learner Progress. The system enables comprehensive course definition, robust content management including rich text, videos, quizzes, and documents, and sophisticated tracking of user enrollment and progress. Key components such as <code>Admin::CourseForm</code>, <code>SectionsController</code>, <code>ItemsController</code>, <code>Course::EnrollmentsController</code>, and various <code>Xikolo::CourseService</code> microservice clients work in concert to deliver a seamless learning experience, from course creation to certificate achievement. The scope covers administrative course setup, content delivery, user lifecycle within courses, and detailed progress visualization.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo 02_CORE_CourseContent cluster operates on a hybrid architecture, leveraging a Ruby on Rails frontend (<code>xi-web</code>) that interacts with various microservices for core data persistence and business logic. The <code>Admin::CourseForm</code> acts as an entry point for administrative course definition, interacting with the underlying Course microservice. User-facing content and enrollment flows are managed by specialized controllers like <code>SectionsController</code>, <code>ItemsController</code>, and <code>Course::EnrollmentsController</code>, all relying heavily on <code>Xikolo::CourseService</code> for data. Helper modules such as <code>CourseContextHelper</code> and <code>ItemContextHelper</code> ensure consistent context and access control across the application. Frontend components and scripts like <code>handleRichTextType</code> and <code>sections.js</code> enhance user interaction by dynamically adjusting UIs and managing client-side states. Storage for static and dynamic content, including media, is primarily handled through <code>Xikolo::S3</code> integration, facilitated by operations like <code>Course::Visual::Store</code> and <code>Course::Richtext::Store</code>. Presenters like <code>ItemPresenter</code> and <code>Course::ProgressPresenter</code> transform data from microservices for efficient display, ensuring a clear separation of concerns.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-architecture-overview"><span>Main Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userInterface["User Interface (xi-web)"]
+  controllers["Controllers (SectionsController, ItemsController, EnrollmentsController)"]
+  helpersPresenters["Helpers & Presenters (CourseContextHelper, ItemPresenter)"]
+  courseMicroservice["Xikolo::CourseService (Application Programming Interface (API))"]
+  s3Storage["Xikolo::S3 (File Storage)"]
+  otherMicroservices["Other Microservices (Quiz, Pinboard, Account)"]
+
+  userInterface -->|"sends requests to"| controllers
+  controllers -->|"uses helpers & presenters for logic & data formatting"| helpersPresenters
+  controllers -->|"interacts with"| courseMicroservice
+  helpersPresenters -->|"fetches data from"| courseMicroservice
+  courseMicroservice -->|"stores files in"| s3Storage
+  courseMicroservice -->|"integrates with"| otherMicroservices
+  controllers -->|"interacts with for content-specific data"| otherMicroservices
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Admin::CourseForm:</strong> Interacts with the underlying Course model (via microservice) for persistence.</li>
+<li><strong>Admin::CourseForm:</strong> Uses <code>ChannelHelper</code> for image dimension constants.</li>
+<li><strong>SectionsController:</strong> Uses <code>CourseContextHelper</code> for course context and eligibility checks.</li>
+<li><strong>SectionsController:</strong> Interacts with <code>Xikolo::Course::Section</code> microservice client for section data.</li>
+<li><strong>ItemsController:</strong> Uses <code>CourseContextHelper</code> and <code>ItemContextHelper</code> for context and eligibility.</li>
+<li><strong>ItemsController:</strong> Interacts with <code>Xikolo::Course::Item</code> microservice client for item data.</li>
+<li><strong>Course::DocumentsController:</strong> Uses <code>CourseContextHelper</code> for course context.</li>
+<li><strong>Course::DocumentsController:</strong> Uses <code>DocumentHelper</code> for document-related actions and helpers.</li>
+<li><strong>Course::EnrollmentsController:</strong> Communicates with <code>Xikolo.api(:course)</code> (specifically <code>Xikolo::CourseService</code>) for enrollment creation, retrieval, and deletion.</li>
+<li><strong>Course::EnrollmentsController:</strong> Checks <code>current_user.allowed?('course.content.access')</code> for invite-only courses.</li>
+<li><strong>Course::LaunchController:</strong> Fetches course details from <code>Xikolo.api(:course)</code>.</li>
+<li><strong>Course::LaunchController:</strong> Redirects to <code>create_enrollment_path</code> if authenticated.</li>
+<li><strong>Course::FreeReactivationsController:</strong> Communicates with <code>Xikolo.api(:course)</code> to fetch prerequisite status and post reactivation requests.</li>
+<li><strong>Course::FreeReactivationsController:</strong> Uses <code>CourseReactivation.config('period')</code> to determine the duration of the reactivation period.</li>
+<li><strong>Course::ProgressController:</strong> Uses <code>CourseContextHelper</code> to establish the course context.</li>
+<li><strong>Course::ProgressController:</strong> Fetches user details from <code>Xikolo::Account::User</code> if an admin is viewing another user’s progress.</li>
+<li><strong>Course::SyllabusController:</strong> Uses <code>CourseContextHelper</code> for course context.</li>
+<li><strong>Course::SyllabusController:</strong> Loads section navigation (<code>load_section_nav</code>).</li>
+<li><strong>CourseContextHelper:</strong> Defines <code>inside_course</code> which calls <code>layout</code> and <code>before_action :check_course_eligibility</code>.</li>
+<li><strong>CourseContextHelper:</strong> The <code>check_course_eligibility</code> method checks user permissions, course availability, and enrollment status.</li>
+<li><strong>ItemContextHelper:</strong> Defines <code>inside_item</code> which calls <code>layout</code>, <code>before_action :load_section_nav</code>, <code>before_action :create_position_presenter!</code>, <code>before_action :create_item_presenter!</code>, and <code>before_action :check_course_path</code>.</li>
+<li><strong>ItemContextHelper:</strong> Creates <code>Course::PositionPresenter</code> and <code>ItemPresenter</code> instances.</li>
+<li><strong>DocumentHelper:</strong> Interacts with <code>Xikolo.api(:course)</code> (CourseService) for document and localization CRUD operations.</li>
+<li><strong>DocumentHelper:</strong> Uses <code>FileUpload</code> for S3 uploads of document files.</li>
+<li><strong>ProgressHelper:</strong> Used by views or other components to display calculated progress percentages.</li>
+<li><strong>Course::Metadata::Store:</strong> Interacts with <code>Xikolo::S3::SingleFileUpload</code> to manage uploaded files.</li>
+<li><strong>Course::Metadata::Store:</strong> Parses and validates JSON data from uploaded files against a schema.</li>
+<li><strong>Course::Richtext::Store:</strong> Uses <code>Xikolo::S3::TextWithUploadsProcessor</code> to parse and manage text with embedded uploads.</li>
+<li><strong>Course::Richtext::Store:</strong> Interacts with <code>S3FileDeletionJob</code> for asynchronous deletion of obsolete S3 files.</li>
+<li><strong>Course::Visual::Store:</strong> Interacts with <code>Xikolo::S3::SingleFileUpload</code> and <code>Xikolo::S3::UploadByUri</code> for S3 file management.</li>
+<li><strong>Course::Visual::Store:</strong> Persists visual data to <code>Course::Visual</code> and video data to <code>Video::Video</code>.</li>
+<li><strong>Item::Create:</strong> Validates and saves the content resource (<code>@content</code>).</li>
+<li><strong>Item::Create:</strong> Sets <code>content_id</code> and <code>section_id</code> on the item.</li>
+<li><strong>Home::CourseCard:</strong> Receives <code>course</code>, <code>enrollment</code>, <code>user</code>, and <code>type</code> as initialization parameters.</li>
+<li><strong>Home::CourseCard:</strong> Renders actions and conditional buttons based on user features (e.g., <code>course_reactivation</code>).</li>
+<li><strong>Navigation::CoursesMenu:</strong> Fetches course data from <code>Catalog::Course</code> (released, for global list, for guests).</li>
+<li><strong>Navigation::CoursesMenu:</strong> Caches course lists for 30 minutes.</li>
+<li><strong>BasicCoursePresenter:</strong> Wraps a course hash (<code>@course</code>).</li>
+<li><strong>BasicCoursePresenter:</strong> Checks for <code>Certificate::Template</code> and <code>Certificate::OpenBadgeTemplate</code> existence for certificate availability.</li>
+<li><strong>CourseInfoPresenter:</strong> Delegates attributes to the <code>@course</code> object (Restify resource).</li>
+<li><strong>CourseInfoPresenter:</strong> Renders markdown for abstract and description.</li>
+<li><strong>CourseLargePreviewPresenter:</strong> Initializes a <code>VideoPresenter</code> if a teaser video exists.</li>
+<li><strong>CourseLargePreviewPresenter:</strong> Determines <code>unenrollment_enabled?</code> based on <code>invite_only</code> and <code>external_registration_url</code>.</li>
+<li><strong>CourseNav:</strong> Uses <code>MenuWithPermissions</code> for permission-based item visibility.</li>
+<li><strong>CourseNav:</strong> Checks <code>course.pinboard_enabled</code> and <code>Xikolo.config.beta_features['documents']</code> for item visibility.</li>
+<li><strong>CoursePresenter:</strong> Delegates attributes to the <code>@course</code> object.</li>
+<li><strong>CoursePresenter:</strong> Fetches item and section collections from <code>Course::Course</code>.</li>
+<li><strong>CourseTeacherNav:</strong> Uses <code>MenuWithPermissions</code> for permission-based item visibility.</li>
+<li><strong>CourseTeacherNav:</strong> Checks <code>user.allowed?</code> for various course-related permissions (e.g., <code>course.dashboard.view</code>, <code>course.content.edit</code>).</li>
+<li><strong>DocumentsListPresenter:</strong> Wraps a collection of document resources.</li>
+<li><strong>DocumentsListPresenter:</strong> Extracts unique languages from document localizations.</li>
+<li><strong>DocumentsListPresenter::DocumentPresenter:</strong> Wraps a document resource and a collection of courses.</li>
+<li><strong>DocumentsListPresenter::DocumentPresenter:</strong> Maps course IDs to course titles.</li>
+<li><strong>DocumentsPresenter:</strong> Fetches course details via <code>course_api</code> and wraps them in <code>BasicCoursePresenter</code>.</li>
+<li><strong>DocumentsPresenter:</strong> Finds <code>Certificate::Template</code> and <code>Certificate::OpenBadgeTemplate</code> based on course and certificate type.</li>
+<li><strong>FeaturedItemPresenter:</strong> Builds <code>FeaturedVideoItem</code> for video content types.</li>
+<li><strong>FeaturedItemPresenter:</strong> Raises an error for unsupported content types.</li>
+<li><strong>ItemPresenter:</strong> Delegates attributes to the <code>@item</code> and <code>@course</code> objects.</li>
+<li><strong>ItemPresenter:</strong> Determines <code>partial_name</code> and <code>layout</code> based on content type.</li>
+<li><strong>RichTextItemPresenter:</strong> Extends <code>ItemPresenter</code>.</li>
+<li><strong>RichTextItemPresenter:</strong> Finds the associated <code>Course::Richtext</code> content.</li>
+<li><strong>SectionPresenter:</strong> Delegates attributes to the <code>@section</code> object.</li>
+<li><strong>SectionPresenter:</strong> Fetches items for the section from <code>Xikolo.api(:course)</code>.</li>
+<li><strong>StageItemPresenter:</strong> Uses <code>MarkdownHelper</code> to render statements.</li>
+<li><strong>StageItemPresenter:</strong> Parses the statement string to extract <code>quote_by</code>.</li>
+<li><strong>UnsupportedItemPresenter:</strong> Extends <code>ItemPresenter</code>.</li>
+<li><strong>UnsupportedItemPresenter:</strong> Sets <code>partial_name</code> to <code>items/show_unsupported_item</code>.</li>
+<li><strong>handleRichTextType:</strong> Modifies DOM elements using <code>setVisibility</code>, <code>hidePublicDescription</code>, and <code>hideAndUncheckSwitch</code> helpers.</li>
+<li><strong>handleRichTextType:</strong> Called when the content type selection changes to ‘rich text’.</li>
+<li><strong>sections.js:</strong> Uses <code>toggleUuids</code> to show/hide section UUIDs.</li>
+<li><strong>sections.js:</strong> Attaches event listeners to ‘new item’ and ‘delete section’ buttons.</li>
+<li><strong>Xikolo::Course::Course:</strong> Used by <code>Course::CoursesController</code>, <code>CourseContextHelper</code>, <code>CourseInfoPresenter</code>, <code>CoursePresenter</code>, <code>Home::CourseCard</code> and others to fetch course data.</li>
+<li><strong>Xikolo::Course::Course:</strong> Provides methods for checking course availability (<code>was_available?</code>, <code>published?</code>).</li>
+<li><strong>Xikolo::Course::Section:</strong> Used by <code>SectionsController</code> for CRUD operations on sections.</li>
+<li><strong>Xikolo::Course::Section:</strong> Used by <code>CourseContextHelper</code> to fetch the current section.</li>
+<li><strong>Xikolo::Course::Item:</strong> Used by <code>ItemsController</code> for CRUD operations on items.</li>
+<li><strong>Xikolo::Course::Item:</strong> Used by <code>CourseContextHelper</code> to fetch the current item.</li>
+<li><strong>Xikolo::Course::Visit:</strong> Created by <code>ItemContextHelper#create_visit!</code> when a user views an item.</li>
+<li><strong>Xikolo::Quiz::Quiz:</strong> Used by <code>ItemsController</code> when creating or editing quiz items.</li>
+<li><strong>Xikolo::Quiz::Quiz:</strong> Provides attributes like <code>allowed_attempts</code>, <code>time_limit_seconds</code>, <code>instructions</code>.</li>
+<li><strong>Lti::Exercise:</strong> Used by <code>ItemsController</code> when creating or editing LTI exercise items.</li>
+<li><strong>Lti::Exercise:</strong> Interacts with <code>Lti::Exercise::Store</code> for persistence.</li>
+<li><strong>Video::Video:</strong> Used by <code>ItemsController</code> when creating or editing video items.</li>
+<li><strong>Video::Video:</strong> Used by <code>Course::Visual::Store</code> for managing teaser videos.</li>
+<li><strong>Course::Richtext:</strong> Used by <code>ItemsController</code> when creating or editing rich text items.</li>
+<li><strong>Course::Richtext:</strong> Interacts with <code>Course::Richtext::Store</code> for persistence and file management.</li>
+<li><strong>Course::CircularProgress:</strong> Rendered by other views or components (e.g., <code>ItemPresenter</code> or <code>Course::SectionProgressPresenter</code>) to visualize user progress.</li>
+<li><strong>Course::EnrollmentPolicyForm:</strong> Interacts with <code>Course::Course</code> model to fetch course details using <code>by_identifier</code>.</li>
+<li><strong>Course::EnrollmentPolicyForm:</strong> Submits enrollment data to <code>Course::EnrollmentsController#create</code> via <code>enrollments_path</code>.</li>
+<li><strong>Course::EnrollmentStatistics:</strong> Interacts with <code>Course::Course</code> to get course details and <code>Course::EnrollmentsStatistics</code> to retrieve enrollment counts.</li>
+<li><strong>Course::EnrollmentStatistics:</strong> Checks <code>user.allowed?('course.enrollment_counter.view')</code> for permission to display the count.</li>
+<li><strong>Dashboard::IcalFeed:</strong> Checks <code>user.feature?('ical_feed')</code> to determine if it should render.</li>
+<li><strong>Dashboard::IcalFeed:</strong> Uses <code>IcalHelper#ical_url</code> to generate the iCal feed URL.</li>
+<li><strong>Admin::PollOptionsController:</strong> Interacts with <code>Poll::Poll</code> model to find polls and add/delete options.</li>
+<li><strong>Admin::PollOptionsController:</strong> Renders the <code>admin/polls/options_form</code> partial to update the options list.</li>
+<li><strong>Admin::PollsController:</strong> Interacts with <code>Poll::Poll</code> model for all CRUD operations.</li>
+<li><strong>Admin::PollsController:</strong> Uses <code>add_flash_message</code> for user feedback on operations.</li>
+<li><strong>CourseSubscriptionsController:</strong> Uses <code>CourseContextHelper</code> to get the course context.</li>
+<li><strong>CourseSubscriptionsController:</strong> Communicates with <code>Xikolo.api(:pinboard)</code> to create or delete course subscriptions.</li>
+<li><strong>DashboardController:</strong> Redirects <code>index</code> action to <code>dashboard</code>.</li>
+<li><strong>DashboardController:</strong> Fetches <code>Xikolo::Account::Authorization</code> if an authorization parameter is present (e.g., after SSO signup).</li>
+<li><strong>IcalController:</strong> Requires the ‘ical_feed’ feature to be enabled.</li>
+<li><strong>IcalController:</strong> Uses <code>IcalHelper</code> for generating the authentication hash and URL.</li>
+<li><strong>PollsController:</strong> Interacts with <code>Poll::Poll</code> model to retrieve polls, check for upcoming polls, and record votes.</li>
+<li><strong>PollsController:</strong> Uses <code>PollArchivePresenter</code> for formatting archived polls.</li>
+<li><strong>User::SubscriptionsController:</strong> Finds <code>Xikolo::Pinboard::Subscription</code> based on <code>user_id</code> and <code>question_id</code>.</li>
+<li><strong>User::SubscriptionsController:</strong> Deletes the found subscription.</li>
+<li><strong>IcalHelper:</strong> Interacts with <code>Xikolo::Account::Token</code> to create a security token for the user.</li>
+<li><strong>IcalHelper:</strong> Uses <code>Digest::SHA256</code> for hashing user ID and token.</li>
+<li><strong>CourseReactivation:</strong> Reads configuration from <code>Xikolo.config.course_reactivation</code> and <code>Xikolo.config.voucher</code>.</li>
+<li><strong>CourseReactivation:</strong> Used by <code>Course::FreeReactivationsController</code> to determine the reactivation period.</li>
+<li><strong>Course::Enrollment:</strong> Belongs to <code>Course</code>.</li>
+<li><strong>Course::Enrollment:</strong> Provides a scope <code>active</code> to filter non-deleted enrollments.</li>
+<li><strong>Course::EnrollmentsStatistics:</strong> Initialized with a <code>Course::Course</code> object.</li>
+<li><strong>Course::EnrollmentsStatistics:</strong> Queries <code>course.enrollments</code> and uses <code>course.enrollment_delta</code> for calculations.</li>
+<li><strong>Admin::SubscriptionListPresenter:</strong> Wraps a collection of subscriptions (likely <code>Xikolo::Pinboard::Subscription</code> resources).</li>
+<li><strong>Admin::SubscriptionListPresenter:</strong> Uses <code>RestifyPaginationCollection</code> for pagination.</li>
+<li><strong>Course::DashboardPresenter:</strong> Provides data transformation logic for charting.</li>
+<li><strong>Course::DashboardPresenter:</strong> Uses <code>I18n</code> for localized labels.</li>
+<li><strong>Course::DeadlinesPresenter:</strong> Communicates with <code>Xikolo.api(:course).rel(:next_dates)</code> to fetch deadline data.</li>
+<li><strong>Course::DeadlinesPresenter:</strong> Uses <code>ActionView::Helpers::DateHelper</code> for time formatting.</li>
+<li><strong>Course::ProgressPresenter:</strong> Fetches <code>Xikolo::Course::Progress</code> records for the user and course.</li>
+<li><strong>Course::ProgressPresenter:</strong> Uses <code>Acfs.on</code> for concurrent data fetching.</li>
+<li><strong>Course::SectionProgressPresenter:</strong> Wraps a section object (likely a <code>Xikolo::Course::Section</code> resource).</li>
+<li><strong>Course::SectionProgressPresenter:</strong> Iterates through <code>section.items</code> and uses <code>ItemPresenter.for</code> to present each item.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-course-content-creation-workflow" tabindex="-1"><a class="header-anchor" href="#1.-course-content-creation-workflow"><span>1. Course Content Creation Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminCourseForm["Admin::CourseForm (Define Course Metadata)"]
+  courseService["Xikolo::CourseService (Persist Course)"]
+  sectionsController["SectionsController (Manage Sections)"]
+  itemsController["ItemsController (Manage Items)"]
+  contentStores["Content Stores (Richtext::Store, Visual::Store)"]
+  s3Storage["Xikolo::S3 (Store Files)"]
+
+  adminCourseForm -->|"validates & persists"| courseService
+  sectionsController -->|"CRUD sections via"| courseService
+  sectionsController -->|"creates implicit tag"| XikoloPinboardImplicitTag["Xikolo::Pinboard::ImplicitTag"]
+  itemsController -->|"orchestrates item creation"| ItemCreate["Item::Create"]
+  ItemCreate -->|"validates & saves content to"| contentStores
+  contentStores -->|"manages files in"| s3Storage
+  itemsController -->|"adds items to sections via"| courseService
+</pre></div>
+<p>The course content creation workflow begins with administrative setup and proceeds through structuring and populating courses with diverse learning materials. An administrator initializes course metadata using <code>Admin::CourseForm</code>, validating essential details such as <code>status</code>, <code>code</code>, <code>title</code>, and language. This form interacts directly with the Course microservice for persistence, and leverages <code>ChannelHelper</code> for image dimension constants for course visuals. Once the course framework is established, <code>SectionsController</code> allows content editors to define and organize course sections, communicating with the <code>Xikolo::Course::Section</code> microservice client for data management. Saving a section also triggers the creation of <code>Xikolo::Pinboard::ImplicitTag</code> for integration with discussion features. Subsequently, <code>ItemsController</code> is used to add various content items like videos, rich text, quizzes, or LTI exercises within these sections. The <code>Item::Create</code> operation orchestrates the storage of these items and their associated content resources (e.g., <code>Video::Video</code>, <code>Course::Richtext</code>, <code>Xikolo::Quiz::Quiz</code>) by interacting with respective content stores (<code>Video::Store</code>, <code>Course::Richtext::Store</code>). Frontend scripts like <code>handleRichTextType</code> dynamically adapt the UI based on the chosen content type, ensuring a tailored editing experience.</p>
+<h3 id="2.-user-enrollment-and-access-workflow" tabindex="-1"><a class="header-anchor" href="#2.-user-enrollment-and-access-workflow"><span>2. User Enrollment and Access Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  courseLaunchController["Course::LaunchController (Initial Access)"]
+  userAuth["User Authentication (Login/Authenticated)"]
+  enrollmentsController["Course::EnrollmentsController (Enroll/Unenroll)"]
+  courseApi["Xikolo.api(:course) (Enrollment Microservice)"]
+  courseEnrollmentPolicyForm["Course::EnrollmentPolicyForm (Accept Policy)"]
+  courseReactivationController["Course::FreeReactivationsController (Reactivate Course)"]
+
+  courseLaunchController -->|"redirects"| userAuth
+  userAuth -->|"initiates enrollment"| enrollmentsController
+  enrollmentsController -->|"checks access for invite-only"| currentUserPermissions["current_user.allowed?"]
+  enrollmentsController -->|"creates/deletes enrollments via"| courseApi
+  enrollmentsController -->|"handles policy acceptance via"| courseEnrollmentPolicyForm
+  courseEnrollmentPolicyForm -->|"submits to"| enrollmentsController
+  courseReactivationController -->|"posts reactivation request to"| courseApi
+  courseReactivationController -->|"uses config from"| courseReactivationUtil["CourseReactivation Utility"]
+</pre></div>
+<p>User enrollment and access follow a defined lifecycle, from initial course launch to potential reactivation. The journey typically starts with <code>Course::LaunchController</code>, which directs unauthenticated users to a login page or authenticated users to an enrollment path, preserving the intended course location. For invite-only courses, <code>Course::EnrollmentsController</code> verifies <code>current_user.allowed?('course.content.access')</code>. This controller is central to the enrollment process, communicating with <code>Xikolo.api(:course)</code> to create, retrieve, or delete enrollments. It robustly handles <code>Restify::UnprocessableEntity</code> exceptions for scenarios like access restrictions or unfulfilled prerequisites, redirecting users accordingly. In cases where users need to re-access a course after its official duration, <code>Course::FreeReactivationsController</code> enables this functionality by interacting with <code>Xikolo.api(:course)</code> to check prerequisite statuses and process reactivation requests. The <code>CourseReactivation</code> utility module, informed by <code>Xikolo.config.course_reactivation</code> and <code>Xikolo.config.voucher</code>, dictates the eligibility and duration of such reactivations. The <code>Course::EnrollmentPolicyForm</code> component ensures that users accept necessary policies before finalizing their enrollment, interacting with the <code>Course::Course</code> model and submitting data to <code>Course::EnrollmentsController</code>.</p>
+<h3 id="3.-learner-progress-tracking-and-visualization-workflow" tabindex="-1"><a class="header-anchor" href="#3.-learner-progress-tracking-and-visualization-workflow"><span>3. Learner Progress Tracking and Visualization Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  itemContextHelper["ItemContextHelper (User Views Item)"]
+  courseVisitService["Xikolo::Course::Visit.create (Record Visit)"]
+  progressController["Course::ProgressController (Display Progress)"]
+  courseApi["Xikolo.api(:course) (Fetch Progress Data)"]
+  progressPresenter["Course::ProgressPresenter (Format Progress Data)"]
+  circularProgressUI["Course::CircularProgress (Visualize Progress)"]
+
+  itemContextHelper -->|"creates record in"| courseVisitService
+  progressController -->|"establishes context using"| courseContextHelper["CourseContextHelper"]
+  progressController -->|"fetches data from"| courseApi
+  progressController -->|"instantiates"| progressPresenter
+  progressPresenter -->|"delegates to for sections"| sectionProgressPresenter["Course::SectionProgressPresenter"]
+  sectionProgressPresenter -->|"uses for item details"| itemPresenter["ItemPresenter.for"]
+  progressPresenter -->|"uses for percentage calculation"| progressHelper["ProgressHelper"]
+  progressPresenter -->|"renders visualization with"| circularProgressUI
+</pre></div>
+<p>Learner progress within courses is meticulously tracked and visually presented to users and administrators. When a user views a course item, <code>ItemContextHelper#create_visit!</code> records this activity by creating a <code>Xikolo::Course::Visit</code> entry, excluding quizzes or masquerading sessions, which is crucial for building a complete progress history. The <code>Course::ProgressController</code> is responsible for fetching and displaying a user’s overall progress. It establishes the course context using <code>CourseContextHelper</code> and retrieves user-specific progress data from <code>Xikolo.api(:course).rel(:progresses)</code>. If an administrator is reviewing another user’s progress, the controller also fetches details from <code>Xikolo::Account::User</code>. Progress presentation is enhanced by <code>ProgressHelper#calc_progress</code>, which computes percentage values, and <code>Course::CircularProgress</code>, a UI component that visualizes this data. The <code>Course::SyllabusController</code> provides an overview of content and progress, utilizing <code>Course::ProgressPresenter</code> to build detailed progress data, often delegating to <code>Course::SectionProgressPresenter</code> for section-level insights. This presenter in turn uses <code>ItemPresenter.for</code> to display individual item statuses (locked, visited, active), thereby creating a comprehensive and granular view of learner engagement and completion.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<h3 id="technical-considerations" tabindex="-1"><a class="header-anchor" href="#technical-considerations"><span>Technical Considerations</span></a></h3>
+<p>The Xikolo 02_CORE_CourseContent cluster is built upon a Ruby on Rails application (<code>xi-web</code>) that serves as a frontend facade, orchestrating interactions with several backend microservices. Key microservices include <code>Xikolo::CourseService</code> for all core course, section, item, and enrollment data; <code>Xikolo::QuizService</code> for quiz-specific content; and <code>Xikolo::S3</code> for robust file storage of visuals, documents, and rich text assets. The application employs <code>Acfs.run</code> for efficient, concurrent fetching of data from multiple microservice endpoints, optimizing response times. Frontend interactivity is achieved through JavaScript and TypeScript, with components like <code>handleRichTextType</code> and <code>sections.js</code> directly manipulating the DOM to provide dynamic user experiences, such as toggling UUID visibility or adapting form fields based on content type selections. Presenters (<code>BasicCoursePresenter</code>, <code>ItemPresenter</code>, <code>DocumentsPresenter</code>) are heavily utilized to decouple data fetching and business logic from view rendering, ensuring clean separation and reusability. Markdown rendering is consistently applied for descriptions and rich text content via <code>MarkdownHelper</code>. Error handling is implemented with <code>Restify::UnprocessableEntity</code> for user-facing enrollment restrictions and <code>Mnemosyne</code>/<code>Sentry</code> for operational error capture, as seen in <code>Course::Metadata::Store</code> and <code>Course::Visual::Store</code>.</p>
+<h3 id="dependencies-and-integrations" tabindex="-1"><a class="header-anchor" href="#dependencies-and-integrations"><span>Dependencies and Integrations</span></a></h3>
+<p>Dependencies and integrations are crucial for the comprehensive functionality of the CourseContent cluster. Core interactions revolve around the <code>course_api</code> (an instance of <code>Xikolo::CourseService</code>), which is frequently accessed by controllers (<code>SectionsController</code>, <code>ItemsController</code>, <code>Course::DocumentsController</code>, <code>Course::EnrollmentsController</code>, <code>Course::ProgressController</code>, <code>Course::SyllabusController</code>, <code>Course::LaunchController</code>, <code>Course::FreeReactivationsController</code>, <code>DashboardController</code>, <code>IcalController</code>) and helpers/presenters (<code>DocumentHelper</code>, <code>CourseContextHelper</code>, <code>SectionPresenter</code>, <code>DocumentsPresenter</code>, <code>Course::DeadlinesPresenter</code>).</p>
+<p>File uploads, central to course content, integrate with <code>FileUpload</code> for S3 uploads (<code>DocumentHelper</code>) and specific S3 modules like <code>Xikolo::S3::SingleFileUpload</code>, <code>Xikolo::S3::UploadByUri</code>, and <code>Xikolo::S3::TextWithUploadsProcessor</code> for various content types (<code>Course::Metadata::Store</code>, <code>Course::Richtext::Store</code>, <code>Course::Visual::Store</code>). Asynchronous deletion of obsolete S3 files is handled by <code>S3FileDeletionJob</code>. Certificates leverage <code>Certificate::Template</code> and <code>Certificate::OpenBadgeTemplate</code>, and require <code>Proctoring::SmowlAdapter</code> for proctoring checks. User authentication and token management integrate with <code>Xikolo::Account::User</code> and <code>Xikolo::Account::Token</code> for functionalities like progress tracking and iCal feed generation. The iCal feed generation specifically uses the <code>Icalendar</code> gem and <code>TZInfo</code> for calendar construction. Poll management components (<code>Admin::PollOptionsController</code>, <code>Admin::PollsController</code>, <code>PollsController</code>) interact with a <code>Poll::Poll</code> model (likely a service beyond core course content but integrated for user engagement).</p>
+<h3 id="configuration-requirements" tabindex="-1"><a class="header-anchor" href="#configuration-requirements"><span>Configuration Requirements</span></a></h3>
+<p>The system’s behavior is influenced by several configuration settings, primarily managed through <code>Xikolo.config</code>. The visibility of certain features is controlled by feature flags, for example:</p>
+<ul>
+<li><code>Xikolo.config.beta_features['documents']</code> determines if the documents feature is visible to users (<code>CourseNav</code>).</li>
+<li><code>Xikolo.config.beta_features['teaching_team_pinboard_activity']</code> impacts navigation visibility for teachers (<code>CourseTeacherNav</code>).</li>
+<li><code>Xikolo.config.course_reactivation</code> and <code>Xikolo.config.voucher</code> control the course reactivation functionality, including the reactivation period and the enablement of voucher-based reactivations (<code>CourseReactivation</code>, <code>Course::FreeReactivationsController</code>).</li>
+<li><code>user.feature?('course_list')</code> is checked by <code>Navigation::CoursesMenu</code> to determine if the course list should be rendered.</li>
+<li><code>user.feature?('ical_feed')</code> enables or disables the iCal feed functionality for a user (<code>Dashboard::IcalFeed</code>, <code>IcalController</code>).</li>
+</ul>
+<p>Other configurations, such as <code>Xikolo.base_url</code> for URL construction (<code>IcalHelper</code>) and various permissions (<code>user.allowed?('course.content.access')</code>, <code>user.allowed?('course.dashboard.view')</code>) are vital for security and functionality. Specific thresholds like <code>MIN_ENROLLMENTS</code> (e.g., 500 in <code>Course::EnrollmentStatistics</code>) can dictate when certain aggregated data is displayed.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>SectionsController</strong> <code>app/controllers/sections_controller.rb</code></li>
+<li>📄 <strong>SectionsController</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>ItemsController</strong> <code>app/controllers/items_controller.rb</code></li>
+<li>📄 <strong>ItemsController</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>Course::DocumentsController</strong> <code>app/controllers/course/documents_controller.rb</code></li>
+<li>📄 <strong>Course::DocumentsController</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>Course::EnrollmentsController</strong> <code>app/controllers/course/enrollments_controller.rb</code></li>
+<li>📄 <strong>Course::LaunchController</strong> <code>app/controllers/course/launch_controller.rb</code></li>
+<li>📄 <strong>Course::FreeReactivationsController</strong> <code>app/controllers/course/free_reactivations_controller.rb</code></li>
+<li>📄 <strong>Course::ProgressController</strong> <code>app/controllers/course/progress_controller.rb</code></li>
+<li>📄 <strong>Course::SyllabusController</strong> <code>app/controllers/course/syllabus_controller.rb</code></li>
+<li>📄 <strong>Course::SyllabusController</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>BasicCoursePresenter</strong> <code>app/presenters/basic_course_presenter.rb</code></li>
+<li>📄 <strong>CourseInfoPresenter</strong> <code>app/presenters/course_info_presenter.rb</code></li>
+<li>📄 <strong>CourseLargePreviewPresenter</strong> <code>app/presenters/course_large_preview_presenter.rb</code></li>
+<li>📄 <strong>CoursePresenter</strong> <code>app/presenters/course_presenter.rb</code></li>
+<li>📄 <strong>DocumentsListPresenter</strong> <code>app/presenters/documents_list_presenter.rb</code></li>
+<li>📄 <strong>DocumentsListPresenter::DocumentPresenter</strong> <code>app/presenters/documents_list_presenter.rb</code></li>
+<li>📄 <strong>DocumentsPresenter</strong> <code>app/presenters/documents_presenter.rb</code></li>
+<li>📄 <strong>FeaturedItemPresenter</strong> <code>app/presenters/featured_item_presenter.rb</code></li>
+<li>📄 <strong>ItemPresenter</strong> <code>app/presenters/item_presenter.rb</code></li>
+<li>📄 <strong>RichTextItemPresenter</strong> <code>app/presenters/rich_text_item_presenter.rb</code></li>
+<li>📄 <strong>SectionPresenter</strong> <code>app/presenters/section_presenter.rb</code></li>
+<li>📄 <strong>StageItemPresenter</strong> <code>app/presenters/stage_item_presenter.rb</code></li>
+<li>📄 <strong>UnsupportedItemPresenter</strong> <code>app/presenters/unsupported_item_presenter.rb</code></li>
+<li>📄 <strong>Admin::PollOptionsController</strong> <code>app/controllers/admin/poll_options_controller.rb</code></li>
+<li>📄 <strong>Admin::PollsController</strong> <code>app/controllers/admin/polls_controller.rb</code></li>
+<li>📄 <strong>CourseSubscriptionsController</strong> <code>app/controllers/course_subscriptions_controller.rb</code></li>
+<li>📄 <strong>DashboardController</strong> <code>app/controllers/dashboard_controller.rb</code></li>
+<li>📄 <strong>DashboardController</strong> <code>app/views/dashboard/dashboard.html.slim</code></li>
+<li>📄 <strong>IcalController</strong> <code>app/controllers/ical_controller.rb</code></li>
+<li>📄 <strong>PollsController</strong> <code>app/controllers/polls_controller.rb</code></li>
+<li>📄 <strong>User::SubscriptionsController</strong> <code>app/controllers/user/subscriptions_controller.rb</code></li>
+<li>📄 <strong>Admin::SubscriptionListPresenter</strong> <code>app/presenters/admin/subscription_list_presenter.rb</code></li>
+<li>📄 <strong>Course::DashboardPresenter</strong> <code>app/presenters/course/dashboard_presenter.rb</code></li>
+<li>📄 <strong>Course::DeadlinesPresenter</strong> <code>app/presenters/course/deadlines_presenter.rb</code></li>
+<li>📄 <strong>Course::DeadlinesPresenter</strong> <code>RAG: docs/app/features/courses/deadlines.md</code></li>
+<li>📄 <strong>Course::ProgressPresenter</strong> <code>app/presenters/course/progress_presenter.rb</code></li>
+<li>📄 <strong>Course::SectionProgressPresenter</strong> <code>app/presenters/course/section_progress_presenter.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Admin::CourseForm</strong> <code>app/forms/admin/course_form.rb</code></li>
+<li>📄 <strong>Admin::CourseForm</strong> <code>app/helpers/channel_helper.rb</code></li>
+<li>📄 <strong>CourseContextHelper</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>ItemContextHelper</strong> <code>app/helpers/item_context_helper.rb</code></li>
+<li>📄 <strong>DocumentHelper</strong> <code>app/helpers/document_helper.rb</code></li>
+<li>📄 <strong>ProgressHelper</strong> <code>app/helpers/progress_helper.rb</code></li>
+<li>📄 <strong>Course::Metadata::Store</strong> <code>app/operations/course/metadata/store.rb</code></li>
+<li>📄 <strong>Course::Richtext::Store</strong> <code>app/operations/course/richtext/store.rb</code></li>
+<li>📄 <strong>Course::Visual::Store</strong> <code>app/operations/course/visual/store.rb</code></li>
+<li>📄 <strong>Item::Create</strong> <code>app/operations/item/create.rb</code></li>
+<li>📄 <strong>Home::CourseCard</strong> <code>app/components/home/course_card.rb</code></li>
+<li>📄 <strong>Navigation::CoursesMenu</strong> <code>app/components/navigation/courses_menu.rb</code></li>
+<li>📄 <strong>CourseNav</strong> <code>app/presenters/course_nav.rb</code></li>
+<li>📄 <strong>CourseTeacherNav</strong> <code>app/presenters/course_teacher_nav.rb</code></li>
+<li>📄 <strong>Xikolo::Course::Course</strong> <code>app/controllers/course/courses_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Course::Course</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>Xikolo::Course::Section</strong> <code>app/controllers/sections_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Course::Section</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>Xikolo::Course::Item</strong> <code>app/controllers/items_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Course::Item</strong> <code>app/helpers/course_context_helper.rb</code></li>
+<li>📄 <strong>Xikolo::Course::Visit</strong> <code>app/helpers/item_context_helper.rb</code></li>
+<li>📄 <strong>Xikolo::Quiz::Quiz</strong> <code>app/controllers/items_controller.rb</code></li>
+<li>📄 <strong>Lti::Exercise</strong> <code>app/controllers/items_controller.rb</code></li>
+<li>📄 <strong>Video::Video</strong> <code>app/controllers/items_controller.rb</code></li>
+<li>📄 <strong>Video::Video</strong> <code>app/operations/course/visual/store.rb</code></li>
+<li>📄 <strong>Course::Richtext</strong> <code>app/controllers/items_controller.rb</code></li>
+<li>📄 <strong>Course::Richtext</strong> <code>app/operations/course/richtext/store.rb</code></li>
+<li>📄 <strong>Course::CircularProgress</strong> <code>app/components/course/circular_progress.rb</code></li>
+<li>📄 <strong>Course::EnrollmentPolicyForm</strong> <code>app/components/course/enrollment_policy_form.rb</code></li>
+<li>📄 <strong>Course::EnrollmentStatistics</strong> <code>app/components/course/enrollment_statistics.rb</code></li>
+<li>📄 <strong>Dashboard::IcalFeed</strong> <code>app/components/dashboard/ical_feed.rb</code></li>
+<li>📄 <strong>IcalHelper</strong> <code>app/helpers/ical_helper.rb</code></li>
+<li>📄 <strong>CourseReactivation</strong> <code>app/lib/course_reactivation.rb</code></li>
+<li>📄 <strong>Course::Enrollment</strong> <code>app/models/course/enrollment.rb</code></li>
+<li>📄 <strong>Course::EnrollmentsStatistics</strong> <code>app/models/course/enrollments_statistics.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>CourseContextHelper</strong> <code>docs/app/development/implementation/helper_inside_course.md</code></li>
+<li>📄 <strong>ItemContextHelper</strong> <code>docs/app/development/implementation/helper_inside_course.md</code></li>
+<li>📄 <strong>handleRichTextType</strong> <code>docs/app/development/implementation/course_items_form.md</code></li>
+<li>📄 <strong>CourseReactivation</strong> <code>RAG: docs/app/features/reactivation.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>handleRichTextType</strong> <code>app/assets/teacher/items/rich-text.ts</code></li>
+<li>📄 <strong>sections.js</strong> <code>app/assets/teacher/sections/sections.js</code></li>
+<li>📄 <strong>Course::CircularProgress</strong> <code>app/components/course/circular_progress.html.slim</code></li>
+<li>📄 <strong>Course::EnrollmentPolicyForm</strong> <code>app/components/course/enrollment_policy_form.html.slim</code></li>
+<li>📄 <strong>Course::EnrollmentStatistics</strong> <code>app/components/course/enrollment_statistics.html.slim</code></li>
+<li>📄 <strong>Dashboard::IcalFeed</strong> <code>app/components/dashboard/ical_feed.html.slim</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740297169"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

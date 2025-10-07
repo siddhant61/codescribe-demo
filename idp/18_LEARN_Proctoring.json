@@ -1,0 +1,425 @@
+{
+  "clusterId": "18_LEARN_Proctoring",
+  "featureFocus": "Online Proctoring Integration for Quizzes and Exams",
+  "documentationReport": "The 'Online Proctoring Integration for Quizzes and Exams' feature is implemented using the SMOWL solution [Source: config/xikolo.yml]. However, it is explicitly marked as **deprecated** and slated for removal [Source: app/models/course/enrollment/proctoring.rb, app/models/quiz/submission/proctoring.rb].\n\n**Platform Configuration:**\nIntegration with SMOWL requires specific configurations in `xikolo.yml` and `secrets.yml`. A `store_url` (or multiple for different languages) must be set for external shop integration, allowing users to book proctoring via vouchers [Source: config/xikolo.yml]. SMOWL-specific thresholds for various proctoring features (e.g., `nobodyinthepicture`, `wronguser`, `severalpeople`, `webcamcovered`, `othertab`) are configured in `xikolo.yml` to determine pass/fail criteria for activities [Source: config/xikolo.yml]. Credentials for SMOWL's REST API, including `smowl_entity`, `smowl_license_key`, and `smowl_password`, are managed via `secrets.yml` [Source: config/secrets.yml]. Finally, a `proctoring` feature flipper must be enabled at the platform level, typically for all courses and logged-in users [Source: config/xikolo.yml].\n\n**Course Configuration:**\nOnce the feature flipper is enabled, individual courses can be designated as 'proctored' within the 'Certificates' section of the course administration [Source: app/models/voucher/product_types/proctoring.rb]. For proctored courses, specific homeworks or exams must also be activated for proctoring by toggling the 'Proctored' option in their respective item settings [Source: app/models/quiz/submission/proctoring.rb]. Initial activation on the SMOWL side is also required [Source: config/xikolo.yml].\n\n**Core Components and Logic:**\n*   **`Course::Enrollment::Proctoring`**: This class is responsible for generating S3 object paths for proctoring-related images, specifically for a proctored enrollment. It uses `UUID4` to create unique identifiers based on course and user IDs, storing images in a `proctoring/{user_uid}/{course_uid}.jpg` format within the `:certificate` S3 bucket [Source: app/models/course/enrollment/proctoring.rb]. It interacts with an implied `::Proctoring::SmowlAdapter` to retrieve vendor-specific information [Source: app/models/course/enrollment/proctoring.rb].\n*   **`Quiz::Submission::Proctoring`**: This component processes proctoring data associated with a quiz submission. It initializes with a `submission` object and retrieves proctoring results by delegating to a `::Proctoring::SmowlAdapter` instance, passing the `vendor_data` stored within the submission [Source: app/models/quiz/submission/proctoring.rb]. It also fetches the associated `Course::Course` to provide context to the adapter [Source: app/models/quiz/submission/proctoring.rb].\n*   **`Voucher::ProductTypes::Proctoring`**: This class manages the business logic for enabling, validating, and claiming proctored status for users via vouchers. It checks if proctoring is enabled globally (`::Proctoring.enabled?`) and specifically for a given course (`course.proctored?`) [Source: app/models/voucher/product_types/proctoring.rb]. It validates if a user is eligible to claim proctoring, checking for existing enrollments, whether they are already proctored, and if an upgrade is possible via `::Proctoring::CourseContext` [Source: app/models/voucher/product_types/proctoring.rb]. Upon successful validation, it claims proctored status by making an API call to the `course` microservice to update the enrollment [Source: app/models/voucher/product_types/proctoring.rb].\n*   **`QuizSubmissionProctoringPresenter`**: This presenter formats the proctoring results for display in the user interface. It takes a `Quiz::Submission::Proctoring` object and generates a `Global::Callout` based on the proctoring result's status (e.g., `perfect?`, `valid?`, `empty?`) [Source: app/presenters/quiz_submission_proctoring_presenter.rb]. It provides localized messages for different outcomes [Source: app/presenters/quiz_submission_proctoring_presenter.rb].\n*   **`_proctoring_chart.html.slim`**: This Slim template renders a client-side bar chart using `dimple.js` (a D3.js wrapper) to visualize proctoring data. It takes `proctoring_data` (presumably an array of `[Type, Value]`) and displays it, including a tooltip for features [Source: app/views/shared/_proctoring_chart.html.slim]. The chart labels are rotated for better readability [Source: app/views/shared/_proctoring_chart.html.slim].\n\n**Technical Debt:**\n*   The entire proctoring feature is officially deprecated and scheduled for removal [Source: app/models/course/enrollment/proctoring.rb, app/models/quiz/submission/proctoring.rb]. This is the most significant piece of technical debt, indicating that the current implementation will not be maintained or extended.\n*   The `_proctoring_chart.html.slim` view uses embedded JavaScript with `raw` and jQuery, which might be considered legacy frontend practices [Source: app/views/shared/_proctoring_chart.html.slim]. The use of `raw` also introduces a potential XSS vulnerability if `proctoring_data` is not thoroughly sanitized before being passed to the view [Source: app/views/shared/_proctoring_chart.html.slim].",
+  "componentMapPatch": {
+    "components": {
+      "Course::Enrollment::Proctoring": {
+        "type": "Model Concern/Utility",
+        "description": "Manages the generation of S3 object paths for proctoring-related images associated with a specific course enrollment. It uses UUIDs to construct unique paths for storing images in the `:certificate` S3 bucket.",
+        "interactions": {
+          "interaction_0": "Interacts with `UUID4` for generating unique identifiers [Source: app/models/course/enrollment/proctoring.rb].",
+          "interaction_1": "Interacts with `Xikolo::S3` to access the `:certificate` bucket [Source: app/models/course/enrollment/proctoring.rb].",
+          "interaction_2": "Interacts with an implied `::Proctoring::SmowlAdapter` to get vendor-specific context [Source: app/models/course/enrollment/proctoring.rb]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/course/enrollment/proctoring.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 23,
+              "code": "module Course\n  class Enrollment\n    class Proctoring\n      def initialize(enrollment)\n        @enrollment = enrollment\n      end\n\n      def s3_image\n        @s3_image ||= begin\n          cid = UUID4(@enrollment.course_id).to_s(format: :base62)\n          uid = UUID4(@enrollment.user_id).to_s(format: :base62)\n\n          Xikolo::S3.bucket_for(:certificate).object(\n            \"proctoring/#{uid}/#{cid}.jpg\"\n          )\n        end\n      end\n\n      private\n\n      def vendor\n        @vendor ||= ::Proctoring::SmowlAdapter.new(@enrollment.course)\n      end\n    end\n  end\nend",
+              "source": "app/models/course/enrollment/proctoring.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/course/enrollment/proctoring.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/lib/proctoring.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/quiz/submission/proctoring.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Quiz::Submission::Proctoring": {
+        "type": "Model Concern/Utility",
+        "description": "Handles the retrieval and processing of proctoring results for a specific quiz submission. It delegates the actual result parsing to an external adapter.",
+        "interactions": {
+          "interaction_0": "Initializes with a `Quiz::Submission` object [Source: app/models/quiz/submission/proctoring.rb].",
+          "interaction_1": "Interacts with an implied `::Proctoring::SmowlAdapter` to get and interpret proctoring results from `vendor_data` [Source: app/models/quiz/submission/proctoring.rb].",
+          "interaction_2": "Fetches `Course::Course` to provide context to the adapter [Source: app/models/quiz/submission/proctoring.rb]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/quiz/submission/proctoring.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 20,
+              "code": "# frozen_string_literal: true\n\nmodule Quiz\n  class Submission\n    class Proctoring\n      def initialize(submission)\n        @submission = submission\n      end\n\n      def results\n        @results ||= vendor.results_from_data(@submission['vendor_data'])\n      end\n\n      private\n\n      def vendor\n        @vendor ||= ::Proctoring::SmowlAdapter.new(course)\n      end\n\n      def course\n        @course ||= Course::Course.find(@submission['course_id'])\n      end\n    end\n  end\nend",
+              "source": "app/models/quiz/submission/proctoring.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/quiz/submission/proctoring.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/lib/proctoring.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/course/enrollment/proctoring.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Voucher::ProductTypes::Proctoring": {
+        "type": "Service Object/Product Type",
+        "description": "Encapsulates the business logic for enabling, validating, and claiming proctored status for users, typically through a voucher system. It checks platform and course-level proctoring settings and user eligibility.",
+        "interactions": {
+          "interaction_0": "Checks global proctoring enablement via `::Proctoring.enabled?` [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_1": "Checks course-specific proctoring enablement via `course.proctored?` [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_2": "Validates user enrollment and proctoring status against `Course::Enrollment` records [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_3": "Uses an implied `::Proctoring::CourseContext` to check if a proctoring upgrade is possible for an enrollment [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_4": "Interacts with `Xikolo.api(:course)` to update enrollment status (set `proctored: true`) in the course microservice [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_5": "Retrieves localized text for messages via `I18n` [Source: app/models/voucher/product_types/proctoring.rb]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/voucher/product_types/proctoring.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 38,
+              "code": "module Voucher\n  module ProductTypes\n    class Proctoring\n      class << self\n        def enabled?\n          ::Proctoring.enabled?\n        end\n\n        # Check platform and course settings: Is proctoring enabled?\n        # @param course [Course::Course]\n        def enabled_in?(course)\n          return false unless enabled?\n          return false unless course.proctored?\n\n          true\n        end\n\n        def type\n          'proctoring_smowl'\n        end\n\n        def text\n          I18n.t(:'course.redeem_voucher.proctoring_smowl.text')\n        end\n\n        def info_text\n          I18n.t(\n            :'course.redeem_voucher.proctoring_smowl.info_text',\n            link: ::Proctoring.store_url,\n            brand: Xikolo.config.site_name\n          )\n        end\n\n        def unavailable_message\n          I18n.t(:'flash.error.proctoring.booking_failed')\n        end\n      end\n\n      def initialize(course, user)\n        @course = course\n        @user = user\n   ...\n",
+              "source": "app/models/voucher/product_types/proctoring.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 29,
+              "code": "module Proctoring\n  class << self\n    def config(key)\n      Xikolo.config.proctoring[key]\n    end\n\n    def enabled?\n      # Check whether proctoring is configured correctly for the platform\n      Xikolo.config.proctoring.present? &&\n        Xikolo.config.proctoring_smowl_options.present? &&\n        entity.present? &&\n        license_key.present? &&\n        password.present?\n    end\n\n    def smowl_option(key)\n      Xikolo.config.proctoring_smowl_options[key]\n    end\n\n    def entity\n      Rails.application.secrets.smowl_entity\n    end\n\n    def license_key\n      Rails.application.secrets.smowl_license_key\n    end\n\n    def password\n      Rails.application.secrets.smowl_password\n    end\n\n    def store_url\n      configured_url = config 'store_url'\n\n      # If the config is a string, that's our URL and we're done\n      return configured_url if configured_url.respond_to? :to_str\n\n      # Otherwise, we assume one URL per locale, and fall back to English\n      conf...\n",
+              "source": "app/models/voucher/product_types/proctoring.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/voucher/product_types/proctoring.rb",
+              "relevance": 41
+            },
+            {
+              "path": "app/lib/proctoring.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/models/course/enrollment/proctoring.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "QuizSubmissionProctoringPresenter": {
+        "type": "Presenter",
+        "description": "Formats and presents proctoring results from a `Quiz::Submission::Proctoring` object into user-friendly callouts for display in the UI, indicating success, warnings, or errors.",
+        "interactions": {
+          "interaction_0": "Initializes with a `Quiz::Submission::Proctoring` object [Source: app/presenters/quiz_submission_proctoring_presenter.rb].",
+          "interaction_1": "Calls `results` on the `Quiz::Submission::Proctoring` object to get the raw proctoring outcome [Source: app/presenters/quiz_submission_proctoring_presenter.rb].",
+          "interaction_2": "Constructs `Global::Callout` objects based on the proctoring results [Source: app/presenters/quiz_submission_proctoring_presenter.rb].",
+          "interaction_3": "Retrieves localized text via `I18n` [Source: app/presenters/quiz_submission_proctoring_presenter.rb]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/presenters/quiz_submission_proctoring_presenter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 29,
+              "code": "class QuizSubmissionProctoringPresenter\n  # @param proctoring [Quiz::Submission::Proctoring]\n  def initialize(proctoring)\n    @proctoring = proctoring\n  end\n\n  def status_callout\n    if result.empty?\n      Global::Callout.new(\n        I18n.t(:'quiz_submission.proctoring.data_currently_unavailable'),\n        icon: Global::FaIcon.new('gears', style: :solid),\n        type: :warning\n      )\n    elsif result.perfect?\n      Global::Callout.new(I18n.t(:'quiz_submission.proctoring.no_issues'), type: :success)\n    elsif result.valid?\n      Global::Callout.new(I18n.t(:'quiz_submission.proctoring.passed_with_issues'), type: :success)\n    else\n      Global::Callout.new(I18n.t(:'quiz_submission.proctoring.not_passed'), type: :error)\n    end\n  end\n\n  def result\n    @proctoring.results\n  end\nend",
+              "source": "app/presenters/quiz_submission_proctoring_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/quiz_submission_proctoring_presenter.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/presenters/abuse_report_presenter.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/presenters/account/policy_presenter.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "_proctoring_chart.html.slim": {
+        "type": "View Component (Frontend)",
+        "description": "A Slim template responsible for rendering a client-side bar chart to visualize proctoring data using `dimple.js` (a D3.js wrapper). It dynamically generates JavaScript to display the chart.",
+        "interactions": {
+          "interaction_0": "Receives `proctoring_data` as an input variable [Source: app/views/shared/_proctoring_chart.html.slim].",
+          "interaction_1": "Uses `dimple.js` (which relies on D3.js) for chart rendering [Source: app/views/shared/_proctoring_chart.html.slim].",
+          "interaction_2": "Uses jQuery for DOM manipulation and window resize event handling [Source: app/views/shared/_proctoring_chart.html.slim].",
+          "interaction_3": "Retrieves localized tooltip text via `I18n` [Source: app/views/shared/_proctoring_chart.html.slim]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml].",
+          "Uses embedded JavaScript with `raw` output, which can be a security risk (XSS) if `proctoring_data` is not properly sanitized [Source: app/views/shared/_proctoring_chart.html.slim].",
+          "Relies on older frontend libraries (jQuery, dimple.js/D3.js) which might be inconsistent with the project's stated use of React and TypeScript [Source: app/views/shared/_proctoring_chart.html.slim]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/views/shared/_proctoring_chart.html.slim"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 28,
+              "code": "#proctoring_chart\n- # rubocop:disable Rails/OutputSafety\njavascript:\n  proctoring_chart_data = #{raw proctoring_data.to_json};\n  var max = #{proctoring_data.max}\n  stat_data = new Array;\n  $.each(proctoring_chart_data, function (key, value) {\n    stat_data.push({Type: value[0], Value: value[1]});\n  });\n  var svg = dimple.newSvg(\"#proctoring_chart\", '100%', '100%');\n  var myProctoringChart = new dimple.chart(svg, stat_data);\n  myProctoringChart.setMargins(\"25px\", \"25px\", \"25px\", \"25px\");\n  var x = myProctoringChart.addCategoryAxis(\"x\", \"Type\");\n  var y = myProctoringChart.addMeasureAxis(\"y\", \"Value\");\n  y.overrideMax = max;\n  y.overrideMin = 0;\n  myProctoringChart.defaultColors = [new dimple.color(\"#E06200\")];\n  var bars = myProctoringChart.addSeries(null, dimple.plot.bar);\n  myProctoringChart.draw();\n  var chartHolder2 = [];\n  chartHolder2.push(myProctoringChart);\n  rotateLabels(x)\n\n  $(window).resize(function () {\n    $.each(chartHolder2, function (index, value) {\n      value.draw(0, ...",
+              "source": "app/views/shared/_proctoring_chart.html.slim"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/views/shared/_proctoring_chart.html.slim",
+              "relevance": 15
+            }
+          ]
+        }
+      },
+      "::Proctoring::SmowlAdapter": {
+        "type": "External Service Adapter (Implied)",
+        "description": "An adapter class (referenced but not provided in code) responsible for integrating with the external SMOWL proctoring solution. It likely handles API calls to SMOWL and parses their responses.",
+        "interactions": {
+          "interaction_0": "Instantiated by `Course::Enrollment::Proctoring` and `Quiz::Submission::Proctoring` [Source: app/models/course/enrollment/proctoring.rb, app/models/quiz/submission/proctoring.rb].",
+          "interaction_1": "Receives `course` context during initialization [Source: app/models/course/enrollment/proctoring.rb, app/models/quiz/submission/proctoring.rb].",
+          "interaction_2": "Processes `vendor_data` from quiz submissions to extract proctoring results [Source: app/models/quiz/submission/proctoring.rb].",
+          "interaction_3": "Relies on SMOWL API credentials configured in `secrets.yml` [Source: config/secrets.yml]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/course/enrollment/proctoring.rb",
+            "app/models/quiz/submission/proctoring.rb",
+            "app/lib/proctoring/smowl_adapter.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 6,
+              "code": "module Proctoring\n  class SmowlAdapter\n    # @param course [Course::Course]\n    def initialize(course)\n      @course = course\n    end",
+              "source": "app/lib/proctoring/smowl_adapter.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 19,
+              "code": "    # Read the proctoring results for a quiz from a stored vendor data hash\n    #\n    # @return [Proctoring::Result]\n    def results_from_data(vendor_data)\n      if vendor_data['proctoring_smowl_v2']\n        Proctoring::Result.new vendor_data['proctoring_smowl_v2'], thresholds: thresholds_v2\n      elsif vendor_data['proctoring_smowl']\n        Proctoring::Result.new vendor_data['proctoring_smowl'], thresholds: thresholds_v1\n      else\n        Proctoring::Result.new({}, thresholds: thresholds_v1)\n      end\n    end",
+              "source": "app/lib/proctoring/smowl_adapter.rb"
+            },
+            {
+              "startLine": 21,
+              "endLine": 26,
+              "code": "    # @deprecated Should be replaced by locally accumulating cached submission\n    # data, see `results_from_data` above.\n    # @param user [Xikolo::Common::Auth::CurrentUser::Authenticated]\n    # @return [Boolean]\n    def passed?(_user)\n      # Temporary: Since we cannot load data anymore, we ne...\n",
+              "source": "app/lib/proctoring/smowl_adapter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/proctoring/smowl_adapter.rb",
+              "relevance": 33
+            },
+            {
+              "path": "app/jobs/proctoring/store_submission_results_job.rb",
+              "relevance": 14
+            },
+            {
+              "path": "app/jobs/proctoring/upload_certificate_image_job.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "::Proctoring::CourseContext": {
+        "type": "Service Object (Implied)",
+        "description": "A service object (referenced but not provided in code) likely responsible for determining if a proctoring 'upgrade' (e.g., from non-proctored to proctored status) is possible for a given course and enrollment.",
+        "interactions": {
+          "interaction_0": "Instantiated by `Voucher::ProductTypes::Proctoring` with `course` and `enrollment` objects [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_1": "Provides `upgrade_possible?` method to check eligibility [Source: app/models/voucher/product_types/proctoring.rb]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/voucher/product_types/proctoring.rb",
+            "app/lib/proctoring/course_context.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 27,
+              "code": "class CourseContext     # @param course [Xikolo::Course::Course|Course::Course|Restify::Resource]     # @param enrollment [Xikolo::Course::Enrollment|Course::Enrollment|Restify::Resource]     def initialize(course, enrollment)       @course = course       @enrollment = enrollment     end      def enabled?       # Check whether proctoring has been activated for a course by a user       Proctoring.enabled? &&         course_proctored? &&         !@enrollment.nil? && @enrollment.proctored?     end      def can_enable?       # Check whether proctoring can be activated for a course by a user.       # This check describes rather formal criteria (proctoring activated for       # the course) and not whether the user already has taken to many       # assignments. The latter is handled by #upgrade_possible? to be able to       # display more precise messages for the user.       Proctoring.enabled? && # Proctoring enabled for the platform        ...",
+              "source": "app/lib/proctoring/course_context.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/proctoring/course_context.rb",
+              "relevance": 33
+            },
+            {
+              "path": "app/helpers/course_context_helper.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/presenters/pinboard_presenter.rb",
+              "relevance": 26
+            }
+          ]
+        }
+      },
+      "::Proctoring (Module)": {
+        "type": "Configuration Module (Implied)",
+        "description": "A module (referenced but not provided in code) that likely holds global configuration and utility methods for the proctoring feature, such as checking if the feature is enabled and providing the store URL.",
+        "interactions": {
+          "interaction_0": "Provides `enabled?` method to check if proctoring is globally active [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_1": "Provides `store_url` method to retrieve the external shop URL [Source: app/models/voucher/product_types/proctoring.rb].",
+          "interaction_2": "Relies on `xikolo.yml` for configuration [Source: config/xikolo.yml]."
+        },
+        "techDebt": [
+          "Part of a deprecated feature [Source: config/xikolo.yml]."
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/voucher/product_types/proctoring.rb",
+            "app/lib/proctoring.rb",
+            "config/xikolo.yml"
+          ]
+        }
+      }
+    },
+    "workflows": [
+      {
+        "workflowName": "Proctoring Configuration and Activation",
+        "description": "This workflow describes the steps required to enable and configure the proctoring feature at both the platform and individual course levels. It involves setting up external shop URLs, SMOWL API credentials, proctoring thresholds, and activating the feature via a feature flipper and course administration settings.",
+        "involvedComponents": [
+          "::Proctoring (Module)",
+          "::Proctoring::SmowlAdapter"
+        ],
+        "provenance": {
+          "sources": [
+            "config/xikolo.yml",
+            "config/secrets.yml",
+            "app/lib/proctoring.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "User Booking/Claiming Proctoring",
+        "description": "This workflow covers the process where a user attempts to obtain proctored status for a course, typically by redeeming a voucher. It includes checks for global and course-specific proctoring enablement, user enrollment status, and existing proctored status, culminating in an API call to update the enrollment.",
+        "involvedComponents": [
+          "Voucher::ProductTypes::Proctoring",
+          "::Proctoring (Module)",
+          "::Proctoring::CourseContext",
+          "Xikolo.api(:course) (Course Microservice)"
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/voucher/product_types/proctoring.rb",
+            "app/lib/proctoring/course_context.rb",
+            "config/xikolo.yml"
+          ]
+        }
+      },
+      {
+        "workflowName": "Proctoring Data Processing and Storage",
+        "description": "This workflow describes how proctoring-related data, such as images or results, are handled and stored. It involves generating unique identifiers for storage paths and processing vendor-specific data from quiz submissions.",
+        "involvedComponents": [
+          "Course::Enrollment::Proctoring",
+          "Quiz::Submission::Proctoring",
+          "::Proctoring::SmowlAdapter",
+          "Xikolo::S3",
+          "UUID4"
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/course/enrollment/proctoring.rb",
+            "app/models/quiz/submission/proctoring.rb"
+          ]
+        }
+      },
+      {
+        "workflowName": "Proctoring Results Display",
+        "description": "This workflow outlines how proctoring results are presented to users or administrators in the application's UI. It involves interpreting raw proctoring data and rendering it in a human-readable format, including status callouts and visual charts.",
+        "involvedComponents": [
+          "Quiz::Submission::Proctoring",
+          "QuizSubmissionProctoringPresenter",
+          "_proctoring_chart.html.slim",
+          "Global::Callout"
+        ],
+        "provenance": {
+          "sources": [
+            "app/models/quiz/submission/proctoring.rb",
+            "app/presenters/quiz_submission_proctoring_presenter.rb",
+            "app/views/shared/_proctoring_chart.html.slim"
+          ]
+        }
+      }
+    ]
+  },
+  "infographics": [],
+  "success": true,
+  "sourceFile": "cluster_C27_Proctoring_2025-09-12T07-37-38.json",
+  "runId": "run_2",
+  "filePath": "run_2/clusters/cluster_C27_Proctoring_2025-09-12T07-37-38.json",
+  "provenance": {
+    "primarySource": {
+      "clusterId": "C27_Proctoring",
+      "runId": "run_2"
+    },
+    "mergedSources": [],
+    "confidence": 1,
+    "reason": "Single cluster in functional group",
+    "synthesizedAt": "2025-09-17T16:06:16.440Z"
+  }
+}

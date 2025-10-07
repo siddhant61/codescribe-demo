@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Analytics standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#admin" class="breadcrumb-link">ADMIN</a></li>
+            <li class="breadcrumb-item active">Analytics standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-platform-wide-statistics-retrieval" class="sidebar-nav-link">1. Platform-Wide Statistics Retrieval</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-custom-report-generation-and-management" class="sidebar-nav-link">2. Custom Report Generation and Management</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-detailed-course-statistics-retrieval" class="sidebar-nav-link">3. Detailed Course Statistics Retrieval</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-admin">ADMIN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="platform-wide-and-course-specific-analytics-and-reporting---technical-documentation" tabindex="-1"><a class="header-anchor" href="#platform-wide-and-course-specific-analytics-and-reporting---technical-documentation"><span>Platform-Wide and Course-Specific Analytics and Reporting - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo 31_ADMIN_Analytics cluster provides a centralized and comprehensive system for analytics and reporting across the learning platform. Its core purpose is to offer administrators and stakeholders deep insights into platform-wide usage, granular course performance, and user activity through a suite of administrative controllers and specialized models. This cluster enables the generation, management, and display of diverse statistical data and custom reports, consolidating information from various microservices and internal data models to ensure data-driven decision-making and operational oversight. Key components include AJAX controllers for dynamic data retrieval, dedicated models for statistical calculations, and a robust reporting interface.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The architecture for the 31_ADMIN_Analytics cluster is designed to aggregate and present analytics from various microservices and internal models. It primarily relies on specialized administrative controllers acting as an intermediary layer between the user interface and distributed data sources. Caching mechanisms are extensively utilized to enhance performance and reduce load on backend services. The reporting subsystem provides flexible job management and data presentation through dedicated presenters.</p>
+<p>Key Components:</p>
+<ul>
+<li><strong>Admin Dashboard (UI):</strong> The primary user interface for administrators to view statistics and manage reports, initiating data requests to the backend controllers.</li>
+<li><strong>Admin::Ajax::PlatformStatisticsController:</strong> This controller is responsible for gathering and consolidating high-level platform statistics, such as user counts, total enrollments, and overall activity, from various APIs.</li>
+<li><strong>Admin::Ajax::DetailStatisticsController:</strong> Focuses on providing in-depth, course-specific metrics, including geographical data, top content types, and video engagement. It leverages external APIs and a GeoIP lookup service.</li>
+<li><strong>Admin::ReportsController:</strong> Serves as the central component for managing custom reports, facilitating their creation, listing, restarting, and deletion. It interacts heavily with the <code>lanalytics_api</code>.</li>
+<li><strong>Lanalytics Microservice API:</strong> A critical backend service that stores and processes analytics data, providing aggregated metrics and managing report generation jobs.</li>
+<li><strong>External Data Services (Course, Account, Pinboard APIs):</strong> Represents various microservices (<code>course_api</code>, <code>account_api</code>, <code>pinboard_api</code>) that are queried by the administrative controllers to enrich analytics data with user, course, and specific feature (e.g., pinboard) details.</li>
+</ul>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-architecture-overview"><span>Main Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUI["Admin Dashboard (UI)"]
+  platformStatsCtrl["Admin::Ajax::PlatformStatisticsController"]
+  detailStatsCtrl["Admin::Ajax::DetailStatisticsController"]
+  reportsCtrl["Admin::ReportsController"]
+  lanalyticsAPI["Lanalytics Microservice API"]
+  externalServices["Course/Account/Pinboard APIs"]
+
+  adminUI -->|"requests platform stats"| platformStatsCtrl
+  adminUI -->|"requests course stats"| detailStatsCtrl
+  adminUI -->|"manages reports"| reportsCtrl
+
+  platformStatsCtrl -->|"fetches global metrics"| lanalyticsAPI
+  detailStatsCtrl -->|"fetches detailed metrics"| lanalyticsAPI
+  reportsCtrl -->|"manages report jobs"| lanalyticsAPI
+
+  platformStatsCtrl -->|"queries users/courses"| externalServices
+  detailStatsCtrl -->|"queries courses/pinboard"| externalServices
+  reportsCtrl -->|"fetches course options"| externalServices
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Admin::Ajax::ClassifiersController:</strong> Interacts with <code>Course::Classifier</code> model to retrieve classifier data.</li>
+<li><strong>Admin::Ajax::CoursesController:</strong> Communicates with <code>course_api</code> service to fetch course details.</li>
+<li><strong>Admin::Ajax::DetailStatisticsController:</strong> Fetches ‘top_countries’, ‘top_cities’, ‘top_items’, ‘video_statistics’ metrics from <code>learnanalytics_api</code> via <code>fetch_metric</code> helper. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]</li>
+<li><strong>Admin::Ajax::DetailStatisticsController:</strong> Fetches course items from <code>course_api</code>. [Source: app/controllers/admin/ajax/detail_statistics_controller.rb]</li>
+<li><strong>Admin::Ajax::PlatformStatisticsController:</strong> Fetches account statistics from <code>account_api</code>. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]</li>
+<li><strong>Admin::Ajax::PlatformStatisticsController:</strong> Fetches course statistics (global enrollments, course count) from <code>course_api</code>. [Source: app/controllers/admin/ajax/platform_statistics_controller.rb]</li>
+<li><strong>Admin::Ajax::StreamsController:</strong> Interacts with <code>Video::Stream</code> model to retrieve stream data.</li>
+<li><strong>Admin::Ajax::UsersController:</strong> Communicates with <code>account_api</code> service to fetch user details.</li>
+<li><strong>Admin::ReportsController:</strong> Fetches report jobs and report types from <code>learnanalytics_api</code>. [Source: app/controllers/admin/reports_controller.rb]</li>
+<li><strong>Admin::ReportsController:</strong> Creates, restarts, and deletes report jobs via <code>learnanalytics_api</code>. [Source: app/controllers/admin/reports_controller.rb]</li>
+<li><strong>Admin::StatisticsController:</strong> Initializes <code>IconNavigationPresenter</code> for dashboard navigation. [Source: app/controllers/admin/statistics_controller.rb]</li>
+<li><strong>LanalyticsHelper:</strong> Accesses <code>current_user</code> to determine user ID.</li>
+<li><strong>LanalyticsHelper:</strong> Reads <code>ENV['RELEASE_NUMBER']</code> for build version.</li>
+<li><strong>Course::EnrollmentsStatistics:</strong> Queries <code>Course::Enrollment</code> records directly from the database. [Source: app/models/course/enrollments_statistics.rb]</li>
+<li><strong>Course::EnrollmentsStatistics:</strong> Considers <code>course.enrollment_delta</code> for adjusted counts. [Source: app/models/course/enrollments_statistics.rb]</li>
+<li><strong>Course::Statistics:</strong> Uses <code>Course::EnrollmentsStatistics</code> to get enrollment data. [Source: app/models/course/statistics.rb]</li>
+<li><strong>Course::Statistics:</strong> Queries <code>Course::Visit</code> records to determine user shows. [Source: app/models/course/statistics.rb]</li>
+<li><strong>Admin::ReportJobPresenter:</strong> Receives raw job data and <code>current_user</code> object. [Source: app/presenters/admin/report_job_presenter.rb]</li>
+<li><strong>Admin::ReportJobPresenter:</strong> Determines if a job is downloadable, error-prone, or restartable based on its status. [Source: app/presenters/admin/report_job_presenter.rb]</li>
+<li><strong>Admin::ReportPresenter:</strong> Receives report type definition, list of courses, list of classifiers, and prefill data. [Source: app/presenters/admin/report_presenter.rb]</li>
+<li><strong>Admin::ReportPresenter:</strong> Maps <code>courses</code> and <code>classifiers</code> data to select input options. [Source: app/presenters/admin/report_presenter.rb]</li>
+<li><strong>Admin::StatisticsPresenter:</strong> Queries <code>Course::Classifier</code> to find relevant courses. [Source: app/presenters/admin/statistics_presenter.rb]</li>
+<li><strong>Admin::StatisticsPresenter:</strong> Wraps <code>Course::Course</code> objects with an inner <code>Course</code> class for formatted display. [Source: app/presenters/admin/statistics_presenter.rb]</li>
+<li><strong>GeoIP::Lookup:</strong> Reads from the <code>vendor/GeoLite2-Country/GeoLite2-Country.mmdb</code> database.</li>
+<li><strong>Course::Admin::StatisticsController:</strong> Uses <code>CourseContextHelper</code> to establish course context. [Source: app/controllers/course/admin/statistics_controller.rb]</li>
+<li><strong>Course::Admin::StatisticsController:</strong> Uses <code>Acfs.run</code> (likely a frontend data fetching mechanism) for each statistics view. [Source: app/controllers/course/admin/statistics_controller.rb]</li>
+<li><strong>Poll::Stats:</strong> Directly queries the database (<code>poll_responses</code> table) using raw SQL to count responses. [Source: app/models/poll/stats.rb]</li>
+<li><strong>Voucher::Stats:</strong> Queries <code>Voucher::Voucher</code> and <code>Course::Course</code> models directly from the database. [Source: app/models/voucher/stats.rb]</li>
+<li><strong>report-jobs.js:</strong> Polls the <code>/reports</code> endpoint every 10 seconds to update the report jobs table. [Source: app/assets/admin/reports/report-jobs.js]</li>
+<li><strong>report-jobs.js:</strong> Fetches HTML content from <code>/reports</code> and injects it into the <code>[data-id=&quot;report-jobs&quot;]</code> element. [Source: app/assets/admin/reports/report-jobs.js]</li>
+<li><strong>lanalytics.report.admin Role:</strong> Includes <code>lanalytics.report.create</code> permission. [Source: RAG: services/account/lib/tasks/permissions/lanalytics.yml]</li>
+<li><strong>lanalytics.report.admin Role:</strong> Includes <code>lanalytics.report.delete</code> permission. [Source: RAG: services/account/lib/tasks/permissions/lanalytics.yml]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-platform-wide-statistics-retrieval" tabindex="-1"><a class="header-anchor" href="#1.-platform-wide-statistics-retrieval"><span>1. Platform-Wide Statistics Retrieval</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminClient["Admin UI Request"]
+  platformCtrl["PlatformStatisticsController"]
+  cache["Rails Cache"]
+  accountCourseAPI["Account/Course APIs"]
+  lanalyticsAPI["Lanalytics API"]
+  dataResponse["Aggregated Data Response"]
+
+  adminClient -->|"initiates request"| platformCtrl
+  platformCtrl -->|"check/store data"| cache
+  platformCtrl -->|"fetches user/course data"| accountCourseAPI
+  platformCtrl -->|"fetches activity/certs"| lanalyticsAPI
+  accountCourseAPI -->|"returns data"| platformCtrl
+  lanalyticsAPI -->|"returns metrics"| platformCtrl
+  platformCtrl -->|"aggregates and process"| dataResponse
+  dataResponse -->|"display to user"| adminClient
+</pre></div>
+<p>This workflow describes how platform-level statistics are retrieved and presented to an administrator. The process emphasizes concurrent data fetching and aggressive caching to ensure responsiveness.</p>
+<p>An administrator initiates a request for platform statistics from the Admin UI. The <code>Admin::Ajax::PlatformStatisticsController</code> intercepts this request and first attempts to retrieve the data from <code>Rails.cache</code>. If the data is not cached or has expired, the controller performs concurrent API calls using <code>Restify::Promise</code> to <code>account_api</code> for user statistics (e.g., confirmed users, daily registrations) and <code>course_api</code> for global course statistics (e.g., total enrollments, course counts). Simultaneously, it fetches active user counts and certificate statistics from the <code>learnanalytics_api</code> via a <code>fetch_metric</code> helper. Once all data is gathered, it applies any configured global deltas (e.g., <code>Xikolo.config.global_users_delta</code>), aggregates the results, stores them in <code>Rails.cache</code> for future requests (with expiration times ranging from 30 minutes to 1 hour), and renders the aggregated data for display in the Admin UI.</p>
+<h3 id="2.-custom-report-generation-and-management" tabindex="-1"><a class="header-anchor" href="#2.-custom-report-generation-and-management"><span>2. Custom Report Generation and Management</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUser["Admin User"]
+  reportsPage["Reports UI Page"]
+  reportsJS["report-jobs.js"]
+  reportsCtrl["Admin::ReportsController"]
+  lanalyticsAPI["Lanalytics API"]
+  presenters["Report Presenters"]
+
+  adminUser -->|"accesses"| reportsPage
+  reportsPage -->|"loads script"| reportsJS
+  reportsJS -->|"polls /reports endpoint"| reportsCtrl
+  reportsCtrl -->|"fetches jobs/types"| lanalyticsAPI
+  lanalyticsAPI -->|"returns data"| reportsCtrl
+  reportsCtrl -->|"uses for formatting"| presenters
+  presenters -->|"formats for display"| reportsPage
+  reportsPage -->|"updates view"| reportsJS
+</pre></div>
+<p>This workflow outlines the process an administrator follows to create, manage, and view custom reports within the system.</p>
+<p>The administrator navigates to the reports management page, which is managed by the <code>Admin::ReportsController</code>. Upon loading, the <code>report-jobs.js</code> frontend script initiates polling of the <code>/reports</code> endpoint every 10 seconds to keep the report jobs table updated asynchronously. The <code>Admin::ReportsController</code> fetches available report types and existing report jobs from the <code>lanalytics_api</code>. It then uses <code>Admin::ReportJobPresenter</code> to format existing jobs for display and <code>Admin::ReportPresenter</code> to prepare report creation forms, dynamically populating options like courses (from <code>course_api</code>) and classifiers (from <code>Course::Classifier</code>). When an administrator submits a new report creation request, the <code>Admin::ReportsController</code> sends this request, including <code>task_type</code>, <code>task_scope</code>, and <code>options</code>, to the <code>lanalytics_api</code>. For managing existing jobs, the controller also facilitates restarting failed jobs and deleting completed or failed jobs through direct interactions with the <code>lanalytics_api</code>. The frontend continuously updates the display, showing job progress, completion status, or error details in a modal if a job fails.</p>
+<h3 id="3.-detailed-course-statistics-retrieval" tabindex="-1"><a class="header-anchor" href="#3.-detailed-course-statistics-retrieval"><span>3. Detailed Course Statistics Retrieval</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminClient["Admin UI Request"]
+  detailCtrl["DetailStatisticsController"]
+  cache["Rails Cache"]
+  lanalyticsAPI["Lanalytics API"]
+  courseAPI["Course API"]
+  pinboardAPI["Pinboard API (Beta Feature)"]
+
+  adminClient -->|"requests course stats"| detailCtrl
+  detailCtrl -->|"check/store data"| cache
+  detailCtrl -->|"fetches geo/video metrics"| lanalyticsAPI
+  detailCtrl -->|"fetches course items"| courseAPI
+  detailCtrl -->|"fetches pinboard activity"| pinboardAPI
+  lanalyticsAPI -->|"provides metrics"| detailCtrl
+  courseAPI -->|"provides items"| detailCtrl
+  pinboardAPI -->|"provides activity"| detailCtrl
+  detailCtrl -->|"aggregates and returns"| adminClient
+</pre></div>
+<p>This workflow details how specific analytical data for individual courses is fetched and presented, including geographical and content engagement metrics.</p>
+<p>An administrator selects a specific course and requests its detailed statistics from the Admin UI. This request is handled by the <code>Admin::Ajax::DetailStatisticsController</code>. Similar to platform statistics, the controller first checks <code>Rails.cache</code> for existing data, caching results for up to 6 hours. If a cache miss occurs, the controller proceeds to fetch various metrics. It requests <code>top_countries</code>, <code>top_cities</code>, <code>top_items</code>, and <code>video_statistics</code> from the <code>learnanalytics_api</code> using the <code>fetch_metric</code> helper. To determine <code>top_item_types</code>, it first retrieves all course items from <code>course_api</code> and then combines this with the <code>top_items</code> metrics. Additionally, if the <code>teaching_team_pinboard_activity</code> beta feature is enabled, the controller queries the <code>pinboard_api</code> for pinboard activity statistics. Geographical data might implicitly rely on <code>GeoIP::Lookup</code> being used by an underlying service to enrich IP addresses. Once all data is collected and processed, it’s served to the Admin UI for display.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The 31_ADMIN_Analytics cluster integrates deeply with various microservices and internal models to provide comprehensive insights. Frontend interactions, primarily driven by AJAX, ensure a dynamic user experience, while backend processes focus on efficient data aggregation and presentation.</p>
+<p><strong>Technical Considerations:</strong></p>
+<ul>
+<li><strong>Caching Strategy:</strong> <code>Rails.cache</code> is extensively used across <code>Admin::Ajax::PlatformStatisticsController</code> (30 mins to 1 hour expiration) and <code>Admin::Ajax::DetailStatisticsController</code> (6 hours expiration) for platform-wide and course-specific statistics respectively, along with a <code>race_condition_ttl</code> to prevent thundering herd problems. <code>Course::Statistics</code> also caches certificate data for 1 hour. This indicates a strong emphasis on performance optimization for frequently accessed statistics.</li>
+<li><strong>Concurrent API Calls:</strong> <code>Restify::Promise</code> is employed in <code>Admin::Ajax::PlatformStatisticsController</code> to make concurrent API calls to <code>account_api</code> and <code>course_api</code>, significantly reducing latency for fetching multiple data points simultaneously.</li>
+<li><strong>Data Transformation:</strong> Presenters like <code>Admin::ReportJobPresenter</code> and <code>Admin::ReportPresenter</code> are crucial for formatting raw data received from APIs or models into a user-friendly format for display, including mapping IDs to human-readable titles and handling conditional display logic (e.g., job restartability).</li>
+<li><strong>Asynchronous Frontend Updates:</strong> The <code>report-jobs.js</code> script exemplifies a client-side polling mechanism, updating report job listings every 10 seconds. This pushes the responsibility of maintaining an up-to-date view to the client, reducing server-side complexity for real-time updates.</li>
+<li><strong>Direct Database Queries &amp; Raw SQL:</strong> Components like <code>Course::EnrollmentsStatistics</code>, <code>Course::Statistics</code>, <code>Poll::Stats</code>, and <code>Voucher::Stats</code> directly query the database. <code>Poll::Stats</code> notably uses raw SQL for <code>poll_responses</code> counting, which might be a performance optimization but poses a technical debt due to maintainability.</li>
+</ul>
+<p><strong>Dependencies and Integrations:</strong></p>
+<ul>
+<li><strong>Microservices:</strong> Direct API interactions with <code>account_api</code>, <code>course_api</code>, <code>lanalytics_api</code>, and <code>pinboard_api</code> are fundamental for data retrieval and report job management. These are accessed via <code>Xikolo.api()</code> or <code>Restify::Promise</code>.</li>
+<li><strong>Internal Models:</strong> Relies heavily on internal ActiveRecord models such as <code>Course::Classifier</code>, <code>Video::Stream</code>, <code>Course::Enrollment</code>, <code>Course::Visit</code>, <code>Poll::Poll</code>, and <code>Voucher::Voucher</code> for data that resides within the primary application’s database or is managed directly.</li>
+<li><strong>Utility Modules:</strong> <code>GeoIP::Lookup</code> provides IP address to geographical location resolution, reading from <code>vendor/GeoLite2-Country/GeoLite2-Country.mmdb</code>. <code>LanalyticsHelper</code> provides frontend configuration details like user ID and <code>ENV['RELEASE_NUMBER']</code>.</li>
+<li><strong>Frontend Data Fetching:</strong> <code>Acfs.run</code> is utilized within <code>Course::Admin::StatisticsController</code> for various course statistics views, indicating a specialized frontend data fetching mechanism.</li>
+</ul>
+<p><strong>Configuration Requirements:</strong></p>
+<ul>
+<li><strong>Global Deltas:</strong> <code>Xikolo.config.global_enrollment_delta</code> and <code>Xikolo.config.global_users_delta</code> are used to adjust global enrollment and user counts, respectively. These are critical for accurate platform-wide reporting.</li>
+<li><strong>Feature Flags:</strong> The <code>teaching_team_pinboard_activity</code> beta feature controls access to pinboard statistics in <code>Admin::Ajax::DetailStatisticsController</code> and <code>Course::Admin::StatisticsController</code>.</li>
+<li><strong>Environment Variables:</strong> <code>ENV['RELEASE_NUMBER']</code> is read by <code>LanalyticsHelper</code> to include the build version in frontend analytics data, which is useful for debugging and tracking.</li>
+<li><strong>GeoIP Database:</strong> The presence of <code>vendor/GeoLite2-Country/GeoLite2-Country.mmdb</code> is explicitly required by <code>GeoIP::Lookup</code> for geographical data resolution. This database is not included in the open-source codebase and must be sourced externally.</li>
+<li><strong>Permissions:</strong> Specific permissions are required for various actions, such as <code>global.dashboard.show</code> for viewing dashboards, <code>lanalytics.report.create</code> and <code>lanalytics.report.delete</code> for report management. The <code>lanalytics.report.admin</code> role bundles these reporting permissions, managed manually via Rails console in the <code>account</code> service, which is noted as a potential technical debt for its lack of a user-friendly interface.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Admin::Ajax::ClassifiersController</strong> <code>app/controllers/admin/ajax/classifiers_controller.rb</code></li>
+<li>📄 <strong>Admin::Ajax::CoursesController</strong> <code>app/controllers/admin/ajax/courses_controller.rb</code></li>
+<li>📄 <strong>Admin::Ajax::DetailStatisticsController</strong> <code>app/controllers/admin/ajax/detail_statistics_controller.rb</code></li>
+<li>📄 <strong>Admin::Ajax::PlatformStatisticsController</strong> <code>app/controllers/admin/ajax/platform_statistics_controller.rb</code></li>
+<li>📄 <strong>Admin::Ajax::StreamsController</strong> <code>app/controllers/admin/ajax/streams_controller.rb</code></li>
+<li>📄 <strong>Admin::Ajax::UsersController</strong> <code>app/controllers/admin/ajax/users_controller.rb</code></li>
+<li>📄 <strong>Admin::ReportsController</strong> <code>app/controllers/admin/reports_controller.rb</code></li>
+<li>📄 <strong>Admin::StatisticsController</strong> <code>app/controllers/admin/statistics_controller.rb</code></li>
+<li>📄 <strong>Admin::ReportJobPresenter</strong> <code>app/presenters/admin/report_job_presenter.rb</code></li>
+<li>📄 <strong>Admin::ReportPresenter</strong> <code>app/presenters/admin/report_presenter.rb</code></li>
+<li>📄 <strong>Admin::StatisticsPresenter</strong> <code>app/presenters/admin/statistics_presenter.rb</code></li>
+<li>📄 <strong>Course::Admin::StatisticsController</strong> <code>app/controllers/course/admin/statistics_controller.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>LanalyticsHelper</strong> <code>app/helpers/lanalytics_helper.rb</code></li>
+<li>📄 <strong>Course::EnrollmentsStatistics</strong> <code>app/models/course/enrollments_statistics.rb</code></li>
+<li>📄 <strong>Course::Statistics</strong> <code>app/models/course/statistics.rb</code></li>
+<li>📄 <strong>GeoIP::Lookup</strong> <code>lib/geo_ip/lookup.rb</code></li>
+<li>📄 <strong>Poll::Stats</strong> <code>app/models/poll/stats.rb</code></li>
+<li>📄 <strong>Voucher::Stats</strong> <code>app/models/voucher/stats.rb</code></li>
+<li>📄 <strong>lanalytics.report.admin Role</strong> <code>RAG: services/account/lib/tasks/permissions/lanalytics.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>lanalytics.report.admin Role</strong> <code>RAG: docs/app/features/permissions/reporting.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>report-jobs.js</strong> <code>app/assets/admin/reports/report-jobs.js</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295438"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

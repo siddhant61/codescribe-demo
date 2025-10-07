@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizAssessment standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for QuizAssessment standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#learn" class="breadcrumb-link">LEARN</a></li>
+            <li class="breadcrumb-item active">QuizAssessment standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-quiz-creation-and-management-workflow" class="sidebar-nav-link">1. Quiz Creation and Management Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-quiz-submission-workflow" class="sidebar-nav-link">2. User Quiz Submission Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-quiz-result-and-recap-display-workflow" class="sidebar-nav-link">3. Quiz Result and Recap Display Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-learn">LEARN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="quiz-creation%2C-question-management%2C-user-submissions%2C-and-grading---technical-documentation" tabindex="-1"><a class="header-anchor" href="#quiz-creation%2C-question-management%2C-user-submissions%2C-and-grading---technical-documentation"><span>Quiz Creation, Question Management, User Submissions, and Grading - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the Xikolo Quiz Management and Assessment System, a critical feature cluster for enabling comprehensive online learning assessments. It encompasses functionalities for instructors to create, manage, and grade quizzes, alongside a robust platform for students to submit and review their attempts. The system leverages a microservice architecture, distributing core logic across the main Ruby on Rails application and dedicated services like the Quiz, Course, and Submission Services. Key components facilitate everything from dynamic form rendering for question editing to real-time submission processing and detailed result presentation, including integration with external proctoring services. The primary purpose is to provide a standardized, scalable, and reliable framework for educational assessments within the Xikolo platform.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo Quiz Management and Assessment System operates within a distributed microservice architecture, with the Main Ruby on Rails Application serving as the primary interface and orchestrator for user interactions. This application hosts frontend assets, controllers, models, and presenters, interacting with several backend microservices for specialized functionalities. The <code>Quiz Service</code> is central, managing core quiz entities like <code>Quiz</code>, <code>Question</code>, <code>Answer</code>, and <code>QuizSubmission</code>. It communicates with PostgreSQL for data persistence, RabbitMQ for asynchronous communication, and Redis for caching. The <code>Course Service</code> provides essential course-related data, including item and section details, and is crucial for linking quizzes within the broader course structure. The <code>Submission Service</code> is responsible for processing and storing submission-related events, particularly receiving notifications about new quiz submissions. This modular design ensures scalability, maintainability, and clear separation of concerns, allowing different parts of the system to evolve independently while interacting through well-defined APIs and message queues. ACFS client models and Restify instances abstract these microservice interactions for the main application, streamlining data fetching and manipulation.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-architecture-overview"><span>Main Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userClient["User Interface (Frontend)"]
+  mainRailsApp["Main Ruby on Rails Application"]
+  quizService["Quiz Service (Microservice)"]
+  courseService["Course Service (Microservice)"]
+  submissionService["Submission Service (Microservice)"]
+
+  userClient -->|"HTTP/HTTPS requests"| mainRailsApp
+  mainRailsApp -->|"ACFS models, API clients (Restify)"| quizService
+  mainRailsApp -->|"ACFS models, API clients (Restify)"| courseService
+  mainRailsApp -->|"Msgr (RabbitMQ) events"| submissionService
+  quizService -->|"PostgreSQL (persistence)"| dbQuiz["Quiz DB"]
+  quizService -->|"RabbitMQ (async comms)"| mqQuiz["RabbitMQ"]
+  quizService -->|"Redis (caching, Sidekiq)"| cacheQuiz["Redis/Sidekiq"]
+  courseService -->|"PostgreSQL"| dbCourse["Course DB"]
+  submissionService -->|"PostgreSQL"| dbSubmission["Submission DB"]
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>QuizAnswersController:</strong> Interacts with <code>Xikolo::Quiz::Question</code> and <code>Xikolo::Quiz::Answer</code> ACFS models to fetch and persist data from the <code>quiz</code> microservice.</li>
+<li><strong>QuizAnswersController:</strong> Uses <code>Acfs.run</code> to execute asynchronous data fetching requests.</li>
+<li><strong>QuizQuestionsController:</strong> Interacts with <code>Xikolo::Course::Item</code> and <code>Xikolo::Quiz::Quiz</code> ACFS models to retrieve course and quiz context.</li>
+<li><strong>QuizQuestionsController:</strong> Interacts with various <code>Xikolo::Quiz::Question</code> ACFS models to fetch and persist question data from the <code>quiz</code> microservice.</li>
+<li><strong>QuizSubmissionController:</strong> Includes <code>CourseContextHelper</code> and <code>ItemContextHelper</code> for contextual data.</li>
+<li><strong>QuizSubmissionController:</strong> Authenticates users via <code>ensure_logged_in</code>.</li>
+<li><strong>QuizSubmissionSnapshotController:</strong> Authenticates users via <code>ensure_logged_in</code>.</li>
+<li><strong>QuizSubmissionSnapshotController:</strong> Posts snapshot data to the <code>quiz</code> microservice via <code>Xikolo.api(:quiz)</code>.</li>
+<li><strong>QuizRecapController:</strong> Authenticates users via <code>ensure_logged_in</code>.</li>
+<li><strong>QuizRecapController:</strong> Fetches questions from the <code>quiz</code> microservice using <code>Xikolo.api(:quiz)</code>.</li>
+<li><strong>Quiz::Submission:</strong> Initializes with a hash of submission attributes, typically from a Restify response or ACFS client object [Source: app/models/quiz/submission.rb]</li>
+<li><strong>Quiz::Submission:</strong> Delegates proctoring-related logic to <code>Quiz::Submission::Proctoring</code> [Source: app/models/quiz/submission.rb]</li>
+<li><strong>Quiz::Submission::Proctoring:</strong> Initializes with a quiz submission hash [Source: app/models/quiz/submission/proctoring.rb]</li>
+<li><strong>Quiz::Submission::Proctoring:</strong> Utilizes <code>Proctoring::SmowlAdapter</code> to process <code>vendor_data</code> and retrieve proctoring results [Source: app/models/quiz/submission/proctoring.rb]</li>
+<li><strong>QuizItemPresenter:</strong> Delegates properties to <code>@quiz</code> (Xikolo::Quiz::Quiz) and <code>@attempts</code> (Xikolo::Submission::UserQuizAttempts) ACFS models.</li>
+<li><strong>QuizItemPresenter:</strong> Interacts with <code>Xikolo::Course::Enrollment</code>, <code>Xikolo::Submission::QuizSubmission</code> ACFS models.</li>
+<li><strong>QuizResultPresenter:</strong> Receives <code>quiz</code>, <code>submission</code>, and <code>all_submissions</code> data as input.</li>
+<li><strong>QuizResultPresenter:</strong> Uses <code>ProgressHelper</code> for percentage calculation.</li>
+<li><strong>QuizSubmissionProctoringPresenter:</strong> Receives a <code>Quiz::Submission::Proctoring</code> object in its constructor.</li>
+<li><strong>app/assets/course/items/quiz.ts:</strong> Interacts with the DOM to attach an event listener to a select element.</li>
+<li><strong>app/assets/course/items/quiz.ts:</strong> Triggers a browser redirect (<code>window.location.replace</code>) based on user selection.</li>
+<li><strong>app/assets/quiz-recap/quiz-recap.ts:</strong> Fetches quiz question data from the <code>/app/quiz-recap</code> endpoint using <code>fetch</code>.</li>
+<li><strong>app/assets/quiz-recap/quiz-recap.ts:</strong> Uses <code>I18n</code> for internationalization.</li>
+<li><strong>app/assets/teacher/items/quiz-edit.ts:</strong> Fetches HTML content for question/answer forms from specified URLs using <code>fetch</code> [Source: app/assets/teacher/items/quiz-edit.ts]</li>
+<li><strong>app/assets/teacher/items/quiz-edit.ts:</strong> Initializes markdown editors (<code>initMarkdownEditorOnSelector</code>) and markdown upload dropzones (<code>mdupload.scan</code>) on the loaded content [Source: app/assets/teacher/items/quiz-edit.ts]</li>
+<li><strong>app/assets/teacher/items/quiz-item.ts:</strong> Handles changes to quiz exercise type to adjust visibility and default values of instructions, time limits, and allowed attempts [Source: app/assets/teacher/items/quiz-item.ts]</li>
+<li><strong>app/assets/teacher/items/quiz-item.ts:</strong> Manages ‘unlimited-time-switch’ and ‘unlimited-attempts-switch’ to toggle visibility of corresponding input fields [Source: app/assets/teacher/items/quiz-item.ts]</li>
+<li><strong>app/assets/teacher/items/quiz-questions.ts:</strong> Dynamically appends the appropriate question form (multiple choice, multiple answer, free text, essay) to the UI based on a selector’s value [Source: app/assets/teacher/items/quiz-questions.ts]</li>
+<li><strong>app/assets/teacher/items/quiz-questions.ts:</strong> Initializes markdown editors (<code>initMarkdownEditorOnSelector</code>), upload dropzones (<code>upload.scan</code>, <code>mdupload.scan</code>), and dropdowns (<code>initDropdownsOnSelector</code>) within the question forms [Source: app/assets/teacher/items/quiz-questions.ts]</li>
+<li><strong>app/assets/teacher/items/quiz.ts:</strong> Calls <code>handleQuizExerciseTypes</code> and <code>setTimeAndAttemptsSwitches</code> from <code>quiz-item.ts</code> to configure quiz properties [Source: app/assets/teacher/items/quiz.ts]</li>
+<li><strong>app/assets/teacher/items/quiz.ts:</strong> Calls <code>setQuizQuestions</code> from <code>quiz-questions.ts</code> to manage question forms [Source: app/assets/teacher/items/quiz.ts]</li>
+<li><strong>Xikolo::Quiz::Quiz:</strong> Used by <code>QuizQuestionsController</code> to find the associated quiz for question management [Source: app/controllers/quiz_questions_controller.rb]</li>
+<li><strong>Xikolo::Quiz::Quiz:</strong> Used by <code>QuizSubmissionController</code> to retrieve quiz details, questions, and answers for submissions [Source: app/controllers/quiz_submission_controller.rb]</li>
+<li><strong>Xikolo::Quiz::Question:</strong> Used by <code>QuizAnswersController</code> to find the question for which answers are being managed [Source: app/controllers/quiz_answers_controller.rb]</li>
+<li><strong>Xikolo::Quiz::Question:</strong> Used by <code>QuizQuestionsController</code> for finding, creating, updating, and moving questions [Source: app/controllers/quiz_questions_controller.rb]</li>
+<li><strong>Xikolo::Quiz::Answer:</strong> Used by <code>QuizAnswersController</code> for finding, creating, updating, moving, and deleting answers [Source: app/controllers/quiz_answers_controller.rb]</li>
+<li><strong>Xikolo::Quiz::Answer:</strong> Used by <code>QuizSubmissionController</code> to retrieve answers for quiz questions during submission [Source: app/controllers/quiz_submission_controller.rb]</li>
+<li><strong>Xikolo::Submission::QuizSubmission:</strong> Used by <code>QuizSubmissionController</code> for finding, creating, and updating quiz submissions [Source: app/controllers/quiz_submission_controller.rb]</li>
+<li><strong>Xikolo::Submission::QuizSubmission:</strong> Used by <code>QuizItemPresenter</code> to determine the user’s submission status and redirect logic [Source: app/presenters/quiz_item_presenter.rb]</li>
+<li><strong>Xikolo::Submission::QuizSubmissionSnapshot:</strong> Used by <code>QuizSubmissionController</code> to find and load submission snapshots [Source: app/controllers/quiz_submission_controller.rb]</li>
+<li><strong>Xikolo::Submission::UserQuizAttempts:</strong> Used by <code>QuizSubmissionController</code> to check remaining attempts before allowing a new submission [Source: app/controllers/quiz_submission_controller.rb]</li>
+<li><strong>Xikolo::Submission::UserQuizAttempts:</strong> Used by <code>QuizItemPresenter</code> to determine if further attempts are allowed [Source: app/presenters/quiz_item_presenter.rb]</li>
+<li><strong>Quiz Service:</strong> Communicates with PostgreSQL for data persistence.</li>
+<li><strong>Quiz Service:</strong> Uses RabbitMQ for asynchronous inter-service communication.</li>
+<li><strong>Course Service:</strong> Provides API endpoints consumed by <code>QuizSubmissionController</code> to retrieve item and section details [Source: app/controllers/quiz_submission_controller.rb]</li>
+<li><strong>Course Service:</strong> Provides API endpoints consumed by <code>QuizRecapController</code> to find course items for generating reference links [Source: app/controllers/quiz_recap_controller.rb]</li>
+<li><strong>Submission Service:</strong> Receives <code>xikolo.submission.submission.create</code> events via Msgr from <code>QuizSubmissionController</code> [Source: app/controllers/quiz_submission_controller.rb]</li>
+<li><strong>Regrading Rake Tasks:</strong> Directly manipulates internal data models of the Quiz Service (e.g., questions, answers, submissions). [Source: RAG: docs/app/features/courses/regrading.md]</li>
+<li><strong>Regrading Rake Tasks:</strong> Triggers updates to course results, likely through an interaction with the Course Service, via the <code>regrading:just_update_course</code> task. [Source: RAG: docs/app/features/courses/regrading.md]</li>
+<li><strong>QuizSubmissionNavigator:</strong> Interacts with the DOM to find the submission selection element.</li>
+<li><strong>QuizSubmissionNavigator:</strong> Modifies <code>window.location.replace</code> to navigate the user.</li>
+<li><strong>ACFS Client Models (e.g., Xikolo::Quiz::Question):</strong> Perform <code>find</code>, <code>where</code>, <code>new</code>, <code>save!</code>, <code>update_attributes</code>, <code>delete!</code> operations, which translate into API calls to the respective microservices.</li>
+<li><strong>ACFS Client Models (e.g., Xikolo::Quiz::Question):</strong> Enqueue further ACFS requests for associated resources (e.g., questions enqueue answers) to facilitate concurrent data fetching.</li>
+<li><strong>Microservice API Clients (Xikolo.api(:quiz), Xikolo.api(:course)):</strong> Send HTTP requests to the <code>quiz</code> and <code>course</code> microservices for data retrieval and manipulation.</li>
+<li><strong>Msgr:</strong> Publishes <code>xikolo.submission.submission.create</code> events to the RabbitMQ message queue.</li>
+<li><strong>Proctoring::ItemContext:</strong> Receives <code>course</code>, <code>item</code>, and <code>enrollment</code> objects to establish proctoring context.</li>
+<li><strong>Proctoring::ItemContext:</strong> Interacts with <code>Proctoring::SmowlAdapter</code> to check service availability.</li>
+<li><strong>Quiz:</strong> Contains multiple ‘Question’ entities.</li>
+<li><strong>Quiz:</strong> Associated with ‘QuizSubmission’ entities for user attempts.</li>
+<li><strong>Question:</strong> Belongs to a ‘Quiz’.</li>
+<li><strong>Question:</strong> Contains multiple ‘Answer’ entities.</li>
+<li><strong>Answer:</strong> Belongs to a ‘Question’.</li>
+<li><strong>QuizSubmission:</strong> Associated with a ‘Quiz’.</li>
+<li><strong>QuizSubmission:</strong> Associated with a ‘User’ (from Account Service).</li>
+<li><strong>QuizImporter:</strong> Reads and validates XML data.</li>
+<li><strong>QuizImporter:</strong> Creates/updates ‘Quiz’ entities.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-quiz-creation-and-management-workflow" tabindex="-1"><a class="header-anchor" href="#1.-quiz-creation-and-management-workflow"><span>1. Quiz Creation and Management Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  teacherUI["Teacher UI"]
+  feQuizTS["app/assets/teacher/items/quiz.ts"]
+  feQuizEditTS["app/assets/teacher/items/quiz-edit.ts"]
+  quizQuestionsController["QuizQuestionsController"]
+  quizAnswersController["QuizAnswersController"]
+  quizService["Quiz Service"]
+
+  teacherUI -->|"Configures Quiz"| feQuizTS
+  feQuizTS -->|"Manages Questions/Answers"| feQuizEditTS
+  feQuizEditTS -->|"AJAX Fetch Forms"| quizQuestionsController
+  feQuizEditTS -->|"AJAX Fetch Forms"| quizAnswersController
+  quizQuestionsController -->|"CRUD Question (ACFS)"| quizService
+  quizAnswersController -->|"CRUD Answer (ACFS)"| quizService
+</pre></div>
+<p>This workflow outlines how instructors create and manage quizzes, questions, and answers within the Xikolo platform. The process begins with the teacher interacting with the frontend components to set up a quiz item. The <code>app/assets/teacher/items/quiz.ts</code> module orchestrates the overall quiz item configuration, including general properties and proctoring settings. It delegates to <code>app/assets/teacher/items/quiz-item.ts</code> for managing specific quiz properties like exercise type, time limits, and allowed attempts, which dynamically adjust the UI. When managing questions, <code>app/assets/teacher/items/quiz-questions.ts</code> dynamically loads the appropriate form based on the selected question type (e.g., multiple choice, essay) and initializes markdown editors and upload dropzones for content creation. For editing existing questions or answers, <code>app/assets/teacher/items/quiz-edit.ts</code> uses AJAX to fetch HTML content. These frontend interactions trigger requests handled by <code>QuizQuestionsController</code> and <code>QuizAnswersController</code> in the main Rails application. These controllers enforce content editor permissions via <code>ensure_content_editor</code> and interact with the <code>Quiz Service</code> using ACFS client models such as <code>Xikolo::Quiz::Question</code> and <code>Xikolo::Quiz::Answer</code>, and direct API calls via <code>Xikolo.api(:quiz)</code> for CRUD operations and position management. The <code>Quiz Service</code> then persists these changes to its PostgreSQL database. This comprehensive flow ensures instructors have granular control over quiz content and structure.</p>
+<h3 id="2.-user-quiz-submission-workflow" tabindex="-1"><a class="header-anchor" href="#2.-user-quiz-submission-workflow"><span>2. User Quiz Submission Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  studentUI["Student UI"]
+  quizItemPresenter["QuizItemPresenter"]
+  quizSubmissionController["QuizSubmissionController"]
+  quizService["Quiz Service"]
+  submissionService["Submission Service"]
+  proctoringSmowl["Proctoring::SmowlAdapter"]
+
+  studentUI -->|"Start/Resume Quiz"| quizItemPresenter
+  quizItemPresenter -->|"Contextual Data"| quizSubmissionController
+  quizSubmissionController -->|"Fetch Quiz Details (ACFS)"| quizService
+  quizSubmissionController -->|"Save Snapshot (API Post)"| quizService
+  quizSubmissionController -->|"Update Submission (ACFS)"| quizService
+  quizSubmissionController -->|"Check Attempts (ACFS)"| quizService
+  quizSubmissionController -->|"Proctoring Integration"| proctoringSmowl
+  quizSubmissionController -->|"Publish Submission Event (Msgr)"| submissionService
+</pre></div>
+<p>The User Quiz Submission workflow details the student’s journey from starting an attempt to final submission and snapshot saving. A student initiates a quiz attempt through the <code>studentUI</code>. The <code>QuizItemPresenter</code> prepares the data for the quiz’s introductory page, determining eligibility, attempts remaining, and handling redirects based on quiz state, deadlines, and proctoring status. When a student begins or resumes a quiz, <code>QuizSubmissionController</code> in the main Rails application takes over, authenticating the user via <code>ensure_logged_in</code> and incorporating contextual data using <code>CourseContextHelper</code> and <code>ItemContextHelper</code>. This controller interacts with multiple ACFS models: <code>Xikolo::Quiz::Quiz</code> for quiz details, <code>Xikolo::Submission::QuizSubmission</code> for managing the submission itself, <code>Xikolo::Submission::UserQuizAttempts</code> to track remaining attempts, and <code>Xikolo::Submission::QuizSubmissionSnapshot</code> for loading or saving progress. Partial submissions are handled by <code>QuizSubmissionSnapshotController</code>, which posts snapshot data directly to the <code>quiz</code> microservice via <code>Xikolo.api(:quiz)</code>. Upon final submission, the <code>QuizSubmissionController</code> processes the answers, potentially interacts with <code>Proctoring::ItemContext</code> for proctoring checks, and publishes an <code>xikolo.submission.submission.create</code> event to RabbitMQ via <code>Msgr</code>, which is then received by the <code>Submission Service</code>. This ensures a robust and trackable submission process, including auto-saving capabilities.</p>
+<h3 id="3.-quiz-result-and-recap-display-workflow" tabindex="-1"><a class="header-anchor" href="#3.-quiz-result-and-recap-display-workflow"><span>3. Quiz Result and Recap Display Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  studentUI["Student UI"]
+  quizRecapTS["app/assets/quiz-recap/quiz-recap.ts"]
+  quizRecapController["QuizRecapController"]
+  quizService["Quiz Service"]
+  courseService["Course Service"]
+  quizResultPresenter["QuizResultPresenter"]
+
+  studentUI -->|"View Quiz Recap"| quizRecapTS
+  quizRecapTS -->|"Fetch Recap Data (fetch)"| quizRecapController
+  quizRecapController -->|"Fetch Questions (API)"| quizService
+  quizRecapController -->|"Fetch Course Items (API)"| courseService
+  quizRecapController -->|"Format Results"| quizResultPresenter
+  quizResultPresenter -->|"Return Formatted Data"| quizRecapTS
+  quizRecapTS -->|"Render Recap UI (@openhpi/quiz-recap)"| studentUI
+</pre></div>
+<p>This workflow describes how students review their quiz results and a comprehensive recap of questions and answers. After a quiz submission, or when navigating to review previous attempts, the <code>studentUI</code> triggers the <code>QuizSubmissionNavigator</code> (implemented in <code>app/assets/course/items/quiz.ts</code>) to select a specific submission for display. For a detailed review, <code>app/assets/quiz-recap/quiz-recap.ts</code> fetches quiz question and answer data from the <code>/app/quiz-recap</code> endpoint using <code>fetch</code>. This request is handled by the <code>QuizRecapController</code> in the main Rails application, which authenticates the user and fetches questions from the <code>quiz</code> microservice via <code>Xikolo.api(:quiz)</code>. To enrich the recap with contextual information, the <code>QuizRecapController</code> also fetches course items from the <code>course</code> microservice via <code>Xikolo.api(:course)</code> to generate <code>referenceLink</code>s for questions. Once the data is retrieved, <code>QuizResultPresenter</code> formats the submission data, calculating percentages and preparing historical submission graphs, while <code>QuizSubmissionProctoringPresenter</code> translates any raw proctoring results into user-friendly callout messages. Finally, <code>app/assets/quiz-recap/quiz-recap.ts</code> renders the comprehensive quiz recap UI utilizing the <code>@openhpi/quiz-recap</code> library. This workflow provides students with a detailed, localized, and context-rich review of their performance and the quiz content.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo Quiz Management and Assessment System is built upon a Ruby on Rails application interacting with several microservices through specific technical mechanisms. ACFS Client Models, such as <code>Xikolo::Quiz::Question</code> and <code>Xikolo::Submission::QuizSubmission</code>, are fundamental. These models provide an ActiveRecord-like interface for the main application, abstracting HTTP/REST API calls to the <code>Quiz Service</code> and <code>Submission Service</code>. They perform operations like <code>find</code>, <code>where</code>, <code>new</code>, <code>save!</code>, and <code>delete!</code>, and are designed to enqueue further ACFS requests for associated resources, enabling concurrent data fetching using <code>Acfs.run</code>. Direct microservice API clients (<code>Xikolo.api(:quiz)</code>, <code>Xikolo.api(:course)</code>) are used for more granular, low-level HTTP requests (GET, POST, PATCH, DELETE) to specific relations within the microservices. This duality allows for both high-level ORM-like interaction and precise API control where needed. Frontend components are primarily TypeScript modules, leveraging <code>fetch</code> for AJAX calls, <code>I18n</code> for internationalization, and integrating external libraries like <code>@openhpi/quiz-recap</code>. Markdown editors and upload dropzones are initialized using <code>initMarkdownEditorOnSelector</code> and <code>mdupload.scan</code> to enhance content creation. Asynchronous communication for critical events, such as a new quiz submission, is handled via <code>Msgr</code> (RabbitMQ), which publishes <code>xikolo.submission.submission.create</code> events to the <code>Submission Service</code>. The <code>Quiz Service</code> itself relies on PostgreSQL for data persistence, RabbitMQ for inter-service communication, and Redis for caching and Sidekiq job queuing. Configuration requirements include standard database connections for PostgreSQL, message queue setup for RabbitMQ, and Redis instances for caching. The system also integrates with external proctoring services via <code>Proctoring::SmowlAdapter</code> and <code>Proctoring::ItemContext</code>, although the status notes indicate proctoring is currently unavailable for new quizzes and includes deprecated code. Regrading is managed through <code>rake</code> tasks executed directly on the <code>Quiz Service</code> (xi-quiz), which directly manipulates internal data models and requires a separate task, <code>regrading:just_update_course</code>, to update overall course results in the Course Service. This highlights a blend of modern microservice interactions with some legacy or administrative tooling. Specific file paths like <code>app/controllers/quiz_answers_controller.rb</code> and <code>app/assets/teacher/items/quiz.ts</code> underpin these interactions, with identified technical debt items such as <code>Quiz::Submission</code> needing to become a real ActiveRecord model and misplaced redirect logic in <code>QuizItemPresenter#submission!</code>, indicating ongoing refinement of the system’s architecture and component responsibilities.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>QuizAnswersController</strong> <code>app/controllers/quiz_answers_controller.rb</code></li>
+<li>📄 <strong>QuizQuestionsController</strong> <code>app/controllers/quiz_questions_controller.rb</code></li>
+<li>📄 <strong>QuizSubmissionController</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>QuizSubmissionSnapshotController</strong> <code>app/controllers/quiz_submission_snapshot_controller.rb</code></li>
+<li>📄 <strong>QuizSubmissionSnapshotController</strong> <code>spec/controllers/quiz_submission_snapshot_controller_spec.rb</code></li>
+<li>📄 <strong>QuizRecapController</strong> <code>app/controllers/quiz_recap_controller.rb</code></li>
+<li>📄 <strong>QuizRecapController</strong> <code>spec/requests/app/quiz-recap/show_spec.rb</code></li>
+<li>📄 <strong>QuizItemPresenter</strong> <code>app/presenters/quiz_item_presenter.rb</code></li>
+<li>📄 <strong>QuizResultPresenter</strong> <code>app/presenters/quiz_result_presenter.rb</code></li>
+<li>📄 <strong>QuizSubmissionProctoringPresenter</strong> <code>app/presenters/quiz_submission_proctoring_presenter.rb</code></li>
+<li>📄 <strong>ACFS Client Models (e.g., Xikolo::Quiz::Question)</strong> <code>app/controllers/quiz_answers_controller.rb</code></li>
+<li>📄 <strong>ACFS Client Models (e.g., Xikolo::Quiz::Question)</strong> <code>app/controllers/quiz_questions_controller.rb</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>Quiz Service</strong> <code>RAG: services/quiz/README.md</code></li>
+<li>📄 <strong>Quiz Service</strong> <code>RAG: docker/compose.quiz.yml</code></li>
+<li>📄 <strong>Course Service</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Course Service</strong> <code>app/controllers/quiz_recap_controller.rb</code></li>
+<li>📄 <strong>Submission Service</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Microservice API Clients (Xikolo.api(:quiz), Xikolo.api(:course))</strong> <code>app/controllers/quiz_answers_controller.rb</code></li>
+<li>📄 <strong>Microservice API Clients (Xikolo.api(:quiz), Xikolo.api(:course))</strong> <code>app/controllers/quiz_questions_controller.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Quiz::Submission</strong> <code>app/models/quiz/submission.rb</code></li>
+<li>📄 <strong>Quiz::Submission::Proctoring</strong> <code>app/models/quiz/submission/proctoring.rb</code></li>
+<li>📄 <strong>Xikolo::Quiz::Quiz</strong> <code>app/controllers/quiz_questions_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Quiz::Quiz</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Quiz::Question</strong> <code>app/controllers/quiz_answers_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Quiz::Question</strong> <code>app/controllers/quiz_questions_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Quiz::Answer</strong> <code>app/controllers/quiz_answers_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Quiz::Answer</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Submission::QuizSubmission</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Submission::QuizSubmission</strong> <code>app/presenters/quiz_item_presenter.rb</code></li>
+<li>📄 <strong>Xikolo::Submission::QuizSubmissionSnapshot</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Submission::UserQuizAttempts</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Submission::UserQuizAttempts</strong> <code>app/presenters/quiz_item_presenter.rb</code></li>
+<li>📄 <strong>Course::QuizRecap</strong> <code>app/components/course/quiz_recap.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Proctoring::ItemContext</strong> <code>app/controllers/quiz_submission_controller.rb</code></li>
+<li>📄 <strong>Proctoring::ItemContext</strong> <code>app/presenters/quiz_item_presenter.rb</code></li>
+<li>📄 <strong>QuizSubmission</strong> <code>RAG: services/quiz/config/services.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Regrading Rake Tasks</strong> <code>RAG: docs/app/features/courses/regrading.md</code></li>
+<li>📄 <strong>Quiz</strong> <code>RAG: services/quiz/app/assets/quiz_import_schema.xml</code></li>
+<li>📄 <strong>Question</strong> <code>RAG: services/quiz/app/assets/quiz_import_schema.xml</code></li>
+<li>📄 <strong>Answer</strong> <code>RAG: services/quiz/app/assets/quiz_import_schema.xml</code></li>
+<li>📄 <strong>QuizSubmission</strong> <code>RAG: services/quiz/README.md</code></li>
+<li>📄 <strong>QuizImporter</strong> <code>RAG: services/quiz/app/assets/quiz_import_schema.xml</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>app/assets/course/items/quiz.ts</strong> <code>app/assets/course/items/quiz.ts</code></li>
+<li>📄 <strong>app/assets/quiz-recap/quiz-recap.ts</strong> <code>app/assets/quiz-recap/quiz-recap.ts</code></li>
+<li>📄 <strong>app/assets/teacher/items/quiz-edit.ts</strong> <code>app/assets/teacher/items/quiz-edit.ts</code></li>
+<li>📄 <strong>app/assets/teacher/items/quiz-item.ts</strong> <code>app/assets/teacher/items/quiz-item.ts</code></li>
+<li>📄 <strong>app/assets/teacher/items/quiz-questions.ts</strong> <code>app/assets/teacher/items/quiz-questions.ts</code></li>
+<li>📄 <strong>app/assets/teacher/items/quiz.ts</strong> <code>app/assets/teacher/items/quiz.ts</code></li>
+<li>📄 <strong>QuizSubmissionNavigator</strong> <code>app/assets/course/items/quiz.ts</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740296732"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

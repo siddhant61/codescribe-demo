@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Support standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#admin" class="breadcrumb-link">ADMIN</a></li>
+            <li class="breadcrumb-item active">Support standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-user-submits-helpdesk-ticket-(frontend)" class="sidebar-nav-link">1. User Submits Helpdesk Ticket (Frontend)</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-submits-helpdesk-ticket-(api)" class="sidebar-nav-link">2. User Submits Helpdesk Ticket (API)</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-helpdesk-ticket-processing" class="sidebar-nav-link">3. Helpdesk Ticket Processing</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-admin">ADMIN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="user-support%2C-ticket-management%2C-and-helpdesk-integration---technical-documentation" tabindex="-1"><a class="header-anchor" href="#user-support%2C-ticket-management%2C-and-helpdesk-integration---technical-documentation"><span>User Support, Ticket Management, and Helpdesk Integration - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report documents cluster 33_ADMIN_Support, focusing on the system for user support, ticket management, and helpdesk integration within the Xikolo platform. The primary objective is to provide a robust infrastructure that enables users to submit support requests through both web-based interfaces and programmatic API interactions. Key components like <code>Helpdesk::Ticket</code>, <code>HelpdeskController</code>, and <code>Xikolo::V2::Helpdesk::Tickets</code> facilitate ticket creation, while <code>Helpdesk::TicketMailer</code> and <code>Msgr</code> ensure automated notifications and asynchronous event processing. The system incorporates stringent data validation and spam prevention mechanisms, offering a comprehensive and extensible solution for managing diverse support inquiries, including those related to specific courses.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The architecture of the Xikolo 33_ADMIN_Support cluster is designed around a core <code>Helpdesk::Ticket</code> model, supported by both a web-facing controller and a dedicated API endpoint for ticket submission. The system emphasizes clear separation of concerns, with specialized components handling user interaction, data validation, persistence, and post-creation notifications. Frontend user submissions are managed by the <code>HelpdeskController</code>, which utilizes a <code>Helpdesk::TicketForm</code> for data encapsulation and <code>Xi::Recaptcha::Integration</code> for spam prevention. Programmatic submissions leverage the <code>Xikolo::V2::Helpdesk::Tickets</code> API endpoint. Upon successful ticket creation, the system triggers asynchronous processes via <code>Helpdesk::TicketMailer</code> for email notifications and <code>Msgr</code> for message queue publishing, ensuring external systems or support staff are promptly informed. Configuration settings are centralized through <code>Xikolo.config</code>, influencing behaviors such as email recipients.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  helpdeskController["HelpdeskController"]
+  apiEndpoint["Xikolo::V2::Helpdesk::Tickets (API)"]
+  helpdeskTicket["Helpdesk::Ticket (Model)"]
+  ticketMailer["Helpdesk::TicketMailer"]
+  msgrService["Msgr (RabbitMQ)"]
+  recaptchaService["Xi::Recaptcha::Integration"]
+
+  helpdeskController -->|"validates & creates"| helpdeskTicket
+  helpdeskController -->|"integrates with"| recaptchaService
+  apiEndpoint -->|"creates"| helpdeskTicket
+  helpdeskTicket -->|"sends email via"| ticketMailer
+  helpdeskTicket -->|"publishes event to"| msgrService
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Helpdesk::Ticket:</strong> Belongs to <code>Course::Course</code> (optional) for course-specific tickets. [Source: app/models/helpdesk/ticket.rb]</li>
+<li><strong>Helpdesk::Ticket:</strong> Triggers <code>Helpdesk::TicketMailer</code> to send email notifications upon creation. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]</li>
+<li><strong>HelpdeskController:</strong> Interacts with <code>Xi::Recaptcha::Integration</code> for spam prevention. [Source: app/controllers/helpdesk_controller.rb]</li>
+<li><strong>HelpdeskController:</strong> Uses <code>Helpdesk::TicketForm</code> to initialize and annotate form data. [Source: app/controllers/helpdesk_controller.rb]</li>
+<li><strong>Helpdesk::TicketForm:</strong> Provides <code>categories_for</code> method, delegating to <code>Helpdesk::CategoryOptions</code>. [Source: app/forms/helpdesk/ticket_form.rb]</li>
+<li><strong>Helpdesk::TicketForm:</strong> Used by <code>HelpdeskController</code> to manage form data. [Source: app/controllers/helpdesk_controller.rb]</li>
+<li><strong>Helpdesk::TicketMailer:</strong> Receives a <code>Helpdesk::Ticket</code> object to construct the email. [Source: app/mailers/helpdesk/ticket_mailer.rb]</li>
+<li><strong>Helpdesk::TicketMailer:</strong> Retrieves helpdesk email recipient from <code>Xikolo.config.helpdesk_email</code>. [Source: app/mailers/helpdesk/ticket_mailer.rb]</li>
+<li><strong>Xikolo::V2::Helpdesk::Tickets:</strong> Creates <code>Helpdesk::Ticket</code> records [Source: api/xikolo/v2/helpdesk/tickets.rb]</li>
+<li><strong>Xikolo::V2::Helpdesk::Tickets:</strong> Accesses <code>current_user</code> for user details if authenticated [Source: api/xikolo/v2/helpdesk/tickets.rb]</li>
+<li><strong>Xi::Recaptcha::Integration:</strong> Used by <code>HelpdeskController</code> to verify form submissions. [Source: app/controllers/helpdesk_controller.rb]</li>
+<li><strong>Msgr:</strong> Receives a <code>Helpdesk::Ticket</code>’s JSON representation and publishes it to the <code>xikolo.helpdesk.ticket.create</code> topic. [Source: app/models/helpdesk/ticket.rb, spec/models/helpdesk/ticket_spec.rb]</li>
+<li><strong>Helpdesk::CategoryOptions:</strong> Used by <code>HelpdeskController</code> to determine ticket topic. [Source: app/controllers/helpdesk_controller.rb]</li>
+<li><strong>Helpdesk::CategoryOptions:</strong> Used by <code>Helpdesk::TicketForm</code> to retrieve categories for display. [Source: app/forms/helpdesk/ticket_form.rb]</li>
+<li><strong>Xikolo.config:</strong> Accessed by <code>Helpdesk::TicketMailer</code> to get the recipient email address [Source: app/mailers/helpdesk/ticket_mailer.rb]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-user-submits-helpdesk-ticket-(frontend)" tabindex="-1"><a class="header-anchor" href="#1.-user-submits-helpdesk-ticket-(frontend)"><span>1. User Submits Helpdesk Ticket (Frontend)</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  user["User (Frontend)"]
+  helpdeskController["HelpdeskController"]
+  recaptchaService["Xi::Recaptcha::Integration"]
+  ticketForm["Helpdesk::TicketForm"]
+  helpdeskTicket["Helpdesk::Ticket (Model)"]
+  postCreation["Notifier & Publisher (Mailer/Msgr)"]
+
+  user -->|"submits form"| helpdeskController
+  helpdeskController -->|"verifies with"| recaptchaService
+  helpdeskController -->|"prepares data using"| ticketForm
+  ticketForm -->|"populates"| helpdeskTicket
+  helpdeskController -->|"creates"| helpdeskTicket
+  helpdeskTicket -->|"triggers"| postCreation
+</pre></div>
+<p>This workflow describes the process initiated when a user submits a support ticket via the Xikolo web interface. The user interacts with the <code>HelpdeskController</code>, which is responsible for orchestrating the submission. Initially, the <code>HelpdeskController</code> leverages <code>Xi::Recaptcha::Integration</code> to verify the submission, mitigating spam. Form data is then processed using <code>Helpdesk::TicketForm</code>, which encapsulates and validates the input, and also retrieves dynamic category options from <code>Helpdesk::CategoryOptions</code>. The controller then constructs and persists a new <code>Helpdesk::Ticket</code> record in the database. Upon successful creation, an <code>after_commit</code> callback on the <code>Helpdesk::Ticket</code> model triggers two critical post-creation actions: sending an email notification via <code>Helpdesk::TicketMailer</code> to the configured helpdesk address and publishing a JSON representation of the ticket to a RabbitMQ topic using <code>Msgr</code>. This ensures immediate notification and enables further asynchronous processing by other services.</p>
+<h3 id="2.-user-submits-helpdesk-ticket-(api)" tabindex="-1"><a class="header-anchor" href="#2.-user-submits-helpdesk-ticket-(api)"><span>2. User Submits Helpdesk Ticket (API)</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  externalSystem["External System / Client App"]
+  apiEndpoint["Xikolo::V2::Helpdesk::Tickets API"]
+  ticketValidation["Ticket Data Validation"]
+  ticketPersistence["Helpdesk::Ticket (Persist)"]
+  emailNotify["Helpdesk::TicketMailer (Email)"]
+  mqPublish["Msgr (RabbitMQ Publish)"]
+
+  externalSystem -->|"POST /api/v2/helpdesk/tickets"| apiEndpoint
+  apiEndpoint -->|"validates input"| ticketValidation
+  ticketValidation -->|"if valid, creates"| ticketPersistence
+  ticketPersistence -->|"triggers"| emailNotify
+  ticketPersistence -->|"triggers"| mqPublish
+</pre></div>
+<p>This workflow outlines the programmatic submission of helpdesk tickets, typically by an external system or client application. A POST request is made to the <code>/api/v2/helpdesk/tickets</code> endpoint, which is managed by the <code>Xikolo::V2::Helpdesk::Tickets</code> API endpoint. This endpoint receives the request payload, validates the provided ticket attributes (e.g., <code>title</code>, <code>report</code>, <code>topic</code>), and automatically assigns user details like <code>mail</code> and <code>user_id</code> if an authenticated <code>current_user</code> is present via an authorization header. The API endpoint then proceeds to create a new <code>Helpdesk::Ticket</code> record. Similar to the frontend submission, the creation of the <code>Helpdesk::Ticket</code> triggers <code>after_commit</code> callbacks. These callbacks initiate an email notification via <code>Helpdesk::TicketMailer</code> and dispatch a message to the <code>xikolo.helpdesk.ticket.create</code> RabbitMQ topic through <code>Msgr</code>, ensuring consistency in post-creation processing regardless of the submission origin.</p>
+<h3 id="3.-helpdesk-ticket-processing" tabindex="-1"><a class="header-anchor" href="#3.-helpdesk-ticket-processing"><span>3. Helpdesk Ticket Processing</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  ticketCreated["Helpdesk::Ticket (Created)"]
+  sendEmail["Helpdesk::TicketMailer (Send Email)"]
+  publishMessage["Msgr (Publish MQ Message)"]
+  helpdeskRecipient["Configured Helpdesk Email"]
+  externalConsumers["External MQ Consumers"]
+  configLookup["Xikolo.config (Email Lookup)"]
+
+  ticketCreated -->|"after commit: creates"| sendEmail
+  ticketCreated -->|"after commit: publishes"| publishMessage
+  sendEmail -->|"retrieves address from"| configLookup
+  sendEmail -->|"sends to"| helpdeskRecipient
+  publishMessage -->|"sends to topic"| externalConsumers
+</pre></div>
+<p>This workflow details the automated actions that occur immediately following the successful creation of a <code>Helpdesk::Ticket</code> record, regardless of whether it originated from the frontend or API. The <code>Helpdesk::Ticket</code> model includes <code>after_commit</code> callbacks that are executed specifically after a new ticket is persisted. First, <code>Helpdesk::TicketMailer</code> is invoked to send an email notification. This mailer receives the newly created <code>Helpdesk::Ticket</code> object, constructs the email content, sets the <code>reply_to</code> address to the submitter’s email, and retrieves the primary recipient address from <code>Xikolo.config.helpdesk_email</code>. Second, <code>Msgr</code> is engaged to publish a message to the RabbitMQ <code>xikolo.helpdesk.ticket.create</code> topic. This message contains a JSON representation of the <code>Helpdesk::Ticket</code>. This asynchronous messaging mechanism allows other microservices or external helpdesk systems to subscribe to and consume these events, facilitating further automation and integration within the broader Xikolo ecosystem or with third-party support platforms.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo 33_ADMIN_Support cluster is implemented with a clear separation of concerns, utilizing Ruby on Rails conventions for models and controllers, and a Grape-based API for programmatic interactions.</p>
+<p><strong>Technical Considerations:</strong>
+Several technical aspects from the cluster data highlight areas for potential improvement:</p>
+<ul>
+<li><strong>Direct <code>params</code> Access:</strong> The <code>create_ticket!</code> method within <code>HelpdeskController</code> directly accesses <code>params</code> for several fields (e.g., <code>userAgent</code>, <code>cookie</code>, <code>language</code>, <code>category</code>) without uniformly utilizing <code>ticket_params</code>. While <code>params.permit</code> is employed for <code>ticket_params</code>, this pattern could introduce mass assignment vulnerabilities if not meticulously managed across all parameter usages. A more consistent approach using a dedicated form object or strictly permitted parameters would enhance security and maintainability.</li>
+<li><strong>Generic <code>data</code> Field:</strong> The <code>data</code> field in <code>Helpdesk::Ticket</code> and <code>Helpdesk::TicketForm</code> is defined as a generic string. This approach might lead to inconsistent data storage if various client information needs to be captured. Evolving this to a structured format, such as a JSONB column in the database, would significantly improve querying, analysis capabilities, and overall data integrity.</li>
+<li><strong><code>allowed_title</code> Validation Complexity:</strong> The <code>allowed_title</code> validation in <code>Helpdesk::Ticket</code> employs a complex regular expression (<code>URI::DEFAULT_PARSER.make_regexp</code>) to prevent URLs in the ticket title. This regex can be brittle and prone to unexpected behavior, potentially leading to false positives or negatives, depending on how a ‘URL’ is precisely defined within a title. Simplification or a more robust, tested validation approach might be beneficial.</li>
+</ul>
+<p><strong>Dependencies and Integrations:</strong>
+This cluster exhibits tight integrations among its components and with external systems:</p>
+<ul>
+<li><code>Helpdesk::Ticket</code> is optionally associated with <code>Course::Course</code> for course-specific support requests. It also has critical dependencies on <code>Helpdesk::TicketMailer</code> and <code>Msgr</code> for its <code>after_commit</code> callbacks.</li>
+<li><code>HelpdeskController</code> depends heavily on <code>Xi::Recaptcha::Integration</code> for spam verification, <code>Helpdesk::TicketForm</code> for managing form data, and <code>Helpdesk::CategoryOptions</code> for dynamic category selection. It also creates instances of <code>Helpdesk::Ticket</code> and accesses <code>current_user</code> for authenticated user details.</li>
+<li><code>Helpdesk::TicketForm</code> delegates category retrieval to <code>Helpdesk::CategoryOptions</code>.</li>
+<li><code>Helpdesk::TicketMailer</code> relies on <code>Helpdesk::Ticket</code> to construct email content and <code>Xikolo.config</code> to determine the recipient email address.</li>
+<li><code>Xikolo::V2::Helpdesk::Tickets</code> (API endpoint) directly creates <code>Helpdesk::Ticket</code> records and uses <code>current_user</code> for user context if available.</li>
+<li><code>Msgr</code> serves as the integration point with RabbitMQ, facilitating asynchronous communication by publishing ticket creation events.</li>
+</ul>
+<p><strong>Configuration Requirements:</strong>
+The cluster relies on <code>Xikolo.config</code> for essential settings:</p>
+<ul>
+<li><strong>Helpdesk Email Recipient:</strong> <code>Xikolo.config.helpdesk_email</code> is accessed by <code>Helpdesk::TicketMailer</code> to determine the destination address for all new ticket notifications. This is a critical configuration point for ensuring support requests reach the appropriate support team.</li>
+<li><strong>reCAPTCHA Enablement:</strong> <code>Xi::Recaptcha::Integration</code> checks <code>Xikolo.config.recaptcha['enabled']</code> to determine if reCAPTCHA verification should be active for web-based form submissions. If this setting is false, reCAPTCHA checks are bypassed.</li>
+<li>Other configuration requirements are not explicitly specified in the cluster data provided.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>HelpdeskController</strong> <code>app/controllers/helpdesk_controller.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Helpdesk::Ticket</strong> <code>app/models/helpdesk/ticket.rb</code></li>
+<li>📄 <strong>Helpdesk::Ticket</strong> <code>spec/models/helpdesk/ticket_spec.rb</code></li>
+<li>📄 <strong>Helpdesk::TicketForm</strong> <code>app/forms/helpdesk/ticket_form.rb</code></li>
+<li>📄 <strong>Helpdesk::TicketMailer</strong> <code>app/mailers/helpdesk/ticket_mailer.rb</code></li>
+<li>📄 <strong>Helpdesk::TicketMailer</strong> <code>app/models/helpdesk/ticket.rb</code></li>
+<li>📄 <strong>Xikolo::V2::Helpdesk::Tickets</strong> <code>api/xikolo/v2/helpdesk/tickets.rb</code></li>
+<li>📄 <strong>Xi::Recaptcha::Integration</strong> <code>app/controllers/helpdesk_controller.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>app/models/helpdesk/ticket.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>spec/models/helpdesk/ticket_spec.rb</code></li>
+<li>📄 <strong>Helpdesk::CategoryOptions</strong> <code>app/controllers/helpdesk_controller.rb</code></li>
+<li>📄 <strong>Helpdesk::CategoryOptions</strong> <code>app/forms/helpdesk/ticket_form.rb</code></li>
+<li>📄 <strong>Xikolo.config</strong> <code>app/mailers/helpdesk/ticket_mailer.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740295257"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

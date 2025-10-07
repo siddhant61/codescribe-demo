@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gamification standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Gamification standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#learn" class="breadcrumb-link">LEARN</a></li>
+            <li class="breadcrumb-item active">Gamification standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#key-components%3A" class="sidebar-nav-link">Key Components:</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-event-processing-and-score-generation-workflow" class="sidebar-nav-link">1. Event Processing and Score Generation Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-badge-and-user-level-display-workflow" class="sidebar-nav-link">2. Badge and User Level Display Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-open-badges-integration-workflow" class="sidebar-nav-link">3. Open Badges Integration Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-learn">LEARN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="gamification-system-(badges%2C-levels%2C-scores)---technical-documentation" tabindex="-1"><a class="header-anchor" href="#gamification-system-(badges%2C-levels%2C-scores)---technical-documentation"><span>Gamification System (Badges, Levels, Scores) - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo Gamification System (cluster 15_LEARN_Gamification) is a pivotal component designed to significantly boost user engagement and motivation across the platform. Operating on an event-driven architecture, it meticulously rewards user activities through a sophisticated points-based scoring system, achievement badges, and a progressive user leveling structure. Key components include a dedicated consumer for real-time event processing, rule-based logic for dynamic score generation, and specialized view components for the intuitive display of user achievements. The system’s primary purpose is to recognize user contributions, foster continuous platform interaction, and provide visual feedback on individual progression, ensuring a rewarding and interactive user experience by integrating seamlessly with core platform services.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Gamification System’s architecture is rooted in an event-driven paradigm, ensuring responsive processing of user actions. At its core, the system consumes various events from a message queue, applying a set of predefined rules to calculate and store user scores, which in turn drive badge and level progression. The user’s achievements are then presented through a dedicated display layer, which integrates with the core platform UI.</p>
+<h3 id="key-components%3A" tabindex="-1"><a class="header-anchor" href="#key-components%3A"><span>Key Components:</span></a></h3>
+<ol>
+<li>
+<p><strong>GamificationConsumer</strong>: This <code>Msgr</code> consumer serves as the primary entry point for all gamification-related events. It actively listens to RabbitMQ for diverse event types, such as <code>xikolo.course.result.create</code> or <code>xikolo.pinboard.vote.create</code>. Before processing, it checks the global <code>Xikolo.config.gamification['enabled']</code> flag. If active, it dispatches event payloads to specific <code>Gamification::Rules</code> classes.</p>
+</li>
+<li>
+<p><strong>Gamification::Rules::</strong>*: These are a family of service classes (e.g., <code>Gamification::Rules::Course::TakeExam</code>) instantiated by the <code>GamificationConsumer</code>. Each class encapsulates specific logic to calculate points for an event and subsequently persists a <code>Gamification::Score</code> record. They implement the <code>create_score!</code> method, applying gamification logic based on the event payload.</p>
+</li>
+<li>
+<p><strong>Gamification::Score</strong>: This model represents an individual score earned by a user for a specific action. It records <code>user_id</code>, <code>course_id</code>, the <code>rule</code> applied, <code>points</code> awarded, and event-specific <code>data</code>. A <code>checksum</code> mechanism is integral to prevent the creation of duplicate scores for identical events. These scores are foundational for calculating user levels and badge progression.</p>
+</li>
+<li>
+<p><strong>Gamification::Badge</strong>: This model or entity represents an awarded digital badge, storing its <code>name</code> and <code>level</code>. It is passed as an object to the <code>Dashboard::GamificationBadge</code> ViewComponent for rendering, where its attributes (name, level, persisted?) determine the display logic.</p>
+</li>
+<li>
+<p><strong>Dashboard::GamificationBadge</strong>: A <code>ViewComponent</code> responsible for rendering individual <code>Gamification::Badge</code> objects within the user interface. It dynamically generates image paths (e.g., <code>communicator_1.png</code> or <code>communicator_not_gained.png</code>) based on the badge’s status and name. It also interacts with <code>I18n</code> for localized badge level titles.</p>
+</li>
+<li>
+<p><strong>Gamification Configuration (YAML) &amp; Xikolo.config.gamification</strong>: These encompass several YAML files like <code>app/models/gamification/badge_types.yml</code> (defining badge progression and rules) and <code>app/models/gamification/user_levels.yml</code> (defining user level thresholds and metadata). <code>Xikolo.config.gamification</code> is a global feature flag that controls the overall enablement of the gamification system, checked by <code>GamificationConsumer</code> prior to event processing.</p>
+</li>
+</ol>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-gamification-architecture" tabindex="-1"><a class="header-anchor" href="#main-gamification-architecture"><span>Main Gamification Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  eventQueue["RabbitMQ Event Queue"]
+  gamificationConsumer["GamificationConsumer"]
+  gamificationConfig["Xikolo.config.gamification & YAML"]
+  gamificationRules["Gamification::Rules::*"]
+  gamificationScore["Gamification::Score"]
+  achievementDisplay["Achievement Display (UI)"]
+
+  eventQueue -->|"publishes events"| gamificationConsumer
+  gamificationConsumer -->|"checks enabled status"| gamificationConfig
+  gamificationConsumer -->|"dispatches payload"| gamificationRules
+  gamificationRules -->|"creates score"| gamificationScore
+  gamificationScore -->|"updates progression"| achievementDisplay
+  gamificationConfig -->|"defines rules/levels"| achievementDisplay
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>GamificationConsumer:</strong> Consumes messages from RabbitMQ via the <code>Msgr</code> gem.</li>
+<li><strong>GamificationConsumer:</strong> Checks <code>Xikolo.config.gamification['enabled']</code> to determine if gamification processing should occur.</li>
+<li><strong>Gamification::Rules::*:</strong> Instantiated by <code>GamificationConsumer</code> with an event <code>payload</code>.</li>
+<li><strong>Gamification::Rules::*:</strong> Executes the <code>create_score!</code> method to apply gamification logic and persist scores.</li>
+<li><strong>Gamification::Score:</strong> Created by <code>Gamification::Rules::*</code> classes [Inferred from app/consumers/gamification_consumer.rb]</li>
+<li><strong>Gamification::Score:</strong> Used in calculations for user levels and badge progression [Inferred from RAG: app/models/gamification/badge_types.yml, RAG: app/models/gamification/user_levels.yml]</li>
+<li><strong>Gamification::Badge:</strong> Passed as a parameter to <code>Dashboard::GamificationBadge</code> for rendering.</li>
+<li><strong>Gamification::Badge:</strong> Its attributes (<code>name</code>, <code>level</code>, <code>persisted?</code>) are accessed by the ViewComponent to determine display logic.</li>
+<li><strong>Dashboard::GamificationBadge:</strong> Receives a <code>Gamification::Badge</code> object during initialization.</li>
+<li><strong>Dashboard::GamificationBadge:</strong> Uses <code>helpers.image_tag</code> to render the badge image, constructing the path based on badge name and level/gained status.</li>
+<li><strong>Gamification Configuration (YAML):</strong> Defines the rules for <code>Gamification::Badge</code> progression [Source: RAG: app/models/gamification/badge_types.yml]</li>
+<li><strong>Gamification Configuration (YAML):</strong> Defines the thresholds and metadata for user levels [Source: RAG: app/models/gamification/user_levels.yml]</li>
+<li><strong>Xikolo.config.gamification:</strong> Checked by <code>GamificationConsumer</code> to determine if event processing should occur [Source: app/consumers/gamification_consumer.rb]</li>
+<li><strong>Xikolo.config.gamification:</strong> Configured in test environments to enable/disable gamification for specific tests [Source: spec/events/xikolo.course.result.create_spec.rb]</li>
+<li><strong>Open Badges Configuration:</strong> Enables/disables Open Badges functionality [Source: RAG: spec/fixtures/files/badge_config.yml]</li>
+<li><strong>Open Badges Configuration:</strong> Provides cryptographic keys for badge signing [Source: RAG: spec/fixtures/files/badge_config.yml, RAG: spec/support/files/certificate/badge_config.yml]</li>
+<li><strong>Gamification::Badge (Implied Model):</strong> Provided as an input to <code>Dashboard::GamificationBadge</code>.</li>
+<li><strong>Gamification::Badge (Implied Model):</strong> Its attributes (<code>name</code>, <code>level</code>, <code>persisted?</code>) are accessed by <code>Dashboard::GamificationBadge</code>.</li>
+<li><strong>Gamification::Configuration:</strong> Checked by <code>GamificationConsumer</code> before processing events.</li>
+<li><strong>Gamification::Configuration:</strong> Manipulated by integration tests to enable/disable the feature.</li>
+<li><strong>Gamification::BadgeTypes (YAML):</strong> Defines the structure and requirements for <code>Gamification::Badge</code> instances.</li>
+<li><strong>Gamification::UserLevels (YAML):</strong> Defines the progression and display properties for user levels based on accumulated XP.</li>
+<li><strong>Gamification Badge Configuration:</strong> Informs the gamification system about the criteria for awarding and leveling up badges.</li>
+<li><strong>Gamification Badge Configuration:</strong> Implicitly guides the implementation of <code>Gamification::Rules</code> by listing contributing events.</li>
+<li><strong>Gamification User Level Configuration:</strong> Used by the gamification system to determine a user’s current level based on their accumulated XP.</li>
+<li><strong>Gamification User Level Configuration:</strong> Establishes naming conventions for user level image assets.</li>
+<li><strong>Gamification (Presenter/Decorator):</strong> Provides collections of <code>badges</code> and <code>scores</code> to the <code>achievements.html.slim</code> view.</li>
+<li><strong>Gamification (Presenter/Decorator):</strong> Encapsulates logic for retrieving and structuring gamification data relevant to a user.</li>
+<li><strong>State::Empty:</strong> Rendered conditionally in <code>achievements.html.slim</code> when <code>@gamification.scores</code> is empty.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-event-processing-and-score-generation-workflow" tabindex="-1"><a class="header-anchor" href="#1.-event-processing-and-score-generation-workflow"><span>1. Event Processing and Score Generation Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userAction["User Action (e.g., Take Exam)"]
+  eventQueue["RabbitMQ Event Queue"]
+  gamificationConsumer["GamificationConsumer"]
+  ruleDispatcher["Dispatch to Gamification::Rules"]
+  scoreCreation["Create Gamification::Score"]
+  scorePersisted["Score Record Persisted"]
+
+  userAction -->|"generates event"| eventQueue
+  eventQueue -->|"consumes message"| gamificationConsumer
+  gamificationConsumer -->|"checks Xikolo.config.gamification"| ruleDispatcher
+  ruleDispatcher -->|"invokes create_score!"| scoreCreation
+  scoreCreation -->|"saves record with checksum"| scorePersisted
+</pre></div>
+<p>This workflow is the backbone of the gamification system, translating user actions into tangible scores. It begins when a user performs a tracked action, which publishes an event to a centralized message queue (RabbitMQ). The <code>GamificationConsumer</code> continuously monitors this queue. Upon receiving an event, the consumer first performs a critical check on <code>Xikolo.config.gamification['enabled']</code> to ensure the gamification system is active. If the feature is enabled, the consumer then intelligently dispatches the event payload to a specialized <code>Gamification::Rules</code> class. For example, a <code>xikolo.course.result.create</code> event with an ‘exam’ exercise type would be handled by <code>Gamification::Rules::Course::TakeExam</code>. This rule class processes the payload, applies its specific gamification logic, and then creates and persists a new <code>Gamification::Score</code> record. A checksum embedded within the score record prevents duplicate entries for the same event, ensuring data integrity. This score then becomes a basis for badge and user level calculations, triggering subsequent updates within the system.</p>
+<h3 id="2.-badge-and-user-level-display-workflow" tabindex="-1"><a class="header-anchor" href="#2.-badge-and-user-level-display-workflow"><span>2. Badge and User Level Display Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRequest["User Request Achievements Page"]
+  gamificationPresenter["Gamification (Presenter)"]
+  scoresAndBadges["Gamification::Score & Gamification::Badge"]
+  dashboardBadge["Dashboard::GamificationBadge ViewComponent"]
+  i18nService["I18n Service"]
+  userUI["User Interface Render"]
+
+  userRequest -->|"requests data"| gamificationPresenter
+  gamificationPresenter -->|"fetches data from"| scoresAndBadges
+  gamificationPresenter -->|"prepares badge object for"| dashboardBadge
+  dashboardBadge -->|"looks up titles"| i18nService
+  dashboardBadge -->|"renders badge and level UI"| userUI
+</pre></div>
+<p>This workflow focuses on presenting accumulated achievements to the user. When a user navigates to their dashboard or an achievements page, a <code>Gamification (Presenter/Decorator)</code> component is invoked. This presenter is responsible for aggregating relevant gamification data, including the user’s <code>Gamification::Score</code> records and <code>Gamification::Badge</code> instances. It structures this information for optimal display within the <code>achievements.html.slim</code> view. For each badge, the <code>Dashboard::GamificationBadge</code> ViewComponent is initialized with a <code>Gamification::Badge</code> object. This component then renders the badge’s visual representation. It dynamically determines the correct image source based on the badge’s <code>name</code> and <code>level</code>, distinguishing between earned (<code>communicator_1.png</code>) and unearned (<code>communicator_not_gained.png</code>) states, drawing from paths like <code>app/assets/images/gamification/badges/</code>. Localization for badge level titles is handled through <code>I18n</code>. Concurrently, the user’s overall progression, represented by user levels, is calculated based on their total experience points (XP) against thresholds defined in <code>app/models/gamification/user_levels.yml</code>, with corresponding images displayed in the UI. If a user has no scores, a <code>State::Empty</code> component is conditionally rendered.</p>
+<h3 id="3.-open-badges-integration-workflow" tabindex="-1"><a class="header-anchor" href="#3.-open-badges-integration-workflow"><span>3. Open Badges Integration Workflow</span></a></h3>
+<p>This workflow outlines the foundational capability for integrating with the Open Badges standard, allowing for external verification and recognition of user achievements. The system’s ability to support Open Badges is primarily driven by specific configuration files, namely <code>spec/fixtures/files/badge_config.yml</code> and <code>spec/support/files/certificate/badge_config.yml</code>. These YAML configurations are critical, as they not only contain feature flags to enable or disable Open Badges functionality but also store essential cryptographic assets, such as public and private RSA keys. The presence of these keys indicates the system’s preparedness to digitally sign verifiable digital badges, making them compliant with the Open Badges standard. While the explicit steps for <em>triggering</em> the issuance of an Open Badge are not fully detailed in the provided cluster data, the existence of these cryptographic elements and their configuration demonstrates a robust capability for generating secure, externally verifiable achievement credentials. This allows for a potential future expansion where users could export their achievements to external Open Badge platforms.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Gamification System leverages an event-driven architecture with several key implementation details and dependencies. The core event processing is handled by the <code>Msgr</code> gem, which facilitates communication with RabbitMQ, serving as the message broker for various gamification-related events. Each specific gamification rule is encapsulated within a <code>Gamification::Rules::*</code> class, designed to be independently invoked by the <code>GamificationConsumer</code> based on the event type. A <code>checksum</code> field on the <code>Gamification::Score</code> model is a critical technical consideration, implemented to ensure that only unique scores are persisted for any given event, thereby preventing data duplication and maintaining score accuracy.</p>
+<p><strong>Dependencies and Integrations:</strong></p>
+<ul>
+<li><strong>Message Queue</strong>: The system depends on RabbitMQ (via the <code>Msgr</code> gem) for asynchronous event consumption. Events such as <code>xikolo.course.result.create</code> and <code>xikolo.pinboard.vote.create</code> are ingested from this queue.</li>
+<li><strong>Configuration Management</strong>: <code>Xikolo.config.gamification</code> (an <code>ActiveSupport::Configurable</code> object) is a primary dependency for enabling/disabling the entire system. <code>YAML</code> is heavily used for static configurations, including <code>app/models/gamification/badge_types.yml</code> and <code>app/models/gamification/user_levels.yml</code>.</li>
+<li><strong>Internationalization</strong>: The <code>Dashboard::GamificationBadge</code> component explicitly uses <code>I18n</code> for localizing badge level titles, though a <code>TODO</code> exists to move more title logic to locale files.</li>
+<li><strong>View Components</strong>: <code>Dashboard::GamificationBadge</code> and <code>State::Empty</code> are <code>ApplicationComponent</code> subclasses, integrating with the Rails view layer to render dynamic UI elements.</li>
+</ul>
+<p><strong>Configuration Requirements:</strong></p>
+<ul>
+<li><strong>Feature Toggle</strong>: The system’s operation is contingent on <code>Xikolo.config.gamification['enabled']</code> being set to <code>true</code>. This flag is checked by the <code>GamificationConsumer</code> before any event processing occurs and can be manipulated in test environments.</li>
+<li><strong>Badge Definitions</strong>: <code>app/models/gamification/badge_types.yml</code> is mandatory for defining all badges, their contributing rules, and the score thresholds for various levels (e.g., bronze, silver, gold). This file also implies image paths for badges in <code>app/assets/images/gamification/badges/</code>.</li>
+<li><strong>User Level Definitions</strong>: <code>app/models/gamification/user_levels.yml</code> defines the progression of user levels, specifying <code>min_xp</code> requirements, <code>title</code>s, and <code>image</code> paths (e.g., <code>kyu02yellow.png</code>). These images are expected in <code>app/assets/images/gamification/userstates/</code>.</li>
+<li><strong>Open Badges</strong>: Configuration for Open Badges, including <code>open_badges</code> settings and cryptographic keys (public and private RSA keys), is located in <code>spec/fixtures/files/badge_config.yml</code> and <code>spec/support/files/certificate/badge_config.yml</code>. This configuration dictates the system’s ability to issue verifiable digital badges.</li>
+<li><strong>Rule Deactivation</strong>: Individual gamification rules can be deactivated by setting their awarded points to zero in configuration. However, removing or commenting out rules in the config requires careful consideration due to potential side effects on dependent rules or badge calculations, as explicitly noted in <code>app/consumers/gamification_consumer.rb</code>. This suggests a need for robust dependency management, which is not specified in cluster data beyond the warning.</li>
+</ul>
+<p><strong>Missing Information</strong>: Specific database schema details for <code>Gamification::Score</code> and <code>Gamification::Badge</code> beyond the mentioned attributes (e.g., exact column types, indices, <code>on_delete</code> constraints) are not specified in cluster data.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Gamification::Badge (Implied Model)</strong> <code>app/components/dashboard/gamification_badge.rb</code></li>
+<li>📄 <strong>Gamification::Badge (Implied Model)</strong> <code>RAG: app/models/gamification/badge_types.yml</code></li>
+<li>📄 <strong>Gamification (Presenter/Decorator)</strong> <code>app/views/dashboard/achievements.html.slim</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>GamificationConsumer</strong> <code>app/consumers/gamification_consumer.rb</code></li>
+<li>📄 <strong>Gamification::Rules::</strong>* <code>app/consumers/gamification_consumer.rb</code></li>
+<li>📄 <strong>Gamification::Score</strong> <code>spec/factories/gamification.rb</code></li>
+<li>📄 <strong>Gamification::Score</strong> <code>spec/events/xikolo.course.result.create_spec.rb</code></li>
+<li>📄 <strong>Gamification::Badge</strong> <code>app/components/dashboard/gamification_badge.rb</code></li>
+<li>📄 <strong>Gamification::Badge</strong> <code>RAG: app/models/gamification/badge_types.yml</code></li>
+<li>📄 <strong>Dashboard::GamificationBadge</strong> <code>app/components/dashboard/gamification_badge.rb</code></li>
+<li>📄 <strong>Dashboard::GamificationBadge</strong> <code>RAG: app/models/gamification/badge_types.yml</code></li>
+<li>📄 <strong>Gamification Configuration (YAML)</strong> <code>RAG: app/models/gamification/badge_types.yml</code></li>
+<li>📄 <strong>Gamification Configuration (YAML)</strong> <code>RAG: app/models/gamification/user_levels.yml</code></li>
+<li>📄 <strong>Xikolo.config.gamification</strong> <code>app/consumers/gamification_consumer.rb</code></li>
+<li>📄 <strong>Xikolo.config.gamification</strong> <code>spec/events/xikolo.course.result.create_spec.rb</code></li>
+<li>📄 <strong>Open Badges Configuration</strong> <code>RAG: spec/fixtures/files/badge_config.yml</code></li>
+<li>📄 <strong>Open Badges Configuration</strong> <code>RAG: spec/support/files/certificate/badge_config.yml</code></li>
+<li>📄 <strong>Gamification::Configuration</strong> <code>app/consumers/gamification_consumer.rb</code></li>
+<li>📄 <strong>Gamification::Configuration</strong> <code>integration/features/steps/gamification/user_score.rb</code></li>
+<li>📄 <strong>Gamification::BadgeTypes (YAML)</strong> <code>RAG: app/models/gamification/badge_types.yml</code></li>
+<li>📄 <strong>Gamification::UserLevels (YAML)</strong> <code>RAG: app/models/gamification/user_levels.yml</code></li>
+<li>📄 <strong>Gamification Badge Configuration</strong> <code>RAG: app/models/gamification/badge_types.yml</code></li>
+<li>📄 <strong>Gamification User Level Configuration</strong> <code>RAG: app/models/gamification/user_levels.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>State::Empty</strong> <code>app/views/dashboard/achievements.html.slim</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740296225"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

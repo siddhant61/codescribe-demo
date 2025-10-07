@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Monitoring standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#devops" class="breadcrumb-link">DEVOPS</a></li>
+            <li class="breadcrumb-item active">Monitoring standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#key-components-and-interactions" class="sidebar-nav-link">Key Components and Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-error-reporting-workflow" class="sidebar-nav-link">1. Error Reporting Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-performance-tracing-workflow" class="sidebar-nav-link">2. Performance Tracing Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-custom-metrics-collection-workflow" class="sidebar-nav-link">3. Custom Metrics Collection Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#technical-considerations" class="sidebar-nav-link">Technical Considerations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#dependencies-and-integrations" class="sidebar-nav-link">Dependencies and Integrations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#configuration-requirements" class="sidebar-nav-link">Configuration Requirements</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-devops">DEVOPS</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="application-performance-monitoring-and-error-logging---technical-documentation" tabindex="-1"><a class="header-anchor" href="#application-performance-monitoring-and-error-logging---technical-documentation"><span>Application Performance Monitoring and Error Logging - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/19/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>The Xikolo 60_DEVOPS_Monitoring cluster implements a robust and integrated strategy for application performance monitoring, logging, and error management. This system leverages Sentry for comprehensive error tracking and performance profiling, Mnemosyne for distributed transaction tracing, and Telegraf for custom application metrics. The primary purpose is to provide deep observability into application health, swiftly identify performance bottlenecks, and streamline error resolution across monolithic and microservice architectures. This multi-faceted approach ensures efficient incident response and continuous operational improvement by correlating errors with traces and metrics, providing a unified view of application health and performance.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The monitoring architecture for Xikolo cluster 60_DEVOPS_Monitoring is designed to provide comprehensive observability across its various application components and microservices. It strategically integrates Sentry for error tracking and performance monitoring, Mnemosyne for distributed tracing, and a Telegraf agent for custom metrics collection. This setup enables detailed insights into application behavior, from high-level performance trends to granular error occurrences and their root causes. The system is designed for a multi-layered approach to incident detection and analysis, fostering proactive maintenance and efficient debugging processes.</p>
+<h3 id="key-components-and-interactions" tabindex="-1"><a class="header-anchor" href="#key-components-and-interactions"><span>Key Components and Interactions</span></a></h3>
+<p><strong>1. Xikolo Application:</strong> This represents the core application logic, encompassing both web and microservice components. It is the source of all performance data, errors, and custom metrics. Exceptions within the application are caught by the <code>ErrorsController</code>, while custom metrics are emitted via the <code>Xikolo.metrics</code> interface.</p>
+<p><strong>2. Sentry Client (with filters):</strong> The Sentry client is embedded within the application, configured to capture exceptions and performance transaction data. It integrates <code>ActiveSupport::ParameterFilter</code> to sanitize sensitive parameters before events are sent. Crucially, the <code>AnnotateSentryErrorsForMnemosyne</code> middleware also ensures that Mnemosyne trace IDs are attached to Sentry events, enabling direct correlation.</p>
+<p><strong>3. Mnemosyne Client (Tracing):</strong> This client is responsible for collecting distributed trace data, providing end-to-end visibility of requests across services. It captures granular details of operations and, when errors occur, can attach them. Mnemosyne is configured to send its collected trace data asynchronously to a centralized message broker.</p>
+<p><strong>4. Telegraf Metrics Agent:</strong> Implemented via <code>Xikolo::Common::Metrics</code>, this agent facilitates the collection of custom application metrics. Application code interacts with <code>Xikolo.metrics</code> to increment counters or set gauges, which are then packaged and sent as UDP packets to a local Telegraf agent.</p>
+<p><strong>5. Sentry Service (External):</strong> This is the external platform that receives, processes, and stores the filtered error events and performance transaction data sent by the Sentry clients. It provides dashboards, alerting, and analysis tools for operational teams.</p>
+<p><strong>6. RabbitMQ Message Broker:</strong> Serving as the AMQP sink for Mnemosyne, RabbitMQ receives and queues all distributed trace data from various Mnemosyne instances. This centralizes trace data collection, allowing for subsequent processing, storage, and analysis by a trace data analytics system. The <code>XIKOLO_RABBITMQ_URL</code> environment variable configures its connection.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  application["Xikolo Application"]
+  sentryClient["Sentry Client (with filters)"]
+  mnemosyneClient["Mnemosyne Client (Tracing)"]
+  telegrafAgent["Telegraf Metrics Agent"]
+  sentryService["Sentry Service (External)"]
+  rabbitMQ["RabbitMQ Message Broker"]
+
+  application -->|"Emits Errors/Perf Data"| sentryClient
+  application -->|"Generates Trace Data"| mnemosyneClient
+  application -->|"Emits Custom Metrics"| telegrafAgent
+
+  mnemosyneClient -->|"Provides Trace ID"| sentryClient
+  sentryClient -->|"Sends Filtered Events"| sentryService
+  mnemosyneClient -->|"Sends Trace Data (AMQP)"| rabbitMQ
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Sentry:</strong> Receives captured exceptions from <code>ErrorsController</code> and other parts of the application. [Source: RAG: docs/app/development/monitoring/index.md]</li>
+<li><strong>Sentry:</strong> Receives performance transaction data from the application. [Source: config/initializers/sentry.rb]</li>
+<li><strong>Mnemosyne:</strong> Receives attached errors from <code>ErrorsController</code> via <code>::Mnemosyne.attach_error</code>. [Source: app/controllers/errors_controller.rb]</li>
+<li><strong>Mnemosyne:</strong> Provides a trace ID (<code>current_trace&amp;.uuid</code>) that can be correlated with Sentry events. [Source: app/controllers/errors_controller.rb, config/initializers/sentry.rb]</li>
+<li><strong>Telegraf::Agent (via Xikolo::Common::Metrics):</strong> Receives metric data from application code (e.g., <code>Xikolo.metrics.increment('event_name')</code>).</li>
+<li><strong>Telegraf::Agent (via Xikolo::Common::Metrics):</strong> Sends metric data as UDP packets to <code>localhost:8094</code>, where a Telegraf agent is expected to be listening.</li>
+<li><strong>AnnotateSentryErrorsForMnemosyne:</strong> Interacts with <code>Mnemosyne::Instrumenter</code> to retrieve the current trace ID.</li>
+<li><strong>AnnotateSentryErrorsForMnemosyne:</strong> Sets context on <code>Sentry.get_current_scope</code> to include the Mnemosyne trace ID.</li>
+<li><strong>ErrorsController:</strong> Receives exceptions from the Rails application (<code>action_dispatch.exception</code>). [Source: app/controllers/errors_controller.rb]</li>
+<li><strong>ErrorsController:</strong> Logs exceptions to Mnemosyne using <code>::Mnemosyne.attach_error</code>. [Source: app/controllers/errors_controller.rb]</li>
+<li><strong>ActiveSupport::ParameterFilter:</strong> Configured in Sentry’s <code>before_send</code> callback to sanitize event data. [Source: config/initializers/sentry.rb]</li>
+<li><strong>ActiveSupport::ParameterFilter:</strong> Filters parameters based on <code>Rails.application.config.filter_parameters</code>. [Source: config/initializers/sentry.rb]</li>
+<li><strong>RabbitMQ:</strong> Receives trace data from Mnemosyne instances across all applications and microservices. [Source: config/mnemosyne.yml, RAG: services/account/config/mnemosyne.yml]</li>
+<li><strong>RabbitMQ:</strong> Configured via <code>XIKOLO_RABBITMQ_URL</code> environment variable. [Source: config/mnemosyne.yml]</li>
+<li><strong>Sentry Configuration (Web):</strong> Reports exceptions to the Sentry service.</li>
+<li><strong>Sentry Configuration (Web):</strong> Filters sensitive parameters using <code>ActiveSupport::ParameterFilter</code>.</li>
+<li><strong>Sentry Configuration (Microservice):</strong> Reports exceptions to the Sentry service.</li>
+<li><strong>Sentry Configuration (Microservice):</strong> Filters sensitive parameters using <code>ActiveSupport::ParameterFilter</code>.</li>
+<li><strong>Mnemosyne Configuration:</strong> Connects to RabbitMQ via <code>XIKOLO_RABBITMQ_URL</code> to send trace data.</li>
+<li><strong>Mnemosyne Configuration:</strong> Identifies the originating application (e.g., ‘web’, ‘account’) for traces.</li>
+<li><strong>MsgrSentryIntegration:</strong> Captures <code>Exception</code> instances within <code>Msgr::Consumer</code> dispatch logic.</li>
+<li><strong>MsgrSentryIntegration:</strong> Reports captured exceptions to Sentry using <code>Sentry.capture_exception</code>.</li>
+<li><strong>Xikolo.site/Xikolo.brand:</strong> Provides contextual tags to Sentry events.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-error-reporting-workflow" tabindex="-1"><a class="header-anchor" href="#1.-error-reporting-workflow"><span>1. Error Reporting Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appProcess["Application Process"]
+  unhandledError["Unhandled Exception Occurs"]
+  sentryClient["Sentry Client (Filtered, Annotated)"]
+  mnemosyneTrace["Mnemosyne (Trace ID)"]
+  errorsController["ErrorsController (User Feedback)"]
+  sentryPlatform["Sentry Platform (External)"]
+
+  appProcess -->|"Triggers"| unhandledError
+  unhandledError -->|"Caught by"| sentryClient
+  unhandledError -->|"Handled by"| errorsController
+  mnemosyneTrace -->|"Provides Trace ID to"| sentryClient
+  sentryClient -->|"Applies Filtering & Annotation"| sentryPlatform
+  errorsController -->|"Renders Response (HTML/JSON)"| appProcess
+</pre></div>
+<p>Unhandled exceptions arising from application processes, whether in the main web application or microservices, are primarily intercepted by the <code>ErrorsController</code> or directly by Sentry integrations configured in <code>config/initializers/sentry.rb</code>. Before any error event is dispatched to the external Sentry service, it undergoes a crucial sanitization step using <code>ActiveSupport::ParameterFilter</code> to remove sensitive information. Concurrently, the <code>AnnotateSentryErrorsForMnemosyne</code> middleware ensures that if an active distributed trace exists via <code>Mnemosyne</code>, its unique trace ID is appended to the Sentry error event. This enables developers to immediately link an error to its broader operational context. A predefined list of <code>excluded_exceptions</code> prevents known, non-critical errors from cluttering the Sentry dashboard, ensuring focus on actionable issues. For user-facing errors, the <code>ErrorsController</code> gracefully renders appropriate HTML or JSON responses, including Sentry event IDs and Mnemosyne trace IDs for debugging.</p>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appProcess["Application Process"]
+  unhandledError["Unhandled Exception Occurs"]
+  sentryClient["Sentry Client (Filtered, Annotated)"]
+  mnemosyneTrace["Mnemosyne (Trace ID)"]
+  errorsController["ErrorsController (User Feedback)"]
+  sentryPlatform["Sentry Platform (External)"]
+
+  appProcess -->|"Triggers"| unhandledError
+  unhandledError -->|"Caught by"| sentryClient
+  unhandledError -->|"Handled by"| errorsController
+  mnemosyneTrace -->|"Provides Trace ID to"| sentryClient
+  sentryClient -->|"Applies Filtering & Annotation"| sentryPlatform
+  errorsController -->|"Renders Response (HTML/JSON)"| appProcess
+</pre></div>
+<h3 id="2.-performance-tracing-workflow" tabindex="-1"><a class="header-anchor" href="#2.-performance-tracing-workflow"><span>2. Performance Tracing Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appRequest["Application Request/Job Starts"]
+  sentryPerfClient["Sentry Client (Performance)"]
+  mnemosyneClient["Mnemosyne Client (Trace Data)"]
+  sentryPlatform["Sentry Platform (External)"]
+  rabbitMQ["RabbitMQ (AMQP Sink)"]
+  traceAnalytics["Trace Data Analytics"]
+
+  appRequest -->|"Initiates Transaction"| sentryPerfClient
+  appRequest -->|"Generates Distributed Trace"| mnemosyneClient
+  sentryPerfClient -->|"Samples & Sends Transactions"| sentryPlatform
+  mnemosyneClient -->|"Sends Trace Data"| rabbitMQ
+  rabbitMQ -->|"Forwards Data to"| traceAnalytics
+</pre></div>
+<p>Performance monitoring commences as application requests are processed or background jobs execute. Sentry’s client, configured with <code>traces_sample_rate</code> and <code>profiles_sample_rate</code> (both defaulting to <code>1.0</code>), dynamically samples these transactions and profiles. This sampling respects parent sampling decisions and intelligently bypasses health check endpoints (<code>/up</code>, <code>/ping</code>, <code>/system_info</code>) to conserve resources and focus on user-facing performance. In parallel, <code>Mnemosyne</code> diligently collects comprehensive distributed trace data for these operations, capturing granular details including query parameters for debugging. Once collected, <code>Mnemosyne</code> transmits this detailed trace information asynchronously to <code>RabbitMQ</code> through an AMQP sink. This message broker acts as a central collection point for traces from all application instances and microservices, facilitating a holistic view of performance bottlenecks and inter-service communication latency, which can then be processed for analytical purposes.</p>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appRequest["Application Request/Job Starts"]
+  sentryPerfClient["Sentry Client (Performance)"]
+  mnemosyneClient["Mnemosyne Client (Trace Data)"]
+  sentryPlatform["Sentry Platform (External)"]
+  rabbitMQ["RabbitMQ (AMQP Sink)"]
+  traceAnalytics["Trace Data Analytics"]
+
+  appRequest -->|"Initiates Transaction"| sentryPerfClient
+  appRequest -->|"Generates Distributed Trace"| mnemosyneClient
+  sentryPerfClient -->|"Samples & Sends Transactions"| sentryPlatform
+  mnemosyneClient -->|"Sends Trace Data"| rabbitMQ
+  rabbitMQ -->|"Forwards Data to"| traceAnalytics
+</pre></div>
+<h3 id="3.-custom-metrics-collection-workflow" tabindex="-1"><a class="header-anchor" href="#3.-custom-metrics-collection-workflow"><span>3. Custom Metrics Collection Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appCode["Application Code"]
+  xikoloMetricsInterface["Xikolo.metrics Interface"]
+  telegrafAgentLocal["Telegraf::Agent (Local App)"]
+  udpSocket["UDP Socket (localhost:8094)"]
+  telegrafCollector["Telegraf Agent (Collector)"]
+  timeSeriesDB["Time-Series Database"]
+
+  appCode -->|"Emits Custom Metric"| xikoloMetricsInterface
+  xikoloMetricsInterface -->|"Sends to"| telegrafAgentLocal
+  telegrafAgentLocal -->|"Transmits via UDP"| udpSocket
+  udpSocket -->|"Received by"| telegrafCollector
+  telegrafCollector -->|"Forwards to"| timeSeriesDB
+</pre></div>
+<p>The <code>Xikolo</code> application provides a standardized interface, <code>Xikolo.metrics</code>, allowing any part of the application code to emit custom operational metrics. These metrics can represent various application-specific events, counters, or gauges, offering granular insights beyond standard error and performance tracking. When <code>Xikolo.metrics</code> is invoked (e.g., <code>Xikolo.metrics.increment('event_name')</code>), an instance of <code>::Telegraf::Agent</code> is used to package and send this metric data. The data is transmitted as UDP packets to a predetermined endpoint: <code>localhost:8094</code>. This setup anticipates a local <code>Telegraf agent</code> running on the same host, which is responsible for receiving these UDP packets. This local agent then processes, aggregates, and forwards the custom metrics to a designated time-series database for long-term storage, visualization through dashboards, and integration into alerting systems, completing the metric data journey.</p>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appCode["Application Code"]
+  xikoloMetricsInterface["Xikolo.metrics Interface"]
+  telegrafAgentLocal["Telegraf::Agent (Local App)"]
+  udpSocket["UDP Socket (localhost:8094)"]
+  telegrafCollector["Telegraf Agent (Collector)"]
+  timeSeriesDB["Time-Series Database"]
+
+  appCode -->|"Emits Custom Metric"| xikoloMetricsInterface
+  xikoloMetricsInterface -->|"Sends to"| telegrafAgentLocal
+  telegrafAgentLocal -->|"Transmits via UDP"| udpSocket
+  udpSocket -->|"Received by"| telegrafCollector
+  telegrafCollector -->|"Forwards to"| timeSeriesDB
+</pre></div>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The implementation of the monitoring and error management system within the Xikolo cluster involves specific technical considerations, dependencies, and configuration requirements to ensure its effectiveness and reliability.</p>
+<h3 id="technical-considerations" tabindex="-1"><a class="header-anchor" href="#technical-considerations"><span>Technical Considerations</span></a></h3>
+<ul>
+<li><strong>Sentry Configuration Details:</strong> The Sentry client is meticulously configured via <code>config/initializers/sentry.rb</code>. It uses a <code>before_send</code> callback with <code>ActiveSupport::ParameterFilter</code> to sanitize event data based on <code>Rails.application.config.filter_parameters</code>, ensuring sensitive information is not transmitted. <code>app_dirs_pattern</code> (<code>%r{(api|app|config(?!/initializers/acfs.rb$)|lib(?!/acfs_rails_cache.rb$))}</code>) is defined to accurately identify ‘in-app’ code for clearer stack traces. To reduce noise, a list of <code>excluded_exceptions</code> (e.g., <code>Acfs::BadGateway</code>, <code>Redis::CannotConnectError</code>) is maintained. Performance tracing is enabled with configurable <code>traces_sample_rate</code> (defaulting to <code>1.0</code>) and <code>profiles_sample_rate</code> (<code>1.0</code>), alongside dynamic sampling rules that ignore health check endpoints. Global tags are applied using <code>Xikolo.site</code> and <code>Xikolo.brand</code> for enhanced categorization.</li>
+<li><strong>Mnemosyne AMQP Sink:</strong> Mnemosyne is configured to send all collected trace data to an AMQP sink, specifically RabbitMQ. The connection endpoint is dynamically determined by the <code>XIKOLO_RABBITMQ_URL</code> environment variable, defaulting to <code>amqp://localhost</code> if not explicitly set. This robust configuration ensures that distributed trace data from all application instances and microservices is centrally collected for subsequent analysis. Mnemosyne is explicitly disabled for <code>test</code> and <code>integration</code> environments to conserve resources.</li>
+<li><strong>Telegraf UDP Metrics:</strong> Custom application metrics are transmitted via UDP packets to <code>localhost:8094</code>. This design implies a strong operational requirement: a Telegraf agent must be co-located and actively listening on this port on every host where the application is running. This local agent then acts as a forwarder to a centralized metrics store.</li>
+<li><strong>Sentry-Mnemosyne Correlation:</strong> The custom <code>AnnotateSentryErrorsForMnemosyne</code> Rack middleware plays a critical role in bridging Sentry errors with Mnemosyne traces. It actively queries <code>Mnemosyne::Instrumenter.current_trace</code> to retrieve the current trace ID (UUID) and injects it into the <code>Sentry.get_current_scope</code> context as <code>mnemosyne.trace_id</code>. This explicit correlation is vital for debugging by providing immediate context for errors.</li>
+<li><strong>Microservice Sentry Integration:</strong> The <code>MsgrSentryIntegration</code> module is prepended to <code>Msgr::Consumer</code> classes in several microservices. This ensures that any unhandled exceptions occurring during RabbitMQ message processing are caught by Sentry (<code>Sentry.capture_exception</code>) before being re-raised to maintain the original error flow. This mechanism is crucial for complete error visibility in asynchronous message-driven architectures.</li>
+</ul>
+<h3 id="dependencies-and-integrations" tabindex="-1"><a class="header-anchor" href="#dependencies-and-integrations"><span>Dependencies and Integrations</span></a></h3>
+<ul>
+<li><strong>Sentry and <code>ActiveSupport::ParameterFilter</code>:</strong> Sentry directly depends on <code>ActiveSupport::ParameterFilter</code> for the crucial sanitization of sensitive data, integrating into its <code>before_send</code> callback mechanism.</li>
+<li><strong>Sentry and Mnemosyne:</strong> The integration between Sentry and Mnemosyne is facilitated by the custom <code>AnnotateSentryErrorsForMnemosyne</code> middleware, which ensures trace IDs are passed from Mnemosyne to Sentry contexts.</li>
+<li><strong>Mnemosyne and RabbitMQ:</strong> Mnemosyne’s tracing capabilities are tightly integrated with RabbitMQ, which serves as its essential AMQP sink for distributed trace data collection.</li>
+<li><strong>Custom Metrics and <code>::Telegraf::Agent</code>:</strong> The custom metrics collection, exposed via the <code>Xikolo.metrics</code> interface (from <code>xikolo-common</code> gem), directly utilizes <code>::Telegraf::Agent</code> for transmitting metrics data.</li>
+<li><strong><code>ErrorsController</code> and Monitoring Tools:</strong> The <code>ErrorsController</code> serves as a central point for application-level error handling, interacting directly with both Sentry (<code>::Sentry.capture_exception</code>) and Mnemosyne (<code>::Mnemosyne.attach_error</code>) to log and report exceptions.</li>
+<li><strong>Msgr::Consumer and Sentry:</strong> The <code>MsgrSentryIntegration</code> module explicitly integrates Sentry with <code>Msgr::Consumer</code> in microservices for robust error capture during message processing.</li>
+</ul>
+<h3 id="configuration-requirements" tabindex="-1"><a class="header-anchor" href="#configuration-requirements"><span>Configuration Requirements</span></a></h3>
+<ul>
+<li><strong>RabbitMQ URL (<code>XIKOLO_RABBITMQ_URL</code>):</strong> This environment variable is mandatory in production environments for Mnemosyne to correctly route trace data to the central RabbitMQ instance. Its default value is <code>amqp://localhost</code> if not specified.</li>
+<li><strong>Sentry Sample Rate (<code>SENTRY_TRACES_SAMPLE_RATE</code>):</strong> This environment variable controls the default sampling rate for Sentry’s performance transactions. It defaults to <code>1.0</code> (100%), which should be reviewed for cost optimization in high-volume environments.</li>
+<li><strong>Parameter Filtering Configuration:</strong> <code>Rails.application.config.filter_parameters</code> must be accurately configured to specify all sensitive data points that require filtering by <code>ActiveSupport::ParameterFilter</code> before being sent to Sentry.</li>
+<li><strong>Mnemosyne Environment Configuration:</strong> Mnemosyne’s configuration file (<code>config/mnemosyne.yml</code>) explicitly defines that the tracing system is disabled for <code>test</code> and <code>integration</code> environments, optimizing resource usage.</li>
+<li><strong>Local Telegraf Agent:</strong> A <code>Telegraf agent</code> must be manually deployed and configured to run locally on <code>localhost:8094</code> on each application host to reliably receive custom metrics via UDP from the <code>Xikolo.metrics</code> interface. This operational dependency is critical, though its configuration specifics are not detailed in the cluster data.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>ErrorsController</strong> <code>app/controllers/errors_controller.rb</code></li>
+<li>📄 <strong>ErrorsController</strong> <code>RAG: docs/app/development/monitoring/index.md</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>Sentry Configuration (Microservice)</strong> <code>services/account/config/initializers/sentry.rb</code></li>
+<li>📄 <strong>Sentry Configuration (Microservice)</strong> <code>services/course/config/initializers/sentry.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Sentry</strong> <code>config/initializers/sentry.rb</code></li>
+<li>📄 <strong>Mnemosyne</strong> <code>app/controllers/errors_controller.rb</code></li>
+<li>📄 <strong>Mnemosyne</strong> <code>config/mnemosyne.yml</code></li>
+<li>📄 <strong>Telegraf::Agent (via Xikolo::Common::Metrics)</strong> <code>gems/xikolo-common/lib/xikolo/common/metrics.rb</code></li>
+<li>📄 <strong>Telegraf::Agent (via Xikolo::Common::Metrics)</strong> <code>Gemfile</code></li>
+<li>📄 <strong>AnnotateSentryErrorsForMnemosyne</strong> <code>config/initializers/sentry.rb</code></li>
+<li>📄 <strong>ActiveSupport::ParameterFilter</strong> <code>config/initializers/sentry.rb</code></li>
+<li>📄 <strong>RabbitMQ</strong> <code>config/mnemosyne.yml</code></li>
+<li>📄 <strong>Sentry Configuration (Web)</strong> <code>config/initializers/sentry.rb</code></li>
+<li>📄 <strong>Sentry Configuration (Web)</strong> <code>RAG: docs/app/development/monitoring/index.md</code></li>
+<li>📄 <strong>Mnemosyne Configuration</strong> <code>config/mnemosyne.yml</code></li>
+<li>📄 <strong>Mnemosyne Configuration</strong> <code>services/account/config/mnemosyne.yml</code></li>
+<li>📄 <strong>MsgrSentryIntegration</strong> <code>services/course/config/initializers/sentry_msgr.rb</code></li>
+<li>📄 <strong>MsgrSentryIntegration</strong> <code>services/news/config/initializers/sentry_msgr.rb</code></li>
+<li>📄 <strong>Xikolo.site/Xikolo.brand</strong> <code>config/initializers/sentry.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Sentry</strong> <code>RAG: docs/app/development/monitoring/index.md</code></li>
+<li>📄 <strong>AnnotateSentryErrorsForMnemosyne</strong> <code>RAG: docs/app/development/monitoring/index.md</code></li>
+<li>📄 <strong>RabbitMQ</strong> <code>RAG: foundational_context</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294263"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

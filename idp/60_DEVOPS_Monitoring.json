@@ -1,0 +1,441 @@
+{
+  "clusterId": "60_DEVOPS_Monitoring",
+  "featureFocus": "Application Performance Monitoring and Error Logging",
+  "documentationReport": "{\n  \"title\": \"Application Monitoring, Logging, and Error Management\",\n  \"introduction\": \"This document outlines the comprehensive strategy for application monitoring, logging, and error management within the merged software cluster. The system integrates multiple specialized tools—Sentry for error tracking and performance monitoring, Mnemosyne for distributed tracing, and Telegraf for custom metrics collection—to provide deep visibility into application health, performance bottlenecks, and error occurrences across both monolithic and microservice architectures. This multi-faceted approach ensures robust observability and efficient incident response.\",\n  \"sections\": [\n    {\n      \"title\": \"Core Monitoring Solutions\",\n      \"content\": [\n        {\n          \"heading\": \"Sentry: Error Tracking and Performance Monitoring\",\n          \"description\": \"Sentry serves as the primary solution for error tracking and performance monitoring across the application stack. Its configuration is meticulously defined to optimize data collection and relevance:\",\n          \"details\": [\n            \"**In-App Stack Traces**: Sentry is configured to identify code within `api`, `app`, `config` (excluding `acfs.rb`), and `lib` (excluding `acfs_rails_cache.rb`) as 'in-app' code, focusing stack traces on relevant application logic. [Source: config/initializers/sentry.rb]\",\n            \"**Excluded Exceptions**: A predefined list of common and expected exceptions, including various `Acfs` and `Restify` gateway errors, `Status::NotFound`, `ApplicationJob::ExpectedRetry`, and `Redis` connection errors, are explicitly filtered to reduce noise in error reports. [Source: config/initializers/sentry.rb]\",\n            \"**Reduced Payload**: The `send_modules` option is set to `false` to minimize data payload size by preventing the transmission of a full list of installed gems with each event. [Source: config/initializers/sentry.rb]\",\n            \"**Parameter Filtering**: A `before_send` hook leverages `ActiveSupport::ParameterFilter` to sanitize event data, ensuring sensitive parameters (as defined in `Rails.application.config.filter_parameters`) are not transmitted. [Source: config/initializers/sentry.rb]\",\n            \"**Performance Tracing**: Transaction tracing is enabled with a configurable `traces_sample_rate` (defaulting to `1.0` via `ENV['SENTRY_TRACES_SAMPLE_RATE']`), alongside profile sampling at `1.0`. [Source: config/initializers/sentry.rb]\",\n            \"**Dynamic Sampling**: A `traces_sampler` lambda provides granular control, respecting parent sampling decisions, ignoring health check endpoints (`/up`, `/ping`, `/system_info`), and applying the default sample rate otherwise. [Source: config/initializers/sentry.rb]\",\n            \"**Global Tags**: Sentry events are globally tagged with `site` and `brand` values derived from `Xikolo.site` and `Xikolo.brand` for enhanced categorization and filtering. [Source: config/initializers/sentry.rb]\",\n            \"**Web and Microservice Configurations**: Sentry configurations exist for both the main web application and individual microservices, ensuring consistent error and performance monitoring across the entire architecture. [Source: C05_Monitoring_Observability]\"\n          ]\n        },\n        {\n          \"heading\": \"Mnemosyne: Distributed Tracing\",\n          \"description\": \"Mnemosyne is integrated for distributed tracing, providing end-to-end visibility into request flows across services.\",\n          \"details\": [\n            \"**AMQP Sink**: Trace data is sent to an AMQP sink, specifically RabbitMQ, with the endpoint defaulting to `amqp://localhost` or `ENV['XIKOLO_RABBITMQ_URL']`. [Source: config/mnemosyne.yml]\",\n            \"**Application Identification**: The application is identified as `web` within Mnemosyne traces. [Source: config/mnemosyne.yml]\",\n            \"**Environment-Specific Disabling**: Mnemosyne is explicitly disabled for `test` and `integration` environments to optimize resource usage during development and testing. [Source: config/mnemosyne.yml]\",\n            \"**Mnemosyne Configuration**: Comprehensive configuration for Mnemosyne is managed to ensure proper trace data collection and routing. [Source: C05_Monitoring_Observability]\"\n          ]\n        },\n        {\n          \"heading\": \"Telegraf: Custom Metrics Collection\",\n          \"description\": \"Custom application metrics are collected using Telegraf, facilitated by the `xikolo-common` gem's `Metrics` module.\",\n          \"details\": [\n            \"**Metrics Agent**: An instance of `::Telegraf::Agent` is initialized to send UDP packets to `localhost:8094`, expecting a local Telegraf agent to receive and forward these metrics. [Source: gems/xikolo-common/lib/xikolo/common/metrics.rb]\",\n            \"**Application-Wide Access**: The `Xikolo` module is extended with this `Metrics` functionality, making `Xikolo.metrics` available for emitting custom metrics throughout the application code. [Source: gems/xikolo-common/lib/xikolo/common/metrics.rb]\"\n          ]\n        }\n      ]\n    },\n    {\n      \"title\": \"Key Integrations and Correlation\",\n      \"content\": [\n        {\n          \"heading\": \"Sentry-Mnemosyne Correlation (`AnnotateSentryErrorsForMnemosyne`)\",\n          \"description\": \"A custom Rack middleware, `AnnotateSentryErrorsForMnemosyne`, is crucial for correlating Sentry errors with Mnemosyne traces. When an active Mnemosyne trace is detected, its UUID is added to the current Sentry scope as `mnemosyne.trace_id`. This enables developers to seamlessly navigate from an error in Sentry to its corresponding distributed performance trace in Mnemosyne, significantly aiding in root cause analysis. This middleware is a key component mentioned across all analysis sources. [Source: config/initializers/sentry.rb, monitoring_logging_error_handling, C05_Monitoring_Observability]\"\n        },\n        {\n          \"heading\": \"MsgrSentryIntegration for Microservices\",\n          \"description\": \"For microservices, a specific `MsgrSentryIntegration` component is utilized. This integration likely handles Sentry's interaction with message-based communication patterns common in microservice architectures, ensuring that errors and performance data from inter-service communication are also captured and correlated effectively. [Source: C05_Monitoring_Observability]\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Error Management and Filtering\",\n      \"content\": [\n        {\n          \"heading\": \"Sensitive Parameter Filtering\",\n          \"description\": \"`ActiveSupport::ParameterFilter` is consistently applied to sanitize sensitive data before it is sent to monitoring systems, upholding data privacy and security standards. [Source: config/initializers/sentry.rb, monitoring_logging_error_handling]\"\n        },\n        {\n          \"heading\": \"Application-Level Error Handling (`ErrorsController`)\",\n          \"description\": \"Beyond automated error tracking, an `ErrorsController` is in place, likely responsible for handling and rendering user-friendly error pages for various HTTP status codes, providing a graceful degradation experience for end-users. [Source: monitoring_logging_error_handling]\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Workflows\",\n      \"content\": [\n        {\n          \"heading\": \"1. Error Reporting Workflow\",\n          \"description\": \"Unhandled exceptions within the application are captured by Sentry. Before transmission, sensitive parameters are filtered, and a predefined list of common exceptions is ignored to reduce noise. The `AnnotateSentryErrorsForMnemosyne` middleware ensures that the current Mnemosyne trace ID is attached to the Sentry event, enabling direct correlation. For user-facing errors, the `ErrorsController` provides appropriate responses. [Source: config/initializers/sentry.rb, monitoring_logging_error_handling]\"\n        },\n        {\n          \"heading\": \"2. Performance Tracing Workflow\",\n          \"description\": \"Sentry collects performance data for HTTP requests and background jobs, applying dynamic sampling based on configured rates and rules (e.g., ignoring health checks). Concurrently, Mnemosyne collects detailed distributed traces, which are then asynchronously sent to a RabbitMQ instance via AMQP. [Source: config/initializers/sentry.rb, config/mnemosyne.yml]\"\n        },\n        {\n          \"heading\": \"3. Custom Metrics Collection Workflow\",\n          \"description\": \"Application code can emit custom metrics (e.g., counters, gauges) using the `Xikolo.metrics` interface. These metrics are sent via UDP to a local Telegraf agent, which is responsible for aggregating and forwarding them to a time-series database for visualization and alerting. [Source: gems/xikolo-common/lib/xikolo/common/metrics.rb]\"\n        }\n      ]\n    }\n  ],\n  \"conclusion\": \"The merged cluster employs a robust and integrated monitoring, logging, and error management strategy. By combining the strengths of Sentry, Mnemosyne, and Telegraf, alongside custom integrations like `AnnotateSentryErrorsForMnemosyne` and `MsgrSentryIntegration`, the system achieves comprehensive observability across its monolithic and microservice components. This unified approach facilitates proactive issue detection, efficient debugging, and continuous performance optimization.\"\n}",
+  "componentMapPatch": {
+    "components": {
+      "Sentry": {
+        "type": "External Service",
+        "description": "A third-party error monitoring and debugging tool used to capture, group, and provide detailed information about application errors. It also supports performance monitoring through transaction tracing.",
+        "interactions": {
+          "interaction_0": "Receives captured exceptions from `ErrorsController` and other parts of the application. [Source: docs/app/development/monitoring/index.md]",
+          "interaction_1": "Receives performance transaction data from the application. [Source: config/initializers/sentry.rb]",
+          "interaction_2": "Filters sensitive parameters using `ActiveSupport::ParameterFilter` before sending events. [Source: config/initializers/sentry.rb]",
+          "interaction_3": "Integrates Mnemosyne trace IDs into its context via `AnnotateSentryErrorsForMnemosyne` middleware. [Source: config/initializers/sentry.rb]",
+          "interaction_4": "Can be configured to exclude specific exceptions or ignore errors based on rules. [Source: config/initializers/sentry.rb, docs/app/development/monitoring/index.md]"
+        },
+        "techDebt": [
+          "Managing `excluded_exceptions` lists can become unwieldy if not regularly reviewed and pruned, potentially hiding new, relevant errors. [Source: config/initializers/sentry.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "config/initializers/sentry.rb",
+            "docs/app/development/monitoring/index.md",
+            "docs/app/development/monitoring/",
+            "docs/app/development/monitoring/"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 48,
+              "code": "# frozen_string_literal: true\n\nrequire 'active_support/parameter_filter'\n\nSentry.init do |config|\n  # Include /api as in-app stacktrace lines.\n  #\n  # Ignore lib/acfs_rails_cache.rb and config/initializers/acfs.rb.\n  # They define generic wrappers that would otherwise be the summary for\n  # the \"primary\" line for many exceptions.\n  config.app_dirs_pattern = %r{(api|app|config(?!/initializers/acfs.rb$)|lib(?!/acfs_rails_cache.rb$))}\n\n  # Ignore a few common exceptions that sometimes bubble up to Rails' error\n  # handling middleware. These are expected to occur and have dedicated\n  # handler logic in our exceptions app.\n  # We trigger intentional retries using this class, so no need to report them.\n  # Far too many exception when sidekiq workers are just reconnecting\n  config.excluded_exceptions += %w[\n    Acfs::BadGateway\n    Acfs::GatewayTimeout\n    Acfs::ServiceUnavailable\n    Status::NotFound\n    Restify::BadGateway\n    Restify::GatewayTimeout\n    Restify::ServiceUnavailable\n    ApplicationJob::ExpectedRetry\n    ApplicationJob::Retry\n    Redis::CannotConnectError\n    RedisClient::CannotConnectError\n  ]\n\n  # Do not send full list of gems with each event\n  config.send_modules = false\n\n  filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)\n  config.before_send = lambda do |event, _hint|\n    # use Rails' parameter filter to sanitize the event\n    filter.filter(event.to_hash)\n  end\n\n  # The default sampling rate for Sentry transactions. Unless other\n  # rules apply below, sample all requests by default.\n  # Collect profiles are transactions that are sampled.\n  config.traces_sample_rate = ENV.fetch('SENTRY_TRACES_SAMPLE_RATE', '1.0').to_f\n  config.profiles_sample_rate = 1.0\n\n  config.traces_sampler = lambda do |ctx|\n    # If this is the continuation of a trace, just use that decision\n    # (rat...\n  end\nend",
+              "source": "config/initializers/sentry.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/initializers/sentry.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/account/config/initializers/sentry.rb",
+              "relevance": 11
+            },
+            {
+              "path": "services/course/config/initializers/sentry.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Mnemosyne": {
+        "type": "Internal Service",
+        "description": "A custom-developed monitoring system that extracts full application traces, including cross-application requests, and stores them for debugging and analysis.",
+        "interactions": {
+          "interaction_0": "Receives attached errors from `ErrorsController` via `::Mnemosyne.attach_error`. [Source: app/controllers/errors_controller.rb]",
+          "interaction_1": "Provides a trace ID (`current_trace&.uuid`) that can be correlated with Sentry events. [Source: app/controllers/errors_controller.rb, config/initializers/sentry.rb]",
+          "interaction_2": "Configured to send data to RabbitMQ (AMQP sink). [Source: config/mnemosyne.yml, services/account/config/mnemosyne.yml]",
+          "interaction_3": "Captures query parameters for detailed debugging. [Source: docs/app/development/monitoring/index.md]",
+          "interaction_4": "Configured per application/service (e.g., 'web', 'account', 'course'). [Source: config/mnemosyne.yml, services/account/config/mnemosyne.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/errors_controller.rb",
+            "config/mnemosyne.yml",
+            "docs/app/development/monitoring/index.md",
+            "docs/app/development/monitoring/",
+            "docs/app/development/monitoring/",
+            "services/account/config/mnemosyne.yml",
+            "services/course/config/mnemosyne.yml",
+            "services/news/config/mnemosyne.yml",
+            "services/notification/config/mnemosyne.yml",
+            "services/pinboard/config/mnemosyne.yml",
+            "services/quiz/config/mnemosyne.yml",
+            "services/timeeffort/config/mnemosyne.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 27,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo::S3\n  module Seahorse\n    class MnemosyneHandler < ::Seahorse::Client::Handler\n      # @param [RequestContext] context\n      # @return [Response]\n      def call(context)\n        trace = ::Mnemosyne::Instrumenter.current_trace\n\n        return @handler.call(context) unless trace\n\n        req = context.http_request\n        span = ::Mnemosyne::Span.new 'external.http.seahorse',\n          meta: {\n            url: req.endpoint.to_s,\n            method: req.http_method.downcase.to_sym,\n          }\n\n        span.start!\n\n        @handler.call(context).tap do |response|\n          res = response.context.http_response\n          span.meta[:status] = res.status_code\n\n          trace << span.finish!\n        end\n      end\n    end\n  end\nend",
+              "source": "gems/xikolo-s3/lib/xikolo/s3/seahorse/mnemosyne_handler.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "gems/xikolo-s3/lib/xikolo/s3/seahorse/mnemosyne_handler.rb",
+              "relevance": 30
+            }
+          ]
+        }
+      },
+      "Telegraf::Agent (via Xikolo::Common::Metrics)": {
+        "type": "Metrics Collection Agent",
+        "description": "Provides an interface within the `Xikolo` module for sending custom application metrics (e.g., counters, gauges) to a local Telegraf agent via UDP.",
+        "interactions": {
+          "interaction_0": "Receives metric data from application code (e.g., `Xikolo.metrics.increment('event_name')`).",
+          "interaction_1": "Sends metric data as UDP packets to `localhost:8094`, where a Telegraf agent is expected to be listening."
+        },
+        "techDebt": [
+          "The `Telegraf::Agent` is configured to send metrics to `udp://localhost:8094`. This implies a strong coupling where a Telegraf agent must be running on the same host as the application instance. In containerized or distributed environments, this requires careful orchestration (e.g., sidecar containers or daemonsets) to ensure the agent is always available and correctly configured. [Source: gems/xikolo-common/lib/xikolo/common/metrics.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "gems/xikolo-common/lib/xikolo/common/metrics.rb",
+            "Gemfile"
+          ]
+        }
+      },
+      "AnnotateSentryErrorsForMnemosyne": {
+        "type": "Middleware",
+        "description": "A Rails middleware in the main `web` application responsible for injecting the current Mnemosyne trace ID into the Sentry context. This links Sentry error events to their corresponding distributed traces in Mnemosyne.",
+        "interactions": {
+          "interaction_0": "Interacts with `Mnemosyne::Instrumenter` to retrieve the current trace ID.",
+          "interaction_1": "Sets context on `Sentry.get_current_scope` to include the Mnemosyne trace ID.",
+          "interaction_2": "Processes HTTP requests within the Rails application stack."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/sentry.rb",
+            "docs/app/development/monitoring/index.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 5,
+              "endLine": 30,
+              "code": "Sentry.init do |config|\n  # Include /api as in-app stacktrace lines.\n  #\n  # Ignore lib/acfs_rails_cache.rb and config/initializers/acfs.rb.\n  # They define generic wrappers that would otherwise be the summary for\n  # the \"primary\" line for many exceptions.\n  config.app_dirs_pattern = %r{(api|app|config(?!/initializers/acfs.rb$)|lib(?!/acfs_rails_cache.rb$))}\n\n  # Ignore a few common exceptions that sometimes bubble up to Rails' error\n  # handling middleware. These are expected to occur and have dedicated\n  # handler logic in our exceptions app.\n  config.excluded_exceptions += %w[\n    Acfs::BadGateway\n    Acfs::GatewayTimeout\n    Acfs::ServiceUnavailable\n    Status::NotFound\n    Restify::BadGateway\n    Restify::GatewayTimeout\n    Restify::ServiceUnavailable\n    ApplicationJob::ExpectedRetry\n  ]\n\n  # Far too many exception when sidekiq workers are just reconnecting\n  config.excluded_exceptions += %w[Redis::CannotC...\nend",
+              "source": "config/initializers/sentry.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/initializers/sentry.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "ErrorsController": {
+        "type": "Controller",
+        "description": "Handles HTTP 4xx/5xx errors by rendering custom error pages or JSON responses. It integrates with Sentry and Mnemosyne to log exceptions and provide trace IDs.",
+        "interactions": {
+          "interaction_0": "Receives exceptions from the Rails application (`action_dispatch.exception`). [Source: app/controllers/errors_controller.rb]",
+          "interaction_1": "Logs exceptions to Mnemosyne using `::Mnemosyne.attach_error`. [Source: app/controllers/errors_controller.rb]",
+          "interaction_2": "Captures exceptions to Sentry using `::Sentry.capture_exception`. [Source: docs/app/development/monitoring/index.md]",
+          "interaction_3": "Renders HTML error templates (e.g., `errors/not_found`) with `layouts/error`. [Source: app/controllers/errors_controller.rb]",
+          "interaction_4": "Renders JSON `application/problem+json` responses, including Mnemosyne trace ID and Sentry event ID. [Source: app/controllers/errors_controller.rb]",
+          "interaction_5": "Uses `I18n` for localized error messages. [Source: app/controllers/errors_controller.rb]"
+        },
+        "techDebt": [
+          "The `STATUS_TEMPLATES` hash is hardcoded, which might become less maintainable if a large number of custom error pages with specific templates are introduced. [Source: app/controllers/errors_controller.rb]",
+          "Deriving `status_code` from `request.path_info[1..].to_i` is a common Rails pattern for `exceptions_app` but relies on a specific URL structure (e.g., `/404`) which could be brittle if routing changes. [Source: app/controllers/errors_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/errors_controller.rb",
+            "docs/app/development/monitoring/index.md"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\n# Error handler for custom pretty HTTP 4xx/5xx pages.\n# Called per Rails convention via config.exceptions_app.\nclass ErrorsController < ApplicationController\n  skip_before_action :verify_authenticity_token",
+              "source": "app/controllers/errors_controller.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 15,
+              "code": "  ##\n  # Which error template do we want to show for which status code?\n  #\n  STATUS_TEMPLATES = {\n    404 => :not_found,\n  }.freeze",
+              "source": "app/controllers/errors_controller.rb"
+            },
+            {
+              "startLine": 18,
+              "endLine": 27,
+              "code": "  ##\n  # Log an exception and show its pretty error page.\n  #\n  def show\n    log!\n\n    if STATUS_TEMPLATES.key?(status_code)\n      pretty_error_page STATUS_TEMPLATES[status_code]\n    else\n      fallback\n    end\n  end",
+              "source": "app/controllers/errors_controller.rb"
+            },
+            {
+              "startLine": 31,
+              "endLine": 38,
+              "code": "  def pretty_error_page(template)\n    respond_to do |format|\n      format.html { render template: \"errors/#{template}\", layout: 'layouts/error', status: status_code }\n      format.json do\n        render json: {\n          title: t(:\"errors.#{template}.headline\"),\n          detail: t(:\"errors.#{template}.message\"),\n...",
+              "source": "app/controllers/errors_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/errors_controller.rb",
+              "relevance": 24
+            },
+            {
+              "path": "app/controllers/abstract/ajax_controller.rb",
+              "relevance": 5
+            },
+            {
+              "path": "app/controllers/abstract/bridge_api_controller.rb",
+              "relevance": 5
+            }
+          ]
+        }
+      },
+      "ActiveSupport::ParameterFilter": {
+        "type": "Utility",
+        "description": "A Rails utility used to filter sensitive parameters from logs and monitoring events, enhancing data privacy and security.",
+        "interactions": {
+          "interaction_0": "Configured in Sentry's `before_send` callback to sanitize event data. [Source: config/initializers/sentry.rb]",
+          "interaction_1": "Filters parameters based on `Rails.application.config.filter_parameters`. [Source: config/initializers/sentry.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/sentry.rb"
+          ]
+        }
+      },
+      "RabbitMQ": {
+        "type": "Message Broker",
+        "description": "An external message broker used as the AMQP sink for Mnemosyne traces, facilitating inter-service communication for monitoring data.",
+        "interactions": {
+          "interaction_0": "Receives trace data from Mnemosyne instances across all applications and microservices. [Source: config/mnemosyne.yml, services/account/config/mnemosyne.yml]",
+          "interaction_1": "Configured via `XIKOLO_RABBITMQ_URL` environment variable. [Source: config/mnemosyne.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/mnemosyne.yml",
+            "services/account/config/mnemosyne.yml"
+          ]
+        }
+      },
+      "Sentry Configuration (Web)": {
+        "type": "Configuration",
+        "description": "Initializes and configures the Sentry error tracking client for the main `web` application. It defines in-app stack trace patterns, excludes common exceptions, sanitizes event data, sets sampling rates for traces and profiles, ignores health check requests, and sets global tags.",
+        "interactions": {
+          "interaction_0": "Reports exceptions to the Sentry service.",
+          "interaction_1": "Filters sensitive parameters using `ActiveSupport::ParameterFilter`.",
+          "interaction_2": "Integrates with `Mnemosyne::Instrumenter` via `AnnotateSentryErrorsForMnemosyne` middleware to attach trace IDs.",
+          "interaction_3": "Excludes specific exceptions like `Acfs::BadGateway`, `Restify::ServiceUnavailable`, and `Redis::CannotConnectError`."
+        },
+        "techDebt": [
+          "Duplicated configuration logic across multiple services, leading to maintenance overhead."
+        ],
+        "provenance": {
+          "sources": [
+            "config/initializers/sentry.rb",
+            "docs/app/development/monitoring/index.md"
+          ]
+        }
+      },
+      "Sentry Configuration (Microservice)": {
+        "type": "Configuration",
+        "description": "Initializes and configures the Sentry error tracking client for individual microservices. It defines excluded exceptions, sanitizes event data, sets sampling rates for traces and profiles, ignores health check requests, and sets global tags. Largely identical across services.",
+        "interactions": {
+          "interaction_0": "Reports exceptions to the Sentry service.",
+          "interaction_1": "Filters sensitive parameters using `ActiveSupport::ParameterFilter`.",
+          "interaction_2": "Excludes specific exceptions like `ApplicationJob::Retry` (in 'account' service), `Redis::CannotConnectError`."
+        },
+        "techDebt": [
+          "Duplicated configuration logic across multiple services, leading to maintenance overhead."
+        ],
+        "provenance": {
+          "sources": [
+            "services/account/config/initializers/sentry.rb",
+            "services/course/config/initializers/sentry.rb",
+            "services/news/config/initializers/sentry.rb",
+            "services/notification/config/initializers/sentry.rb",
+            "services/pinboard/config/initializers/sentry.rb",
+            "services/quiz/config/initializers/sentry.rb",
+            "services/timeeffort/config/initializers/sentry.rb"
+          ]
+        }
+      },
+      "Mnemosyne Configuration": {
+        "type": "Configuration",
+        "description": "Configures the Mnemosyne APM client for each application (main `web` and microservices). It specifies the RabbitMQ server endpoint and the application name for tracing purposes.",
+        "interactions": {
+          "interaction_0": "Connects to RabbitMQ via `XIKOLO_RABBITMQ_URL` to send trace data.",
+          "interaction_1": "Identifies the originating application (e.g., 'web', 'account') for traces."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/mnemosyne.yml",
+            "services/account/config/mnemosyne.yml",
+            "services/course/config/mnemosyne.yml",
+            "services/news/config/mnemosyne.yml",
+            "services/notification/config/mnemosyne.yml",
+            "services/pinboard/config/mnemosyne.yml",
+            "services/quiz/config/mnemosyne.yml",
+            "services/timeeffort/config/mnemosyne.yml",
+            "docs/app/development/monitoring/index.md"
+          ]
+        }
+      },
+      "MsgrSentryIntegration": {
+        "type": "Module",
+        "description": "A Ruby module prepended to `Msgr::Consumer` classes in several microservices. Its purpose is to wrap the `dispatch` method to capture any unhandled exceptions that occur during RabbitMQ message processing and report them to Sentry, while ensuring the exception is re-raised.",
+        "interactions": {
+          "interaction_0": "Captures `Exception` instances within `Msgr::Consumer` dispatch logic.",
+          "interaction_1": "Reports captured exceptions to Sentry using `Sentry.capture_exception`.",
+          "interaction_2": "Re-raises exceptions after capture to maintain original error flow.",
+          "interaction_3": "Explicitly avoids capturing `Sentry::Error` to prevent infinite loops."
+        },
+        "techDebt": [
+          "The `rubocop:disable Lint/RescueException` comment indicates a suppressed code quality warning, suggesting a broad `rescue Exception` which should be carefully justified.",
+          "Missing in `account` and `quiz` services, indicating a gap in error monitoring for their RabbitMQ consumers."
+        ],
+        "provenance": {
+          "sources": [
+            "services/course/config/initializers/sentry_msgr.rb",
+            "services/news/config/initializers/sentry_msgr.rb",
+            "services/notification/config/initializers/sentry_msgr.rb",
+            "services/pinboard/config/initializers/sentry_msgr.rb",
+            "services/timeeffort/config/initializers/sentry_msgr.rb",
+            "services/account/config/initializers/sentry_msgr.rb",
+            "services/quiz/config/initializers/sentry_msgr.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 15,
+              "code": "module MsgrSentryIntegration\n  def dispatch(*)\n    Sentry.with_scope do\n      super\n    rescue Sentry::Error\n      raise # Don't capture Sentry errors\n    rescue Exception => e # rubocop:disable Lint/RescueException\n      Sentry.capture_exception(e)\n      raise\n    end\n  end\nend\n\nMsgr::Consumer.prepend MsgrSentryIntegration",
+              "source": "services/course/config/initializers/sentry_msgr.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "services/course/config/initializers/sentry_msgr.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/news/config/initializers/sentry_msgr.rb",
+              "relevance": 19
+            },
+            {
+              "path": "services/notification/config/initializers/sentry_msgr.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Xikolo.site/Xikolo.brand": {
+        "type": "Configuration Values",
+        "description": "Global configuration values representing the current site and brand, used to tag Sentry events for better categorization and filtering.",
+        "interactions": {
+          "interaction_0": "Provides contextual tags to Sentry events."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/sentry.rb"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Receives error and performance data from the Rails application.",
+      "interaction_1": "Filters sensitive parameters using `ActiveSupport::ParameterFilter`.",
+      "interaction_2": "Excludes specific exceptions to reduce noise.",
+      "interaction_3": "Samples performance transactions and profiles based on configured rates and rules.",
+      "interaction_4": "Receives Mnemosyne trace IDs from the `AnnotateSentryErrorsForMnemosyne` middleware for correlation.",
+      "interaction_5": "Sends processed error and performance data to the Sentry SaaS/on-premise service.",
+      "interaction_6": "Collects performance trace data from the application.",
+      "interaction_7": "Sends trace data to a RabbitMQ server via AMQP, configured by `XIKOLO_RABBITMQ_URL`.",
+      "interaction_8": "Provides trace IDs that are consumed by the `AnnotateSentryErrorsForMnemosyne` middleware to link with Sentry events.",
+      "interaction_9": "Receives metric data from application code (e.g., `Xikolo.metrics.increment('event_name')`).",
+      "interaction_10": "Sends metric data as UDP packets to `localhost:8094`, where a Telegraf agent is expected to be listening.",
+      "interaction_11": "Intercepts incoming requests in the Rails application.",
+      "interaction_12": "Queries `Mnemosyne::Instrumenter.current_trace` to retrieve the active trace.",
+      "interaction_13": "Updates the current Sentry scope with the Mnemosyne trace ID, if available.",
+      "interaction_14": "Receives exceptions from the Rails application (`action_dispatch.exception`). [Source: app/controllers/errors_controller.rb]",
+      "interaction_15": "Logs exceptions to Mnemosyne using `::Mnemosyne.attach_error`. [Source: app/controllers/errors_controller.rb]",
+      "interaction_16": "Captures exceptions to Sentry using `::Sentry.capture_exception`. [Source: docs/app/development/monitoring/index.md]",
+      "interaction_17": "Renders HTML error templates (e.g., `errors/not_found`) with `layouts/error`. [Source: app/controllers/errors_controller.rb]",
+      "interaction_18": "Renders JSON `application/problem+json` responses, including Mnemosyne trace ID and Sentry event ID. [Source: app/controllers/errors_controller.rb]",
+      "interaction_19": "Uses `I18n` for localized error messages. [Source: app/controllers/errors_controller.rb]",
+      "interaction_20": "Receives captured exceptions from `ErrorsController` and other parts of the application. [Source: docs/app/development/monitoring/index.md]",
+      "interaction_21": "Receives performance transaction data from the application. [Source: config/initializers/sentry.rb]",
+      "interaction_22": "Filters sensitive parameters using `ActiveSupport::ParameterFilter` before sending events. [Source: config/initializers/sentry.rb]",
+      "interaction_23": "Integrates Mnemosyne trace IDs into its context via `AnnotateSentryErrorsForMnemosyne` middleware. [Source: config/initializers/sentry.rb]",
+      "interaction_24": "Can be configured to exclude specific exceptions or ignore errors based on rules. [Source: config/initializers/sentry.rb, docs/app/development/monitoring/index.md]",
+      "interaction_25": "Receives attached errors from `ErrorsController` via `::Mnemosyne.attach_error`. [Source: app/controllers/errors_controller.rb]",
+      "interaction_26": "Provides a trace ID (`current_trace&.uuid`) that can be correlated with Sentry events. [Source: app/controllers/errors_controller.rb, config/initializers/sentry.rb]",
+      "interaction_27": "Configured to send data to RabbitMQ (AMQP sink). [Source: config/mnemosyne.yml, services/account/config/mnemosyne.yml]",
+      "interaction_28": "Captures query parameters for detailed debugging. [Source: docs/app/development/monitoring/index.md]",
+      "interaction_29": "Configured per application/service (e.g., 'web', 'account', 'course'). [Source: config/mnemosyne.yml, services/account/config/mnemosyne.yml]",
+      "interaction_30": "Intercepts incoming requests (`call(env)`). [Source: config/initializers/sentry.rb]",
+      "interaction_31": "Retrieves the current Mnemosyne trace ID using `Mnemosyne::Instrumenter.current_trace`. [Source: config/initializers/sentry.rb]",
+      "interaction_32": "Sets the Mnemosyne trace ID in the current Sentry scope's context. [Source: config/initializers/sentry.rb]",
+      "interaction_33": "Is integrated into the Rails application's middleware stack. [Source: config/initializers/sentry.rb]",
+      "interaction_34": "Configured in Sentry's `before_send` callback to sanitize event data. [Source: config/initializers/sentry.rb]",
+      "interaction_35": "Filters parameters based on `Rails.application.config.filter_parameters`. [Source: config/initializers/sentry.rb]",
+      "interaction_36": "Receives trace data from Mnemosyne instances across all applications and microservices. [Source: config/mnemosyne.yml, services/account/config/mnemosyne.yml]",
+      "interaction_37": "Configured via `XIKOLO_RABBITMQ_URL` environment variable. [Source: config/mnemosyne.yml]",
+      "interaction_38": "Reports exceptions to the Sentry service.",
+      "interaction_39": "Filters sensitive parameters using `ActiveSupport::ParameterFilter`.",
+      "interaction_40": "Integrates with `Mnemosyne::Instrumenter` via `AnnotateSentryErrorsForMnemosyne` middleware to attach trace IDs.",
+      "interaction_41": "Excludes specific exceptions like `Acfs::BadGateway`, `Restify::ServiceUnavailable`, and `Redis::CannotConnectError`.",
+      "interaction_42": "Reports exceptions to the Sentry service.",
+      "interaction_43": "Filters sensitive parameters using `ActiveSupport::ParameterFilter`.",
+      "interaction_44": "Excludes specific exceptions like `ApplicationJob::Retry` (in 'account' service), `Redis::CannotConnectError`.",
+      "interaction_45": "Connects to RabbitMQ via `XIKOLO_RABBITMQ_URL` to send trace data.",
+      "interaction_46": "Identifies the originating application (e.g., 'web', 'account') for traces.",
+      "interaction_47": "Interacts with `Mnemosyne::Instrumenter` to retrieve the current trace ID.",
+      "interaction_48": "Sets context on `Sentry.get_current_scope` to include the Mnemosyne trace ID.",
+      "interaction_49": "Processes HTTP requests within the Rails application stack.",
+      "interaction_50": "Captures `Exception` instances within `Msgr::Consumer` dispatch logic.",
+      "interaction_51": "Reports captured exceptions to Sentry using `Sentry.capture_exception`.",
+      "interaction_52": "Re-raises exceptions after capture to maintain original error flow.",
+      "interaction_53": "Explicitly avoids capturing `Sentry::Error` to prevent infinite loops.",
+      "interaction_54": "Provides contextual tags to Sentry events."
+    },
+    "technicalDebt": [
+      "The default `traces_sample_rate` and `profiles_sample_rate` of `1.0` (100%) can lead to high data volume and associated costs for large-scale applications, despite dynamic sampling rules. This should be reviewed for cost optimization in production environments. [Source: config/initializers/sentry.rb]",
+      "The `server` configuration defaults to `amqp://localhost` if `XIKOLO_RABBITMQ_URL` is not set. While suitable for development, this must be correctly configured in production environments to point to the central RabbitMQ instance. [Source: config/mnemosyne.yml]",
+      "The `Telegraf::Agent` is configured to send metrics to `udp://localhost:8094`. This implies a strong coupling where a Telegraf agent must be running on the same host as the application instance. In containerized or distributed environments, this requires careful orchestration (e.g., sidecar containers or daemonsets) to ensure the agent is always available and correctly configured. [Source: gems/xikolo-common/lib/xikolo/common/metrics.rb]",
+      "The `STATUS_TEMPLATES` hash is hardcoded, which might become less maintainable if a large number of custom error pages with specific templates are introduced. [Source: app/controllers/errors_controller.rb]",
+      "Deriving `status_code` from `request.path_info[1..].to_i` is a common Rails pattern for `exceptions_app` but relies on a specific URL structure (e.g., `/404`) which could be brittle if routing changes. [Source: app/controllers/errors_controller.rb]",
+      "Managing `excluded_exceptions` lists can become unwieldy if not regularly reviewed and pruned, potentially hiding new, relevant errors. [Source: config/initializers/sentry.rb]",
+      "Duplicated configuration logic across multiple services, leading to maintenance overhead.",
+      "The `rubocop:disable Lint/RescueException` comment indicates a suppressed code quality warning, suggesting a broad `rescue Exception` which should be carefully justified.",
+      "Missing in `account` and `quiz` services, indicating a gap in error monitoring for their RabbitMQ consumers."
+    ]
+  }
+}

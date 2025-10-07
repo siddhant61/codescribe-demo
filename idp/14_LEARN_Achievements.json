@@ -1,0 +1,818 @@
+{
+  "clusterId": "14_LEARN_Achievements",
+  "featureFocus": "Digital Certificates, Open Badges, and Credential Issuance",
+  "documentationReport": "{\n  \"title\": \"Certificate and Open Badge Generation and Management\",\n  \"description\": \"This documentation report synthesizes insights into the 'Digital Certificates, Open Badges, and Credential Issuance' feature cluster, providing a comprehensive system for managing, issuing, and verifying digital credentials within the platform. This includes both PDF-based certificates and Open Badges, primarily managed through the main Rails application with integrations for external services like proctoring and achievement tracking. The system encompasses template management, user-facing display, rendering, verification, and background processing for credential-related assets.\",\n  \"functional_domain\": \"Digital Credentialing and Verification\",\n  \"key_components_and_functionality\": [\n    {\n      \"section_title\": \"Credential Template Management\",\n      \"details\": \"The system provides robust administrative interfaces for defining and managing templates for both digital certificates and Open Badges.\",\n      \"sub_sections\": [\n        {\n          \"title\": \"Certificate Template Management\",\n          \"description\": \"Managed by the `Course::Admin::CertificateTemplatesController`, this interface allows administrators to create, update, delete, and preview certificate templates. These templates, represented by `Certificate::Template` objects, support various attributes including `certificate_type`, `dynamic_content` (SVG), `qrcode_x`, `qrcode_y`, and an associated PDF file upload. File uploads are handled via the `FileUpload` utility for `application/pdf` content. Deletion of a template is prevented if `Certificate::Record` instances are associated with it. Permissions are controlled by `certificate.template.manage`, granted to `xikolo.admins`.\",\n          \"components\": [\n            \"Course::Admin::CertificateTemplatesController\",\n            \"Certificate::Template\",\n            \"FileUpload\"\n          ]\n        },\n        {\n          \"title\": \"Open Badge Template Management\",\n          \"description\": \"Similar to certificates, `Course::Admin::OpenBadgeTemplatesController` provides an administrative interface for `Certificate::OpenBadgeTemplate` objects. Administrators can create, update, and delete Open Badge templates, defining their `name`, `description`, and uploading a PNG image file using `FileUpload` for `image/png` content. Permissions are also tied to `certificate.template.manage`.\",\n          \"components\": [\n            \"Course::Admin::OpenBadgeTemplatesController\",\n            \"Certificate::OpenBadgeTemplate\",\n            \"FileUpload\"\n          ]\n        }\n      ]\n    },\n    {\n      \"section_title\": \"User-Facing Credential Display and Issuance\",\n      \"details\": \"The `Course::CertificatesController` handles the user's view of their earned credentials and the process of displaying and generating them.\",\n      \"sub_sections\": [\n        {\n          \"title\": \"Credential Display\",\n          \"description\": \"The `index` action retrieves user achievements from an external service via `Restify` and displays course-related documents. The `show` action displays a specific certificate (e.g., 'Record of Achievement' or `ROA`) and an associated Open Badge for the `current_user`. Open Badges are 'baked' using `Certificate::OpenBadgeTemplate#bake!`. Meta tags are dynamically generated for SEO and social sharing, including Open Graph image tags if an Open Badge is available.\",\n          \"components\": [\n            \"Course::CertificatesController\",\n            \"Restify\",\n            \"Certificate::OpenBadgeTemplate\"\n          ]\n        },\n        {\n          \"title\": \"Certificate Rendering and Download\",\n          \"description\": \"The `render_certificate` action allows users to download PDF certificates. For proctored courses, a critical check `ensure_proctoring_passed!` is performed, verifying proctoring status via `Proctoring::SmowlAdapter`. Failure to pass proctoring raises a `CertificateNotAllowed` exception. The actual PDF generation is delegated to the `Certificate::Record::Render` operation, which utilizes `Certificate::RecordRenderer`. This renderer uses the `Prawn` and `Prawn::QRCode` gems to construct the PDF, supporting dynamic content (SVG), QR codes, proctoring images, a transcript of records table, and custom font loading.\",\n          \"components\": [\n            \"Course::CertificatesController\",\n            \"Proctoring::SmowlAdapter\",\n            \"Certificate::Record::Render\",\n            \"Certificate::RecordRenderer\",\n            \"Prawn\",\n            \"Prawn::QRCode\"\n          ]\n        },\n        {\n          \"title\": \"Open Badge Baking\",\n          \"description\": \"Open Badges are generated through a 'baking' process, which involves embedding user-specific data into a template. This process is facilitated by the `OpenBadgeBakery` component, ensuring that Open Badges are properly constructed and verifiable.\",\n          \"components\": [\n            \"OpenBadgeBakery\"\n          ]\n        }\n      ]\n    },\n    {\n      \"section_title\": \"Certificate Verification\",\n      \"details\": \"The `verify` action in `Course::CertificatesController` provides a public endpoint for verifying certificates using a unique `verification_code`. It retrieves the `Certificate::Record` and, if eligible, bakes and displays the corresponding Open Badge.\",\n      \"components\": [\n        \"Course::CertificatesController\",\n        \"Certificate::Record\"\n      ]\n    },\n    {\n      \"section_title\": \"Proctoring Image Management\",\n      \"details\": \"The `Proctoring::UploadCertificateImageJob` is designed to fetch a user's proctoring image from SMOWL and upload it to S3 for inclusion in certificates. This job is queued with `eventual` priority and includes retry logic for `Proctoring::ServiceError`.\",\n      \"components\": [\n        \"Proctoring::UploadCertificateImageJob\"\n      ]\n    }\n  ],\n  \"inferred_models_and_presenters\": [\n    {\n      \"name\": \"Certificate::Template\",\n      \"description\": \"Represents a customizable template for digital certificates, storing design parameters, dynamic content, QR code positioning, and linking to the PDF template file.\"\n    },\n    {\n      \"name\": \"Certificate::OpenBadgeTemplate\",\n      \"description\": \"Represents a template for Open Badges, storing badge metadata (name, description) and linking to the badge image file.\"\n    },\n    {\n      \"name\": \"Certificate::Record\",\n      \"description\": \"Represents an issued digital certificate or credential to a specific user for a specific course, including a unique verification code.\"\n    },\n    {\n      \"name\": \"Course::CertificateTemplatePresenter\",\n      \"description\": \"A presenter for `Certificate::Template` objects, used for display purposes.\"\n    },\n    {\n      \"name\": \"Certificate::RecordPresenter\",\n      \"description\": \"A presenter for `Certificate::Record` objects, used for display purposes.\"\n    }\n  ],\n  \"technical_debt_and_observations\": [\n    {\n      \"issue\": \"Incomplete Proctoring Image Upload Job\",\n      \"description\": \"The `perform` method of `Proctoring::UploadCertificateImageJob` is currently empty. This indicates that the functionality to upload proctoring images to S3 for certificates is not yet implemented or is non-functional, despite the job being scheduled.\",\n      \"source\": \"app/jobs/proctoring/upload_certificate_image_job.rb\"\n    },\n    {\n      \"issue\": \"Hardcoded Proctoring Image Position\",\n      \"description\": \"The `Certificate::RecordRenderer` uses fixed coordinates (`at: [16.1, 754]`, `width: 77.2`) for placing the proctoring image on the PDF. This could lead to layout issues if certificate templates vary significantly in design or if the image size/aspect ratio changes.\",\n      \"source\": \"app/lib/certificate/record_renderer.rb\"\n    },\n    {\n      \"issue\": \"Font Handling Complexity\",\n      \"description\": \"The `RecordRenderer` includes specific workarounds for Prawn's font handling, such as disabling subsetting (`subset: false`) and setting custom font identifiers. This suggests underlying complexities or limitations with the PDF generation library that required explicit mitigation.\",\n      \"source\": \"app/lib/certificate/record_renderer.rb\"\n    },\n    {\n      \"issue\": \"Multiple `Acfs.run` Calls\",\n      \"description\": \"The `Course::CertificatesController` makes multiple `Acfs.run` calls within a single action (`index`, `show`). While `Acfs` is an asynchronous framework, calling `run` multiple times in a single action might indicate a less optimized data fetching strategy if not carefully managed to avoid redundant processing.\",\n      \"source\": \"app/controllers/course/certificates_controller.rb\"\n    },\n    {\n      \"issue\": \"Proctoring Check Scope\",\n      \"description\": \"The `ensure_proctoring_passed!` check is only applied when rendering the `CERT` type of certificate, not for other types like `ROA`. This might be intentional but warrants consideration for consistency if all official credentials should require proctoring for download.\",\n      \"source\": \"app/controllers/course/certificates_controller.rb\"\n    },\n    {\n      \"issue\": \"`TODO` in `check_course_eligibility`\",\n      \"description\": \"An explicit `TODO` comment highlights an acknowledged area for improvement in the course eligibility checks, suggesting potential gaps or desired enhancements in access control logic.\",\n      \"source\": \"app/controllers/course/certificates_controller.rb\"\n    }\n  ]\n}",
+  "componentMapPatch": {
+    "components": {
+      "Course::Admin::CertificateTemplatesController": {
+        "type": "Controller",
+        "description": "Manages CRUD operations for certificate templates within a specific course. Handles file uploads for PDF templates and provides a preview function for certificates. Requires 'certificate.template.manage' permission.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Course` to identify the current course. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_1": "Interacts with `Certificate::Template` model for persistence and data retrieval. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_2": "Utilizes `FileUpload` for handling PDF template uploads. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_3": "Calls `Certificate::Template#process_upload!` to associate uploaded files. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_4": "Invokes `Certificate::Template#preview_for` to generate preview data. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_5": "Delegates PDF rendering to `Certificate::Record::Render.call` for previews. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_6": "Uses `Course::CertificateTemplatePresenter` to prepare template data for display. [Source: app/controllers/course/admin/certificate_templates_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/certificate_templates_controller.rb",
+            "services/account/lib/tasks/permissions/certificate.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.8,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 36,
+              "code": "module Course\n  module Admin\n    class DashboardController < Abstract::FrontendController\n      include CourseContextHelper\n\n      before_action :set_no_cache_headers\n\n      inside_course\n\n      def show\n        authorize! 'course.dashboard.view'\n\n        @course = the_course\n        Acfs.run # wait for course context promises\n      end\n\n      def hide_course_nav?\n        true\n      end\n\n      private\n\n      def auth_context\n        the_course.context_id\n      end\n\n      # fix course receiving\n      def request_course\n        Xikolo::Course::Course.find(params[:id])\n      end\n    end\n  end\nend",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/course/admin/dashboard_controller.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/admin/classifier/courses_order_controller.rb",
+              "relevance": 15
+            }
+          ]
+        }
+      },
+      "Course::Admin::OpenBadgeTemplatesController": {
+        "type": "Controller",
+        "description": "Manages CRUD operations for Open Badge templates within a specific course. Handles file uploads for PNG badge images. Requires 'certificate.template.manage' permission.",
+        "interactions": {
+          "interaction_0": "Interacts with `Course::Course` to identify the current course. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+          "interaction_1": "Interacts with `Certificate::OpenBadgeTemplate` model for persistence and data retrieval. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+          "interaction_2": "Utilizes `FileUpload` for handling PNG badge image uploads. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+          "interaction_3": "Calls `Certificate::OpenBadgeTemplate#process_upload!` to associate uploaded files. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/open_badge_templates_controller.rb",
+            "services/account/lib/tasks/permissions/certificate.yml"
+          ]
+        }
+      },
+      "Course::CertificatesController": {
+        "type": "Controller",
+        "description": "Handles user-facing display, download, and public verification of digital certificates and Open Badges. Integrates with proctoring services and external achievement data.",
+        "interactions": {
+          "interaction_0": "Interacts with Course::Course and Course::Enrollment [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_1": "Retrieves Certificate::Template and Certificate::Record objects (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_2": "Retrieves and \"bakes\" Certificate::OpenBadgeTemplate objects (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_3": "Uses Certificate::RecordPresenter and Course::DocumentsPresenter for display (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_4": "Communicates with external services for achievements via Restify [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_5": "Integrates with Proctoring::SmowlAdapter for proctoring checks (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_6": "Delegates PDF rendering to Certificate::Record::Render [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_7": "Sets meta tags for SEO/social sharing [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_8": "Uses Acfs for asynchronous data fetching [Source: app/controllers/course/certificates_controller.rb]"
+        },
+        "techDebt": [
+          "Multiple Acfs.run calls within actions, potentially indicating less optimized data fetching [Source: app/controllers/course/certificates_controller.rb]",
+          "TODO: Improve checks in check_course_eligibility, suggesting potential gaps in access control [Source: app/controllers/course/certificates_controller.rb]",
+          "Proctoring check (ensure_proctoring_passed!) only applied to CERT type, not ROA, which might be inconsistent [Source: app/controllers/course/certificates_controller.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/certificates_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 25,
+              "endLine": 32,
+              "code": "          certificates: {\n            roa: {\n              enabled: course['roa_enabled'],\n              requirement: course['roa_threshold_percentage'],\n            },\n            cop: {\n              enabled: course['cop_enabled'],\n              requirement: course['cop_threshold...",
+              "source": "app/controllers/admin/ajax/courses_controller.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/admin/ajax/courses_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/bridges/chatbot/courses_controller.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/controllers/bridges/lanalytics/course_open_badge_stats_controller.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Certificate::RecordRenderer": {
+        "type": "Library",
+        "description": "A library responsible for generating PDF documents for certificates using Prawn and Prawn::QRCode. It handles template loading, dynamic content rendering (SVG), QR code embedding, proctoring images, and a transcript of records table. Supports custom brand-specific fonts.",
+        "interactions": {
+          "interaction_0": "Uses `Prawn::Document` for PDF generation. [Source: app/lib/certificate/record_renderer.rb]",
+          "interaction_1": "Uses `Prawn::QRCode` for embedding QR codes. [Source: app/lib/certificate/record_renderer.rb]",
+          "interaction_2": "Reads configuration from `Xikolo.config` for font paths and transcript of records table settings. [Source: app/lib/certificate/record_renderer.rb]",
+          "interaction_3": "Accesses file system for font files and PDF templates. [Source: app/lib/certificate/record_renderer.rb]",
+          "interaction_4": "Receives data for rendering from a `Certificate::RenderDataPresenter` (or similar data object). [Source: spec/lib/certificate/record_renderer_spec.rb]"
+        },
+        "techDebt": [
+          "Font subsetting is currently disabled due to a Prawn issue, potentially leading to larger PDF file sizes. [Source: app/lib/certificate/record_renderer.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/lib/certificate/record_renderer.rb",
+            "spec/lib/certificate/record_renderer_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 7,
+              "code": "module Certificate   class RecordRenderer     def self.as_pdf(data)       RecordPdf.new(data).render     end",
+              "source": "app/lib/certificate/record_renderer.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 35,
+              "code": "    class RecordPdf       def initialize(data)         @data = data         @pdf = Prawn::Document.new(           template: @data.template_path,           page_size: 'A4',           page_layout: :landscape,           left_margin: 0,           right_margin: 0,           top_margin: 0,           bottom_margin: 0         )          update_fonts!         qrcode!         dynamic_content!         proctoring_image!         transcript_of_records!       end        def render         @pdf.render       end        private        def update_fonts!         fonts.each do |name, file|           next unless File.exist?(file) # Skip font it is not included in the assets.            io = File.open(file, 'rb')           # Specifying a font family name is required to use the same name from the config (without           # appendi...",
+              "source": "app/lib/certificate/record_renderer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/certificate/record_renderer.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/controllers/course/certificates_controller.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/models/certificate/certificate.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Certificate::Record::Render": {
+        "type": "Operation",
+        "description": "An application operation (service object) that encapsulates the process of rendering a certificate record into a PDF document. It acts as a wrapper for `Certificate::RecordRenderer`.",
+        "interactions": {
+          "interaction_0": "Initializes with a `record` object (e.g., `Certificate::RecordOfAchievement`). [Source: app/operations/certificate/record/render.rb]",
+          "interaction_1": "Calls `@record.render_data` to obtain the necessary data for rendering. [Source: app/operations/certificate/record/render.rb]",
+          "interaction_2": "Delegates the actual PDF generation to `Certificate::RecordRenderer.as_pdf`. [Source: app/operations/certificate/record/render.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/operations/certificate/record/render.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 10,
+              "code": "module Certificate   class Record     class Render < ::ApplicationOperation       def initialize(record)         super()          @record = record       end",
+              "source": "app/operations/certificate/record/render.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 14,
+              "code": "      def call         RecordRenderer.as_pdf(@record.render_data)       end",
+              "source": "app/operations/certificate/record/render.rb"
+            },
+            {
+              "startLine": 6,
+              "endLine": 8,
+              "code": "module Certificate   class RenderDataPresenter     def initialize(record, template)       @record = record       @template = template     end",
+              "source": "app/operations/certificate/record/render.rb"
+            },
+            {
+              "startLine": 10,
+              "endLine": 21,
+              "code": "    def dynamic_content       return '' if @template.dynamic_content.blank?        dynamic_content = I18n.with_locale(course_lang) do         @template.dynamic_content.gsub(/##(\\w+)##/) do           lookup(Regexp.last_match(1))         end       end        fix_text_direction dynamic_content     end",
+              "source": "app/operations/certificate/record/render.rb"
+            },
+            {
+              "startLine": 23,
+              "endLine": 25,
+              "code": "    def qrcode_url       verification_url     end",
+              "source": "app/operations/certificate/record/render.rb"
+            },
+            {
+              "startLine": 27,
+              "endLine": 32,
+              "code": "    def qrcode_pos       return false if @template.certificate_type == ::Certificate::Record::TOR       return false unless @template.qrcode_x.try(:positive?) &&                           @template.qrcode_y.try(:positive?)        {x: @template.qrcode_x, y: @template.qrcode_y}     end",
+              "source": "app/operations/certificate/record/render.rb"
+            },
+            {
+              "startLine": 34,
+              "endLine": 36,
+              "code": "    def template_path       # We keep a reference here to ensure the tempfile is deleted       # after the rendering, not after leavi...",
+              "source": "app/operations/certificate/record/render.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/operations/certificate/record/render.rb",
+              "relevance": 44
+            },
+            {
+              "path": "app/presenters/certificate/render_data_presenter.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/presenters/certificate/render_preview_data_presenter.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Proctoring::UploadCertificateImageJob": {
+        "type": "Background Job",
+        "description": "Intended to load a user's proctoring image from SMOWL and upload it to S3 for inclusion on certificates. Designed to be triggered after a proctored quiz submission.",
+        "interactions": {
+          "interaction_0": "(Intended) Interacts with Proctoring::SmowlAdapter to fetch images (inferred from description) [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+          "interaction_1": "(Intended) Interacts with S3 for image storage (inferred from description) [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+          "interaction_2": "Handles Proctoring::ServiceError with retries [Source: app/jobs/proctoring/upload_certificate_image_job.rb]"
+        },
+        "techDebt": [
+          "The perform method is currently empty, indicating that the core functionality is not implemented [Source: app/jobs/proctoring/upload_certificate_image_job.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/jobs/proctoring/upload_certificate_image_job.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 17,
+              "code": "# frozen_string_literal: true\n\n##\n# Load the user's proctoring image to be printed on the\n# certificate from SMOWL and upload it to S3.\n#\n# This job is supposed to be triggered after a user submits\n# any proctored quiz. At this point, the user registration\n# is valid. The job does not need to be triggered if the\n# user image for a course already exists in S3.\n#\nmodule Proctoring\n  class UploadCertificateImageJob < ApplicationJob\n    queue_as :default\n    queue_with_priority :eventual\n\n    # On provider errors, we give them a bit of time before we retry, but also\n    # limit the number of retries.\n    retry_on Proctoring::ServiceError, wait: ->(executions) { executions.hours }, attempts: 10\n\n    def perform(_enrollment_id); end\n  end\nend",
+              "source": "app/jobs/proctoring/upload_certificate_image_job.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/jobs/proctoring/upload_certificate_image_job.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/jobs/proctoring/store_submission_results_job.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/lib/proctoring/course_context.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Certificate::Template": {
+        "type": "Model",
+        "description": "Represents a template for PDF certificates. Stores dynamic content (SVG), QR code position, certificate type, and a file URI for the PDF background. Can have associated `Certificate::Record`s.",
+        "interactions": {
+          "interaction_0": "Managed by `Course::Admin::CertificateTemplatesController`. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_1": "Processes file uploads via `process_upload!`. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_2": "Generates preview data via `preview_for`. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_3": "Associated with `Certificate::RecordOfAchievement` instances. [Source: db/seeds/development/30_certificate.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/certificate_templates_controller.rb",
+            "db/seeds/development/30_certificate.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 37,
+              "code": "module Certificate   class Template < ::ApplicationRecord     self.table_name = 'templates'      CERTIFICATE_TYPES = ::Certificate::Record::TYPES.map(&:to_sym).freeze     SVG_XSD = Rails.root.join('vendor', 'assets', 'schemas', 'svg', 'svg.xsd').freeze      validates :certificate_type, uniqueness: {scope: :course_id}     validate :allowed_certificate_type     validate :valid_s3_reference_or_upload     validate :valid_xml      belongs_to :course, class_name: 'Course::Course'     has_many :records,       class_name: '::Certificate::Record',       inverse_of: :template,       dependent: :destroy      default_scope { order(updated_at: :desc) }      after_commit :delete_s3_object!, on: :destroy      ## ROUTE HELPERS     ## Ensure that Rails routing helpers can be used directly with OpenBadgeTemplate instances.      def self.model_name       ActiveModel::Name.new(self, nil, 'CertificateTemplate')     end      def to_param       id     end",
+              "source": "app/models/certificate/template.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 20,
+              "code": "class Course::Admin::CertificateTemplatesController < Abstract::FrontendController   include CourseContextHelper    inside_course   require_permission 'certificate.template.manage'    def index     course = Course::Course.by_identifier(params[:course_id]).take!     @templates = Certificate::Template.where(course:).map do |template|       Course::CertificateTemplatePresenter.new(template)     end   end    def new     course = Course::Course.by_identifier(params[:course_id]).take!     @template = Certificate::Template.new(course_id: course.id)     @file_upload = FileUpload.new purpose: :certificate_template, content_type: 'application/pdf'   end",
+              "source": "app/models/certificate/template.rb"
+            },
+            {
+              "startLine": 22,
+              "endLine": 29,
+              "code": "  def edit     @template = Certificate::Template.find(params[:id])     @file_upload = FileUpload.new purpose: :certificate_template, content_type: 'application/pdf'   end    def create     course = Course::Course.by_identifier(params[:course_id]).take!     @template = Certificate::Template.new(template_params.merge...",
+              "source": "app/models/certificate/template.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/certificate/template.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/certificate/open_badge_template.rb",
+              "relevance": 18
+            },
+            {
+              "path": "app/controllers/course/admin/certificate_templates_controller.rb",
+              "relevance": 14
+            }
+          ]
+        }
+      },
+      "Certificate::OpenBadgeTemplate": {
+        "type": "Model",
+        "description": "Represents a template for Open Badges. Stores a file URI for the badge image, along with a name and description. Typically one per course.",
+        "interactions": {
+          "interaction_0": "Managed by `Course::Admin::OpenBadgeTemplatesController`. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+          "interaction_1": "Processes file uploads via `process_upload!`. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+          "interaction_2": "Associated with `Certificate::V2::OpenBadge` instances. [Source: db/seeds/development/30_certificate.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/open_badge_templates_controller.rb",
+            "db/seeds/development/30_certificate.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 39,
+              "code": "module Certificate\n  class OpenBadgeTemplate < ::ApplicationRecord\n    validates :course_id, uniqueness: true\n    validate :valid_s3_reference_or_upload\n\n    after_commit :delete_s3_object!, on: :destroy\n\n    belongs_to :course, class_name: 'Course::Course'\n    has_many :open_badges,\n      foreign_key: :template_id,\n      dependent: :destroy,\n      inverse_of: :open_badge_template\n\n    ## ROUTE HELPERS\n    ## Ensure that Rails routing helpers can be used directly with OpenBadgeTemplate instances.\n\n    def self.model_name\n      ActiveModel::Name.new(self, nil, 'OpenBadgeTemplate')\n    end\n\n    def to_param\n      id\n    end\n\n    def bake!(user_id)\n      begin\n        record = RecordOfAchievement.find_or_create_by!(\n          course_id:,\n          user_id:\n        )\n      rescue ActiveRecord::RecordNotUnique\n        retry\n      end\n\n      begin\n        V2::OpenBadge\n          .find_or_create_by!(record:, template_id: id)\n          .tap(&:bake!)\n      rescue ...",
+              "source": "app/models/certificate/open_badge_template.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/certificate/open_badge_template.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/controllers/course/certificates_controller.rb",
+              "relevance": 7
+            },
+            {
+              "path": "app/lib/certificate/record_renderer.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Certificate::Record": {
+        "type": "Model",
+        "description": "Represents an issued digital certificate or credential to a specific user for a specific course. Includes a unique verification code.",
+        "interactions": {
+          "interaction_0": "Associated with Certificate::Template, Course::Course, and User (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_1": "Provides a class method for verification (verify) (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_2": "Has methods to check eligibility for badges (eligible_for_badge?) and user status (user_deleted?) (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+          "interaction_3": "Provides data for rendering (render_data) (inferred) [Source: app/operations/certificate/record/render.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/certificates_controller.rb",
+            "app/operations/certificate/record/render.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 4,
+              "endLine": 31,
+              "code": "module Certificate\n  class Record < ::ApplicationRecord\n    # Define certificate types to be reused elsewhere.\n    COP = 'ConfirmationOfParticipation'\n    ROA = 'RecordOfAchievement'\n    CERT = 'Certificate'\n    TOR = 'TranscriptOfRecords'\n    TYPES = [COP, ROA, CERT, TOR].freeze\n\n    # Map \"type\" column values to concrete subclasses.\n    # NOTE: This can be used to map obsolete values to newer classes, or when\n    # renaming models.\n    STI_TYPE_TO_CLASS = {\n      'Certificate' => '::Certificate::Certificate',\n      'RecordOfAchievement' => '::Certificate::RecordOfAchievement',\n      'ConfirmationOfParticipation' => '::Certificate::ConfirmationOfParticipation',\n      'TranscriptOfRecords' => '::Certificate::TranscriptOfRecords',\n    }.freeze\n\n    # What \"type\" should be used when storing each subclass?\n    STI_CLASS_TO_TYPE = {\n      'Certificate::Certificate' => 'Certificate',\n      'Certificate::RecordOfAchievement' => 'R...",
+              "source": "app/lib/certificate/record_renderer.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/certificate/record_renderer.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/certificate/record.rb",
+              "relevance": 37
+            },
+            {
+              "path": "app/models/certificate/record_of_achievement.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "OpenBadgeBakery": {
+        "type": "Library",
+        "description": "Responsible for 'baking' Open Badge assertions into PNG image files. This involves embedding a signed JSON Web Token (JWT) assertion as an iTXt chunk within the image.",
+        "interactions": {
+          "interaction_0": "Takes an assertion (hash), image URL, and private key as input. [Source: spec/lib/open_badge_bakery_spec.rb]",
+          "interaction_1": "Fetches the badge image from the provided `image_url`. [Source: spec/lib/open_badge_bakery_spec.rb]",
+          "interaction_2": "Uses `ChunkyPNG` for manipulating PNG image chunks. [Source: spec/lib/open_badge_bakery_spec.rb]",
+          "interaction_3": "Uses `JWT` gem for signing the assertion with the `RS256` algorithm. [Source: spec/lib/open_badge_bakery_spec.rb, spec/support/badge_support.rb]",
+          "interaction_4": "Uses `OpenSSL::PKey::RSA` for key management. [Source: spec/support/badge_support.rb]",
+          "interaction_5": "Reads `open_badge_private_key` from `Rails.application.secrets` for signing. [Source: spec/lib/open_badge_bakery_spec.rb]",
+          "interaction_6": "Reads `public_key` from `Xikolo.config.open_badges` for assertion verification (in tests). [Source: spec/lib/open_badge_bakery_spec.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "spec/lib/open_badge_bakery_spec.rb",
+            "spec/support/badge_support.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 6,
+              "endLine": 40,
+              "code": "class OpenBadgeBakery\n  SIGNING_ALGORITHM = 'RS256'\n\n  def initialize(assertion, template_uri, private_key)\n    @assertion = assertion\n    @template_uri = template_uri\n    @private_key = private_key\n  end\n\n  def bake\n    itxt = ChunkyPNG::Chunk::InternationalText.new('openbadges', signed_assertion)\n\n    datastream = ChunkyPNG::Datastream.from_blob badge_template\n    datastream.other_chunks << itxt\n    datastream.to_blob\n  rescue ChunkyPNG::SignatureMismatch\n    false\n  end\n\n  private\n\n  def badge_template\n    Rails.cache.fetch(@template_uri, expires_in: 1.hour) do\n      Typhoeus.get(@template_uri).body\n    end\n  end\n\n  def signed_assertion\n    @signed_assertion ||= JWT.encode(\n      @assertion,\n      OpenSSL::PKey::RSA.new(@private_key),\n      SIGNING_ALGORITHM\n    )\n  end\nend",
+              "source": "lib/open_badge_bakery.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/open_badge_bakery.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Certificate::RecordOfAchievement": {
+        "type": "Model",
+        "description": "Represents an issued PDF certificate (Record of Achievement) for a specific user in a course, linked to a `Certificate::Template`.",
+        "interactions": {
+          "interaction_0": "Linked to `Certificate::Template`. [Source: db/seeds/development/30_certificate.rb]",
+          "interaction_1": "Can be rendered into a PDF via `Certificate::Record::Render`. [Source: app/operations/certificate/record/render.rb]",
+          "interaction_2": "Can have associated `Certificate::V2::OpenBadge` instances. [Source: db/seeds/development/30_certificate.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "db/seeds/development/30_certificate.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 5,
+              "code": "# frozen_string_literal: true\n\nmodule Certificate\n  class RecordOfAchievement < Record\n  end\nend",
+              "source": "app/models/certificate/record_of_achievement.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 41,
+              "code": "# frozen_string_literal: true\n\nclass Achievements\n  class RecordOfAchievement\n    def initialize(course, evaluation)\n      @course = course\n      @evaluation = evaluation\n    end\n\n    def enabled?\n      @course.roa_enabled\n    end\n\n    def achieved?\n      enabled? && enrollment.present? && enough_points?\n    end\n\n    def achievable?\n      enabled? && enrollment.present? && !enough_points? && !@course.ended?\n    end\n\n    def released?\n      @course.records_released?\n    end\n\n    private\n\n    def enough_points?\n      return false if @evaluation.blank?\n\n      @evaluation.points_percentage >= @course.roa_threshold_percentage\n    end\n\n    # Ensure that this is an `Enrollment` instance no matter if a dynamic\n    # or persisted learning evaluation has been passed in.\n    def enrollment\n      @enrollment ||= if @evaluation.present?\n                        @course.enrollments.find_by(user_id: @evaluation.user_id)\n                      end\n    end\n  end\nend",
+              "source": "app/models/certificate/record_of_achievement.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 43,
+              "code": "  def show\n    Acfs.run\n\n    @record = Certificate::RecordPresenter.new(\n      Certificate::Template.find_by!(\n        course_id: the_course.id,\n        certificate_type: Certificate::Record::ROA\n      ).record_for!(current_user.id),\n      :show\n    )\n\n    @open_badge = Certificate::OpenBadgeTemplate\n      .find_by(course_id: the_course.id)\n      &.bake!(current_user.id)\n\n    set...",
+              "source": "app/models/certificate/record_of_achievement.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/certificate/record_of_achievement.rb",
+              "relevance": 26
+            },
+            {
+              "path": "services/course/app/models/achievements/record_of_achievement.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/controllers/course/certificates_controller.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "Certificate::V2::OpenBadge": {
+        "type": "Model",
+        "description": "Represents an issued Open Badge, linked to a `Certificate::RecordOfAchievement` and a `Certificate::OpenBadgeTemplate`.",
+        "interactions": {
+          "interaction_0": "Linked to `Certificate::RecordOfAchievement` and `Certificate::OpenBadgeTemplate`. [Source: db/seeds/development/30_certificate.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "db/seeds/development/30_certificate.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 32,
+              "code": "# frozen_string_literal: true\n\nrequire 'xikolo/s3'\n\nmodule Certificate\n  module V2\n    class OpenBadge < ::Certificate::OpenBadge\n      protected\n\n      def the_assertion\n        @the_assertion ||= begin\n          {\n            '@context': 'https://w3id.org/openbadges/v2',\n            type: 'Assertion',\n            id: public_assertion_url,\n            recipient: {\n              type: 'email',\n              hashed: true,\n              identity: \"sha256$#{Digest::SHA256.hexdigest record.user.email}\",\n            },\n            badge: public_badge_url,\n            issuedOn: issue_date.to_datetime.utc.iso8601,\n            verification: {\n              type: 'signed',\n              creator: Addressable::URI.parse(Xikolo.base_url).join('openbadges/v2/public_key.json').to_s,\n            },\n            evidence: certificate_verification_url(\n              id: record.verification,\n              host: HOST,\n              protocol: SCHEME\n            ),\n          }\n        rescue TypeError\n     ...",
+              "source": "app/models/certificate/v2/open_badge.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 44,
+              "code": "# frozen_string_literal: true\n\nrequire 'xikolo/s3'\nrequire 'addressable/uri'\n\nmodule Certificate\n  class OpenBadge < ::ApplicationRecord\n    include Rails.application.routes.url_helpers\n\n    HOST = Xikolo.base_url.host\n    SCHEME = Xikolo.base_url.scheme\n    # Map \"type\" column values to concrete subclasses.\n    # NOTE: This can be used to map obsolete values to newer classes, or when\n    # renaming models.\n    STI_TYPE_TO_CLASS = {\n      'OpenBadge' => '::Certificate::OpenBadge',\n      'V2::OpenBadge' => '::Certificate::V2::OpenBadge',\n    }.freeze\n\n    # What \"type\" should be used when storing each subclass?\n    STI_CLASS_TO_TYPE = {\n      'Certificate::OpenBadge' => 'OpenBadge',\n      'Certificate::V2::OpenBadge' => 'V2::OpenBadge',\n    }.freeze\n\n    belongs_to :record, class_name: '::Certificate::Record'\n    belongs_to :open_badge_template,\n      class_name: '::Certificate::OpenBadgeTemplate',\n      foreign_key: :template_id,\n      inverse_of: :open_badges\n\n    class << self\n      ...",
+              "source": "app/models/certificate/v2/open_badge.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/models/certificate/v2/open_badge.rb",
+              "relevance": 33
+            },
+            {
+              "path": "app/controllers/open_badges/v2/open_badges_controller.rb",
+              "relevance": 26
+            },
+            {
+              "path": "app/models/certificate/open_badge.rb",
+              "relevance": 26
+            }
+          ]
+        }
+      },
+      "FileUpload": {
+        "type": "Model",
+        "description": "A generic model for managing temporary file uploads, used to facilitate associating files (PDFs, PNGs) with other models before final persistence. It tracks purpose and content type.",
+        "interactions": {
+          "interaction_0": "Used by `Course::Admin::CertificateTemplatesController` for PDF uploads. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_1": "Used by `Course::Admin::OpenBadgeTemplatesController` for PNG uploads. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+          "interaction_2": "Likely interacts with `Xikolo::S3` for actual file storage. [Source: db/seeds/development/30_certificate.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/certificate_templates_controller.rb",
+            "app/controllers/course/admin/open_badge_templates_controller.rb",
+            "db/seeds/development/30_certificate.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 20,
+              "code": "# frozen_string_literal: true\n\n##\n# A class representing an upload ticket to our S3 object storage.\n#\n# Based on the provided metadata / options, this will generate a presigned URL\n# that can be used by the frontend (i.e. JavaScript code) as a destination for\n# direct uploads.\n#\n# Available options:\n# - purpose: A category, to be stored with the upload - backends will only\n#     accept uploads with expected purposes (and move them to their bucket).\n# - content_type: One or multiple allowed content types. Possible values:\n#     * a string (used in upload dialogs, and enforced by S3 when uploading)\n#     * an array of content types (will be whitelisted in upload dialogs)\n#     * a prefix (e.g. \"image/*\" for matching multiple types, also enforced)\n# - size: The maximum allowed file size in bytes\n# - image_width: For images, the maximum allowed width in pixels\n# - image_height: For images, the maximum allowed height in pixels\n#\nclass FileUpload\n  attr_reader :id, :content_type, :size\n\n  de...",
+              "source": "lib/file_upload.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "lib/file_upload.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "Course::Course": {
+        "type": "Model",
+        "description": "Represents a learning course, serving as the context for certificate and Open Badge templates.",
+        "interactions": {
+          "interaction_0": "Accessed by `Course::Admin::CertificateTemplatesController` to scope templates. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+          "interaction_1": "Accessed by `Course::Admin::OpenBadgeTemplatesController` to scope templates. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/certificate_templates_controller.rb",
+            "app/controllers/course/admin/open_badge_templates_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 30,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Entities\n    class CourseDate < Grape::Entity\n      include Rails.application.routes.url_helpers\n\n      expose def id\n        id = \"#{object.course_id}|#{object.type}|#{object.resource_id}\"\n        Digest::MD5.hexdigest id\n      end\n\n      expose :title\n      expose :date\n      expose :type\n\n      expose def url\n        case type\n          when 'course_start'\n            course_path object.course_code\n          when 'item_submission_deadline'\n            course_item_path object.course_code, UUID(object.resource_id).to_param\n        end\n      end\n\n      expose def course\n        object.course_id\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 27,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module Model\n    class CourseRepository\n      def courses_for(user, course_id)\n        courses = course_api.rel(:courses).get({\n          per_page: 100,\n          user_id: user.id,\n        }).value!\n        if course_id.present?\n          courses.select {|c| c['id'] == course_id }\n        else\n          courses\n        end\n      end\n\n      private\n\n      def course_api\n        @course_api ||= Xikolo.api(:course).value!\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 20,
+              "code": "# frozen_string_literal: true\n\nmodule Xikolo\n  module V2\n    class CourseAPI < Grape::API::Instance\n      namespace 'courses' do\n        route_param :course_id, type: String, desc: 'The course UUID' do\n          namespace 'time_effort' do\n            mount Endpoint::GetCourseTimeEffort\n          end\n        end\n      end\n\n      namespace 'next_dates' do\n        mount Endpoint::ListNextDates\n      end\n    end\n  end\nend",
+              "source": "api/xikolo/entities/course_date.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "api/xikolo/entities/course_date.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/model/course_repository.rb",
+              "relevance": 37
+            },
+            {
+              "path": "api/xikolo/v2/course_api.rb",
+              "relevance": 37
+            }
+          ]
+        }
+      },
+      "Certificate::RenderDataPresenter": {
+        "type": "Presenter",
+        "description": "A presenter object (inferred from specs) that aggregates and formats all necessary data for `Certificate::RecordRenderer` to generate a PDF certificate. This includes template path, dynamic content, QR code details, proctoring image, and transcript of records.",
+        "interactions": {
+          "interaction_0": "Provides data to `Certificate::RecordRenderer`. [Source: spec/lib/certificate/record_renderer_spec.rb]",
+          "interaction_1": "Likely instantiated by a `Certificate::Record` object via a `render_data` method. [Source: app/operations/certificate/record/render.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "spec/lib/certificate/record_renderer_spec.rb",
+            "app/operations/certificate/record/render.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 35,
+              "code": "# frozen_string_literal: true\n\nrequire 'xikolo/s3'\nrequire 'arabic-letter-connector'\n\nmodule Certificate\n  class RenderDataPresenter\n    def initialize(record, template)\n      @record = record\n      @template = template\n    end\n\n    def dynamic_content\n      return '' if @template.dynamic_content.blank?\n\n      dynamic_content = I18n.with_locale(course_lang) do\n        @template.dynamic_content.gsub(/##(\\w+)##/) do\n          lookup(Regexp.last_match(1))\n        end\n      end\n\n      fix_text_direction dynamic_content\n    end\n\n    def qrcode_url\n      verification_url\n    end\n\n    def qrcode_pos\n      return false if @template.certificate_type == ::Certificate::Record::TOR\n      return false unless @template.qrcode_x.try(:positive?) &&\n                          @template.qrcode_y.try(:positive?)\n\n      {x: @template.qrcode_x, y: @template.qrcode_y}\n    end\n\n    def template_path\n      # We keep a reference here to ensure the tempfile is deleted\n      # after the rendering, not after leavi...\n",
+              "source": "app/presenters/certificate/render_data_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/certificate/render_data_presenter.rb",
+              "relevance": 31
+            },
+            {
+              "path": "app/presenters/certificate/record_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/certificate/render_preview_data_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      },
+      "Course::CertificateTemplatePresenter": {
+        "type": "Presenter",
+        "description": "A presenter object used to decorate `Certificate::Template` instances for display in the admin index view, providing a cleaner interface for view logic.",
+        "interactions": {
+          "interaction_0": "Instantiated by `Course::Admin::CertificateTemplatesController` for each `Certificate::Template` in the index action. [Source: app/controllers/course/admin/certificate_templates_controller.rb]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/course/admin/certificate_templates_controller.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 3,
+              "endLine": 20,
+              "code": "class Course::CertificateTemplatePresenter   extend Forwardable    def_delegators :@template, :id, :file_url, :certificate_type    def initialize(template)     @template = template   end    def record_count     @record_count ||= @template.records.count   end    def deletable?     record_count.zero?   end end",
+              "source": "app/presenters/course/admin/metadata_edit_presenter.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/presenters/course/admin/metadata_edit_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/course/admin/visual_edit_presenter.rb",
+              "relevance": 12
+            },
+            {
+              "path": "app/presenters/course/certificate_template_presenter.rb",
+              "relevance": 12
+            }
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Interacts with Course::Course to find the current course [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_1": "Manages Certificate::Template objects (inferred) [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_2": "Uses FileUpload for PDF uploads [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_3": "Delegates PDF rendering for preview to Certificate::Record::Render [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_4": "Uses Course::CertificateTemplatePresenter for display (inferred) [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_5": "Interacts with Course::Course to find the current course [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_6": "Manages Certificate::OpenBadgeTemplate objects (inferred) [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_7": "Uses FileUpload for PNG image uploads [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_8": "Interacts with Course::Course and Course::Enrollment [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_9": "Retrieves Certificate::Template and Certificate::Record objects (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_10": "Retrieves and \"bakes\" Certificate::OpenBadgeTemplate objects (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_11": "Uses Certificate::RecordPresenter and Course::DocumentsPresenter for display (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_12": "Communicates with external services for achievements via Restify [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_13": "Integrates with Proctoring::SmowlAdapter for proctoring checks (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_14": "Delegates PDF rendering to Certificate::Record::Render [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_15": "Sets meta tags for SEO/social sharing [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_16": "Uses Acfs for asynchronous data fetching [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_17": "Uses Prawn and Prawn::QRCode gems for PDF generation [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_18": "Reads certificate data from an object (inferred to be Certificate::Record#render_data) [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_19": "Accesses Xikolo.config for certificate-related configurations (fonts, transcript of records) [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_20": "Loads fonts from brand-specific paths or default paths [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_21": "Takes a Certificate::Record object (inferred) [Source: app/operations/certificate/record/render.rb]",
+      "interaction_22": "Calls Certificate::RecordRenderer.as_pdf with the record's render data [Source: app/operations/certificate/record/render.rb]",
+      "interaction_23": "(Intended) Interacts with Proctoring::SmowlAdapter to fetch images (inferred from description) [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "interaction_24": "(Intended) Interacts with S3 for image storage (inferred from description) [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "interaction_25": "Handles Proctoring::ServiceError with retries [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "interaction_26": "Associated with Course::Course (inferred) [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_27": "Has an association to Certificate::Record (implied by records.any? check) [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_28": "Handles file uploads (via process_upload!) (inferred) [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_29": "Provides methods for previewing and generating records (preview_for, record_for!) (inferred) [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_30": "Associated with Course::Course (inferred) [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_31": "Handles file uploads (via process_upload!) (inferred) [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_32": "Provides a method to \"bake\" an Open Badge for a user (bake!) (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_33": "Associated with Certificate::Template, Course::Course, and User (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_34": "Provides a class method for verification (verify) (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_35": "Has methods to check eligibility for badges (eligible_for_badge?) and user status (user_deleted?) (inferred) [Source: app/controllers/course/certificates_controller.rb]",
+      "interaction_36": "Provides data for rendering (render_data) (inferred) [Source: app/operations/certificate/record/render.rb]",
+      "interaction_37": "Interacts with `Course::Course` to identify the current course. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_38": "Interacts with `Certificate::Template` model for persistence and data retrieval. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_39": "Utilizes `FileUpload` for handling PDF template uploads. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_40": "Calls `Certificate::Template#process_upload!` to associate uploaded files. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_41": "Invokes `Certificate::Template#preview_for` to generate preview data. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_42": "Delegates PDF rendering to `Certificate::Record::Render.call` for previews. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_43": "Uses `Course::CertificateTemplatePresenter` to prepare template data for display. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_44": "Interacts with `Course::Course` to identify the current course. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_45": "Interacts with `Certificate::OpenBadgeTemplate` model for persistence and data retrieval. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_46": "Utilizes `FileUpload` for handling PNG badge image uploads. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_47": "Calls `Certificate::OpenBadgeTemplate#process_upload!` to associate uploaded files. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_48": "Uses `Prawn::Document` for PDF generation. [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_49": "Uses `Prawn::QRCode` for embedding QR codes. [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_50": "Reads configuration from `Xikolo.config` for font paths and transcript of records table settings. [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_51": "Accesses file system for font files and PDF templates. [Source: app/lib/certificate/record_renderer.rb]",
+      "interaction_52": "Receives data for rendering from a `Certificate::RenderDataPresenter` (or similar data object). [Source: spec/lib/certificate/record_renderer_spec.rb]",
+      "interaction_53": "Initializes with a `record` object (e.g., `Certificate::RecordOfAchievement`). [Source: app/operations/certificate/record/render.rb]",
+      "interaction_54": "Calls `@record.render_data` to obtain the necessary data for rendering. [Source: app/operations/certificate/record/render.rb]",
+      "interaction_55": "Delegates the actual PDF generation to `Certificate::RecordRenderer.as_pdf`. [Source: app/operations/certificate/record/render.rb]",
+      "interaction_56": "Takes an assertion (hash), image URL, and private key as input. [Source: spec/lib/open_badge_bakery_spec.rb]",
+      "interaction_57": "Fetches the badge image from the provided `image_url`. [Source: spec/lib/open_badge_bakery_spec.rb]",
+      "interaction_58": "Uses `ChunkyPNG` for manipulating PNG image chunks. [Source: spec/lib/open_badge_bakery_spec.rb]",
+      "interaction_59": "Uses `JWT` gem for signing the assertion with the `RS256` algorithm. [Source: spec/lib/open_badge_bakery_spec.rb, spec/support/badge_support.rb]",
+      "interaction_60": "Uses `OpenSSL::PKey::RSA` for key management. [Source: spec/support/badge_support.rb]",
+      "interaction_61": "Reads `open_badge_private_key` from `Rails.application.secrets` for signing. [Source: spec/lib/open_badge_bakery_spec.rb]",
+      "interaction_62": "Reads `public_key` from `Xikolo.config.open_badges` for assertion verification (in tests). [Source: spec/lib/open_badge_bakery_spec.rb]",
+      "interaction_63": "Managed by `Course::Admin::CertificateTemplatesController`. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_64": "Processes file uploads via `process_upload!`. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_65": "Generates preview data via `preview_for`. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_66": "Associated with `Certificate::RecordOfAchievement` instances. [Source: db/seeds/development/30_certificate.rb]",
+      "interaction_67": "Managed by `Course::Admin::OpenBadgeTemplatesController`. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_68": "Processes file uploads via `process_upload!`. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_69": "Associated with `Certificate::V2::OpenBadge` instances. [Source: db/seeds/development/30_certificate.rb]",
+      "interaction_70": "Linked to `Certificate::Template`. [Source: db/seeds/development/30_certificate.rb]",
+      "interaction_71": "Can be rendered into a PDF via `Certificate::Record::Render`. [Source: app/operations/certificate/record/render.rb]",
+      "interaction_72": "Can have associated `Certificate::V2::OpenBadge` instances. [Source: db/seeds/development/30_certificate.rb]",
+      "interaction_73": "Linked to `Certificate::RecordOfAchievement` and `Certificate::OpenBadgeTemplate`. [Source: db/seeds/development/30_certificate.rb]",
+      "interaction_74": "Used by `Course::Admin::CertificateTemplatesController` for PDF uploads. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_75": "Used by `Course::Admin::OpenBadgeTemplatesController` for PNG uploads. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_76": "Likely interacts with `Xikolo::S3` for actual file storage. [Source: db/seeds/development/30_certificate.rb]",
+      "interaction_77": "Accessed by `Course::Admin::CertificateTemplatesController` to scope templates. [Source: app/controllers/course/admin/certificate_templates_controller.rb]",
+      "interaction_78": "Accessed by `Course::Admin::OpenBadgeTemplatesController` to scope templates. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]",
+      "interaction_79": "Provides data to `Certificate::RecordRenderer`. [Source: spec/lib/certificate/record_renderer_spec.rb]",
+      "interaction_80": "Likely instantiated by a `Certificate::Record` object via a `render_data` method. [Source: app/operations/certificate/record/render.rb]",
+      "interaction_81": "Instantiated by `Course::Admin::CertificateTemplatesController` for each `Certificate::Template` in the index action. [Source: app/controllers/course/admin/certificate_templates_controller.rb]"
+    },
+    "technicalDebt": [
+      "Multiple Acfs.run calls within actions, potentially indicating less optimized data fetching [Source: app/controllers/course/certificates_controller.rb]",
+      "TODO: Improve checks in check_course_eligibility, suggesting potential gaps in access control [Source: app/controllers/course/certificates_controller.rb]",
+      "Proctoring check (ensure_proctoring_passed!) only applied to CERT type, not ROA, which might be inconsistent [Source: app/controllers/course/certificates_controller.rb]",
+      "Hardcoded coordinates for proctoring image placement, potentially inflexible for different designs [Source: app/lib/certificate/record_renderer.rb]",
+      "Specific workarounds for Prawn's font handling (disabling subsetting, custom identifiers), suggesting underlying complexities [Source: app/lib/certificate/record_renderer.rb]",
+      "The perform method is currently empty, indicating that the core functionality is not implemented [Source: app/jobs/proctoring/upload_certificate_image_job.rb]",
+      "Font subsetting is currently disabled due to a Prawn issue, potentially leading to larger PDF file sizes. [Source: app/lib/certificate/record_renderer.rb]"
+    ]
+  }
+}

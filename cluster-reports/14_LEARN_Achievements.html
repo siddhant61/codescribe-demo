@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Achievements standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Achievements standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#learn" class="breadcrumb-link">LEARN</a></li>
+            <li class="breadcrumb-item active">Achievements standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#key-components" class="sidebar-nav-link">Key Components</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagram" class="sidebar-nav-link">Architecture Diagram</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-certificate-template-management-workflow" class="sidebar-nav-link">1. Certificate Template Management Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-pdf-certificate-generation-and-download-workflow" class="sidebar-nav-link">2. User PDF Certificate Generation and Download Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-open-badge-issuance-workflow" class="sidebar-nav-link">3. Open Badge Issuance Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#technical-considerations" class="sidebar-nav-link">Technical Considerations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#dependencies-and-integrations" class="sidebar-nav-link">Dependencies and Integrations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#configuration-requirements" class="sidebar-nav-link">Configuration Requirements</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-learn">LEARN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="digital-certificates%2C-open-badges%2C-and-credential-issuance---technical-documentation" tabindex="-1"><a class="header-anchor" href="#digital-certificates%2C-open-badges%2C-and-credential-issuance---technical-documentation"><span>Digital Certificates, Open Badges, and Credential Issuance - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the ‘Digital Certificates, Open Badges, and Credential Issuance’ feature cluster within the Xikolo platform, focusing on the management, generation, and verification of digital credentials. Key components facilitate administrative control over certificate and Open Badge templates, user-facing credential display and download, and background processing for related assets. The main purpose is to provide a comprehensive system for issuing verifiable digital achievements, including PDF certificates and Open Badges, while integrating with external services like proctoring and achievement tracking. The scope covers template definition, user access, rendering, baking, and verification processes within the Xikolo learning environment.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The achievements feature is central to Xikolo’s credentialing capabilities, enabling the issuance of digital certificates and Open Badges. At its core, administrators manage templates for both credential types, while end-users interact with a dedicated controller to view, download, or verify their earned achievements. Rendering of PDF certificates is handled by a specialized library that integrates with PDF generation tools, and Open Badges are ‘baked’ using a separate utility. File uploads for templates and images are managed by a generic service, with interactions occurring within the course context and with external systems for proctoring and achievement data retrieval.</p>
+<h3 id="key-components" tabindex="-1"><a class="header-anchor" href="#key-components"><span>Key Components</span></a></h3>
+<ul>
+<li><strong>User Certificates Controller (<code>Course::CertificatesController</code>):</strong> This controller serves as the primary interface for users to view, download, and verify their digital certificates and Open Badges. It orchestrates interactions with various services, including external achievement APIs via <code>Restify</code> and proctoring checks through <code>Proctoring::SmowlAdapter</code>.</li>
+<li><strong>Certificate PDF Renderer (<code>Certificate::RecordRenderer</code>):</strong> A specialized library that utilizes <code>Prawn::Document</code> and <code>Prawn::QRCode</code> to construct PDF certificates. It incorporates dynamic content, QR codes, proctoring images, and a transcript of records table, drawing configurations from <code>Xikolo.config</code>.</li>
+<li><strong>Open Badge Bakery (<code>OpenBadgeBakery</code>):</strong> This component is responsible for embedding digital assertions into Open Badge images, a process known as ‘baking’. It takes an assertion, image URL, and a private key, fetching the image and using <code>ChunkyPNG</code> to manipulate PNG chunks for embedding the signed assertion.</li>
+<li><strong>Certificate Template Model (<code>Certificate::Template</code>):</strong> Represents the customizable blueprint for PDF certificates. It stores design parameters such as dynamic SVG content, QR code positioning, and a reference to the PDF background file. This model is managed via the admin interface.</li>
+<li><strong>File Upload Service (<code>FileUpload</code>):</strong> A generic utility for managing temporary file uploads. It facilitates the secure upload of PDF templates for certificates and PNG images for Open Badges, likely interfacing with <code>Xikolo::S3</code> for storage as indicated in cluster data.</li>
+<li><strong>Proctoring Image Upload Job (<code>Proctoring::UploadCertificateImageJob</code>):</strong> A background job intended to fetch a user’s proctoring image from the <code>Proctoring::SmowlAdapter</code> and upload it to <code>S3</code> for eventual inclusion in issued certificates. As indicated in cluster data, its <code>perform</code> method is currently empty.</li>
+</ul>
+<h3 id="architecture-diagram" tabindex="-1"><a class="header-anchor" href="#architecture-diagram"><span>Architecture Diagram</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUI["Admin UI (Templates)"]
+  userUI["User UI (Achievements)"]
+  templateModels["Template Models (Cert/Badge)"]
+  credentialServices["Credential Rendering & Baking"]
+  externalServices["External & Storage Services"]
+  courseCore["Course Core"]
+
+  adminUI -->|"manages templates for"| templateModels
+  templateModels -->|"scoped by"| courseCore
+  userUI -->|"accesses & generates"| credentialServices
+  userUI -->|"queries"| templateModels
+  credentialServices -->|"utilizes"| externalServices
+  externalServices -->|"provides data/storage"| templateModels
+  adminUI -->|"uses"| externalServices
+</pre></div>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture-overview" tabindex="-1"><a class="header-anchor" href="#main-architecture-overview"><span>Main Architecture Overview</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUI["Admin UI (Templates)"]
+  userUI["User UI (Achievements)"]
+  templateModels["Template Models (Cert/Badge)"]
+  credentialServices["Credential Rendering & Baking"]
+  externalServices["External & Storage Services"]
+  courseCore["Course Core"]
+
+  adminUI -->|"manages templates for"| templateModels
+  templateModels -->|"scoped by"| courseCore
+  userUI -->|"accesses & generates"| credentialServices
+  userUI -->|"queries"| templateModels
+  credentialServices -->|"utilizes"| externalServices
+  externalServices -->|"provides data/storage"| templateModels
+  adminUI -->|"uses"| externalServices
+
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Course::Admin::CertificateTemplatesController:</strong> Interacts with <code>Course::Course</code> to identify the current course. [Source: app/controllers/course/admin/certificate_templates_controller.rb]</li>
+<li><strong>Course::Admin::CertificateTemplatesController:</strong> Interacts with <code>Certificate::Template</code> model for persistence and data retrieval. [Source: app/controllers/course/admin/certificate_templates_controller.rb]</li>
+<li><strong>Course::Admin::OpenBadgeTemplatesController:</strong> Interacts with <code>Course::Course</code> to identify the current course. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]</li>
+<li><strong>Course::Admin::OpenBadgeTemplatesController:</strong> Interacts with <code>Certificate::OpenBadgeTemplate</code> model for persistence and data retrieval. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]</li>
+<li><strong>Course::CertificatesController:</strong> Interacts with Course::Course and Course::Enrollment [Source: app/controllers/course/certificates_controller.rb]</li>
+<li><strong>Course::CertificatesController:</strong> Retrieves Certificate::Template and Certificate::Record objects (inferred) [Source: app/controllers/course/certificates_controller.rb]</li>
+<li><strong>Certificate::RecordRenderer:</strong> Uses <code>Prawn::Document</code> for PDF generation. [Source: app/lib/certificate/record_renderer.rb]</li>
+<li><strong>Certificate::RecordRenderer:</strong> Uses <code>Prawn::QRCode</code> for embedding QR codes. [Source: app/lib/certificate/record_renderer.rb]</li>
+<li><strong>Certificate::Record::Render:</strong> Initializes with a <code>record</code> object (e.g., <code>Certificate::RecordOfAchievement</code>). [Source: app/operations/certificate/record/render.rb]</li>
+<li><strong>Certificate::Record::Render:</strong> Calls <code>@record.render_data</code> to obtain the necessary data for rendering. [Source: app/operations/certificate/record/render.rb]</li>
+<li><strong>Proctoring::UploadCertificateImageJob:</strong> (Intended) Interacts with Proctoring::SmowlAdapter to fetch images (inferred from description) [Source: app/jobs/proctoring/upload_certificate_image_job.rb]</li>
+<li><strong>Proctoring::UploadCertificateImageJob:</strong> (Intended) Interacts with S3 for image storage (inferred from description) [Source: app/jobs/proctoring/upload_certificate_image_job.rb]</li>
+<li><strong>Certificate::Template:</strong> Managed by <code>Course::Admin::CertificateTemplatesController</code>. [Source: app/controllers/course/admin/certificate_templates_controller.rb]</li>
+<li><strong>Certificate::Template:</strong> Processes file uploads via <code>process_upload!</code>. [Source: app/controllers/course/admin/certificate_templates_controller.rb]</li>
+<li><strong>Certificate::OpenBadgeTemplate:</strong> Managed by <code>Course::Admin::OpenBadgeTemplatesController</code>. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]</li>
+<li><strong>Certificate::OpenBadgeTemplate:</strong> Processes file uploads via <code>process_upload!</code>. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]</li>
+<li><strong>Certificate::Record:</strong> Associated with Certificate::Template, Course::Course, and User (inferred) [Source: app/controllers/course/certificates_controller.rb]</li>
+<li><strong>Certificate::Record:</strong> Provides a class method for verification (verify) (inferred) [Source: app/controllers/course/certificates_controller.rb]</li>
+<li><strong>OpenBadgeBakery:</strong> Takes an assertion (hash), image URL, and private key as input. [Source: spec/lib/open_badge_bakery_spec.rb]</li>
+<li><strong>OpenBadgeBakery:</strong> Fetches the badge image from the provided <code>image_url</code>. [Source: spec/lib/open_badge_bakery_spec.rb]</li>
+<li><strong>Certificate::RecordOfAchievement:</strong> Linked to <code>Certificate::Template</code>. [Source: RAG: db/seeds/development/30_certificate.rb]</li>
+<li><strong>Certificate::RecordOfAchievement:</strong> Can be rendered into a PDF via <code>Certificate::Record::Render</code>. [Source: app/operations/certificate/record/render.rb]</li>
+<li><strong>Certificate::V2::OpenBadge:</strong> Linked to <code>Certificate::RecordOfAchievement</code> and <code>Certificate::OpenBadgeTemplate</code>. [Source: RAG: db/seeds/development/30_certificate.rb]</li>
+<li><strong>FileUpload:</strong> Used by <code>Course::Admin::CertificateTemplatesController</code> for PDF uploads. [Source: app/controllers/course/admin/certificate_templates_controller.rb]</li>
+<li><strong>FileUpload:</strong> Used by <code>Course::Admin::OpenBadgeTemplatesController</code> for PNG uploads. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]</li>
+<li><strong>Course::Course:</strong> Accessed by <code>Course::Admin::CertificateTemplatesController</code> to scope templates. [Source: app/controllers/course/admin/certificate_templates_controller.rb]</li>
+<li><strong>Course::Course:</strong> Accessed by <code>Course::Admin::OpenBadgeTemplatesController</code> to scope templates. [Source: app/controllers/course/admin/open_badge_templates_controller.rb]</li>
+<li><strong>Certificate::RenderDataPresenter:</strong> Provides data to <code>Certificate::RecordRenderer</code>. [Source: spec/lib/certificate/record_renderer_spec.rb]</li>
+<li><strong>Certificate::RenderDataPresenter:</strong> Likely instantiated by a <code>Certificate::Record</code> object via a <code>render_data</code> method. [Source: app/operations/certificate/record/render.rb]</li>
+<li><strong>Course::CertificateTemplatePresenter:</strong> Instantiated by <code>Course::Admin::CertificateTemplatesController</code> for each <code>Certificate::Template</code> in the index action. [Source: app/controllers/course/admin/certificate_templates_controller.rb]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-certificate-template-management-workflow" tabindex="-1"><a class="header-anchor" href="#1.-certificate-template-management-workflow"><span>1. Certificate Template Management Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUser["Admin User"]
+  adminCertController["Admin Certs Controller"]
+  courseModel["Course Model"]
+  certTemplateModel["Certificate Template Model"]
+  fileUploadService["File Upload Service"]
+  s3Storage["S3 Object Storage"]
+
+  adminUser -->|"manages templates via"| adminCertController
+  adminCertController -->|"scopes to"| courseModel
+  adminCertController -->|"creates/updates"| certTemplateModel
+  adminCertController -->|"initiates upload for"| fileUploadService
+  fileUploadService -->|"stores PDF template in"| s3Storage
+  certTemplateModel -->|"references PDF from"| s3Storage
+  adminCertController -->|"generates preview from"| certTemplateModel
+
+</pre></div>
+<p>Administrators initiate this workflow to define and maintain the visual and dynamic content for PDF certificate templates. The <code>Course::Admin::CertificateTemplatesController</code> provides the interface for creating, updating, or deleting these templates. When a new template is created or an existing one updated, an administrator uploads a PDF file (e.g., for the background design) and defines dynamic elements like SVG content and QR code positioning. The <code>FileUpload</code> service handles the secure transfer of this PDF to storage, typically <code>Xikolo::S3</code>. Each <code>Certificate::Template</code> is associated with a specific <code>Course::Course</code> to ensure proper scoping. Preview functionality is also available, leveraging the <code>Certificate::Record::Render</code> operation to show how a certificate would appear with the current template settings. Deletion of a template is strictly prevented if <code>Certificate::Record</code> instances are already associated with it, preserving data integrity. This workflow ensures that certificate designs are centrally managed and easily updateable by authorized personnel.</p>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUser["Admin User"]
+  adminCertController["Admin Certs Controller"]
+  courseModel["Course Model"]
+  certTemplateModel["Certificate Template Model"]
+  fileUploadService["File Upload Service"]
+  s3Storage["S3 Object Storage"]
+
+  adminUser -->|"manages templates via"| adminCertController
+  adminCertController -->|"scopes to"| courseModel
+  adminCertController -->|"creates/updates"| certTemplateModel
+  adminCertController -->|"initiates upload for"| fileUploadService
+  fileUploadService -->|"stores PDF template in"| s3Storage
+  certTemplateModel -->|"references PDF from"| s3Storage
+  adminCertController -->|"generates preview from"| certTemplateModel
+</pre></div>
+<h3 id="2.-user-pdf-certificate-generation-and-download-workflow" tabindex="-1"><a class="header-anchor" href="#2.-user-pdf-certificate-generation-and-download-workflow"><span>2. User PDF Certificate Generation and Download Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appUser["Application User"]
+  userCertController["User Certs Controller"]
+  smowlAdapter["Smowl Proctoring Adapter"]
+  certRenderOperation["Cert Render Operation"]
+  certRenderer["Certificate PDF Renderer"]
+  pdfDownload["PDF Document Download"]
+
+  appUser -->|"requests certificate"| userCertController
+  userCertController -->|"checks proctoring with"| smowlAdapter
+  smowlAdapter -->|"returns status"| userCertController
+  userCertController -->|"initiates rendering via"| certRenderOperation
+  certRenderOperation -->|"delegates PDF creation to"| certRenderer
+  certRenderer -->|"generates PDF document"| pdfDownload
+  pdfDownload -->|"streams to"| appUser
+
+</pre></div>
+<p>This workflow describes how a user requests and obtains a PDF certificate for an achieved course credential. Triggered by a user’s request through the <code>Course::CertificatesController</code>, the system first performs crucial checks, especially for proctored courses. The <code>ensure_proctoring_passed!</code> check interacts with the <code>Proctoring::SmowlAdapter</code> to verify the user’s proctoring status. If proctoring requirements are not met, a <code>CertificateNotAllowed</code> exception is raised, preventing download. If cleared, the request proceeds to the <code>Certificate::Record::Render</code> operation, which acts as an orchestrator. This operation retrieves the necessary data, including dynamic content and QR code positions, from a <code>Certificate::Record</code> object, often presented by <code>Certificate::RenderDataPresenter</code>. It then delegates the actual PDF creation to <code>Certificate::RecordRenderer</code>. The <code>Certificate::RecordRenderer</code> uses <code>Prawn</code> and <code>Prawn::QRCode</code> to compile the PDF, embedding dynamic content, a unique QR code for verification, and potentially a proctoring image. Once rendered, the PDF is streamed for download to the user, providing them with their official achievement credential.</p>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appUser["Application User"]
+  userCertController["User Certs Controller"]
+  smowlAdapter["Smowl Proctoring Adapter"]
+  certRenderOperation["Cert Render Operation"]
+  certRenderer["Certificate PDF Renderer"]
+  pdfDownload["PDF Document Download"]
+
+  appUser -->|"requests certificate"| userCertController
+  userCertController -->|"checks proctoring with"| smowlAdapter
+  smowlAdapter -->|"returns status"| userCertController
+  userCertController -->|"initiates rendering via"| certRenderOperation
+  certRenderOperation -->|"delegates PDF creation to"| certRenderer
+  certRenderer -->|"generates PDF document"| pdfDownload
+  pdfDownload -->|"streams to"| appUser
+</pre></div>
+<h3 id="3.-open-badge-issuance-workflow" tabindex="-1"><a class="header-anchor" href="#3.-open-badge-issuance-workflow"><span>3. Open Badge Issuance Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appUser["Application User"]
+  userCertController["User Certs Controller"]
+  openBadgeTemplate["Open Badge Template Model"]
+  openBadgeBakery["Open Badge Bakery"]
+  v2OpenBadge["Open Badge (v2) Model"]
+  bakedBadgeAvailable["Baked Open Badge Available"]
+
+  appUser -->|"views/requests badge via"| userCertController
+  userCertController -->|"retrieves"| openBadgeTemplate
+  openBadgeTemplate -->|"initiates baking with"| openBadgeBakery
+  openBadgeBakery -->|"creates/signs"| v2OpenBadge
+  v2OpenBadge -->|"makes"| bakedBadgeAvailable
+  bakedBadgeAvailable -->|"presented to"| appUser
+
+</pre></div>
+<p>The Open Badge issuance workflow enables users to receive digitally verifiable Open Badges for their achievements. This process is often initiated by the <code>Course::CertificatesController</code> when a user views their achievements or explicitly requests an Open Badge. The controller identifies the relevant <code>Certificate::OpenBadgeTemplate</code> for the course, which holds metadata and a reference to the badge image. The core of this workflow is the ‘baking’ process, facilitated by the <code>OpenBadgeBakery</code> component. The <code>OpenBadgeBakery</code> takes an assertion (a JSON object containing recipient, badge, and verification details), the badge image’s URL (fetched from <code>FileUpload</code> or <code>S3</code>), and a private key for signing. It fetches the base badge image and then uses the <code>ChunkyPNG</code> library to embed the cryptographically signed assertion as an iTXt chunk within the PNG image. This results in a ‘baked’ <code>Certificate::V2::OpenBadge</code> instance, which is a tamper-evident digital credential. The baked badge is then made available to the user, often through a public URL for sharing and verification.</p>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  appUser["Application User"]
+  userCertController["User Certs Controller"]
+  openBadgeTemplate["Open Badge Template Model"]
+  openBadgeBakery["Open Badge Bakery"]
+  v2OpenBadge["Open Badge (v2) Model"]
+  bakedBadgeAvailable["Baked Open Badge Available"]
+
+  appUser -->|"views/requests badge via"| userCertController
+  userCertController -->|"retrieves"| openBadgeTemplate
+  openBadgeTemplate -->|"initiates baking with"| openBadgeBakery
+  openBadgeBakery -->|"creates/signs"| v2OpenBadge
+  v2OpenBadge -->|"makes"| bakedBadgeAvailable
+  bakedBadgeAvailable -->|"presented to"| appUser
+</pre></div>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The implementation of the Xikolo Achievements cluster relies on a modular architecture, integrating several Ruby gems and internal services to manage digital certificates and Open Badges. Specific technical considerations, dependencies, and configuration requirements are detailed below based on the provided cluster data.</p>
+<h3 id="technical-considerations" tabindex="-1"><a class="header-anchor" href="#technical-considerations"><span>Technical Considerations</span></a></h3>
+<p>As indicated in the cluster data, several technical observations impact the system’s robustness and flexibility:</p>
+<ul>
+<li><strong>Proctoring Check Inconsistency:</strong> The <code>ensure_proctoring_passed!</code> check is exclusively applied to <code>CERT</code> type certificates by <code>Course::CertificatesController</code>, but not to <code>ROA</code> (Record of Achievement) types. This could lead to an inconsistent security posture if all official credentials are expected to require proctoring for download. This warrants re-evaluation for consistency as noted in the technical debt.</li>
+<li><strong>Incomplete Proctoring Image Upload:</strong> The <code>Proctoring::UploadCertificateImageJob</code>’s <code>perform</code> method is currently empty, indicating that the intended functionality to fetch user proctoring images from <code>Proctoring::SmowlAdapter</code> and upload them to <code>S3</code> for certificate inclusion is not yet implemented or functional. This is a critical gap for proctored certificate generation.</li>
+<li><strong>Hardcoded Image Positioning:</strong> <code>Certificate::RecordRenderer</code> uses fixed coordinates for placing the proctoring image on PDFs (<code>at: [16.1, 754]</code>, <code>width: 77.2</code>). This rigid positioning can lead to layout issues if certificate templates vary significantly in design or if image dimensions change, requiring manual adjustments for each template variant.</li>
+<li><strong>Font Handling Workarounds:</strong> The <code>RecordRenderer</code> includes specific workarounds for <code>Prawn</code>’s font handling, such as disabling subsetting (<code>subset: false</code>) and setting custom font identifiers. This suggests underlying complexities or limitations with the PDF generation library that necessitated explicit mitigation, potentially affecting PDF file sizes or rendering consistency across environments.</li>
+<li><strong>Asynchronous Data Fetching Strategy:</strong> <code>Course::CertificatesController</code> makes multiple <code>Acfs.run</code> calls within single actions. While <code>Acfs</code> is an asynchronous framework, repeated calls in one action may indicate a suboptimal data fetching strategy that could be consolidated for efficiency if not managed to prevent redundant processing.</li>
+</ul>
+<h3 id="dependencies-and-integrations" tabindex="-1"><a class="header-anchor" href="#dependencies-and-integrations"><span>Dependencies and Integrations</span></a></h3>
+<p>The cluster components integrate with several internal and external systems and rely on specific Ruby gems:</p>
+<ul>
+<li><strong>PDF Generation:</strong> <code>Prawn</code> and <code>Prawn::QRCode</code> gems are fundamental dependencies for <code>Certificate::RecordRenderer</code> to create and embed QR codes into PDF certificates.</li>
+<li><strong>Open Badge Processing:</strong> <code>ChunkyPNG</code> is used by <code>OpenBadgeBakery</code> for low-level manipulation of PNG image chunks, enabling the embedding of assertions. The <code>JWT</code> gem handles the signing of Open Badge assertions using the <code>RS256</code> algorithm, ensuring their verifiability.</li>
+<li><strong>Proctoring Service:</strong> <code>Proctoring::SmowlAdapter</code> is integrated with <code>Course::CertificatesController</code> for real-time proctoring status checks and is the intended source for proctoring images via <code>Proctoring::UploadCertificateImageJob</code>.</li>
+<li><strong>External Achievement Data:</strong> <code>Restify</code> is utilized by <code>Course::CertificatesController</code> to communicate with external services for retrieving user achievements, enabling the display of comprehensive credential information.</li>
+<li><strong>File Storage:</strong> <code>FileUpload</code> acts as an intermediary for handling PDF template and PNG image uploads, with an inferred integration with <code>Xikolo::S3</code> for persistent storage of these assets.</li>
+<li><strong>Core Application Context:</strong> <code>Course::Course</code> provides the essential context for scoping certificate and Open Badge templates, ensuring they are correctly associated with specific learning programs.</li>
+</ul>
+<h3 id="configuration-requirements" tabindex="-1"><a class="header-anchor" href="#configuration-requirements"><span>Configuration Requirements</span></a></h3>
+<p>Based on the cluster data, the following configuration aspects are evident:</p>
+<ul>
+<li><strong><code>Xikolo.config</code>:</strong> This configuration source is used by <code>Certificate::RecordRenderer</code> to retrieve settings such as font paths and parameters for the transcript of records table. For Open Badges, <code>Xikolo.config.open_badges</code> is referenced to obtain the <code>public_key</code> used for assertion verification (specifically mentioned in tests).</li>
+<li><strong><code>Rails.application.secrets</code>:</strong> <code>OpenBadgeBakery</code> reads the <code>open_badge_private_key</code> from <code>Rails.application.secrets</code> for signing Open Badge assertions, a critical security measure for credential issuance.</li>
+<li><strong>File System Access:</strong> <code>Certificate::RecordRenderer</code> accesses the file system directly to load font files and PDF templates, indicating that these assets must be present at specified paths for correct rendering.</li>
+<li>Other configuration requirements such as database connection strings, environment variables for external service endpoints, or logging configurations are not specified in cluster data.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Course::Admin::CertificateTemplatesController</strong> <code>app/controllers/course/admin/certificate_templates_controller.rb</code></li>
+<li>📄 <strong>Course::Admin::CertificateTemplatesController</strong> <code>RAG: services/account/lib/tasks/permissions/certificate.yml</code></li>
+<li>📄 <strong>Course::Admin::OpenBadgeTemplatesController</strong> <code>app/controllers/course/admin/open_badge_templates_controller.rb</code></li>
+<li>📄 <strong>Course::Admin::OpenBadgeTemplatesController</strong> <code>RAG: services/account/lib/tasks/permissions/certificate.yml</code></li>
+<li>📄 <strong>Course::CertificatesController</strong> <code>app/controllers/course/certificates_controller.rb</code></li>
+<li>📄 <strong>Certificate::RenderDataPresenter</strong> <code>spec/lib/certificate/record_renderer_spec.rb</code></li>
+<li>📄 <strong>Certificate::RenderDataPresenter</strong> <code>app/operations/certificate/record/render.rb</code></li>
+<li>📄 <strong>Course::CertificateTemplatePresenter</strong> <code>app/controllers/course/admin/certificate_templates_controller.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Certificate::RecordRenderer</strong> <code>app/lib/certificate/record_renderer.rb</code></li>
+<li>📄 <strong>Certificate::RecordRenderer</strong> <code>spec/lib/certificate/record_renderer_spec.rb</code></li>
+<li>📄 <strong>Certificate::Record::Render</strong> <code>app/operations/certificate/record/render.rb</code></li>
+<li>📄 <strong>Proctoring::UploadCertificateImageJob</strong> <code>app/jobs/proctoring/upload_certificate_image_job.rb</code></li>
+<li>📄 <strong>Certificate::Template</strong> <code>app/controllers/course/admin/certificate_templates_controller.rb</code></li>
+<li>📄 <strong>Certificate::Template</strong> <code>RAG: db/seeds/development/30_certificate.rb</code></li>
+<li>📄 <strong>Certificate::OpenBadgeTemplate</strong> <code>app/controllers/course/admin/open_badge_templates_controller.rb</code></li>
+<li>📄 <strong>Certificate::OpenBadgeTemplate</strong> <code>RAG: db/seeds/development/30_certificate.rb</code></li>
+<li>📄 <strong>Certificate::Record</strong> <code>app/controllers/course/certificates_controller.rb</code></li>
+<li>📄 <strong>Certificate::Record</strong> <code>app/operations/certificate/record/render.rb</code></li>
+<li>📄 <strong>OpenBadgeBakery</strong> <code>spec/lib/open_badge_bakery_spec.rb</code></li>
+<li>📄 <strong>OpenBadgeBakery</strong> <code>spec/support/badge_support.rb</code></li>
+<li>📄 <strong>Certificate::RecordOfAchievement</strong> <code>RAG: db/seeds/development/30_certificate.rb</code></li>
+<li>📄 <strong>Certificate::V2::OpenBadge</strong> <code>RAG: db/seeds/development/30_certificate.rb</code></li>
+<li>📄 <strong>FileUpload</strong> <code>app/controllers/course/admin/certificate_templates_controller.rb</code></li>
+<li>📄 <strong>FileUpload</strong> <code>app/controllers/course/admin/open_badge_templates_controller.rb</code></li>
+<li>📄 <strong>Course::Course</strong> <code>app/controllers/course/admin/certificate_templates_controller.rb</code></li>
+<li>📄 <strong>Course::Course</strong> <code>app/controllers/course/admin/open_badge_templates_controller.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740296326"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture Overview | AI Workflow Portal</title>
+  <meta name="description" content="Comprehensive system architecture overview for the Xikolo platform (case study) with visual diagrams and design patterns.">
+  
+  <link rel="icon" type="image/svg+xml" href="./assets/logo-OzViVasd.svg">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script type="module" crossorigin src="./assets/architecture-DZZXXmC1.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/main-CpXNSzGi.css">
+  <link rel="stylesheet" href="./assets/css/theme-dark.css">
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="./index.html" class="header-logo">
+          <img src="./assets/images/logo.svg" alt="AI Workflow Portal Logo" width="40" height="40">
+          <span>AI Workflow Portal</span>
+        </a>
+        
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="./index.html" class="nav-link">Home</a></li>
+            <li><a href="./architecture-overview.html" class="nav-link active">Architecture</a></li>
+            <li><a href="./research-methodology.html" class="nav-link">Methodology</a></li>
+            <li><a href="./reports-hub.html" class="nav-link">Analysis Results</a></li>
+            <li><a href="./knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="./idp-portal.html" class="nav-link">AI Resources</a></li>
+          </ul>
+        </nav>
+        
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="theme-toggle" aria-label="Toggle dark mode">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="./index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item active">Architecture Overview</li>
+          </ol>
+        </nav>
+        
+        <!-- Page Header -->
+        <div class="section-header mb-3xl">
+          <span class="badge badge-primary mb-md">System Design</span>
+          <h1 class="section-title">Architecture Overview</h1>
+          <p class="section-subtitle">
+            Comprehensive overview of the Xikolo platform architecture, including high-level system design,
+            component organization, design patterns, and architectural decisions.
+          </p>
+        </div>
+        
+        <!-- High-Level Architecture -->
+        <section class="section">
+          <h2 id="high-level">High-Level Architecture</h2>
+          
+          <div class="diagram-container">
+            <h3 class="diagram-title">System Components Overview</h3>
+            <div class="mermaid">
+graph TB
+    subgraph "Frontend Layer"
+        WEB[Web Application<br/>Rails + TypeScript]
+        MOBILE[Mobile Apps<br/>iOS / Android]
+    end
+    
+    subgraph "API Gateway"
+        GATEWAY[API Gateway<br/>Request Routing]
+    end
+    
+    subgraph "Microservices"
+        COURSE[Course Service]
+        ACCOUNT[Account Service]
+        QUIZ[Quiz Service]
+        VIDEO[Video Service]
+        CERTIFICATE[Certificate Service]
+    end
+    
+    subgraph "Infrastructure"
+        DB[(PostgreSQL<br/>Database)]
+        REDIS[(Redis<br/>Cache)]
+        S3[S3 Storage<br/>Assets/Videos]
+        JOBS[Background Jobs<br/>Sidekiq]
+    end
+    
+    WEB --> GATEWAY
+    MOBILE --> GATEWAY
+    GATEWAY --> COURSE
+    GATEWAY --> ACCOUNT
+    GATEWAY --> QUIZ
+    GATEWAY --> VIDEO
+    GATEWAY --> CERTIFICATE
+    
+    COURSE --> DB
+    ACCOUNT --> DB
+    QUIZ --> DB
+    VIDEO --> S3
+    CERTIFICATE --> S3
+    
+    WEB --> REDIS
+    JOBS --> REDIS
+    
+    style WEB fill:#667eea,stroke:#764ba2,stroke-width:2px,color:#fff
+    style GATEWAY fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    style COURSE fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+            </div>
+          </div>
+        </section>
+        
+        <!-- Architecture Layers -->
+        <section class="section">
+          <h2 id="layers">Architecture Layers</h2>
+          
+          <div class="grid grid-cols-3 gap-lg mb-2xl">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Presentation Layer</h3>
+              </div>
+              <div class="card-body">
+                <ul>
+                  <li>Rails Views & Controllers</li>
+                  <li>TypeScript Frontend</li>
+                  <li>Mobile Applications</li>
+                  <li>UI Components</li>
+                  <li>Responsive Design</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Business Logic Layer</h3>
+              </div>
+              <div class="card-body">
+                <ul>
+                  <li>Service Objects</li>
+                  <li>Domain Models</li>
+                  <li>Business Rules</li>
+                  <li>Presenters</li>
+                  <li>Form Objects</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Data Layer</h3>
+              </div>
+              <div class="card-body">
+                <ul>
+                  <li>PostgreSQL Database</li>
+                  <li>ActiveRecord Models</li>
+                  <li>Migrations</li>
+                  <li>Data Validation</li>
+                  <li>Associations</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div class="diagram-container">
+            <h3 class="diagram-title">Layer Communication Flow</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant C as Controller
+    participant S as Service Object
+    participant M as Model
+    participant DB as Database
+    participant MS as Microservice
+    
+    U->>C: HTTP Request
+    C->>S: Execute Business Logic
+    S->>M: Validate & Process Data
+    M->>DB: Query/Update
+    DB-->>M: Return Data
+    S->>MS: Call External Service (ACFS)
+    MS-->>S: Service Response
+    S-->>C: Business Result
+    C-->>U: HTTP Response (View)
+            </div>
+          </div>
+        </section>
+        
+        <!-- Design Patterns -->
+        <section class="section">
+          <h2 id="patterns">Design Patterns</h2>
+          
+          <div class="card-grid">
+            
+            <div class="card">
+              <div class="card-header">
+                <span class="badge badge-core">Pattern</span>
+                <h3 class="card-title">Service Objects</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Purpose:</strong> Encapsulate complex business logic separate from models and controllers.</p>
+                <p class="mt-md"><strong>Usage:</strong> User enrollment, course completion, certificate generation.</p>
+                <p class="mt-md"><strong>Benefits:</strong> Testable, reusable, single responsibility.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <span class="badge badge-learn">Pattern</span>
+                <h3 class="card-title">Presenter Pattern</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Purpose:</strong> Separate view logic from models and controllers.</p>
+                <p class="mt-md"><strong>Usage:</strong> Course display, user profiles, quiz results.</p>
+                <p class="mt-md"><strong>Benefits:</strong> Clean views, testable presentation logic.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <span class="badge badge-infra">Pattern</span>
+                <h3 class="card-title">Repository Pattern</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Purpose:</strong> Abstract data access layer for flexibility.</p>
+                <p class="mt-md"><strong>Usage:</strong> Microservice communication via ACFS.</p>
+                <p class="mt-md"><strong>Benefits:</strong> Decoupled data access, easy testing.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <span class="badge badge-admin">Pattern</span>
+                <h3 class="card-title">Form Objects</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Purpose:</strong> Handle complex form validation and processing.</p>
+                <p class="mt-md"><strong>Usage:</strong> Multi-step forms, nested attributes.</p>
+                <p class="mt-md"><strong>Benefits:</strong> Clean controllers, reusable validation.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <span class="badge badge-devops">Pattern</span>
+                <h3 class="card-title">Background Jobs</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Purpose:</strong> Asynchronous task processing.</p>
+                <p class="mt-md"><strong>Usage:</strong> Email sending, video processing, report generation.</p>
+                <p class="mt-md"><strong>Benefits:</strong> Non-blocking, scalable, resilient.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <span class="badge badge-sec">Pattern</span>
+                <h3 class="card-title">Decorator Pattern</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Purpose:</strong> Extend object functionality dynamically.</p>
+                <p class="mt-md"><strong>Usage:</strong> Authorization, caching, logging.</p>
+                <p class="mt-md"><strong>Benefits:</strong> Flexible, composable, maintainable.</p>
+              </div>
+            </div>
+            
+          </div>
+        </section>
+        
+        <!-- Microservices Architecture -->
+        <section class="section">
+          <h2 id="microservices">Microservices Architecture</h2>
+          
+          <div class="alert alert-info mb-2xl">
+            <strong>Communication:</strong> All microservices communicate via ACFS (ActiveModel Client for Services),
+            providing a RESTful interface with ActiveRecord-like syntax.
+          </div>
+          
+          <div class="diagram-container">
+            <h3 class="diagram-title">Microservices Interaction</h3>
+            <div class="mermaid">
+graph LR
+    WEB[Web Application]
+    
+    subgraph "Microservices"
+        COURSE[Course Service]
+        ACCOUNT[Account Service]
+        QUIZ[Quiz Service]
+        VIDEO[Video Service]
+        NOTIF[Notification Service]
+    end
+    
+    WEB -->|ACFS| COURSE
+    WEB -->|ACFS| ACCOUNT
+    WEB -->|ACFS| QUIZ
+    WEB -->|ACFS| VIDEO
+    
+    COURSE -->|Events| NOTIF
+    QUIZ -->|Events| NOTIF
+    ACCOUNT -->|Events| NOTIF
+    
+    style WEB fill:#667eea,stroke:#764ba2,stroke-width:2px,color:#fff
+    style COURSE fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    style NOTIF fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+            </div>
+          </div>
+        </section>
+        
+        <!-- Key Architectural Decisions -->
+        <section class="section">
+          <h2 id="decisions">Key Architectural Decisions</h2>
+          
+          <div class="grid grid-cols-2 gap-lg">
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">✅ Ruby on Rails Framework</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Decision:</strong> Use Rails as the primary web framework.</p>
+                <p class="mt-sm"><strong>Rationale:</strong> Rapid development, convention over configuration, mature ecosystem.</p>
+                <p class="mt-sm"><strong>Trade-offs:</strong> Monolithic tendencies, learning curve for new developers.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">✅ Microservices via ACFS</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Decision:</strong> Separate concerns into domain-specific microservices.</p>
+                <p class="mt-sm"><strong>Rationale:</strong> Scalability, independent deployment, team autonomy.</p>
+                <p class="mt-sm"><strong>Trade-offs:</strong> Increased complexity, network latency, distributed debugging.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">✅ PostgreSQL Database</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Decision:</strong> PostgreSQL as the primary relational database.</p>
+                <p class="mt-sm"><strong>Rationale:</strong> ACID compliance, advanced features, JSON support, reliability.</p>
+                <p class="mt-sm"><strong>Trade-offs:</strong> Vertical scaling limitations, operational complexity.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">✅ Redis for Caching</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Decision:</strong> Redis for caching and session storage.</p>
+                <p class="mt-sm"><strong>Rationale:</strong> High performance, simple API, pub/sub support.</p>
+                <p class="mt-sm"><strong>Trade-offs:</strong> Memory constraints, persistence configuration needed.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">✅ TypeScript Frontend</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Decision:</strong> Migrate JavaScript to TypeScript.</p>
+                <p class="mt-sm"><strong>Rationale:</strong> Type safety, better IDE support, fewer runtime errors.</p>
+                <p class="mt-sm"><strong>Trade-offs:</strong> Build complexity, migration effort, learning curve.</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">✅ Sidekiq for Jobs</h3>
+              </div>
+              <div class="card-body">
+                <p><strong>Decision:</strong> Sidekiq for background job processing.</p>
+                <p class="mt-sm"><strong>Rationale:</strong> Redis-backed, performant, great Rails integration.</p>
+                <p class="mt-sm"><strong>Trade-offs:</strong> Redis dependency, job retry complexity.</p>
+              </div>
+            </div>
+            
+          </div>
+        </section>
+        
+        <!-- Navigation to Details -->
+        <section class="section">
+          <h2 id="explore">Explore in Detail</h2>
+          
+          <div class="card-grid-sm">
+            
+            <a href="./reports-hub.html#core" class="card card-link">
+              <div class="card-header">
+                <span class="badge badge-core">CORE</span>
+                <h3 class="card-title">CORE Platform</h3>
+              </div>
+              <div class="card-body text-sm">
+                Authentication, Course Content, Services, Navigation, API Gateway
+              </div>
+            </a>
+            
+            <a href="./reports-hub.html#learn" class="card card-link">
+              <div class="card-header">
+                <span class="badge badge-learn">LEARN</span>
+                <h3 class="card-title">LEARN Features</h3>
+              </div>
+              <div class="card-body text-sm">
+                Quizzes, Discussions, Videos, Files, Achievements, Gamification
+              </div>
+            </a>
+            
+            <a href="./reports-hub.html#infra" class="card card-link">
+              <div class="card-header">
+                <span class="badge badge-infra">INFRA</span>
+                <h3 class="card-title">INFRA Systems</h3>
+              </div>
+              <div class="card-body text-sm">
+                System Core, Database, Jobs, Service Communication, UI
+              </div>
+            </a>
+            
+            <a href="./knowledge-graph.html" class="card card-link">
+              <div class="card-header">
+                <span class="badge badge-primary">Interactive</span>
+                <h3 class="card-title">Knowledge Graph</h3>
+              </div>
+              <div class="card-body text-sm">
+                Visual exploration of component relationships
+              </div>
+            </a>
+            
+          </div>
+        </section>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. AI-Powered Codebase Analysis &amp; Documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="./assets/scripts/navigation.js"></script>
+  <script src="./assets/scripts/theme-toggle.js"></script>
+  
+  <!-- Mermaid for diagrams -->
+</body>
+</html>

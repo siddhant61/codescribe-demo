@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LTIIntegration standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for LTIIntegration standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#learn" class="breadcrumb-link">LEARN</a></li>
+            <li class="breadcrumb-item active">LTIIntegration standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-lti-provider-configuration-workflow" class="sidebar-nav-link">1. LTI Provider Configuration Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-lti-tool-launch-workflow" class="sidebar-nav-link">2. LTI Tool Launch Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-lti-grade-submission-and-processing-workflow" class="sidebar-nav-link">3. LTI Grade Submission and Processing Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#4.-lti-exercise-content-management-workflow" class="sidebar-nav-link">4. LTI Exercise Content Management Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#technical-considerations" class="sidebar-nav-link">Technical Considerations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#dependencies-and-integrations" class="sidebar-nav-link">Dependencies and Integrations</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#configuration-requirements" class="sidebar-nav-link">Configuration Requirements</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-learn">LEARN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="learning-tools-interoperability-(lti)-provider-and-consumer-functionality---technical-documentation" tabindex="-1"><a class="header-anchor" href="#learning-tools-interoperability-(lti)-provider-and-consumer-functionality---technical-documentation"><span>Learning Tools Interoperability (LTI) Provider and Consumer Functionality - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the Xikolo platform’s Learning Tools Interoperability (LTI) integration, specifically focusing on cluster 17_LEARN_LTIIntegration, which enables both LTI consumer capabilities for integrating external tools and a robust system for managing LTI tool providers. The primary purpose is to outline the architecture, operational workflows, and technical underpinnings that facilitate secure and efficient interaction with third-party educational services. Key components include specialized controllers for provider management, a dedicated LTI controller for handling launches and grade callbacks, and background jobs for grade publishing and content management. The scope covers the full lifecycle from provider configuration and LTI exercise creation to grade submission, processing, and event publishing, ensuring a seamless and extensible learning environment.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The LTI integration architecture for Xikolo cluster 17_LEARN_LTIIntegration is designed to manage LTI provider configurations, facilitate secure LTI tool launches, and process grading outcomes from external learning tools. At its core, the system distinguishes between administrative and course-specific LTI provider management, handled by <code>Admin::LtiProvidersController</code> and <code>LtiProvidersController</code>, respectively. These controllers interact directly with the <code>Lti::Provider</code> model to perform CRUD operations, securing access via defined permissions like <code>lti.provider.manage</code>. User-facing LTI interactions, such as launching an LTI exercise (<code>Course::Item</code>), are managed by the <code>LtiController</code> in conjunction with <code>Course::LtiLaunchPresenter</code> for preparing launch data. Grade submissions from external tools are routed to <code>LtiController::ToolGrading</code>, a nested service object, which validates incoming requests using <code>IMS::LTI::OutcomeRequest</code> and <code>IMS::LTI::ToolConsumer</code> with credentials from <code>Lti::Provider</code>. Successful grading events trigger updates to <code>Lti::Gradebook</code> and <code>Lti::Grade</code> models, and events are published via <code>Msgr</code> for analytics. Furthermore, <code>Lti::Exercise::Store</code> manages LTI exercise content, including instructions with S3 file references, leveraging <code>Xikolo::S3::TextWithUploadsProcessor</code> and <code>S3FileDeletionJob</code> for robust file management. This modular structure ensures scalability and secure interoperability.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-lti-integration-architecture" tabindex="-1"><a class="header-anchor" href="#main-lti-integration-architecture"><span>Main LTI Integration Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userRequest["User Request (Browser)"]
+  xikoloPlatform["Xikolo Platform (LtiController)"]
+  ltiProvider["Lti::Provider (Model)"]
+  externalTool["External LTI Tool"]
+  dataStore["Data Store (DB, S3)"]
+  messageBroker["Message Broker (Msgr)"]
+
+  userRequest -->|"LTI Tool Launch"| xikoloPlatform
+  xikoloPlatform -->|"Prepares Launch (Course::LtiLaunchPresenter)"| externalTool
+  externalTool -->|"Grade Callback (LtiController::ToolGrading)"| xikoloPlatform
+  xikoloPlatform -->|"Validates & Stores (Lti::Gradebook, Lti::Grade)"| dataStore
+  xikoloPlatform -->|"Publishes Event"| messageBroker
+  ltiProvider -->|"Configures Auth & Params"| xikoloPlatform
+  xikoloPlatform -->|"Manages Providers (Admin::LtiProvidersController)"| ltiProvider
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Admin::LtiProvidersController:</strong> Inherits from <code>Admin::BaseController</code> for base administrative functionality.</li>
+<li><strong>Admin::LtiProvidersController:</strong> Requires <code>lti.provider.manage</code> permission for access [Source: app/controllers/admin/lti_providers_controller.rb, RAG: services/account/lib/tasks/permissions/lti.yml].</li>
+<li><strong>LtiController:</strong> Receives LTI launch requests (<code>tool_launch</code>) and prepares data using <code>Course::LtiLaunchPresenter</code>.</li>
+<li><strong>LtiController:</strong> Receives LTI outcome requests (<code>tool_grading</code>) and delegates processing to the nested <code>ToolGrading</code> class.</li>
+<li><strong>LtiController::ToolGrading:</strong> Parses incoming LTI XML using <code>IMS::LTI::OutcomeRequest</code>.</li>
+<li><strong>LtiController::ToolGrading:</strong> Verifies LTI OAuth 1.0a signatures and session validity using <code>IMS::LTI::ToolConsumer</code>.</li>
+<li><strong>LtiProvidersController:</strong> Interacts with the <code>Lti::Provider</code> model for all database operations.</li>
+<li><strong>LtiProvidersController:</strong> Uses <code>CourseContextHelper</code> to establish the course context.</li>
+<li><strong>Course::Admin::LtiProviderForm:</strong> Used by <code>LtiProvidersController</code> to handle form submissions and apply validations.</li>
+<li><strong>Course::Admin::LtiProviderForm:</strong> Defines attributes like <code>name</code>, <code>domain</code>, <code>consumer_key</code>, <code>shared_secret</code>, <code>presentation_mode</code>, <code>privacy</code>, and <code>custom_fields</code>.</li>
+<li><strong>Lti::PublishGradeJob:</strong> Finds an <code>Lti::Grade</code> record by ID.</li>
+<li><strong>Lti::PublishGradeJob:</strong> Calls the <code>publish!</code> method on the <code>Lti::Grade</code> instance (method implementation not provided in context).</li>
+<li><strong>Lti::Exercise::Store:</strong> Updates attributes of an <code>Lti::Exercise</code> model.</li>
+<li><strong>Lti::Exercise::Store:</strong> Uses <code>Xikolo::S3::TextWithUploadsProcessor</code> to parse and manage S3 file references within the exercise instructions.</li>
+<li><strong>LtiExerciseItemPresenter:</strong> Inherits from <code>ItemPresenter</code> and includes <code>MarkdownHelper</code> for rendering instructions.</li>
+<li><strong>LtiExerciseItemPresenter:</strong> Interacts with <code>Lti::Exercise</code> to get exercise details and <code>Lti::Gradebook</code> to retrieve user-specific grades.</li>
+<li><strong>Lti::Provider:</strong> Created, read, updated, and deleted by <code>LtiProvidersController</code>.</li>
+<li><strong>Lti::Provider:</strong> Provides <code>consumer_key</code> and <code>shared_secret</code> for LTI OAuth 1.0a signature verification in <code>ToolGrading</code>.</li>
+<li><strong>Lti::Exercise:</strong> Associated with <code>Course::Item</code> as its content.</li>
+<li><strong>Lti::Exercise:</strong> Managed by <code>Lti::Exercise::Store</code> for creation and updates, especially for <code>instructions</code>.</li>
+<li><strong>Lti::Gradebook:</strong> Found by <code>ToolGrading</code> using the <code>lis_result_sourcedid</code> from LTI outcome requests.</li>
+<li><strong>Lti::Gradebook:</strong> Stores <code>user_id</code> and <code>lti_exercise_id</code>.</li>
+<li><strong>Lti::Grade:</strong> Created or updated by <code>Lti::Gradebook#submit!</code>.</li>
+<li><strong>Lti::Grade:</strong> Referenced by <code>LtiExerciseItemPresenter</code> to display user scores.</li>
+<li><strong>Course::Item:</strong> Found by <code>LtiController#tool_launch</code> using its UUID to initiate an LTI launch [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>Course::Item:</strong> Passed to <code>LtiExerciseItemPresenter</code> for rendering and data preparation [Source: app/presenters/lti_exercise_item_presenter.rb].</li>
+<li><strong>Course::Course:</strong> Used by <code>LtiController</code> to retrieve the course context (<code>course.context_id</code>) and find courses by identifier (<code>Course::Course.by_identifier</code>) [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>Course::Course:</strong> Used by <code>LtiProvidersController</code> to scope LTI providers to a specific course (<code>course_id: the_course.id</code>) [Source: app/controllers/lti_providers_controller.rb].</li>
+<li><strong>Xikolo::S3::TextWithUploadsProcessor:</strong> Instantiated by <code>Lti::Exercise::Store</code> to handle the <code>instructions</code> field of an <code>Lti::Exercise</code> [Source: app/operations/lti/exercise/store.rb].</li>
+<li><strong>Xikolo::S3::TextWithUploadsProcessor:</strong> Configured with <code>bucket</code>, <code>purpose</code>, <code>current</code> text, <code>text</code> input, and <code>valid_refs</code> [Source: app/operations/lti/exercise/store.rb].</li>
+<li><strong>S3FileDeletionJob:</strong> Scheduled by <code>Lti::Exercise::Store</code> to delete obsolete S3 files associated with LTI exercise instructions. The job is set to wait for 1 minute before performing [Source: app/operations/lti/exercise/store.rb].</li>
+<li><strong>Msgr:</strong> Used by <code>LtiController::ToolGrading</code> to publish LTI submission events to the <code>xikolo.web.exp_event.create</code> topic [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>IMS::LTI::OutcomeRequest:</strong> Used by <code>LtiController::ToolGrading</code> to parse the raw HTTP request into a structured LTI outcome request object (<code>IMS::LTI::OutcomeRequest.from_post_request(request)</code>) [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>IMS::LTI::OutcomeRequest:</strong> Provides access to request parameters like <code>lis_result_sourcedid</code> (grading ID), <code>score</code>, <code>message_identifier</code>, and <code>operation</code> [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>IMS::LTI::ToolConsumer:</strong> Instantiated by <code>LtiController::ToolGrading</code> with the <code>Lti::Provider</code>’s <code>consumer_key</code> and <code>shared_secret</code> [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>IMS::LTI::ToolConsumer:</strong> Used to validate the authenticity of incoming LTI requests via <code>consumer.valid_request? @request</code> [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>IMS::LTI::OutcomeResponse:</strong> Instantiated by <code>LtiController::ToolGrading</code> to build the response XML [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>IMS::LTI::OutcomeResponse:</strong> Configured with <code>message_ref_identifier</code>, <code>operation</code>, <code>severity</code>, <code>code_major</code> (e.g., ‘success’, ‘failure’, ‘unsupported’), based on the processing outcome [Source: app/controllers/lti_controller.rb].</li>
+<li><strong>PrivacyAlert:</strong> Interacts with the DOM to find privacy radio buttons.</li>
+<li><strong>PrivacyAlert:</strong> Uses <code>swal</code> (SweetAlert2) to display a confirmation dialog.</li>
+<li><strong>LtiProvidersIndex:</strong> Interacts with the DOM to toggle visibility of ‘add new provider’ and ‘edit provider’ forms.</li>
+<li><strong>LtiProvidersIndex:</strong> Attaches event listeners to buttons and links for form manipulation.</li>
+<li><strong>Course::LtiLaunchPresenter:</strong> Initializes with a <code>Course::Item</code> and <code>User</code>.</li>
+<li><strong>Course::LtiLaunchPresenter:</strong> Delegates to <code>item.content.launch_for(user)</code> to retrieve LTI launch details.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-lti-provider-configuration-workflow" tabindex="-1"><a class="header-anchor" href="#1.-lti-provider-configuration-workflow"><span>1. LTI Provider Configuration Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  adminUser["Admin/Course Admin User"]
+  manageUI["LTI Provider Management UI"]
+  providerController["LtiProvidersController / Admin::LtiProvidersController"]
+  ltiProviderModel["Lti::Provider Model"]
+  formValidation["Course::Admin::LtiProviderForm"]
+  privacyAlert["PrivacyAlert (JS Module)"]
+
+  adminUser -->|"Access UI"| manageUI
+  manageUI -->|"Create/Edit Request"| providerController
+  providerController -->|"Uses Form"| formValidation
+  formValidation -->|"Applies Rules"| providerController
+  providerController -->|"Interacts with DB"| ltiProviderModel
+  providerController --o|"Triggers Alert (for 'unprotected' privacy)"| privacyAlert
+  ltiProviderModel -->|"Stores Configuration"| providerController
+</pre></div>
+<p>Administrators initiate this workflow to establish or modify LTI tool providers, either globally or within a specific course context. For global providers, the <code>Admin::LtiProvidersController</code> facilitates standard CRUD operations on <code>Lti::Provider</code> records, with access controlled by the <code>lti.provider.manage</code> permission. When creating or updating a provider, the <code>Course::Admin::LtiProviderForm</code> is used to define and validate crucial attributes like name, domain, consumer key, and shared secret. Frontend components like <code>LtiProvidersIndex</code> manage the display of provider lists and forms, while <code>PrivacyAlert</code> ensures that privacy settings, especially ‘unprotected’ data sharing, are confirmed by the administrator. Course-specific providers follow a similar flow via <code>LtiProvidersController</code>, which uses <code>CourseContextHelper</code> to scope providers to a <code>Course::Course</code> instance and requires <code>lti.provider.edit_privacy_mode</code> for altering privacy settings. Both controllers leverage strong parameter filtering to secure data integrity.</p>
+<h3 id="2.-lti-tool-launch-workflow" tabindex="-1"><a class="header-anchor" href="#2.-lti-tool-launch-workflow"><span>2. LTI Tool Launch Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userClick["User Clicks Course::Item"]
+  ltiController["LtiController#tool_launch"]
+  itemPresenter["LtiExerciseItemPresenter"]
+  launchPresenter["Course::LtiLaunchPresenter"]
+  ltiProvider["Lti::Provider Model"]
+  externalTool["External LTI Tool"]
+
+  userClick -->|"Initiates"| ltiController
+  ltiController -->|"Gets Item Data"| itemPresenter
+  itemPresenter -->|"Prepares Launch Parameters"| launchPresenter
+  launchPresenter -->|"Consults 'presentation_mode'"| ltiProvider
+  launchPresenter -->|"Redirects/Renders iFrame"| externalTool
+  ltiController -->|"Renders View"| itemPresenter
+</pre></div>
+<p>This workflow describes how a user initiates an interaction with an external LTI tool from within the Xikolo platform. When a user clicks on a <code>Course::Item</code> that is configured as an LTI exercise, the <code>LtiController#tool_launch</code> action is invoked. The <code>Course::LtiLaunchPresenter</code> is instantiated with the <code>Course::Item</code> and <code>current_user</code> to prepare the necessary LTI launch parameters. This presenter also determines the appropriate display method—either an introductory page with a launch button or an embedded iframe—based on the <code>Lti::Provider</code>’s <code>presentation_mode</code> and the user’s interaction state. The system then generates an HTML form with the LTI launch data, which is submitted to the external LTI tool. The <code>LtiExerciseItemPresenter</code> further enriches the display by retrieving exercise details from <code>Lti::Exercise</code> and user-specific grades from <code>Lti::Gradebook</code> and <code>Lti::Grade</code>, allowing for dynamic rendering of instructions and performance metrics.</p>
+<h3 id="3.-lti-grade-submission-and-processing-workflow" tabindex="-1"><a class="header-anchor" href="#3.-lti-grade-submission-and-processing-workflow"><span>3. LTI Grade Submission and Processing Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  externalTool["External LTI Tool"]
+  ltiControllerGrading["LtiController#tool_grading"]
+  toolGradingService["LtiController::ToolGrading"]
+  gradebookModel["Lti::Gradebook / Lti::Grade"]
+  msgrPublish["Msgr (Event Publishing)"]
+  gradePublishJob["Lti::PublishGradeJob"]
+
+  externalTool -->|"Sends LTI Outcome XML"| ltiControllerGrading
+  ltiControllerGrading -->|"Delegates Processing"| toolGradingService
+  toolGradingService -->|"Parses & Validates (IMS::LTI::OutcomeRequest, IMS::LTI::ToolConsumer)"| gradebookModel
+  gradebookModel -->|"Saves Grade"| gradebookModel
+  gradebookModel -->|"Enqueues Publication"| gradePublishJob
+  toolGradingService -->|"Publishes Analytics Event"| msgrPublish
+  toolGradingService -->|"Generates XML Response (IMS::LTI::OutcomeResponse)"| ltiControllerGrading
+</pre></div>
+<p>This workflow covers the reception and processing of grade outcomes sent by external LTI tools back to the Xikolo platform. External LTI tools send grading results to the <code>LtiController#tool_grading</code> endpoint, which is configured to bypass CSRF and authentication middleware for backend-to-backend communication. The core processing logic resides within <code>LtiController::ToolGrading</code>. This nested service object first parses the incoming LTI XML request using <code>IMS::LTI::OutcomeRequest</code>, extracting parameters like <code>lis_result_sourcedid</code> and <code>score</code>. It then validates the LTI OAuth 1.0a signature and session validity using <code>IMS::LTI::ToolConsumer</code> and the <code>Lti::Provider</code>’s <code>consumer_key</code> and <code>shared_secret</code>. Upon successful validation, the service submits the received score to the <code>Lti::Gradebook</code>, creating or updating an <code>Lti::Grade</code> record. An LTI submission event containing <code>course_id</code>, <code>score</code>, and <code>provider_name</code> is published to the <code>xikolo.web.exp_event.create</code> topic via <code>Msgr</code>. Finally, an XML response is generated using <code>IMS::LTI::OutcomeResponse</code> to acknowledge the grading operation back to the external tool.</p>
+<h3 id="4.-lti-exercise-content-management-workflow" tabindex="-1"><a class="header-anchor" href="#4.-lti-exercise-content-management-workflow"><span>4. LTI Exercise Content Management Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userEditor["User Edits Lti::Exercise Instructions"]
+  exerciseStore["Lti::Exercise::Store"]
+  textProcessor["Xikolo::S3::TextWithUploadsProcessor"]
+  s3Bucket["S3 Storage (LTI Bucket)"]
+  deletionJob["S3FileDeletionJob"]
+
+  userEditor -->|"Submits Update"| exerciseStore
+  exerciseStore -->|"Processes Instructions"| textProcessor
+  textProcessor -->|"Manages File References"| s3Bucket
+  textProcessor -->|"Identifies Obsolete URIs"| exerciseStore
+  exerciseStore -->|"Schedules Deletion (1 min delay)"| deletionJob
+  deletionJob -->|"Deletes Obsolete Files"| s3Bucket
+</pre></div>
+<p>This workflow details how the rich text content, specifically <code>instructions</code>, for <code>Lti::Exercise</code> objects is managed, particularly when it includes embedded file uploads. The <code>Lti::Exercise::Store</code> operation is responsible for this process. When <code>instructions</code> are provided, this operation instantiates <code>Xikolo::S3::TextWithUploadsProcessor</code> to handle the text and its associated S3 file references. The processor is configured with specific S3 parameters such as the <code>bucket</code> (<code>:lti</code>), <code>purpose</code> (‘lti_exercise_instructions’), and access control (<code>ACL: :public_read</code>). It manages existing valid references and defines a callback for new uploads to determine their S3 keys, cache control, and content types. After processing, if any files become obsolete (no longer referenced in the updated instructions), <code>S3FileDeletionJob</code> is enqueued with a 1-minute delay. This delay provides fault tolerance, ensuring that client-side pages referencing old files have sufficient time to load before the files are permanently removed from S3.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<h3 id="technical-considerations" tabindex="-1"><a class="header-anchor" href="#technical-considerations"><span>Technical Considerations</span></a></h3>
+<p>The LTI integration in Xikolo exhibits several technical considerations. The <code>LtiController::ToolGrading</code> class, while nested, carries substantial logic, and its extraction into a dedicated service object (<code>Lti::ToolGradingService</code>) is identified as technical debt, aiming for better modularity and testability. Hardcoded constants within <code>ToolGrading</code>, such as <code>MAXIMUM_SESSION_AGE</code> and <code>SCORE_REGEXP</code>, are noted as areas for improvement through externalized configuration. A current limitation is the unavailability of the <code>user_agent</code> for backend LTI submission requests, leading to a gap in analytics data. The client-side privacy alert for LTI Providers, handled by <code>PrivacyAlert</code>, uses <code>swal</code> (SweetAlert2) and <code>I18n</code> for localized confirmation dialogues when ‘unprotected’ privacy is selected. The <code>Lti::Exercise::Store</code> implements a delayed deletion of S3 files for obsolete instruction references (1-minute delay via <code>S3FileDeletionJob</code>), which, while fault-tolerant, requires careful management to prevent race conditions during rapid content updates.</p>
+<h3 id="dependencies-and-integrations" tabindex="-1"><a class="header-anchor" href="#dependencies-and-integrations"><span>Dependencies and Integrations</span></a></h3>
+<p>The core LTI functionality relies on several key dependencies and integrations. The <code>Admin::LtiProvidersController</code> and <code>LtiProvidersController</code> depend on the <code>Lti::Provider</code> model for all CRUD operations, and <code>Admin::BaseController</code> and <code>Abstract::FrontendController</code> for base functionality. Permission checks integrate with the account service via <code>lti.provider.manage</code> and <code>lti.provider.edit_privacy_mode</code> permissions. <code>LtiController</code> integrates with <code>Course::Item</code> and <code>Course::Course</code> for context, delegating LTI launch data preparation to <code>Course::LtiLaunchPresenter</code>. For grade processing, <code>LtiController::ToolGrading</code> critically depends on <code>IMS::LTI::OutcomeRequest</code> for parsing incoming XML, <code>IMS::LTI::ToolConsumer</code> for OAuth 1.0a signature verification using <code>Lti::Provider</code> credentials, and <code>IMS::LTI::OutcomeResponse</code> for generating XML acknowledgments. It also integrates with <code>Lti::Gradebook</code> to find and update grade entries and with <code>Msgr</code> to publish submission events to RabbitMQ (<code>xikolo.web.exp_event.create</code>). <code>Lti::PublishGradeJob</code> depends on <code>Lti::Grade</code> and is expected to integrate with the Xikolo <code>CourseService</code> API for final grade publication (<code>Xikolo.api(:course).value!.rel(:result).put</code>). Content management for LTI exercises in <code>Lti::Exercise::Store</code> integrates with <code>Xikolo::S3::TextWithUploadsProcessor</code> for S3 file handling and schedules <code>S3FileDeletionJob</code> for cleanup.</p>
+<h3 id="configuration-requirements" tabindex="-1"><a class="header-anchor" href="#configuration-requirements"><span>Configuration Requirements</span></a></h3>
+<p>Configuration requirements are primarily derived from LTI Provider settings and S3 parameters. LTI Providers, managed through <code>Course::Admin::LtiProviderForm</code>, require configuration of <code>name</code>, <code>domain</code>, <code>consumer_key</code>, <code>shared_secret</code>, <code>presentation_mode</code> (default ‘window’), <code>privacy</code> (default ‘anonymized’), and <code>custom_fields</code>. The <code>privacy</code> setting, which determines user data sharing, is sensitive and requires <code>lti.provider.edit_privacy_mode</code> permission to alter in course-specific contexts, and triggers a confirmation alert for ‘unprotected’ mode. For LTI exercise instructions that contain file uploads, <code>Lti::Exercise::Store</code> configures <code>Xikolo::S3::TextWithUploadsProcessor</code> with explicit S3 parameters: <code>bucket: :lti</code>, <code>purpose: 'lti_exercise_instructions'</code>. New S3 uploads are given <code>ACL: :public_read</code>, <code>Cache-Control: 'max-age=2592000, public'</code>, and <code>Content-Disposition: 'inline'</code>. <code>LtiController</code>’s <code>tool_grading</code> endpoint is configured to <code>skip_before_action :verify_authenticity_token</code> and <code>skip_around_action :auth_middleware</code> to accommodate external LTI 1.x callback requirements. Specific to grading, <code>IMS::LTI::ToolConsumer</code> relies on <code>consumer_key</code> and <code>shared_secret</code> from <code>Lti::Provider</code> for OAuth validation.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Admin::LtiProvidersController</strong> <code>app/controllers/admin/lti_providers_controller.rb</code></li>
+<li>📄 <strong>Admin::LtiProvidersController</strong> <code>RAG: services/account/lib/tasks/permissions/lti.yml</code></li>
+<li>📄 <strong>LtiController</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>LtiController</strong> <code>spec/controllers/lti_controller_spec.rb</code></li>
+<li>📄 <strong>LtiController::ToolGrading</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>LtiController::ToolGrading</strong> <code>spec/controllers/lti_controller_spec.rb</code></li>
+<li>📄 <strong>LtiProvidersController</strong> <code>app/controllers/lti_providers_controller.rb</code></li>
+<li>📄 <strong>LtiProvidersController</strong> <code>spec/controllers/lti_providers_controller_spec.rb</code></li>
+<li>📄 <strong>LtiExerciseItemPresenter</strong> <code>app/presenters/lti_exercise_item_presenter.rb</code></li>
+<li>📄 <strong>LtiExerciseItemPresenter</strong> <code>spec/presenters/lti_exercise_item_presenter_spec.rb</code></li>
+<li>📄 <strong>Course::LtiLaunchPresenter</strong> <code>app/presenters/course/lti_launch_presenter.rb</code></li>
+<li>📄 <strong>Course::LtiLaunchPresenter</strong> <code>spec/controllers/lti_controller_spec.rb</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Course::Admin::LtiProviderForm</strong> <code>app/forms/course/admin/lti_provider_form.rb</code></li>
+<li>📄 <strong>Lti::PublishGradeJob</strong> <code>app/jobs/lti/publish_grade_job.rb</code></li>
+<li>📄 <strong>Lti::Exercise::Store</strong> <code>app/operations/lti/exercise/store.rb</code></li>
+<li>📄 <strong>Lti::Exercise::Store</strong> <code>spec/operations/lti/exercise/store_spec.rb</code></li>
+<li>📄 <strong>Lti::Provider</strong> <code>app/controllers/lti_providers_controller.rb</code></li>
+<li>📄 <strong>Lti::Provider</strong> <code>app/forms/course/admin/lti_provider_form.rb</code></li>
+<li>📄 <strong>Lti::Exercise</strong> <code>app/operations/lti/exercise/store.rb</code></li>
+<li>📄 <strong>Lti::Exercise</strong> <code>app/presenters/lti_exercise_item_presenter.rb</code></li>
+<li>📄 <strong>Lti::Gradebook</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>Lti::Gradebook</strong> <code>spec/controllers/lti_controller_spec.rb</code></li>
+<li>📄 <strong>Lti::Grade</strong> <code>app/jobs/lti/publish_grade_job.rb</code></li>
+<li>📄 <strong>Lti::Grade</strong> <code>app/presenters/lti_exercise_item_presenter.rb</code></li>
+<li>📄 <strong>Course::Item</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>Course::Item</strong> <code>app/presenters/lti_exercise_item_presenter.rb</code></li>
+<li>📄 <strong>Course::Course</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>Course::Course</strong> <code>app/controllers/lti_providers_controller.rb</code></li>
+<li>📄 <strong>Xikolo::S3::TextWithUploadsProcessor</strong> <code>app/operations/lti/exercise/store.rb</code></li>
+<li>📄 <strong>S3FileDeletionJob</strong> <code>app/operations/lti/exercise/store.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>IMS::LTI::OutcomeRequest</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>IMS::LTI::ToolConsumer</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>IMS::LTI::OutcomeResponse</strong> <code>app/controllers/lti_controller.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>PrivacyAlert</strong> <code>app/assets/admin/lti_providers/privacy-alert.js</code></li>
+<li>📄 <strong>LtiProvidersIndex</strong> <code>app/assets/teacher/lti-providers/index.js</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740296023"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BackgroundJobs standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for BackgroundJobs standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#infra" class="breadcrumb-link">INFRA</a></li>
+            <li class="breadcrumb-item active">BackgroundJobs standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-event-driven-message-processing-workflow" class="sidebar-nav-link">1. Event-Driven Message Processing Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-delayed-job-execution-workflow" class="sidebar-nav-link">2. Delayed Job Execution Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-scheduled-sidekiq-job-execution-workflow" class="sidebar-nav-link">3. Scheduled Sidekiq Job Execution Workflow</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-infra">INFRA</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="background-job-processing-and-message-consumers---technical-documentation" tabindex="-1"><a class="header-anchor" href="#background-job-processing-and-message-consumers---technical-documentation"><span>Background Job Processing and Message Consumers - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report details the robust asynchronous processing architecture of the Xikolo 42_INFRA_BackgroundJobs cluster, which expertly manages both real-time event handling and deferred task execution. The system employs a dual strategy, integrating <code>Msgr</code> message-driven consumers for event processing via RabbitMQ and two distinct background job processors, <code>Delayed::Job</code> and <code>Sidekiq</code>, for handling asynchronous and scheduled tasks. This comprehensive setup ensures efficient, scalable, and resilient task management across various microservices, significantly enhancing the application’s responsiveness and operational stability. Key components include specialized message consumers, ActiveJob-compatible background job classes, and a robust scheduling mechanism provided by <code>sidekiq-cron</code> and <code>Xikolo::Sidekiq</code>, all contributing to a highly effective asynchronous ecosystem.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo asynchronous processing architecture is designed for scalability and responsiveness, built upon a dual foundation of event-driven messaging and background job processing. Message Consumers, specifically instances of <code>Msgr::Consumer</code>, form the backbone of real-time event handling, subscribing to RabbitMQ queues to process events from various services. Concurrently, <code>ActiveJob</code> serves as an abstraction layer for background tasks, allowing jobs to be processed by either <code>Delayed::Job</code> or <code>Sidekiq</code>, depending on configuration and task requirements. <code>Delayed::Job</code> primarily handles deferred tasks with configurable queues and retry mechanisms, reporting metrics to <code>Xikolo.metrics</code>. <code>Sidekiq</code>, supported by the <code>xikolo-sidekiq</code> gem and <code>sidekiq-cron</code>, manages scheduled and recurring tasks, utilizing Redis for queue management and separate databases for isolation. This dual-processor approach provides flexibility, ensuring optimal handling for diverse asynchronous workloads, from immediate event reactions to long-running batch operations.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  rabbitMQ["RabbitMQ"]
+  msgrConsumers["Msgr Consumers (e.g., GamificationConsumer)"]
+  activeJob["ActiveJob (Abstraction Layer)"]
+  delayedJobWorker["Delayed Job Worker"]
+  sidekiqProcessor["Sidekiq Processor"]
+  xikoloMetrics["Xikolo.metrics"]
+
+  rabbitMQ -->|"publishes messages"| msgrConsumers
+  msgrConsumers -->|"processes event, ack message"| rabbitMQ
+  activeJob -->|"enqueues job for deferred tasks"| delayedJobWorker
+  activeJob -->|"enqueues job for scheduled tasks"| sidekiqProcessor
+  delayedJobWorker -->|"reports execution to"| xikoloMetrics
+  sidekiqProcessor -->|"reports execution (via Xikolo::Sidekiq) to"| xikoloMetrics
+  delayedJobWorker -->|"executes task on system resources"| SystemResources[ "System Resources/Services" ]
+  sidekiqProcessor -->|"executes task on system resources"| SystemResources
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>Msgr::Consumer:</strong> Receives messages from RabbitMQ queues.</li>
+<li><strong>Msgr::Consumer:</strong> Dispatches message payloads to specific consumer methods.</li>
+<li><strong>GamificationConsumer:</strong> Receives messages from RabbitMQ (e.g., <code>result_create</code>, <code>visit_create</code>, <code>vote_create</code>, <code>comment_create</code>, <code>question_create</code>, <code>answer_accepted</code>, <code>answer_create</code>).</li>
+<li><strong>GamificationConsumer:</strong> Interacts with <code>Xikolo.config</code> to check if gamification is enabled. [Source: app/consumers/gamification_consumer.rb]</li>
+<li><strong>CourseConsumer:</strong> Receives <code>clone</code> messages from RabbitMQ with <code>old_course_id</code> and <code>new_course_code</code> in the payload. [Source: services/course/app/consumers/course_consumer.rb]</li>
+<li><strong>CourseConsumer:</strong> Invokes <code>Course::Clone.call</code> with the provided course IDs. [Source: services/course/app/consumers/course_consumer.rb]</li>
+<li><strong>NewsConsumer:</strong> Receives <code>update_state</code> messages from RabbitMQ with <code>news_id</code> and other update attributes. [Source: services/news/app/consumers/news_consumer.rb]</li>
+<li><strong>NewsConsumer:</strong> Interacts with the <code>News</code> model to find and update a news record. [Source: services/news/app/consumers/news_consumer.rb]</li>
+<li><strong>ApplicationJob:</strong> Inherited by specific job classes to define asynchronous tasks.</li>
+<li><strong>ApplicationJob:</strong> Interacts with the underlying queuing backend (Delayed Job in this context). [Source: Gemfile, config/initializers/delayed.rb]</li>
+<li><strong>LongRunningApplicationJob:</strong> Sets <code>queue_as</code> to ‘long_running’. [Source: app/jobs/long_running_application_job.rb]</li>
+<li><strong>LongRunningApplicationJob:</strong> Overrides <code>max_run_time</code> to 10 hours and <code>max_attempts</code> to 5. [Source: app/jobs/long_running_application_job.rb]</li>
+<li><strong>Lti::PublishGradeJob:</strong> Queued on the <code>default</code> queue. [Source: app/jobs/lti/publish_grade_job.rb]</li>
+<li><strong>Lti::PublishGradeJob:</strong> Finds an <code>Lti::Grade</code> record by ID. [Source: app/jobs/lti/publish_grade_job.rb]</li>
+<li><strong>Proctoring::StoreSubmissionResultsJob:</strong> Queued on the <code>default</code> queue with <code>eventual</code> priority. [Source: app/jobs/proctoring/store_submission_results_job.rb]</li>
+<li><strong>Proctoring::StoreSubmissionResultsJob:</strong> Includes retry logic for <code>Proctoring::ServiceError</code> and <code>ExpectedRetry</code> with exponential backoff and fixed waits. [Source: app/jobs/proctoring/store_submission_results_job.rb]</li>
+<li><strong>Proctoring::UploadCertificateImageJob:</strong> Queued on the <code>default</code> queue with <code>eventual</code> priority. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]</li>
+<li><strong>Proctoring::UploadCertificateImageJob:</strong> Includes retry logic for <code>Proctoring::ServiceError</code>. [Source: app/jobs/proctoring/upload_certificate_image_job.rb]</li>
+<li><strong>RefreshSitemapJob:</strong> Queued on the <code>default</code> queue with <code>reporting</code> priority. [Source: app/jobs/refresh_sitemap_job.rb]</li>
+<li><strong>RefreshSitemapJob:</strong> The <code>perform</code> method is empty. [Source: app/jobs/refresh_sitemap_job.rb]</li>
+<li><strong>Delayed::Worker:</strong> Processes jobs from ActiveJob.</li>
+<li><strong>Delayed::Worker:</strong> Reports job metrics (run, error, failure) to <code>Xikolo.metrics</code>.</li>
+<li><strong>UnconfirmedAccountsDeletionWorker:</strong> Scheduled to run daily at 3 a.m. via <code>sidekiq-cron</code>. [Source: services/account/config/cron.yml]</li>
+<li><strong>UnconfirmedAccountsDeletionWorker:</strong> Processes jobs on the <code>default</code> queue. [Source: services/account/config/cron.yml]</li>
+<li><strong>Voucher::DeleteClaimantIPJob:</strong> Executed periodically by Sidekiq via <code>sidekiq-cron</code>.</li>
+<li><strong>Video::SyncVideosJob:</strong> Executed periodically by Sidekiq via <code>sidekiq-cron</code>.</li>
+<li><strong>Xikolo::Sidekiq:</strong> Configures Sidekiq Redis connection using <code>config/sidekiq_redis.yml</code>. [Source: RAG: gems/xikolo-sidekiq/README.md]</li>
+<li><strong>Xikolo::Sidekiq:</strong> Loads and parses <code>config/cron.yml</code> for <code>sidekiq-cron</code> job definitions. [Source: RAG: gems/xikolo-sidekiq/README.md]</li>
+<li><strong>Delayed::Job:</strong> Processes jobs enqueued via ActiveJob (e.g., Voucher::DeleteClaimantIPJob, Video::SyncVideosJob).</li>
+<li><strong>Delayed::Job:</strong> Publishes job events to ActiveSupport::Notifications.</li>
+<li><strong>Sidekiq:</strong> Processes background jobs (implied by <code>sidekiq-cron</code> and <code>xikolo-sidekiq</code> gem).</li>
+<li><strong>Sidekiq:</strong> Executes scheduled jobs defined in <code>config/cron.yml</code>.</li>
+<li><strong>ActiveJob:</strong> Jobs defined as ActiveJob classes are enqueued for processing.</li>
+<li><strong>ActiveJob:</strong> Jobs are processed by either Delayed::Job or Sidekiq depending on the environment and configuration.</li>
+<li><strong>Xikolo.metrics:</strong> Receives job execution events (run, error, failure) from ActiveSupport::Notifications.</li>
+<li><strong>Xikolo.metrics:</strong> Records detailed metrics including job ID, attempts, run time, and duration.</li>
+<li><strong>sidekiq-cron:</strong> Reads and parses <code>config/cron.yml</code> to set up scheduled jobs.</li>
+<li><strong>sidekiq-cron:</strong> Enqueues ActiveJobs (like Voucher::DeleteClaimantIPJob, Video::SyncVideosJob) into the background job processor.</li>
+<li><strong>Msgr:</strong> Consumes messages from RabbitMQ (configured via <code>config/rabbitmq.yml</code>).</li>
+<li><strong>Msgr:</strong> Routes messages to the <code>Gamification</code> component (e.g., <code>gamification#vote_create</code>).</li>
+<li><strong>Gamification:</strong> Receives and processes messages routed by <code>Msgr</code> from <code>xikolo.pinboard</code> and <code>xikolo.course</code> events.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-event-driven-message-processing-workflow" tabindex="-1"><a class="header-anchor" href="#1.-event-driven-message-processing-workflow"><span>1. Event-Driven Message Processing Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  eventSource["Event Source (e.g., User Action)"]
+  rabbitMQ["RabbitMQ Message Queue"]
+  msgrConsumer["Msgr::Consumer (e.g., GamificationConsumer)"]
+  xikoloConfig["Xikolo.config"]
+  gamificationRules["Gamification::Rules Classes"]
+  messageComplete["Message Acknowledge / Process Finish"]
+
+  eventSource -->|"publishes event message"| rabbitMQ
+  rabbitMQ -->|"delivers message to"| msgrConsumer
+  msgrConsumer -->|"checks config"| xikoloConfig
+  xikoloConfig -->|"gamification enabled?"| msgrConsumer
+  msgrConsumer -->|"dispatches to rule logic"| gamificationRules
+  gamificationRules -->|"creates score / updates data"| messageComplete
+</pre></div>
+<p>This workflow describes how the system processes real-time events from other services using RabbitMQ and <code>Msgr::Consumer</code> classes. When an event occurs, a message is published to a RabbitMQ queue. A specific <code>Msgr::Consumer</code> (e.g., <code>GamificationConsumer</code>, <code>CourseConsumer</code>, <code>NewsConsumer</code>) is configured to listen to this queue. Upon receiving a message, the consumer dispatches its payload to a relevant internal method. For instance, <code>GamificationConsumer</code> checks <code>Xikolo.config</code> for feature enablement and then instantiates and calls <code>create_score!</code> on appropriate <code>Gamification::Rules</code> classes based on the message content (e.g., <code>result_create</code>, <code>visit_create</code>). The <code>CourseConsumer</code> processes <code>clone</code> messages by invoking <code>Course::Clone.call</code> for course duplication. After successful processing, the consumer acknowledges the message to RabbitMQ, preventing re-delivery and ensuring message durability. This mechanism facilitates loose coupling and efficient inter-service communication.</p>
+<h3 id="2.-delayed-job-execution-workflow" tabindex="-1"><a class="header-anchor" href="#2.-delayed-job-execution-workflow"><span>2. Delayed Job Execution Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  applicationComponent["Application Component (e.g., API)"]
+  activeJob["ActiveJob (Task Definition)"]
+  delayedJobQueue["Delayed::Job Queue"]
+  delayedWorker["Delayed::Worker"]
+  targetSystem["Target Service/Model (e.g., Lti::Grade, Proctoring Service)"]
+  xikoloMetrics["Xikolo.metrics"]
+
+  applicationComponent -->|"enqueues active job"| activeJob
+  activeJob -->|"stores job in"| delayedJobQueue
+  delayedJobQueue -->|"picks up job for processing"| delayedWorker
+  delayedWorker -->|"performs task on"| targetSystem
+  delayedWorker -->|"publishes metrics to"| xikoloMetrics
+  targetSystem -->|"task execution complete"| completeJob["Job Complete"]
+</pre></div>
+<p>This workflow outlines the execution of deferred, asynchronous tasks using <code>ActiveJob</code> and <code>Delayed::Job</code>. Application components enqueue tasks by creating instances of <code>ApplicationJob</code> or its specialized subclasses, such as <code>Lti::PublishGradeJob</code>, <code>Proctoring::StoreSubmissionResultsJob</code>, or <code>LongRunningApplicationJob</code>. These jobs are then placed into a <code>Delayed::Job</code> queue. <code>Delayed::Worker</code> continuously monitors these queues, picking up jobs based on priority and availability. Each job can specify its <code>queue_as</code>, <code>max_run_time</code>, and <code>max_attempts</code>, with global defaults set in <code>config/initializers/delayed.rb</code>. For example, <code>Proctoring::StoreSubmissionResultsJob</code> has specific retry logic for <code>Proctoring::ServiceError</code> with exponential backoff. During execution, <code>Delayed::Worker</code> reports detailed job metrics (run, error, failure) to <code>Xikolo.metrics</code> via <code>ActiveSupport::Notifications</code>, providing crucial insights into job performance and errors. This ensures reliable processing of tasks that do not require immediate synchronous completion.</p>
+<h3 id="3.-scheduled-sidekiq-job-execution-workflow" tabindex="-1"><a class="header-anchor" href="#3.-scheduled-sidekiq-job-execution-workflow"><span>3. Scheduled Sidekiq Job Execution Workflow</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  cronConfigFile["config/cron.yml"]
+  sidekiqCron["sidekiq-cron Scheduler"]
+  redisQueue["Sidekiq Redis Queue"]
+  sidekiqWorker["Sidekiq Worker"]
+  serviceDatabase["Service Database (e.g., Account DB)"]
+  jobComplete["Job Complete"]
+
+  cronConfigFile -->|"defines schedules"| sidekiqCron
+  sidekiqCron -->|"enqueues job at schedule"| redisQueue
+  redisQueue -->|"worker picks up job"| sidekiqWorker
+  sidekiqWorker -->|"performs action on"| serviceDatabase
+  sidekiqWorker -->|"signals completion"| jobComplete
+</pre></div>
+<p>This workflow details the execution of recurring, time-based tasks leveraging <code>Sidekiq</code> and <code>sidekiq-cron</code>. Scheduled jobs, such as <code>UnconfirmedAccountsDeletionWorker</code>, <code>Voucher::DeleteClaimantIPJob</code>, and <code>Video::SyncVideosJob</code>, are defined in <code>config/cron.yml</code> files across different services. The <code>sidekiq-cron</code> component reads and parses these YAML configurations to set up the recurring schedule. At their designated times, <code>sidekiq-cron</code> enqueues these <code>ActiveJob</code>-compatible tasks into <code>Sidekiq</code>’s Redis-backed queues. The <code>Xikolo::Sidekiq</code> gem centralizes the configuration for Sidekiq, including Redis connection settings defined in <code>config/sidekiq_redis.yml</code>, which also specifies different Redis databases per environment for data isolation. <code>Sidekiq</code> workers then pick up and process these jobs. For instance, <code>UnconfirmedAccountsDeletionWorker</code> interacts with the Account service’s database to identify and remove old, unconfirmed accounts. This system ensures that routine maintenance and synchronization tasks are performed reliably and automatically on a defined schedule.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>The Xikolo cluster employs a comprehensive strategy for asynchronous processing, utilizing both message queues and background job processors. For message-driven interactions, <code>Msgr</code> consumes messages from RabbitMQ, configured via <code>config/rabbitmq.yml</code> (though explicit file content is not specified in cluster data). <code>Msgr::Consumer</code> classes like <code>GamificationConsumer</code>, <code>CourseConsumer</code>, and <code>NewsConsumer</code> are the implementation points, where they receive payloads, perform specific logic (e.g., <code>Gamification::Rules::Course::TakeExam.new(payload).create_score!</code>, <code>Course::Clone.call</code>), and then acknowledge the message. These interactions are direct and event-driven, with <code>Xikolo.config</code> being a dependency for feature checks within consumers.</p>
+<p>Background jobs are handled via <code>ActiveJob</code>, providing an abstraction over two distinct backends: <code>Delayed::Job</code> and <code>Sidekiq</code>. <code>Delayed::Job</code> is primarily configured through <code>config/initializers/delayed.rb</code>, which sets global parameters like <code>max_attempts</code> (25) and <code>max_run_time</code> (10 hours) and restricts processing to specific queues (<code>default</code>, <code>long_running</code>, <code>mails</code>). It also integrates with <code>ActiveSupport::Notifications</code> to publish metrics to <code>Xikolo.metrics</code>. Specific jobs like <code>Lti::PublishGradeJob</code> and <code>Proctoring::StoreSubmissionResultsJob</code> inherit from <code>ApplicationJob</code>, using <code>default</code> queues and defining their own retry logic for specific errors, though the <code>perform</code> methods for <code>Proctoring::StoreSubmissionResultsJob</code> and <code>Proctoring::UploadCertificateImageJob</code> are noted as empty in the cluster data, indicating external service interactions not explicitly shown.</p>
+<p><code>Sidekiq</code> is utilized for scheduled tasks, managed by the <code>sidekiq-cron</code> gem. The <code>xikolo-sidekiq</code> gem centralizes its configuration, loading cron job definitions from <code>config/cron.yml</code> (e.g., <code>UnconfirmedAccountsDeletionWorker</code> daily at 3 a.m., <code>Voucher::DeleteClaimantIPJob</code> daily at 4:15 a.m., <code>Video::SyncVideosJob</code> every 2 hours). Redis serves as the backend for Sidekiq queues, with connection details specified in service-specific <code>config/sidekiq_redis.yml</code> files, ensuring Redis database isolation for various environments. Dependencies include RabbitMQ for Msgr, Redis for Sidekiq, and <code>Xikolo.metrics</code> for monitoring both Delayed Job and Sidekiq performance.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>Msgr::Consumer</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Msgr::Consumer</strong> <code>app/consumers/gamification_consumer.rb</code></li>
+<li>📄 <strong>GamificationConsumer</strong> <code>app/consumers/gamification_consumer.rb</code></li>
+<li>📄 <strong>CourseConsumer</strong> <code>services/course/app/consumers/course_consumer.rb</code></li>
+<li>📄 <strong>NewsConsumer</strong> <code>services/news/app/consumers/news_consumer.rb</code></li>
+<li>📄 <strong>ApplicationJob</strong> <code>app/jobs/long_running_application_job.rb</code></li>
+<li>📄 <strong>ApplicationJob</strong> <code>app/jobs/lti/publish_grade_job.rb</code></li>
+<li>📄 <strong>LongRunningApplicationJob</strong> <code>app/jobs/long_running_application_job.rb</code></li>
+<li>📄 <strong>Lti::PublishGradeJob</strong> <code>app/jobs/lti/publish_grade_job.rb</code></li>
+<li>📄 <strong>Proctoring::StoreSubmissionResultsJob</strong> <code>app/jobs/proctoring/store_submission_results_job.rb</code></li>
+<li>📄 <strong>Proctoring::UploadCertificateImageJob</strong> <code>app/jobs/proctoring/upload_certificate_image_job.rb</code></li>
+<li>📄 <strong>RefreshSitemapJob</strong> <code>app/jobs/refresh_sitemap_job.rb</code></li>
+<li>📄 <strong>Delayed::Worker</strong> <code>config/initializers/delayed.rb</code></li>
+<li>📄 <strong>Delayed::Worker</strong> <code>Gemfile</code></li>
+<li>📄 <strong>UnconfirmedAccountsDeletionWorker</strong> <code>services/account/config/cron.yml</code></li>
+<li>📄 <strong>UnconfirmedAccountsDeletionWorker</strong> <code>RAG: services/account/config/cron.yml</code></li>
+<li>📄 <strong>Voucher::DeleteClaimantIPJob</strong> <code>RAG: config/cron.yml</code></li>
+<li>📄 <strong>Video::SyncVideosJob</strong> <code>RAG: config/cron.yml</code></li>
+<li>📄 <strong>Xikolo::Sidekiq</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Delayed::Job</strong> <code>config/initializers/delayed.rb</code></li>
+<li>📄 <strong>Delayed::Job</strong> <code>config/cron.yml</code></li>
+<li>📄 <strong>Sidekiq</strong> <code>Gemfile</code></li>
+<li>📄 <strong>ActiveJob</strong> <code>config/cron.yml</code></li>
+<li>📄 <strong>ActiveJob</strong> <code>config/initializers/delayed.rb</code></li>
+<li>📄 <strong>Xikolo.metrics</strong> <code>config/initializers/delayed.rb</code></li>
+<li>📄 <strong>sidekiq-cron</strong> <code>config/cron.yml</code></li>
+<li>📄 <strong>Msgr</strong> <code>config/msgr.rb</code></li>
+<li>📄 <strong>Msgr</strong> <code>Gemfile</code></li>
+<li>📄 <strong>Gamification</strong> <code>config/msgr.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo::Sidekiq</strong> <code>RAG: gems/xikolo-sidekiq/README.md</code></li>
+<li>📄 <strong>Sidekiq</strong> <code>RAG: gems/xikolo-sidekiq/README.md</code></li>
+<li>📄 <strong>sidekiq-cron</strong> <code>RAG: gems/xikolo-sidekiq/README.md</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740294872"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

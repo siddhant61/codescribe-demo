@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discussion standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for Discussion standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#learn" class="breadcrumb-link">LEARN</a></li>
+            <li class="breadcrumb-item active">Discussion standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-course-discussion-management" class="sidebar-nav-link">1. Course Discussion Management</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-question%2Fanswer%2Fcomment-lifecycle" class="sidebar-nav-link">2. Question/Answer/Comment Lifecycle</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#3.-pinboard-moderation-%26-reporting" class="sidebar-nav-link">3. Pinboard Moderation & Reporting</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#4.-user-interaction-%26-gamification" class="sidebar-nav-link">4. User Interaction & Gamification</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-learn">LEARN</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="course-discussion-forum%2C-questions%2C-answers%2C-comments%2C-and-subscriptions---technical-documentation" tabindex="-1"><a class="header-anchor" href="#course-discussion-forum%2C-questions%2C-answers%2C-comments%2C-and-subscriptions---technical-documentation"><span>Course Discussion Forum, Questions, Answers, Comments, and Subscriptions - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This documentation report details the Course Discussion Forum, also known as the ‘Pinboard,’ a comprehensive feature cluster integrated within courses. This report details the architecture, workflows, and implementation aspects of the Pinboard, a discussion forum facilitating questions, answers, comments, and subscriptions within courses. It operates as a robust microservice-based system, integrating the main Rails web frontend with a dedicated <code>PinboardService</code> that handles core discussion logic, supported by API serving, message queuing, background processing, and sentiment analysis. The primary purpose is to foster course-related discussions, providing a structured environment for user interaction and knowledge exchange.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Pinboard system employs a microservice architecture, distinctly separating the user-facing frontend from the backend discussion logic. The <code>Xikolo::Web::Application</code> acts as the primary client, orchestrating user interactions and views. It communicates with the <code>PinboardService</code> microservice, which is the authoritative source for all discussion-related data and operations. This interaction primarily occurs via ACFS (Asynchronous Client-side Fetching Service) resources, acting as local proxies for <code>PinboardService</code> domain models such as <code>Xikolo::Pinboard::Question</code> and <code>Xikolo::Pinboard::Comment</code>. The <code>PinboardService</code> itself comprises several internal components, including an API Server for synchronous communication, an Msgr Consumer for asynchronous event processing via RabbitMQ, and a Sidekiq Worker for background jobs. Data persistence is managed through PostgreSQL, with Redis supporting Sidekiq and S3 used for file storage. Additionally, the <code>PinboardService</code> integrates with <code>AccountService</code>, <code>CourseService</code>, and <code>NotificationService</code> for user data, course context, and notifications, respectively. A specialized <code>Sentiment Analysis Module</code> is also part of the <code>PinboardService</code>, processing discussion text content. This distributed design enhances scalability, resilience, and maintainability across the platform.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  xikoloWebApp["Xikolo Web Application"]
+  pinboardApiServer["Pinboard API Server"]
+  pinboardBackendProcesses["Pinboard Msgr Consumer & Sidekiq"]
+  pinboardDB["PostgreSQL Database"]
+  rabbitMQ["RabbitMQ Message Broker"]
+  externalServices["Account/Course/Notification Services"]
+
+  xikoloWebApp -->|"HTTP/ACFS Requests"| pinboardApiServer
+  pinboardApiServer -->|"Synchronous Data Access"| pinboardDB
+  pinboardApiServer -->|"Publishes Async Events"| rabbitMQ
+  rabbitMQ -->|"Consumes Messages"| pinboardBackendProcesses
+  pinboardBackendProcesses -->|"Processes Jobs & Updates"| pinboardDB
+  pinboardBackendProcesses -->|"Asynchronous Inter-Service Calls"| externalServices
+  pinboardApiServer -->|"Synchronous Inter-Service Calls"| externalServices
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>PinboardCommentController:</strong> Creates, updates, and deletes comments via <code>Xikolo::Pinboard::Comment</code> [Source: app/controllers/pinboard_comment_controller.rb].</li>
+<li><strong>PinboardCommentController:</strong> Finds comments and answers via <code>Xikolo::Pinboard::Comment.find</code> and <code>Xikolo::Pinboard::Answer.find</code> [Source: app/controllers/pinboard_comment_controller.rb].</li>
+<li><strong>PinboardController:</strong> Fetches course details via <code>the_course</code> [Source: app/controllers/pinboard_controller.rb].</li>
+<li><strong>PinboardController:</strong> Fetches course subscriptions via <code>Xikolo.api(:pinboard).rel(:course_subscriptions)</code> [Source: app/controllers/pinboard_controller.rb].</li>
+<li><strong>QuestionController:</strong> Fetches, creates, updates, and deletes questions via <code>Xikolo::Pinboard::Question</code> [Source: app/controllers/question_controller.rb].</li>
+<li><strong>QuestionController:</strong> Fetches and creates votes via <code>Xikolo::Pinboard::Vote</code> [Source: app/controllers/question_controller.rb].</li>
+<li><strong>PinboardRoutesHelper:</strong> Included in <code>PinboardCommentController</code>, <code>PinboardController</code>, <code>QuestionController</code> [Source: app/helpers/pinboard_routes_helper.rb].</li>
+<li><strong>PinboardRoutesHelper:</strong> Uses <code>params[:section_id]</code> to determine context [Source: app/helpers/pinboard_routes_helper.rb].</li>
+<li><strong>PinboardHelper:</strong> Used by views and potentially controllers [Source: app/helpers/pinboard_helper.rb].</li>
+<li><strong>Pinboard::TopicForm:</strong> Used by controllers (likely <code>QuestionController</code>) to handle form submissions [Source: app/forms/pinboard/topic_form.rb].</li>
+<li><strong>Pinboard::TopicForm:</strong> Transforms <code>text</code> into <code>first_post</code> and <code>video_timestamp</code> into <code>meta</code> for the backend service [Source: app/forms/pinboard/topic_form.rb].</li>
+<li><strong>PinboardBreadcrumbsPresenter:</strong> Used by <code>PinboardPresenter</code> [Source: app/presenters/pinboard_breadcrumbs_presenter.rb].</li>
+<li><strong>PinboardPresenter:</strong> Receives <code>course</code>, <code>section</code>, <code>technical_issues</code>, and <code>filters</code> as input [Source: app/presenters/pinboard_presenter.rb].</li>
+<li><strong>PinboardPresenter:</strong> Delegates breadcrumb generation to <code>PinboardBreadcrumbsPresenter</code> [Source: app/presenters/pinboard_presenter.rb].</li>
+<li><strong>PinboardUserStatePresenter:</strong> Receives <code>question</code> and <code>user</code> as input [Source: app/presenters/pinboard_user_state_presenter.rb].</li>
+<li><strong>PinboardUserStatePresenter:</strong> Checks <code>user.feature?('gamification')</code> [Source: app/presenters/pinboard_user_state_presenter.rb].</li>
+<li><strong>QuestionPresenter:</strong> Receives <code>question</code>, <code>course</code>, <code>section_id</code> as input [Source: app/presenters/question_presenter.rb].</li>
+<li><strong>QuestionPresenter:</strong> Delegates to <code>question</code> for core attributes [Source: app/presenters/question_presenter.rb].</li>
+<li><strong>Xikolo::Pinboard::Comment:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::Comment:</strong> Used by <code>PinboardCommentController</code> and <code>QuestionController</code>.</li>
+<li><strong>Xikolo::Pinboard::Question:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::Question:</strong> Used by <code>PinboardController</code>, <code>QuestionController</code>, and <code>QuestionPresenter</code>.</li>
+<li><strong>Xikolo::Pinboard::Answer:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::Answer:</strong> Used by <code>PinboardCommentController</code> and <code>QuestionController</code>.</li>
+<li><strong>Xikolo::Pinboard::Vote:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::Vote:</strong> Used by <code>QuestionController</code> for upvoting questions.</li>
+<li><strong>Xikolo::Pinboard::Subscription:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::Subscription:</strong> Used by <code>QuestionController</code> to load user subscriptions.</li>
+<li><strong>Xikolo::Pinboard::AbuseReport:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::AbuseReport:</strong> Used by <code>PinboardCommentController</code> and <code>QuestionController</code> for reporting abuse.</li>
+<li><strong>Xikolo::Pinboard::ExplicitTag:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::ExplicitTag:</strong> Used by <code>PinboardController</code> and <code>QuestionController</code> for tag management and display.</li>
+<li><strong>Xikolo::Pinboard::ImplicitTag:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::ImplicitTag:</strong> Used by <code>PinboardController</code> and <code>QuestionController</code> for managing section-based tags.</li>
+<li><strong>Xikolo::Pinboard::CourseSubscription:</strong> Interacts with the <code>PinboardService</code> microservice via the ACFS framework.</li>
+<li><strong>Xikolo::Pinboard::CourseSubscription:</strong> Used by <code>PinboardController</code> to determine course-level subscription status.</li>
+<li><strong>PinboardService:</strong> Communicates with AccountService to retrieve user-related data [Source: RAG: services/pinboard/config/services.yml].</li>
+<li><strong>PinboardService:</strong> Interacts with CourseService to link pinboard content to specific courses or learning contexts [Source: RAG: services/pinboard/config/services.yml].</li>
+<li><strong>Pinboard Microservice:</strong> Communicates with PostgreSQL for data persistence. [Source: RAG: services/pinboard/config/database.yml]</li>
+<li><strong>Pinboard Microservice:</strong> Exposes an HTTP API for client-side and internal service interactions. [Source: RAG: docker/compose.pinboard.yml]</li>
+<li><strong>Pinboard API Server:</strong> Receives HTTP requests from the main <code>web</code> application or other services. [Source: foundational_context: config/routes.rb]</li>
+<li><strong>Pinboard API Server:</strong> Interacts with the PostgreSQL database via ActiveRecord. [Source: RAG: services/pinboard/config/database.yml]</li>
+<li><strong>Pinboard Msgr Consumer:</strong> Connects to RabbitMQ to subscribe to and process messages. [Source: RAG: services/pinboard/config/rabbitmq.yml]</li>
+<li><strong>Pinboard Msgr Consumer:</strong> May interact with the PostgreSQL database based on message content. [Source: RAG: services/pinboard/config/database.yml]</li>
+<li><strong>Pinboard Sidekiq Worker:</strong> Pulls jobs from Redis-backed Sidekiq queues. [Source: RAG: docker/compose.pinboard.yml]</li>
+<li><strong>Pinboard Sidekiq Worker:</strong> Interacts with the PostgreSQL database. [Source: RAG: services/pinboard/config/database.yml]</li>
+<li><strong>Sentiment Analysis Module:</strong> Processes text content from discussion posts (questions, answers, comments). [Source: RAG: services/pinboard/lib/assets/sentiment_dictionaries/**/*]</li>
+<li><strong>Sentiment Analysis Module:</strong> May store sentiment results in the PostgreSQL database. [Source: RAG: services/pinboard/config/database.yml]</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-course-discussion-management" tabindex="-1"><a class="header-anchor" href="#1.-course-discussion-management"><span>1. Course Discussion Management</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  user["User (Browser)"]
+  pinboardController["PinboardController"]
+  pinboardPresenter["PinboardPresenter"]
+  pinboardMicroservice["Pinboard Microservice"]
+  courseService["Course Service"]
+  xikoloConfig["Xikolo Configuration"]
+
+  user -->|"Navigates to Pinboard"| pinboardController
+  pinboardController -->|"Fetches `the_course`"| courseService
+  pinboardController -->|"Fetches Tags/Questions/Subscriptions"| pinboardMicroservice
+  pinboardController -->|"Checks Forum Lock Status"| xikoloConfig
+  pinboardController -->|"Prepares View Data"| pinboardPresenter
+  pinboardPresenter -->|"Renders Pinboard UI"| user
+</pre></div>
+<p>This workflow encompasses the user’s journey through the Pinboard’s main interface, allowing them to browse, filter, and initiate new discussions. The <code>PinboardController</code> is central, fetching course-specific details (<code>the_course</code>), user subscriptions (<code>Xikolo.api(:pinboard).rel(:course_subscriptions)</code>), and various tags (<code>Xikolo::Pinboard::ImplicitTag</code>, <code>Xikolo::Pinboard::ExplicitTag</code>). It also retrieves course sections via <code>Xikolo::Course::Section</code> to enable discussion filtering. Filters can be applied by section ID, including a dedicated ‘Technical Issues’ section, or by explicit tags. The <code>PinboardPresenter</code> then takes these filtered results along with course and section contexts to orchestrate the display logic, including breadcrumbs and determining if new posts are allowed based on <code>course.forum_is_locked</code> or <code>section['pinboard_closed']</code>. The <code>PinboardRoutesHelper</code> ensures that URLs are dynamically generated based on the current course or section context, maintaining navigation consistency. Authorization checks are performed to ensure users have the necessary permissions to access and interact with the content. This workflow provides a comprehensive and context-aware discussion browsing experience, allowing users to quickly find relevant topics.</p>
+<h3 id="2.-question%2Fanswer%2Fcomment-lifecycle" tabindex="-1"><a class="header-anchor" href="#2.-question%2Fanswer%2Fcomment-lifecycle"><span>2. Question/Answer/Comment Lifecycle</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  user["User (Creator/Responder)"]
+  pinboardTopicForm["Pinboard::TopicForm"]
+  questionController["QuestionController"]
+  pinboardCommentController["PinboardCommentController"]
+  pinboardACFS["Xikolo::Pinboard::* (ACFS Resources)"]
+  pinboardMicroservice["Pinboard Microservice"]
+  msgrPublisher["Msgr (RabbitMQ)"]
+
+  user -->|"Submits Question"| pinboardTopicForm
+  pinboardTopicForm -->|"Validates & Prepares Data"| questionController
+  questionController -->|"Create Question/Vote/Subscription"| pinboardACFS
+  user -->|"Submits Answer/Comment"| pinboardCommentController
+  pinboardCommentController -->|"Create/Update Comment"| pinboardACFS
+  pinboardACFS -->|"API Call"| pinboardMicroservice
+  pinboardMicroservice -->|"Publishes Events (Async)"| msgrPublisher
+  msgrPublisher -->|"Processes Analytics/Notifications"| pinboardMicroservice
+</pre></div>
+<p>This core workflow manages the complete lifecycle of discussion content, from creation to deletion. When a user creates a new question, the <code>Pinboard::TopicForm</code> validates and transforms the submitted data, including <code>title</code>, <code>text</code> (into <code>first_post</code>), and <code>video_timestamp</code> (into <code>meta</code>). The <code>QuestionController</code> then orchestrates the creation of the <code>Xikolo::Pinboard::Question</code> via the ACFS framework, communicating with the <code>PinboardService</code> microservice. Similarly, <code>PinboardCommentController</code> handles the creation, updating, and deletion of comments (<code>Xikolo::Pinboard::Comment</code>) on both questions and answers. The <code>QuestionController</code> also manages answers (<code>Xikolo::Pinboard::Answer</code>), votes (<code>Xikolo::Pinboard::Vote</code>), and user subscriptions (<code>Xikolo::Pinboard::Subscription</code>). Crucially, asynchronous API calls are managed using <code>Acfs.run</code>, which includes a documented workaround involving a double call for reliability. Events like <code>xikolo.pinboard.answer.accept</code> and <code>xikolo.pinboard.read_question</code> are published to RabbitMQ via <code>Msgr.publish</code> for analytics and downstream processing. Authorization checks using <code>authorize!</code> and <code>current_user.allowed?</code> ensure that users have appropriate permissions for all actions, maintaining system integrity.</p>
+<h3 id="3.-pinboard-moderation-%26-reporting" tabindex="-1"><a class="header-anchor" href="#3.-pinboard-moderation-%26-reporting"><span>3. Pinboard Moderation &amp; Reporting</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  user["User"]
+  reportAbuse["Report Abuse"]
+  commentController["PinboardCommentController"]
+  questionController["QuestionController"]
+  abuseReportACFS["Xikolo::Pinboard::AbuseReport"]
+  pinboardMicroservice["Pinboard Microservice"]
+  moderator["Moderator"]
+
+  user -->|"Identifies Abuse"| reportAbuse
+  reportAbuse -->|"Initiates Report"| commentController
+  reportAbuse -->|"Initiates Report"| questionController
+  commentController -->|"Creates Abuse Report"| abuseReportACFS
+  questionController -->|"Creates Abuse Report"| abuseReportACFS
+  abuseReportACFS -->|"Sends to API"| pinboardMicroservice
+  pinboardMicroservice -->|"Stores Report & Notifies"| moderator
+  moderator -->|"Reviews Report"| pinboardMicroservice
+  pinboardMicroservice -->|"Blocks/Unblocks/Deletes Content"| pinboardMicroservice
+</pre></div>
+<p>This workflow addresses the crucial aspect of maintaining content quality and safety within the discussion forum. Users are empowered to report any inappropriate content, including questions, answers, or comments. The <code>PinboardCommentController</code> and <code>QuestionController</code> both provide functionality to create abuse reports via <code>Xikolo::Pinboard::AbuseReport.new</code>. These reports are then processed by the <code>PinboardService</code> microservice, which interacts with the underlying PostgreSQL database to store the report data. Authorized moderators, interacting directly or indirectly with the <code>PinboardService</code>, can review these reports. Based on their assessment, moderators can take action such as blocking or unblocking reported entities, or initiating the deletion of questions and comments. Furthermore, questions can be explicitly closed and reopened by authorized personnel, allowing for administrative control over discussion threads. This structured reporting and moderation process ensures that the Pinboard remains a constructive and safe environment for learning and discussion, with clear roles for both users and administrators in upholding content standards.</p>
+<h3 id="4.-user-interaction-%26-gamification" tabindex="-1"><a class="header-anchor" href="#4.-user-interaction-%26-gamification"><span>4. User Interaction &amp; Gamification</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userActivity["User Activity (Post/Vote)"]
+  questionController["QuestionController"]
+  pinboardMicroservice["Pinboard Microservice"]
+  gamificationService["Gamification Service (Score/Level)"]
+  pinboardUserStatePresenter["PinboardUserStatePresenter"]
+  xikoloWebApp["Xikolo Web Application"]
+
+  userActivity -->|"Triggered by post/vote"| questionController
+  questionController -->|"Updates Pinboard State"| pinboardMicroservice
+  pinboardMicroservice -->|"Communicates Activity"| gamificationService
+  gamificationService -->|"Calculates Scores/Levels"| gamificationService
+  xikoloWebApp -->|"Requests User State for Display"| pinboardUserStatePresenter
+  pinboardUserStatePresenter -->|"Fetches Scores/Levels"| gamificationService
+  gamificationService -->|"Returns User Level Data"| pinboardUserStatePresenter
+  pinboardUserStatePresenter -->|"Renders Gamification Display"| xikoloWebApp
+</pre></div>
+<p>The Pinboard heavily integrates with the platform’s gamification system to enhance user engagement and recognize contributions. Anytime a user interacts within the pinboard, such as posting a new question, providing an answer, or commenting on existing content, their activity is tracked. This activity contributes to their overall gamification scores, managed by external <code>Gamification::Score</code> and <code>Gamification::Level</code> components. The <code>PinboardUserStatePresenter</code> is the key component responsible for retrieving and displaying these gamification states. It receives a <code>question</code> and the <code>user</code> as input, checks if the user has the ‘gamification’ feature enabled (<code>user.feature?('gamification')</code>), and then fetches the relevant scores and levels. This allows the system to present visual cues, such as level icons, directly alongside user posts. This integration encourages active participation by providing tangible recognition for users’ contributions, fostering a more dynamic and rewarding discussion environment. The Presenter leverages <code>ActionController::Base.helpers</code> for rendering asset paths and image tags to visually represent the user’s gamified status.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<h4 id="technical-considerations" tabindex="-1"><a class="header-anchor" href="#technical-considerations"><span>Technical Considerations</span></a></h4>
+<p>The Pinboard cluster exhibits several technical considerations and areas of technical debt.</p>
+<ul>
+<li>Ambiguity in ID handling: ‘both these id reference the QUESTION, I have no idea why…’ in <code>create</code> and <code>notification_params</code> methods [Source: app/controllers/pinboard_comment_controller.rb].</li>
+<li>Ambiguous ID referencing in <code>create</code> and <code>notification_params</code> methods: “both these id reference the QUESTION, I have no idea why…” [Source: app/controllers/pinboard_comment_controller.rb].</li>
+<li>ACFS callback issue: ‘the double Acfs.run call is not a mistake - acfs seems to have some problems sometimes executing all callbacks…’ in <code>show</code> method [Source: app/controllers/question_controller.rb].</li>
+<li>A double <code>Acfs.run</code> call is used as a workaround for ACFS callback reliability issues.</li>
+<li>Course ID assignment: ‘TODO: solve better’ for <code>p[:course_id] = the_course.id</code> in <code>question_params</code> [Source: app/controllers/question_controller.rb].</li>
+<li>The assignment of <code>course_id</code> in <code>question_params</code> has a TODO for a better solution.</li>
+<li>Dynamic Route Generation Complexity: While <code>PinboardRoutesHelper</code> provides powerful dynamic routing, its reliance on <code>send</code> for method calls can make the code less explicit and potentially harder to debug or refactor in the long term.</li>
+<li>Fragile module inclusion: ‘for some reason some other module seems to want to include this return unless base_controller.respond_to? :helper_method’ in <code>self.included</code> [Source: app/helpers/pinboard_routes_helper.rb].</li>
+<li>Hardcoded value: ‘TODO: adjust this number as needed’ for <code>questions_per_page</code> [Source: app/helpers/pinboard_helper.rb].</li>
+<li><code>questions_per_page</code> is hardcoded with a TODO to adjust it.</li>
+<li>Lack of detailed code for analysis prevents identification of specific internal technical debt. General architectural debt might include tight coupling if direct HTTP calls are overused instead of asynchronous messaging for certain interactions [Source: foundational_context, RAG: services/pinboard/config/services.yml].</li>
+<li>The presence of <code>rubocop:enable all</code> suggests this file might contain complex logic or style deviations that required temporary disabling of Rubocop rules [Source: app/helpers/pinboard_routes_helper.rb].</li>
+<li>Relies on <code>send</code> for dynamic method calls, which can reduce code clarity and make debugging more challenging.</li>
+<li>Rubocop disablement: <code>rubocop:enable all</code> at the end of the file, implying linting was disabled [Source: app/controllers/question_controller.rb].</li>
+<li>Rubocop disablement: <code>rubocop:enable all</code> at the end of the file, implying linting was disabled [Source: app/helpers/pinboard_routes_helper.rb].</li>
+<li>The <code>response_count</code> logic has a TODO (referencing XI-853) indicating ongoing discussion/potential refactor.</li>
+<li>The <code>response_count</code> method has a TODO (referencing XI-853) indicating an ongoing discussion or potential refactor.</li>
+<li>The <code>services/pinboard/README.md</code> is empty, indicating a lack of specific service-level documentation. [Source: RAG: services/pinboard/README.md]</li>
+<li>Temporary notification URL: ‘TODO: remove question_path once all consumer are rolled out’ in <code>notification_params</code> [Source: app/controllers/pinboard_comment_controller.rb].</li>
+<li>Unresolved design decision: ‘TODO: Oh really? See XI-853. :P’ in <code>response_count</code> method [Source: app/presenters/question_presenter.rb].</li>
+</ul>
+<h4 id="dependencies-and-integrations" tabindex="-1"><a class="header-anchor" href="#dependencies-and-integrations"><span>Dependencies and Integrations</span></a></h4>
+<p>The Xikolo Pinboard cluster is highly integrated across multiple services and components:</p>
+<ul>
+<li><strong><code>Xikolo::Web::Application</code></strong> serves as the primary frontend client, heavily relying on ACFS (Asynchronous Client-side Fetching Service) resources. These ACFS resources, such as <code>Xikolo::Pinboard::Comment</code>, <code>Xikolo::Pinboard::Question</code>, <code>Xikolo::Pinboard::Answer</code>, <code>Xikolo::Pinboard::Vote</code>, <code>Xikolo::Pinboard::Subscription</code>, <code>Xikolo::Pinboard::AbuseReport</code>, <code>Xikolo::Pinboard::ExplicitTag</code>, <code>Xikolo::Pinboard::ImplicitTag</code>, and <code>Xikolo::Pinboard::CourseSubscription</code>, act as proxies, abstracting direct API calls to the <code>PinboardService</code> microservice.</li>
+<li>The <strong><code>PinboardService</code> microservice</strong> is a core backend component. It explicitly depends on and interacts with other microservices:
+<ul>
+<li><strong><code>AccountService</code></strong>: For retrieving user-related data, as specified in <code>services/pinboard/config/services.yml</code>.</li>
+<li><strong><code>CourseService</code></strong>: To link pinboard content with specific courses or learning contexts, also configured in <code>services/pinboard/config/services.yml</code>.</li>
+<li><strong><code>NotificationService</code></strong>: For triggering notifications based on pinboard activities like new posts or replies, configured in <code>services/pinboard/config/services.yml</code>.</li>
+</ul>
+</li>
+<li>Internally, the <strong><code>Pinboard Microservice</code></strong> component relies on several foundational technologies:
+<ul>
+<li><strong>PostgreSQL</strong>: For all data persistence, as configured in <code>services/pinboard/config/database.yml</code>.</li>
+<li><strong>RabbitMQ</strong>: Used by <code>msgr</code> for asynchronous operations and inter-service communication, detailed in <code>services/pinboard/config/rabbitmq.yml</code>.</li>
+<li><strong>Redis</strong>: Backs Sidekiq queues for background job management, indicated in <code>docker/compose.pinboard.yml</code>.</li>
+<li><strong>S3</strong>: Potentially used for file storage related to pinboard content, as referenced in <code>docker/config/xikolo/pinboard.yml</code>.</li>
+</ul>
+</li>
+<li>The <strong><code>PinboardUserStatePresenter</code></strong> integrates with external Gamification components, fetching data from <code>Gamification::Score</code> and <code>Gamification::Level</code> to display user states.</li>
+<li><strong><code>Pinboard::TopicForm</code></strong> leverages <code>XUI::Form</code> as its base and includes a custom <code>FirstPostAndMetaData</code> processor for API data transformation.</li>
+</ul>
+<h4 id="configuration-requirements" tabindex="-1"><a class="header-anchor" href="#configuration-requirements"><span>Configuration Requirements</span></a></h4>
+<p>Key configuration aspects for the Pinboard cluster, as evident from the data:</p>
+<ul>
+<li><strong>Course Context Disablement</strong>: The <code>PinboardController</code> checks <code>Xikolo.config['disable_technical_issues_section']</code> to control the visibility and functionality of specific sections, indicating a configurable feature flag.</li>
+<li><strong>File Upload Limits</strong>: <code>PinboardHelper</code> references <code>Rails.configuration.max_document_size</code>, which is a global Rails configuration setting that governs the maximum allowed size for uploaded files within pinboard content.</li>
+<li><strong>External Service Endpoints</strong>: Connections to <code>AccountService</code>, <code>CourseService</code>, and <code>NotificationService</code> are configured within <code>services/pinboard/config/services.yml</code>, defining the endpoints and other parameters for inter-service communication.</li>
+<li><strong>Database Connection</strong>: PostgreSQL database connection details are specified in <code>services/pinboard/config/database.yml</code> for the <code>Pinboard Microservice</code>.</li>
+<li><strong>Message Queue Settings</strong>: RabbitMQ connection parameters and queue definitions for <code>msgr</code> are found in <code>services/pinboard/config/rabbitmq.yml</code>.</li>
+<li><strong>S3 Storage Configuration</strong>: Configuration for S3 interactions, likely for attachment storage, is indicated in <code>docker/config/xikolo/pinboard.yml</code>.</li>
+<li><strong>Questions Per Page</strong>: The <code>PinboardHelper</code> contains a hardcoded <code>questions_per_page</code> value of 25, noted with a <code>TODO</code> for future adjustment, suggesting this is a configuration that may become dynamic.</li>
+</ul>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>PinboardCommentController</strong> <code>app/controllers/pinboard_comment_controller.rb</code></li>
+<li>📄 <strong>PinboardCommentController</strong> <code>spec/controllers/pinboard_comment_controller_spec.rb</code></li>
+<li>📄 <strong>PinboardController</strong> <code>app/controllers/pinboard_controller.rb</code></li>
+<li>📄 <strong>PinboardController</strong> <code>spec/controllers/pinboard_controller_spec.rb</code></li>
+<li>📄 <strong>QuestionController</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>QuestionController</strong> <code>spec/controllers/question_controller_spec.rb</code></li>
+<li>📄 <strong>PinboardBreadcrumbsPresenter</strong> <code>app/presenters/pinboard_breadcrumbs_presenter.rb</code></li>
+<li>📄 <strong>PinboardPresenter</strong> <code>app/presenters/pinboard_presenter.rb</code></li>
+<li>📄 <strong>PinboardPresenter</strong> <code>spec/presenters/pinboard_presenter_spec.rb</code></li>
+<li>📄 <strong>PinboardUserStatePresenter</strong> <code>app/presenters/pinboard_user_state_presenter.rb</code></li>
+<li>📄 <strong>QuestionPresenter</strong> <code>app/presenters/question_presenter.rb</code></li>
+<li>📄 <strong>QuestionPresenter</strong> <code>spec/presenters/question_presenter_spec.rb</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>PinboardService</strong> <code>foundational_context</code></li>
+<li>📄 <strong>PinboardService</strong> <code>RAG: services/pinboard/README.md</code></li>
+<li>📄 <strong>Pinboard Microservice</strong> <code>foundational_context</code></li>
+<li>📄 <strong>Pinboard Microservice</strong> <code>RAG: docker/compose.pinboard.yml</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>PinboardRoutesHelper</strong> <code>app/helpers/pinboard_routes_helper.rb</code></li>
+<li>📄 <strong>PinboardHelper</strong> <code>app/helpers/pinboard_helper.rb</code></li>
+<li>📄 <strong>Pinboard::TopicForm</strong> <code>app/forms/pinboard/topic_form.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Comment</strong> <code>app/controllers/pinboard_comment_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Comment</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Question</strong> <code>app/controllers/pinboard_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Question</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Answer</strong> <code>app/controllers/pinboard_comment_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Answer</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Vote</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::Subscription</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::AbuseReport</strong> <code>app/controllers/pinboard_comment_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::AbuseReport</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::ExplicitTag</strong> <code>app/controllers/pinboard_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::ExplicitTag</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::ImplicitTag</strong> <code>app/controllers/pinboard_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::ImplicitTag</strong> <code>app/controllers/question_controller.rb</code></li>
+<li>📄 <strong>Xikolo::Pinboard::CourseSubscription</strong> <code>app/controllers/pinboard_controller.rb</code></li>
+<li>📄 <strong>Pinboard API Server</strong> <code>foundational_context: config/routes.rb</code></li>
+<li>📄 <strong>Pinboard API Server</strong> <code>RAG: docker/compose.pinboard.yml</code></li>
+<li>📄 <strong>Pinboard Msgr Consumer</strong> <code>foundational_context: Gemfile</code></li>
+<li>📄 <strong>Pinboard Msgr Consumer</strong> <code>RAG: docker/compose.pinboard.yml</code></li>
+<li>📄 <strong>Pinboard Sidekiq Worker</strong> <code>foundational_context: Gemfile</code></li>
+<li>📄 <strong>Pinboard Sidekiq Worker</strong> <code>RAG: docker/compose.pinboard.yml</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Sentiment Analysis Module</strong> <code>RAG: services/pinboard/lib/assets/sentiment_dictionaries/**/*</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740296633"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

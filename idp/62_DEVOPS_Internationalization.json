@@ -1,0 +1,335 @@
+{
+  "clusterId": "62_DEVOPS_Internationalization",
+  "featureFocus": "Internationalization and Localization",
+  "documentationReport": "{\n  \"title\": \"Internationalization and Localization Support\",\n  \"overview\": \"This documentation outlines the comprehensive internationalization (i18n) and localization (l10n) capabilities of the application. The system is designed to provide robust multi-language support, enabling content to be displayed in various locales based on user preferences and system settings. It leverages Ruby on Rails' built-in `I18n` framework, augmented by custom logic and additional utilities for seamless locale detection, management, and translation delivery across both server-side and client-side components.\",\n  \"core_components\": [\n    {\n      \"name\": \"Ruby on Rails I18n framework\",\n      \"description\": \"The core gem for managing translations and locales within the Rails application.\"\n    },\n    {\n      \"name\": \"Locale concern\",\n      \"description\": \"A custom module integrated into application controllers, responsible for dynamic locale detection and switching. [Source: app/controllers/concerns/locale.rb]\"\n    },\n    {\n      \"name\": \"Translations utility class\",\n      \"description\": \"Provides flexible mechanisms for retrieving localized strings beyond the standard I18n calls.\"\n    },\n    {\n      \"name\": \"ActionView::Helpers::TranslationHelper (Extended)\",\n      \"description\": \"Enhances view-level translation capabilities, providing additional helpers or modifications for rendering localized content.\"\n    },\n    {\n      \"name\": \"i18n-js\",\n      \"description\": \"A JavaScript library enabling client-side access to Rails' I18n translations, facilitating dynamic localization in the browser.\"\n    }\n  ],\n  \"locale_detection_and_switching\": {\n    \"description\": \"The application employs a sophisticated mechanism to determine the active locale for each request, primarily managed by the `set_locale` method within the `Locale` concern. This method, executed as a `before_action` in application controllers, follows a defined order of precedence to ensure the most relevant locale is applied.\",\n    \"precedence_order\": [\n      {\n        \"priority\": 1,\n        \"source\": \"Query Parameter (`params[:locale]`)\",\n        \"details\": \"The highest priority is given to a valid `locale` query parameter. If present, this locale is also persisted in the user's session and, for authenticated users, updates their preferred language via the `account` microservice. [Source: app/controllers/concerns/locale.rb, spec/controllers/concerns/locale_spec.rb]\"\n      },\n      {\n        \"priority\": 2,\n        \"source\": \"Session Cookie (`session[:locale]` or `session[:language]`)\",\n        \"details\": \"The system checks for a previously stored locale in the user's session. [Source: app/controllers/concerns/locale.rb]\"\n      },\n      {\n        \"priority\": 3,\n        \"source\": \"Signed-in User Preference (`current_user.preferred_language`)\",\n        \"details\": \"For authenticated users, their preferred language, retrieved from the `account` service, is considered. [Source: app/controllers/concerns/locale.rb]\"\n      },\n      {\n        \"priority\": 4,\n        \"source\": \"HTTP Content Negotiation (`HTTP_ACCEPT_LANGUAGE` header)\",\n        \"details\": \"The browser's preferred languages, as indicated by the `Accept-Language` header, are used to find a compatible locale from the application's available locales. [Source: app/controllers/concerns/locale.rb, spec/controllers/concerns/locale_spec.rb]\"\n      },\n      {\n        \"priority\": 5,\n        \"source\": \"Application Default Locale (`Xikolo.config.locales['default']`)\",\n        \"details\": \"As a final fallback, if no other locale can be determined, the application defaults to a globally configured locale. [Source: app/controllers/concerns/locale.rb, spec/controllers/concerns/locale_spec.rb]\"\n      }\n    ],\n    \"sanitization\": \"All detected locales are rigorously sanitized against a predefined list of `available` locales, ensuring only supported languages are used. [Source: app/controllers/concerns/locale.rb]\"\n  },\n  \"translation_management\": {\n    \"storage\": \"Translations are systematically organized and stored in YAML files within the `config/locales` directory. This includes general translation files like `config/locales/de.yml` and `config/locales/en.yml`, which contain a broad spectrum of localized strings for dates, languages, buttons, error messages, and various UI components. Specialized translation files, such as `config/locales/simple_form.de.yml` and `config/locales/simple_form.en.yml`, cater to specific gems or complex UI elements. [Source: config/locales/de.yml, config/locales/en.yml, config/locales/simple_form.de.yml, config/locales/simple_form.en.yml]\",\n    \"retrieval_mechanisms\": [\n      {\n        \"mechanism\": \"I18n module\",\n        \"scope\": \"Server-side\",\n        \"details\": \"The core `I18n` module is extensively utilized throughout the application to retrieve localized strings on the server-side.\"\n      },\n      {\n        \"mechanism\": \"Translations utility class\",\n        \"scope\": \"Server-side\",\n        \"details\": \"Offers an additional, flexible layer for translation selection and retrieval.\"\n      },\n      {\n        \"mechanism\": \"i18n-js library\",\n        \"scope\": \"Client-side\",\n        \"details\": \"Ensures that translations are accessible and can be dynamically applied within the browser, providing a consistent localized experience across the entire application stack.\"\n      },\n      {\n        \"mechanism\": \"ActionView::Helpers::TranslationHelper (Extended)\",\n        \"scope\": \"View-level\",\n        \"details\": \"Further supports localization by providing enhanced capabilities for rendering localized content directly within application views.\"\n      }\n    ]\n  }\n}",
+  "componentMapPatch": {
+    "components": {
+      "Locale": {
+        "type": "Concern",
+        "description": "An ActiveSupport concern responsible for dynamically detecting and setting the application's locale for each incoming request. It prioritizes locale sources from query parameters, session, user preferences, browser settings, and finally, the application's default locale. It also persists explicit locale changes for logged-in users to the account service.",
+        "interactions": {
+          "interaction_0": "Interacts with `I18n` to set the global locale. [Source: app/controllers/concerns/locale.rb]",
+          "interaction_1": "Accesses `Xikolo.config.locales` to get available and default locales. [Source: app/controllers/concerns/locale.rb]",
+          "interaction_2": "Reads `params` for explicit locale changes via query parameters. [Source: app/controllers/concerns/locale.rb]",
+          "interaction_3": "Reads and writes to `session` for locale persistence across requests. [Source: app/controllers/concerns/locale.rb]",
+          "interaction_4": "Calls `Xikolo.api(:account)` to update a logged-in user's preferred language. [Source: app/controllers/concerns/locale.rb]",
+          "interaction_5": "Uses `http_accept_language` (implicitly) to detect browser locale preferences. [Source: app/controllers/concerns/locale.rb]"
+        },
+        "techDebt": [
+          "Direct coupling to the `account` microservice API (`Xikolo.api(:account)`) within a controller concern. This could be refactored into a dedicated service object to reduce coupling and improve testability of the concern in isolation from microservice interactions. [Source: app/controllers/concerns/locale.rb]"
+        ],
+        "provenance": {
+          "sources": [
+            "app/controllers/concerns/locale.rb",
+            "spec/controllers/concerns/locale_spec.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 10,
+              "code": "# frozen_string_literal: true\n\nmodule Locale\n  extend ActiveSupport::Concern\n\n  included do\n    before_action :set_locale\n  end\n",
+              "source": "app/controllers/concerns/locale.rb"
+            },
+            {
+              "startLine": 12,
+              "endLine": 27,
+              "code": "  # This will check and prefer locales from different sources\n  # in this order:\n  #\n  #   1. Explicit set locale from query parameter\n  #   2. Locale from current session cookie\n  #   3. Preferred language from signed in user\n  #   4. Language from HTTP content negotiation\n  #   5. Application configured default locale\n  #\n  def set_locale\n    I18n.locale = begin\n      load_query_locale ||\n        load_session_locale ||\n        load_user_locale ||\n        load_browser_locale ||\n        Xikolo.config.locales['default']\n    end\n  end\n",
+              "source": "app/controllers/concerns/locale.rb"
+            },
+            {
+              "startLine": 29,
+              "endLine": 35,
+              "code": "  # Return value of the query parameter that contains a locale value top\n  # change to.\n  #\n  # This currently must be public API as it is overriden in some\n  # controllers to disable query parameter based locale switching.\n  def locale_param\n    params[:locale]\n  end\n",
+              "source": "app/controllers/concerns/locale.rb"
+            },
+            {
+              "startLine": 3,
+              "endLine": 7,
+              "code": "  Given 'I change the language to German' do\n    click_on 'English'\n    click_on 'Deutsch'\n    context.assign :locale, :de\n  end\n",
+              "source": "app/controllers/concerns/locale.rb"
+            },
+            {
+              "startLine": 9,
+              "endLine": 14,
+              "code": "  Given 'the language is set to English' do\n    find('button[aria-description=\"Choose Language\"]').click\n    within '[data-behaviour=\"menu-dropdown\"]' do\n      click_on 'English'\n    end\n  end\n",
+              "source": "app/controllers/concerns/locale.rb"
+            },
+            {
+              "startLine": 1,
+              "endLine": 3,
+              "code": "const getLocale = () => document.documentElement.lang;\n\nexport default getLocale;\n",
+              "source": "app/controllers/concerns/locale.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/controllers/concerns/locale.rb",
+              "relevance": 30
+            },
+            {
+              "path": "integration/features/steps/locale.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/assets/util/locale.ts",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Translations": {
+        "type": "Utility Class",
+        "description": "A custom utility class designed to select the most appropriate localized text from a hash of language-specific strings. It prioritizes a provided locale preference, then the current `I18n.locale`, default Xikolo locale, and finally English.",
+        "interactions": {
+          "interaction_0": "Initializes with a hash of localized strings and an optional locale preference.",
+          "interaction_1": "Interacts with `I18n.locale` and `Xikolo.config` to determine the best locale for text selection."
+        },
+        "techDebt": [
+          "The hardcoded fallback order within `best_locale` could be made more configurable for greater flexibility."
+        ],
+        "provenance": {
+          "sources": [
+            "app/lib/translations.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 31,
+              "code": "# frozen_string_literal: true\n\n##\n# Select the best text from a hash of localized variants.\n#\n# The choice is made based on what locales are enabled on the platform,\n# what variants are available and which locale is active right now.\n#\nclass Translations\n  def initialize(hash, locale_preference: [])\n    if hash.is_a?(String)\n      @hash = {'en' => hash}\n      return\n    end\n\n    @hash = hash&.stringify_keys || {}\n    @locales = locale_preference\n  end\n\n  def to_s\n    @hash[best_locale] || ''\n  end\n\n  def empty?\n    @hash.empty?\n  end\n\n  private\n\n  def best_locale\n    @best_locale ||= (@locales.presence || [\n      I18n.locale.to_s,\n      Xikolo.config.locales['default'],\n      'en',\n    ]).detect(-> { @hash.keys.first }) {|lang| @hash.key? lang }\n  end\nend",
+              "source": "app/lib/translations.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/lib/translations.rb",
+              "relevance": 30
+            },
+            {
+              "path": "app/forms/admin/announcement_email_form.rb",
+              "relevance": 19
+            },
+            {
+              "path": "app/forms/admin/announcement_form.rb",
+              "relevance": 19
+            }
+          ]
+        }
+      },
+      "I18n": {
+        "type": "Framework Module",
+        "description": "Ruby on Rails' core internationalization module, responsible for loading, managing, and retrieving localized strings from YAML files. It provides methods to set and get the current locale and translate keys.",
+        "interactions": {
+          "interaction_0": "Used by the `Locale` concern to set the active locale. [Source: app/controllers/concerns/locale.rb]",
+          "interaction_1": "Used by the `Translations` class to determine the current locale. [Source: app/lib/translations.rb]",
+          "interaction_2": "Loads translation data from YAML files (e.g., `config/locales/de.yml`). [Source: config/locales/de.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/concerns/locale.rb",
+            "app/lib/translations.rb",
+            "spec/support/locale.rb",
+            "config/locales/de.yml",
+            "config/locales/en.yml",
+            "config/locales/simple_form.de.yml",
+            "config/locales/simple_form.en.yml"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 1,
+              "endLine": 23,
+              "code": "import { I18n } from 'i18n-js';\n\n// Create the I18n instance\nconst i18n = new I18n();\n\nexport const loadTranslations = async () => {\n  const locale = document.documentElement.lang;\n  const defaultLocale = document.documentElement.getAttribute(\n    'data-default-locale',\n  );\n\n  if (!locale || !defaultLocale) return;\n\n  // Configure the I18n instance\n  i18n.defaultLocale = defaultLocale;\n  i18n.locale = locale;\n\n  // Lazy load translations based on the locale\n  const translation = await import(`./translations/${locale}`);\n  i18n.store(translation.default);\n};\n\nexport default i18n;",
+              "source": "app/assets/i18n/i18n.ts"
+            },
+            {
+              "startLine": 5,
+              "endLine": 19,
+              "code": "I18n.enforce_available_locales = true\n\n# Add branch specific locale file\n# sitename must be used lowercase and . are replaced by _\nRails.application.config.tap do |config|\n  config.i18n.load_path += Rails.root.glob(\"brand/#{Xikolo.config.brand}/locales/**/*.{rb,yml}\").map(&:to_s)\nend\n\nRails.application.config.after_initialize do\n  if Rails.env.development?\n    require 'i18n-js/listen'\n    # Generate frontend translations on-the-fly.\n    I18nJS.listen\n  end\nend",
+              "source": "app/assets/i18n/i18n.ts"
+            },
+            {
+              "startLine": 9,
+              "endLine": 31,
+              "code": "module ActionView\n  module Helpers\n    module TranslationHelper\n      alias orig_translate translate\n      def translate(key, options = {})\n        options[:rescue_format] = :html unless options.key?(:rescue_format)\n        options[:default] = wrap_translate_defaults(options[:default]) if options[:default]\n\n        html_safe_options = options.dup\n        options.except(*I18n::RESERVED_KEYS).each do |name, value|\n          unless name == :count && value.is_a?(Numeric)\n            html_safe_options[name] = ERB::Util.html_escape(value.to_s)\n          end\n        end\n\n        # deprecated\n        unless html_safe_options[:brand] || key == :brand\n          html_safe_options[:brand] = (@brand ||= Xikolo.config.site_name)\n        end\n\n        unless html_safe_options[:site_name] || key == :site_name\n          html_safe_options[:site_name] = (@site_name ||= Xikolo.config.site_name)\n ...",
+              "source": "app/assets/i18n/i18n.ts"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "app/assets/i18n/i18n.ts",
+              "relevance": 11
+            },
+            {
+              "path": "config/initializers/i18n.rb",
+              "relevance": 11
+            },
+            {
+              "path": "config/initializers/i18n_translate.rb",
+              "relevance": 11
+            }
+          ]
+        }
+      },
+      "Xikolo.config": {
+        "type": "Configuration Object",
+        "description": "A global configuration object (likely provided by the `xikolo-config` gem) that stores application-wide settings, including the default and available locales for internationalization.",
+        "interactions": {
+          "interaction_0": "Accessed by the `Locale` concern to retrieve default and available locales for validation and fallback. [Source: app/controllers/concerns/locale.rb]",
+          "interaction_1": "Accessed by the `Translations` class to determine the application's default locale. [Source: app/lib/translations.rb]",
+          "interaction_2": "Configured via `config/i18n.yml` for translation export settings. [Source: config/i18n.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "app/controllers/concerns/locale.rb",
+            "app/lib/translations.rb",
+            "spec/controllers/concerns/locale_spec.rb",
+            "config/i18n.yml"
+          ]
+        }
+      },
+      "Locale YAML Files": {
+        "type": "Data Store (Translations)",
+        "description": "YAML files located in `config/locales/` that contain the actual localized strings (key-value pairs) for different languages supported by the application. These files are loaded by the `I18n` framework.",
+        "interactions": {
+          "interaction_0": "Provide translation data to the `I18n` framework. [Source: config/locales/de.yml, config/locales/en.yml]"
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/locales/de.yml",
+            "config/locales/en.yml",
+            "config/locales/simple_form.de.yml",
+            "config/locales/simple_form.en.yml"
+          ]
+        }
+      },
+      "I18n (Rails Gem)": {
+        "type": "Framework Component",
+        "description": "The core Ruby on Rails internationalization library, responsible for managing translations, locales, and pluralization rules. It is configured to enforce available locales and dynamically load translation files.",
+        "interactions": {
+          "interaction_0": "Configured by `config/initializers/i18n.rb` to load locale files.",
+          "interaction_1": "Utilized by `Translations` class to determine the current locale for dynamic content selection.",
+          "interaction_2": "Extended by `ActionView::Helpers::TranslationHelper` for custom translation logic in views.",
+          "interaction_3": "Provides translation data to `i18n-js` for frontend localization."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/i18n.rb",
+            "config/initializers/i18n_translate.rb",
+            "app/lib/translations.rb",
+            "config/locales/de.yml",
+            "config/locales/en.yml"
+          ]
+        }
+      },
+      "ActionView::Helpers::TranslationHelper (Extended)": {
+        "type": "Framework Extension",
+        "description": "The standard Rails translation helper, customized to enhance security and provide additional context for translations. It automatically HTML-escapes interpolation values and injects brand-specific information.",
+        "interactions": {
+          "interaction_0": "Overrides the default `translate` method to add custom logic.",
+          "interaction_1": "Interacts with `I18n` for actual translation lookup.",
+          "interaction_2": "Uses `ERB::Util.html_escape` for security.",
+          "interaction_3": "Accesses `Xikolo.config` for brand and site name information."
+        },
+        "techDebt": [
+          "The use of `alias orig_translate translate` and redefinition might be considered less idiomatic than a decorator pattern for extending Rails helpers, potentially leading to conflicts with future Rails updates.",
+          "The `rubocop:disable Rails/OutputSafety` comment indicates a potential XSS vulnerability if raw translation strings from locale files are not properly handled, requiring careful auditing of locale content."
+        ],
+        "provenance": {
+          "sources": [
+            "config/initializers/i18n_translate.rb"
+          ]
+        },
+        "codeImplementation": {
+          "confidence": 0.95,
+          "codeBlocks": [
+            {
+              "startLine": 7,
+              "endLine": 28,
+              "code": "module ActionView   module Helpers     module TranslationHelper       alias orig_translate translate       def translate(key, options = {})         options[:rescue_format] = :html unless options.key?(:rescue_format)         options[:default] = wrap_translate_defaults(options[:default]) if options[:default]          html_safe_options = options.dup         options.except(*I18n::RESERVED_KEYS).each do |name, value|           unless name == :count && value.is_a?(Numeric)             html_safe_options[name] = ERB::Util.html_escape(value.to_s)           end         end          # deprecated         unless html_safe_options[:brand] || key == :brand           html_safe_options[:brand] = (@brand ||= Xikolo.config.site_name)         end          unless html_safe_options[:site_name] || key == :site_name           html_safe_options[:site_name] = (@site_name ||= Xikolo.config.site_name)  ...",
+              "source": "config/initializers/i18n_translate.rb"
+            }
+          ],
+          "sourceFiles": [
+            {
+              "path": "config/initializers/i18n_translate.rb",
+              "relevance": 8
+            },
+            {
+              "path": "api/xikolo/auth/helpers.rb",
+              "relevance": 7
+            },
+            {
+              "path": "api/xikolo/model/helpers.rb",
+              "relevance": 7
+            }
+          ]
+        }
+      },
+      "i18n-js": {
+        "type": "Gem/Frontend Tool",
+        "description": "A Ruby gem that exports Rails I18n translations to JavaScript, enabling frontend applications (e.g., React, jQuery) to use the same translation keys and values as the backend. It generates JSON files for different locales.",
+        "interactions": {
+          "interaction_0": "Configured via `config/i18n.yml` to specify export paths and patterns.",
+          "interaction_1": "Listens for changes in locale files in development to generate translations on-the-fly.",
+          "interaction_2": "Consumes `I18n` translation data from the backend."
+        },
+        "techDebt": [],
+        "provenance": {
+          "sources": [
+            "config/initializers/i18n.rb",
+            "config/i18n.yml"
+          ]
+        }
+      }
+    },
+    "microservices": {},
+    "interactions": {
+      "interaction_0": "Interacts with `I18n` to set the global locale. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_1": "Accesses `Xikolo.config.locales` to get available and default locales. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_2": "Reads `params` for explicit locale changes via query parameters. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_3": "Reads and writes to `session` for locale persistence across requests. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_4": "Calls `Xikolo.api(:account)` to update a logged-in user's preferred language. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_5": "Uses `http_accept_language` (implicitly) to detect browser locale preferences. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_6": "Interacts with `I18n.locale` to get the currently active locale. [Source: app/lib/translations.rb]",
+      "interaction_7": "Accesses `Xikolo.config.locales['default']` for the application's default locale. [Source: app/lib/translations.rb]",
+      "interaction_8": "Used by the `Locale` concern to set the active locale. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_9": "Used by the `Translations` class to determine the current locale. [Source: app/lib/translations.rb]",
+      "interaction_10": "Loads translation data from YAML files (e.g., `config/locales/de.yml`). [Source: config/locales/de.yml]",
+      "interaction_11": "Accessed by the `Locale` concern to retrieve default and available locales for validation and fallback. [Source: app/controllers/concerns/locale.rb]",
+      "interaction_12": "Accessed by the `Translations` class to determine the application's default locale. [Source: app/lib/translations.rb]",
+      "interaction_13": "Configured via `config/i18n.yml` for translation export settings. [Source: config/i18n.yml]",
+      "interaction_14": "Provide translation data to the `I18n` framework. [Source: config/locales/de.yml, config/locales/en.yml]",
+      "interaction_15": "Configured by `config/initializers/i18n.rb` to load locale files.",
+      "interaction_16": "Utilized by `Translations` class to determine the current locale for dynamic content selection.",
+      "interaction_17": "Extended by `ActionView::Helpers::TranslationHelper` for custom translation logic in views.",
+      "interaction_18": "Provides translation data to `i18n-js` for frontend localization.",
+      "interaction_19": "Initializes with a hash of localized strings and an optional locale preference.",
+      "interaction_20": "Interacts with `I18n.locale` and `Xikolo.config` to determine the best locale for text selection.",
+      "interaction_21": "Overrides the default `translate` method to add custom logic.",
+      "interaction_22": "Interacts with `I18n` for actual translation lookup.",
+      "interaction_23": "Uses `ERB::Util.html_escape` for security.",
+      "interaction_24": "Accesses `Xikolo.config` for brand and site name information.",
+      "interaction_25": "Configured via `config/i18n.yml` to specify export paths and patterns.",
+      "interaction_26": "Listens for changes in locale files in development to generate translations on-the-fly.",
+      "interaction_27": "Consumes `I18n` translation data from the backend."
+    },
+    "technicalDebt": [
+      "Direct coupling to the `account` microservice API (`Xikolo.api(:account)`) within a controller concern. This could be refactored into a dedicated service object to reduce coupling and improve testability of the concern in isolation from microservice interactions. [Source: app/controllers/concerns/locale.rb]",
+      "The hardcoded fallback order within `best_locale` could be made more configurable for greater flexibility.",
+      "The use of `alias orig_translate translate` and redefinition might be considered less idiomatic than a decorator pattern for extending Rails helpers, potentially leading to conflicts with future Rails updates.",
+      "The `rubocop:disable Rails/OutputSafety` comment indicates a potential XSS vulnerability if raw translation strings from locale files are not properly handled, requiring careful auditing of locale content."
+    ]
+  }
+}

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UserAuthentication standardized report 2025-09-18 | AI Workflow Portal</title>
+  <meta name="description" content="Architecture documentation for UserAuthentication standardized report 2025-09-18">
+  
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cluster-report.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="../index.html" class="header-logo">
+          <img src="../assets/images/logo.svg" alt="Xikolo Logo">
+          <span>AI Workflow Portal</span>
+        </a>
+        <nav class="header-nav">
+          <ul class="nav">
+            <li><a href="../index.html" class="nav-link">Home</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../documentation-hub.html" class="nav-link">Documentation</a></li>
+            <li><a href="../reports-hub.html" class="nav-link active">Reports</a></li>
+            <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
+            <li><a href="../idp-portal.html" class="nav-link">IDP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="page-main">
+      <div class="container">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
+            <li class="breadcrumb-item"><a href="../reports-hub.html#core" class="breadcrumb-link">CORE</a></li>
+            <li class="breadcrumb-item active">UserAuthentication standardized report 2025-09-18</li>
+          </ol>
+        </nav>
+        
+        <!-- Two Column Layout -->
+        <div class="layout-two-column">
+          
+          <!-- Sidebar TOC -->
+          <aside class="sidebar">
+            <h2 class="sidebar-title">On This Page</h2>
+            <nav>
+              <ul class="sidebar-nav">
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%8B-executive-summary" class="sidebar-nav-link">📋 Executive Summary</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview" class="sidebar-nav-link">🏗️ Architecture Overview</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#architecture-diagrams" class="sidebar-nav-link">Architecture Diagrams</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%84-component-interactions" class="sidebar-nav-link">🔄 Component Interactions</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%E2%9A%99%EF%B8%8F-technical-workflows" class="sidebar-nav-link">⚙️ Technical Workflows</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#1.-user-authentication-via-external-identity-provider-(idp)" class="sidebar-nav-link">1. User Authentication via External Identity Provider (IdP)</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#2.-user-profile-preferences-update" class="sidebar-nav-link">2. User Profile Preferences Update</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%94%A7-implementation-details" class="sidebar-nav-link">🔧 Implementation Details</a>
+                </li>
+                
+                <li class="sidebar-nav-item">
+                  <a href="#%F0%9F%93%9A-technical-sources-%26-references" class="sidebar-nav-link">📚 Technical Sources & References</a>
+                </li>
+                
+              </ul>
+            </nav>
+          </aside>
+          
+          <!-- Main Content -->
+          <article>
+            
+            <div class="mb-lg">
+              <span class="badge badge-core">CORE</span>
+            </div>
+            
+            
+            <div class="prose">
+              <h1 id="user-account-management%2C-authentication%2C-authorization%2C-and-profiles---technical-documentation" tabindex="-1"><a class="header-anchor" href="#user-account-management%2C-authentication%2C-authorization%2C-and-profiles---technical-documentation"><span>User Account Management, Authentication, Authorization, and Profiles - Technical Documentation</span></a></h1>
+<p><em>Generated on 9/18/2025 | AI Workflow Portal</em></p>
+<hr>
+<h2 id="%F0%9F%93%8B-executive-summary" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%8B-executive-summary"><span>📋 Executive Summary</span></a></h2>
+<p>This report provides a standardized overview of Xikolo cluster 01_CORE_UserAuthentication, focusing on user account management, authentication, authorization, and profile features. The cluster is central to how users interact with the Xikolo platform, encompassing registration, login, personal data management, and permissions-based access. Key components include the OmniAuth Configuration for external identity provider integration, the dedicated Xikolo Account Service for core user and authorization logic, and robust systems for Custom Fields Management, Consent Management, and User Preferences. The primary purpose is to detail the architectural components and technical workflows that facilitate secure and personalized user experiences across the platform, relying on a distributed architecture with a strong emphasis on data persistence and inter-service communication.</p>
+<hr>
+<h2 id="%F0%9F%8F%97%EF%B8%8F-architecture-overview" tabindex="-1"><a class="header-anchor" href="#%F0%9F%8F%97%EF%B8%8F-architecture-overview"><span>🏗️ Architecture Overview</span></a></h2>
+<p>The Xikolo User Authentication and Profile cluster is built upon a hybrid architecture involving the main Xikolo Web Application and a specialized Xikolo Account Service microservice. User interactions originate from the User Frontend, which communicates with the Xikolo Web Application. For external authentication, the Web Application leverages OmniAuth Configuration to interact with various External Identity Providers (IdPs) like SAML and OpenID Connect. Upon successful authentication, user and authorization records are managed and persisted by the Xikolo Account Service, which acts as the authoritative source for user data. This microservice also interacts with a PostgreSQL Database for all data persistence and relies on an internal Permissions Manager to enforce access control. The overall design ensures a clear separation of concerns, with the Account Service handling the complexities of user identity, authorization, and profile data, while the Web Application provides the user interface and orchestrates higher-level workflows.</p>
+<h3 id="architecture-diagrams" tabindex="-1"><a class="header-anchor" href="#architecture-diagrams"><span>Architecture Diagrams</span></a></h3>
+<h4 id="main-architecture" tabindex="-1"><a class="header-anchor" href="#main-architecture"><span>Main Architecture</span></a></h4>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  userFrontend["User Frontend"]
+  xikoloWebApp["Xikolo Web Application"]
+  omniauthConfig["OmniAuth Configuration"]
+  externalIdPs["External Identity Providers"]
+  xikoloAccountService["Xikolo Account Service"]
+  dataStore["PostgreSQL Database"]
+
+  userFrontend -->|"interacts with"| xikoloWebApp
+  xikoloWebApp -->|"uses for external auth"| omniauthConfig
+  omniauthConfig -->|"redirects for authentication"| externalIdPs
+  externalIdPs -->|"callbacks with auth data"| omniauthConfig
+  omniauthConfig -->|"authenticates and communicates with"| xikoloAccountService
+  xikoloWebApp -->|"consumes Application Programming Interface (API) from"| xikoloAccountService
+  xikoloAccountService -->|"persists data in"| dataStore
+</pre></div>
+<h3 id="%F0%9F%94%84-component-interactions" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%84-component-interactions"><span>🔄 Component Interactions</span></a></h3>
+<p>Key interactions between components in this cluster:</p>
+<ul>
+<li><strong>OmniAuth Configuration:</strong> Integrates with various external Identity Providers (IdPs) like SAML and OpenID Connect. [Source: config/initializers/omniauth.rb]</li>
+<li><strong>OmniAuth Configuration:</strong> Provides authentication callbacks to the main application. [Source: config/initializers/omniauth.rb]</li>
+<li><strong>Custom Fields Management:</strong> Users interact with their profile page to input data. [Source: services/account/app/models/user.rb, app/controllers/account/profile_controller.rb]</li>
+<li><strong>Custom Fields Management:</strong> Administrators configure fields via Rails console. [Source: services/account/app/models/custom_field.rb]</li>
+<li><strong>Consent Management:</strong> Users manage consents on their profile page. [Source: services/account/app/models/consent.rb, services/account/app/models/treatment.rb]</li>
+<li><strong>Consent Management:</strong> The system enforces required consents. [Source: services/account/app/models/consent.rb]</li>
+<li><strong>Xikolo Account Service:</strong> Exposes API endpoints for user operations. [Source: services/account/config/routes.rb]</li>
+<li><strong>Xikolo Account Service:</strong> Interacts with the main application for authentication flows and profile data display. [Source: services/account/app/controllers/api/]</li>
+<li><strong>Authorization System:</strong> Roles are assigned to groups. [Source: services/account/lib/tasks/permissions/account.yml]</li>
+<li><strong>Authorization System:</strong> Groups are granted specific permissions within a context. [Source: services/account/lib/tasks/permissions/account.yml]</li>
+<li><strong>Portal API Authentication:</strong> Clients send requests with Bearer Tokens.</li>
+<li><strong>Portal API Authentication:</strong> The API validates tokens.</li>
+<li><strong>Xikolo::Account Service:</strong> Interacts with the Xikolo::Web application for user authentication and authorization requests [Source: services/account/app/controllers/api/, services/account/config/routes.rb].</li>
+<li><strong>Xikolo::Account Service:</strong> Manages persistence of permissions, roles, groups, and grants in a PostgreSQL database [Source: services/account/app/models/role.rb, services/account/app/models/group.rb, services/account/app/models/grant.rb].</li>
+<li><strong>Permission (Concept):</strong> Bundled into Roles [Source: services/account/lib/tasks/permissions/*.yml].</li>
+<li><strong>Permission (Concept):</strong> Defined in YAML files within the Xikolo::Account service [Source: services/account/lib/tasks/permissions/account.yml, services/account/lib/tasks/permissions/course.yml].</li>
+<li><strong>Role (Concept):</strong> Comprises multiple Permissions [Source: services/account/lib/tasks/permissions/account.yml, services/account/app/models/role.rb].</li>
+<li><strong>Role (Concept):</strong> Granted to Groups within a specific context [Source: services/account/app/models/grant.rb, services/account/lib/tasks/permissions/account.yml].</li>
+<li><strong>Group (Concept):</strong> Receives Grants of Roles [Source: services/account/app/models/group.rb, services/account/app/models/grant.rb].</li>
+<li><strong>Group (Concept):</strong> Global groups are defined in <code>lib/tasks/permissions/*.yml</code> in <code>xi-account</code> and <code>global_permission_groups</code> in <code>xi-web</code> [Source: services/account/lib/tasks/permissions/account.yml].</li>
+<li><strong>permissions:load Rake Task:</strong> Reads permission definitions from YAML files [Source: services/account/lib/tasks/permissions/account.yml, services/account/lib/tasks/load_permissions.rake].</li>
+<li><strong>permissions:load Rake Task:</strong> Updates the database with new or modified permissions, roles, and grants [Source: services/account/lib/tasks/load_permissions.rake].</li>
+<li><strong>Account::User:</strong> Has many Account::Authorization records for external authentication details.</li>
+<li><strong>Account::User:</strong> Has many Account::Email records, including a primary email.</li>
+<li><strong>Account::Authorization:</strong> Belongs to Account::User.</li>
+<li><strong>Account::Session:</strong> Belongs to Account::User.</li>
+<li><strong>Account::Email:</strong> Belongs to Account::User.</li>
+<li><strong>Account::Consent:</strong> Belongs to Account::User.</li>
+<li><strong>Account::Consent:</strong> Belongs to Account::Treatment.</li>
+<li><strong>Account::Treatment:</strong> Has many Account::Consent records.</li>
+<li><strong>Account::Treatment:</strong> Finds associated Account::Group records based on its name.</li>
+<li><strong>OmniAuth::Builder:</strong> Reads authentication provider configurations from <code>config/omniauth.yml</code>.</li>
+<li><strong>OmniAuth::Builder:</strong> Interacts with external Identity Providers (IdPs).</li>
+<li><strong>account-profile.js:</strong> Utilizes the <code>bootstrap-editable</code> jQuery plugin for inline editing UI.</li>
+<li><strong>account-profile.js:</strong> Interacts with <code>I18n</code> for internationalization of messages and date formats.</li>
+<li><strong>bootstrap-editable:</strong> Integrated and configured by <code>account-profile.js</code>.</li>
+<li><strong>bootstrap-editable:</strong> Renders editable UI components and triggers update events.</li>
+<li><strong>I18n (JS):</strong> Used by <code>account-profile.js</code> to retrieve localized strings for error messages, placeholders, and date formatting.</li>
+<li><strong>Account Service:</strong> Interacts with PostgreSQL for data persistence. [Source: services/account/config/database.yml]</li>
+<li><strong>Account Service:</strong> Communicates with other services (e.g., Course Service) via RabbitMQ. [Source: services/account/config/rabbitmq.yml, services/account/config/services.yml]</li>
+<li><strong>Permissions Manager:</strong> Stores permission, role, and group definitions and assignments in the database. [Source: services/account/app/models/role.rb, services/account/app/models/grant.rb]</li>
+<li><strong>Permissions Manager:</strong> Provides mechanisms (Rake tasks) to load and update permission configurations. [Source: services/account/lib/tasks/load_permissions.rake]</li>
+<li><strong>Custom Profile Fields Manager:</strong> Stores custom field definitions and user-provided values in the database. [Source: services/account/app/models/custom_field.rb]</li>
+<li><strong>Custom Profile Fields Manager:</strong> Affects user profile pages and potentially reporting/analytics features by collecting structured user data. [Source: app/controllers/account/profile_controller.rb]</li>
+<li><strong>User Management API:</strong> Exposed by the Account Service for consumption by the main <code>web</code> application and other authorized internal services. [Source: services/account/config/routes.rb]</li>
+<li><strong>User Management API:</strong> Interacts directly with the underlying database to perform CRUD operations on user data. [Source: services/account/app/controllers/api/users_controller.rb]</li>
+<li><strong>preferences.ts:</strong> Sends PUT requests to <code>/preferences</code> endpoint on the <code>web</code> application.</li>
+<li><strong>preferences.ts:</strong> Reads and updates DOM elements related to preference switches and notification preference visibility.</li>
+<li><strong>Account::PreferencesController:</strong> Fetches user preferences via <code>Xikolo::Account::Preferences</code> (ACFS client).</li>
+<li><strong>Account::PreferencesController:</strong> Uses <code>Account::PreferencesPresenter</code> to prepare data for views.</li>
+<li><strong>Account::PreferencesPresenter:</strong> Receives <code>Xikolo::Account::Preferences</code> object during initialization.</li>
+<li><strong>Account::PreferencesPresenter:</strong> Provides methods to check global notification status and retrieve specific preference values.</li>
+<li><strong>Account::PreferencesPresenter::PreferencePresenter:</strong> Receives a preference key and options, and the <code>Xikolo::Account::Preferences</code> object.</li>
+<li><strong>Account::PreferencesPresenter::PreferencePresenter:</strong> Uses <code>ActionView::Base</code> helpers to generate HTML for labels and checkboxes.</li>
+<li><strong>Account::PreferencesPresenter::NotificationPresenter:</strong> Receives a notification name and options, and the <code>Xikolo::Account::Preferences</code> object.</li>
+<li><strong>Account::PreferencesPresenter::NotificationPresenter:</strong> Overrides <code>value</code> and <code>render_switch</code> to support platform-specific notification keys.</li>
+<li><strong>Xikolo::Account::Preferences:</strong> Communicates with the <code>account</code> service at <code>/users/:user_id/preferences</code> via HTTP (Representational State Transfer (REST)).</li>
+<li><strong>Xikolo::Account::Preferences:</strong> Provides <code>get</code>, <code>get_bool</code>, <code>get_int</code>, <code>set</code>, and <code>update</code> methods to manipulate preference properties.</li>
+<li><strong>API::PreferencesController:</strong> Retrieves <code>User</code> objects from the database.</li>
+<li><strong>API::PreferencesController:</strong> Updates the <code>preferences</code> attribute of the <code>User</code> model.</li>
+<li><strong>PreferencesDecorator:</strong> Decorates <code>User</code> model instances to expose <code>user_id</code> and <code>properties</code> (the preferences hash).</li>
+<li><strong>User:</strong> Stores and retrieves user preferences in its <code>preferences</code> attribute.</li>
+<li><strong>User:</strong> Interacted with by <code>API::PreferencesController</code> for preference updates.</li>
+</ul>
+<hr>
+<h2 id="%E2%9A%99%EF%B8%8F-technical-workflows" tabindex="-1"><a class="header-anchor" href="#%E2%9A%99%EF%B8%8F-technical-workflows"><span>⚙️ Technical Workflows</span></a></h2>
+<h3 id="1.-user-authentication-via-external-identity-provider-(idp)" tabindex="-1"><a class="header-anchor" href="#1.-user-authentication-via-external-identity-provider-(idp)"><span>1. User Authentication via External Identity Provider (IdP)</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  user["User"]
+  webApp["Xikolo Web Application"]
+  omniauthConfig["OmniAuth Configuration"]
+  externalIdP["External IdP (SAML/OIDC)"]
+  accountService["Xikolo Account Service"]
+  db["Account Service Database"]
+
+  user -->|"initiates external login"| webApp
+  webApp -->|"redirects to OmniAuth"| omniauthConfig
+  omniauthConfig -->|"redirects auth request"| externalIdP
+  externalIdP -->|"authenticates user, sends callback"| omniauthConfig
+  omniauthConfig -->|"processes credentials"| accountService
+  accountService -->|"creates/updates Account::User & Authorization"| db
+  accountService -->|"returns authentication success"| webApp
+  webApp -->|"establishes user session, grants access"| authenticationFinal["Authentication Final"]
+</pre></div>
+<p>This workflow details the process a user follows to authenticate with the Xikolo platform using an external Identity Provider, such as a SAML or OpenID Connect service. The process begins with the user initiating a login request through the Xikolo Web Application. The application, configured with OmniAuth, redirects the user’s browser to the chosen external IdP. The IdP then handles the user’s credentials securely and, upon successful authentication, redirects the user back to OmniAuth with authentication data. OmniAuth processes this callback, extracts user information, and communicates with the Xikolo Account Service. The Account Service is responsible for either creating a new <code>Account::User</code> and an associated <code>Account::Authorization</code> record in the PostgreSQL database or updating existing ones. Finally, the Account Service provides authentication success to the Web Application, which then establishes a user session, granting the user access to the platform. This flow is critical for integrating with institutional or corporate identity systems.</p>
+<h3 id="2.-user-profile-preferences-update" tabindex="-1"><a class="header-anchor" href="#2.-user-profile-preferences-update"><span>2. User Profile Preferences Update</span></a></h3>
+<div class="workflow-diagram"><pre class="mermaid">graph TD
+  user["User"]
+  userProfileUI["User Profile UI"]
+  preferencesFrontend["preferences.ts (Frontend Script)"]
+  webAppController["Account::PreferencesController (Web App)"]
+  accountServiceAPI["API::PreferencesController (Account Service)"]
+  accountServiceDB["Account Service Database"]
+
+  user -->|"modifies preference"| userProfileUI
+  userProfileUI -->|"triggers update via JS"| preferencesFrontend
+  preferencesFrontend -->|"sends PUT /preferences"| webAppController
+  webAppController -->|"calls Account Service API"| accountServiceAPI
+  accountServiceAPI -->|"updates User.preferences"| accountServiceDB
+  accountServiceDB -->|"persists changes"| accountServiceAPI
+  accountServiceAPI -->|"returns success"| webAppController
+  webAppController -->|"notifies frontend"| preferencesFrontend
+  preferencesFrontend -->|"updates UI elements"| updateComplete["UI Update Complete"]
+</pre></div>
+<p>This workflow describes how a user modifies their personal preferences or settings within their profile. The user initiates the process by interacting with the User Profile UI in the Xikolo Web Application. Changes made in the UI are captured by the <code>preferences.ts</code> frontend script, which is responsible for client-side logic and sending updates to the backend. The script dispatches an AJAX <code>PUT</code> request to the <code>/preferences</code> endpoint handled by the <code>Account::PreferencesController</code> in the Xikolo Web Application. This controller acts as an intermediary, utilizing the <code>Xikolo::Account::Preferences</code> (an ACFS client resource) to communicate with the Account Service. The ACFS client sends an HTTP request to the <code>API::PreferencesController</code> within the Xikolo Account Service. The Account Service’s <code>API::PreferencesController</code> retrieves the relevant <code>User</code> object from its database, updates the <code>preferences</code> attribute of that user, and persists the changes to the Account Service Database. Upon successful database update, the Account Service returns a success response to the Web Application, which then uses the <code>preferences.ts</code> script to visually update the UI, confirming the preference change to the user. This ensures consistent data management and a responsive user experience for personal settings.</p>
+<hr>
+<h2 id="%F0%9F%94%A7-implementation-details" tabindex="-1"><a class="header-anchor" href="#%F0%9F%94%A7-implementation-details"><span>🔧 Implementation Details</span></a></h2>
+<p>Technical considerations within the 01_CORE_UserAuthentication cluster highlight several key aspects and areas for potential improvement. For instance, the <code>OmniAuth Configuration</code> in <code>config/initializers/omniauth.rb</code> currently allows both <code>GET</code> and <code>POST</code> requests for callbacks, a technical debt item recommended to be restricted to <code>POST</code> requests for enhanced security. Similarly, <code>Portal API Authentication</code> relies on OAuth 2.0 Bearer Tokens but lacks token exchange endpoints, necessitating manual shared secret distribution. The <code>Custom Fields Management</code> feature’s configuration is exclusively performed via the Rails console, suggesting a lack of a user interface for administrative ease and scalability. On the frontend, the <code>account-profile.js</code> script employs a legacy architecture, including <code>async: false</code> for AJAX calls, which can negatively impact user experience by blocking the main thread; refactoring to asynchronous patterns is recommended. Additionally, the <code>Account::PreferencesController</code> fetches an entire preferences object, modifies a single key, and saves it, which could be optimized by implementing a <code>PATCH</code> update mechanism at the service level.</p>
+<p>Dependencies and integrations are extensive. The <code>Xikolo Account Service</code> is a critical microservice that integrates with PostgreSQL for data persistence, RabbitMQ for inter-service communication (e.g., with Course Service), Redis for caching, and Sidekiq for background job processing. It also integrates with S3 for avatar and upload storage. <code>OmniAuth Configuration</code> directly integrates with various external Identity Providers (IdPs) such as SAML and OpenID Connect, reading configurations from <code>config/omniauth.yml</code>. <code>Consent Management</code> supports custom integrations for external consent managers, requiring tailored logic for each type. The <code>Xikolo::Account Service</code> interacts closely with the <code>Xikolo::Web</code> application for authentication and authorization requests, consuming configuration parameters from <code>Xikolo::Web</code>’s <code>app/xikolo.yml</code> for specific permissions.</p>
+<p>Configuration requirements are primarily driven by external service integrations and permission definitions. <code>OmniAuth::Builder</code> reads authentication provider configurations from <code>config/omniauth.yml</code>. The <code>Authorization System</code> and <code>Permissions Manager</code> rely heavily on permission definitions specified in YAML files within the <code>Xikolo::Account service</code> (<code>lib/tasks/permissions/*.yml</code>). Global groups for authorization are also defined in these YAML files and can be referenced in <code>global_permission_groups</code> within <code>xi-web</code>. <code>Account Service</code>’s operational parameters are configured in <code>services/account/config/database.yml</code> for database access, <code>rabbitmq.yml</code> for message queuing, and <code>services.yml</code> for service discovery, though specific runtime configuration values are not specified in the cluster data beyond these file paths.</p>
+<h3 id="%F0%9F%93%9A-technical-sources-%26-references" tabindex="-1"><a class="header-anchor" href="#%F0%9F%93%9A-technical-sources-%26-references"><span>📚 Technical Sources &amp; References</span></a></h3>
+<h4 id="components" tabindex="-1"><a class="header-anchor" href="#components"><span>Components</span></a></h4>
+<ul>
+<li>📄 <strong>Account::PreferencesController</strong> <code>app/controllers/account/preferences_controller.rb</code></li>
+<li>📄 <strong>Account::PreferencesPresenter</strong> <code>app/presenters/account/preferences_presenter.rb</code></li>
+<li>📄 <strong>Account::PreferencesPresenter::PreferencePresenter</strong> <code>app/presenters/account/preferences_presenter.rb</code></li>
+<li>📄 <strong>Account::PreferencesPresenter::NotificationPresenter</strong> <code>app/presenters/account/preferences_presenter.rb</code></li>
+<li>📄 <strong>API::PreferencesController</strong> <code>services/account/app/controllers/api/preferences_controller.rb</code></li>
+<li>📄 <strong>PreferencesDecorator</strong> <code>services/account/app/decorators/preferences_decorator.rb</code></li>
+</ul>
+<h4 id="services" tabindex="-1"><a class="header-anchor" href="#services"><span>Services</span></a></h4>
+<ul>
+<li>📄 <strong>Xikolo Account Service</strong> <code>RAG: services/account/README.md</code></li>
+<li>📄 <strong>Xikolo Account Service</strong> <code>RAG: services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>Xikolo::Account Service</strong> <code>foundational_context</code></li>
+<li>📄 <strong>Xikolo::Account Service</strong> <code>services/account/config/services.yml</code></li>
+<li>📄 <strong>Account Service</strong> <code>docker/compose.account.yml</code></li>
+<li>📄 <strong>Account Service</strong> <code>docker/config/xikolo/account.yml</code></li>
+</ul>
+<h4 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration"><span>Configuration</span></a></h4>
+<ul>
+<li>📄 <strong>OmniAuth Configuration</strong> <code>config/initializers/omniauth.rb</code></li>
+<li>📄 <strong>OmniAuth Configuration</strong> <code>RAG: config/omniauth.yml</code></li>
+<li>📄 <strong>Authorization System</strong> <code>RAG: services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>Permission (Concept)</strong> <code>services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>Role (Concept)</strong> <code>services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>Group (Concept)</strong> <code>services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>permissions:load Rake Task</strong> <code>services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>Account::User</strong> <code>app/models/account/user.rb</code></li>
+<li>📄 <strong>Account::Authorization</strong> <code>app/models/account/authorization.rb</code></li>
+<li>📄 <strong>Account::Session</strong> <code>app/models/account/session.rb</code></li>
+<li>📄 <strong>Account::Email</strong> <code>app/models/account/email.rb</code></li>
+<li>📄 <strong>Account::Consent</strong> <code>app/models/account/consent.rb</code></li>
+<li>📄 <strong>Account::Treatment</strong> <code>app/models/account/treatment.rb</code></li>
+<li>📄 <strong>OmniAuth::Builder</strong> <code>config/initializers/omniauth.rb</code></li>
+<li>📄 <strong>OmniAuth::Builder</strong> <code>RAG: config/omniauth.yml</code></li>
+<li>📄 <strong>Permissions Manager</strong> <code>services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>User Management API</strong> <code>services/account/lib/tasks/permissions/account.yml</code></li>
+<li>📄 <strong>User Management API</strong> <code>config/routes.rb</code></li>
+<li>📄 <strong>Xikolo::Account::Preferences</strong> <code>clients/xikolo-account/lib/xikolo/account/preferences.rb</code></li>
+<li>📄 <strong>User</strong> <code>services/account/app/models/user.rb</code></li>
+<li>📄 <strong>Configuration</strong> <code>config/application.rb, Gemfile, config/database.yml</code></li>
+<li>📄 <strong>Process Management</strong> <code>Procfile, Procfile.web</code></li>
+<li>📄 <strong>Build &amp; Deploy</strong> <code>Rakefile, package.json</code></li>
+</ul>
+<h4 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation"><span>Documentation</span></a></h4>
+<ul>
+<li>📄 <strong>Custom Fields Management</strong> <code>RAG: docs/app/features/profile/custom_fields.md</code></li>
+<li>📄 <strong>Consent Management</strong> <code>RAG: docs/app/features/profile/consents.md</code></li>
+<li>📄 <strong>Portal API Authentication</strong> <code>RAG: docs/portalapi/docs/authentication.md</code></li>
+<li>📄 <strong>Permission (Concept)</strong> <code>docs/app/features/permissions/index.md</code></li>
+<li>📄 <strong>Role (Concept)</strong> <code>docs/app/features/permissions/index.md</code></li>
+<li>📄 <strong>Group (Concept)</strong> <code>docs/app/features/permissions/index.md</code></li>
+<li>📄 <strong>permissions:load Rake Task</strong> <code>docs/app/features/permissions/index.md</code></li>
+<li>📄 <strong>Account::Consent</strong> <code>RAG: docs/app/features/profile/consents.md</code></li>
+<li>📄 <strong>Account::Treatment</strong> <code>RAG: docs/app/features/profile/consents.md</code></li>
+<li>📄 <strong>Permissions Manager</strong> <code>docs/app/features/permissions/index.md</code></li>
+<li>📄 <strong>Custom Profile Fields Manager</strong> <code>docs/app/features/profile/custom_fields.md</code></li>
+</ul>
+<h4 id="other" tabindex="-1"><a class="header-anchor" href="#other"><span>Other</span></a></h4>
+<ul>
+<li>📄 <strong>account-profile.js</strong> <code>app/assets/legacy/account-profile.js</code></li>
+<li>📄 <strong>bootstrap-editable</strong> <code>app/assets/legacy/account-profile.js</code></li>
+<li>📄 <strong>I18n (JS)</strong> <code>app/assets/legacy/account-profile.js</code></li>
+<li>📄 <strong>preferences.ts</strong> <code>app/assets/user/settings/preferences.ts</code></li>
+</ul>
+<hr>
+<p><em>This documentation is automatically generated from cluster analysis and should be validated against the actual codebase.</em></p>
+
+            </div>
+          </article>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div class="footer-container">
+        <div class="footer-bottom">
+          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/js/cluster-report.js?v=1759740297270"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>
