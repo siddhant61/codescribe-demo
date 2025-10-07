@@ -41,26 +41,29 @@
       e.stopPropagation();
     });
     
-    // Add swipe-down gesture to close panel
+    // Add swipe-down gesture to close panel (only at top of scroll)
     let touchStartY = 0;
     let touchEndY = 0;
+    let canSwipeClose = false;
     
     detailsPanel.addEventListener('touchstart', function(e) {
       touchStartY = e.touches[0].clientY;
+      // Check if at the top of the scrollable content
+      canSwipeClose = detailsPanel.scrollTop === 0;
     }, { passive: true });
     
     detailsPanel.addEventListener('touchmove', function(e) {
       touchEndY = e.touches[0].clientY;
       
-      // If swiping down and at the top of scrollable content
-      const detailsContent = document.getElementById('details-content');
-      if (detailsContent && detailsContent.scrollTop === 0) {
+      // Only show visual feedback if we're at the top AND swiping down
+      if (canSwipeClose && detailsPanel.scrollTop === 0) {
         const swipeDistance = touchEndY - touchStartY;
         
-        // Show visual feedback for swipe
+        // Show visual feedback for downward swipe only
         if (swipeDistance > 0) {
-          const translateY = Math.min(swipeDistance, 200);
+          const translateY = Math.min(swipeDistance * 0.5, 100);
           detailsPanel.style.transform = `translateY(${translateY}px)`;
+          detailsPanel.style.transition = 'none';
         }
       }
     }, { passive: true });
@@ -68,15 +71,17 @@
     detailsPanel.addEventListener('touchend', function(e) {
       const swipeDistance = touchEndY - touchStartY;
       
-      // If swiped down more than 100px, close the panel
-      if (swipeDistance > 100) {
+      // If swiped down more than 100px while at the top, close the panel
+      if (canSwipeClose && swipeDistance > 100) {
         detailsPanel.classList.add('hidden');
       }
       
-      // Reset transform
+      // Reset transform with transition
+      detailsPanel.style.transition = '';
       detailsPanel.style.transform = '';
       touchStartY = 0;
       touchEndY = 0;
+      canSwipeClose = false;
     }, { passive: true });
   }
   

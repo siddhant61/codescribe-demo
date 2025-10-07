@@ -118,6 +118,72 @@
   border-color: var(--color-border);
 }
 
+/* About This Project section styles */
+.about-project-section {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%);
+  border-radius: 20px;
+  padding: 40px;
+  margin: 40px 0;
+  border-left: 5px solid #667eea;
+}
+
+[data-theme="dark"] .about-project-section {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(26, 32, 44, 0.95) 100%);
+  border-left-color: #7c8df8;
+}
+
+.about-intro {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+[data-theme="dark"] .about-intro {
+  color: var(--color-text-primary);
+}
+
+.about-subtitle {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 30px 0 15px 0;
+  color: #2c3e50;
+}
+
+[data-theme="dark"] .about-subtitle {
+  color: var(--color-text-primary);
+}
+
+.about-text {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 15px;
+  color: #555;
+}
+
+[data-theme="dark"] .about-text {
+  color: var(--color-text-secondary);
+}
+
+.about-list {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #555;
+  margin-left: 20px;
+}
+
+[data-theme="dark"] .about-list {
+  color: var(--color-text-secondary);
+}
+
+.about-link {
+  color: #667eea;
+}
+
+[data-theme="dark"] .about-link {
+  color: var(--color-primary);
+}
+
 /* Smooth transition when switching themes */
 html.theme-transitioning,
 html.theme-transitioning *,
