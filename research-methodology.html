@@ -38,8 +38,8 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             line-height: 1.6;
-            color: var(--color-text);
-            background: var(--color-bg-alt);
+            color: var(--color-text-primary);
+            background: var(--color-background-alt);
             min-height: 100vh;
         }
 
@@ -51,11 +51,11 @@
 
         /* Header */
         .methodology-header {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 20px;
             padding: 40px;
             margin-bottom: 30px;
-            box-shadow: 0 20px 40px var(--shadow-md);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
 
@@ -83,11 +83,11 @@
         }
 
         .dora-metric {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 15px;
             padding: 20px;
             text-align: center;
-            box-shadow: 0 5px 15px var(--shadow-sm);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             border-left: 5px solid var(--color-primary);
         }
 
@@ -107,11 +107,11 @@
 
         /* Navigation */
         .methodology-nav {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 20px var(--shadow-md);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
@@ -130,25 +130,25 @@
 
         .methodology-nav .nav-link:hover, .methodology-nav .nav-link.active {
             color: var(--color-primary);
-            background: var(--color-primary-alpha);
+            background: var(--color-primary-light);
             border-color: var(--color-primary);
             transform: translateY(-2px);
         }
 
         /* Section Styles */
         .methodology-section {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 20px;
             padding: 40px;
             margin-bottom: 30px;
-            box-shadow: 0 20px 40px var(--shadow-md);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
         .methodology-section h2 {
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 25px;
-            color: var(--color-text);
+            color: var(--color-text-primary);
             border-bottom: 3px solid #667eea;
             padding-bottom: 10px;
         }
@@ -157,14 +157,14 @@
             font-size: 1.4rem;
             font-weight: 600;
             margin: 25px 0 15px 0;
-            color: var(--color-text);
+            color: var(--color-text-primary);
         }
 
         .methodology-section h4 {
             font-size: 1.2rem;
             font-weight: 600;
             margin: 20px 0 10px 0;
-            color: var(--color-text);
+            color: var(--color-text-primary);
         }
 
         .methodology-section p {
@@ -192,7 +192,7 @@
         }
 
         .framework-card {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -214,7 +214,7 @@
             font-size: 1.3rem;
             font-weight: 600;
             margin-bottom: 10px;
-            color: var(--color-text);
+            color: var(--color-text-primary);
         }
 
         .framework-description {
@@ -267,7 +267,7 @@
         }
 
         .metrics-chart {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -280,7 +280,7 @@
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 20px;
-            color: var(--color-text);
+            color: var(--color-text-primary);
             text-align: center;
             flex-shrink: 0;
         }
@@ -299,7 +299,7 @@
         }
 
         .capability-card {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -314,7 +314,7 @@
 
         .capability-name {
             font-weight: 600;
-            color: var(--color-text);
+            color: var(--color-text-primary);
         }
 
         .capability-score {
@@ -360,10 +360,10 @@
         }
 
         .impact-card {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 5px 15px var(--shadow-sm);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--color-border);
         }
 
@@ -377,7 +377,7 @@
         .impact-label {
             font-size: 1.1rem;
             font-weight: 600;
-            color: var(--color-text);
+            color: var(--color-text-primary);
             margin-bottom: 10px;
         }
 
@@ -388,11 +388,11 @@
 
         /* Diagrams */
         .mermaid-diagram {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 15px;
             padding: 30px;
             margin: 20px 0;
-            box-shadow: 0 5px 15px var(--shadow-sm);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--color-border);
         }
 
@@ -426,7 +426,7 @@
         }
 
         .tool-card {
-            background: var(--color-surface);
+            background: var(--color-background);
             border-radius: 10px;
             padding: 20px;
             margin: 15px 0;
@@ -436,7 +436,7 @@
 
         .tool-name {
             font-weight: 600;
-            color: var(--color-text);
+            color: var(--color-text-primary);
             margin-bottom: 8px;
         }
 
@@ -960,6 +960,7 @@
   <!-- Scripts -->
   <script src="./assets/scripts/navigation.js"></script>
   <script src="./assets/scripts/theme-toggle.js"></script>
+  <script src="./assets/scripts/mobile-menu.js"></script>
   
   <script>
     // Navigation scroll behavior for methodology sections

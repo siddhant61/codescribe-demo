@@ -11,6 +11,7 @@
     flex-direction: row !important;
     flex-wrap: wrap;
     gap: var(--space-md);
+    position: relative;
   }
   
   /* Logo stays in top left, compact size */
@@ -28,7 +29,47 @@
     font-size: 0.9rem;
   }
   
-  /* Hide navigation menu on mobile by default, show collapsed */
+  /* Hamburger menu button */
+  .mobile-menu-toggle {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 10;
+    order: 1;
+    margin-left: auto;
+    margin-right: var(--space-sm);
+  }
+  
+  .mobile-menu-toggle span {
+    width: 100%;
+    height: 3px;
+    background: var(--color-text-primary);
+    border-radius: 10px;
+    transition: all 0.3s linear;
+    position: relative;
+    transform-origin: 1px;
+  }
+  
+  .mobile-menu-toggle.open span:first-child {
+    transform: rotate(45deg);
+  }
+  
+  .mobile-menu-toggle.open span:nth-child(2) {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  
+  .mobile-menu-toggle.open span:nth-child(3) {
+    transform: rotate(-45deg);
+  }
+  
+  /* Hide navigation menu on mobile by default */
   .header-nav {
     display: none;
     flex-direction: column;
@@ -36,12 +77,38 @@
     order: 3;
     background: var(--color-background);
     border-top: 1px solid var(--color-border);
-    padding-top: var(--space-md);
+    padding: var(--space-md) 0;
+    animation: slideDown 0.3s ease-out;
+  }
+  
+  .header-nav.mobile-open {
+    display: flex !important;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .header-nav .nav {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .header-nav .nav-link {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
   }
   
   /* Theme toggle button stays visible in top right */
   .header-actions {
-    margin-left: auto;
     order: 2;
   }
   
@@ -122,5 +189,133 @@
   
   .stats {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
+   KNOWLEDGE GRAPH MOBILE FIXES
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Make details panel a bottom sheet on mobile */
+  #details-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    max-height: 70vh !important;
+    width: 100% !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.2) !important;
+    transition: transform 0.3s ease-out !important;
+    z-index: 1000 !important;
+  }
+  
+  /* Add a handle bar at the top for dragging down */
+  #details-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 2px;
+  }
+  
+  /* Add close button for mobile */
+  #details-panel::after {
+    content: '✕';
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-background-alt);
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+  
+  #details-panel:hover::after {
+    background: var(--color-border);
+    color: var(--color-text-primary);
+  }
+  
+  /* Adjust content padding for handle */
+  #details-content {
+    padding-top: var(--space-lg);
+  }
+  
+  /* Add overlay backdrop when panel is open */
+  #details-panel:not(.hidden)::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+    pointer-events: all;
+  }
+  
+  /* Hide graph legend on mobile when panel is open */
+  #details-panel:not(.hidden) ~ .graph-legend {
+    display: none !important;
+  }
+  
+  /* Adjust graph viewport to account for bottom sheet */
+  .graph-viewport {
+    height: calc(100vh - 200px) !important;
+  }
+  
+  /* Make graph controls stack better on mobile */
+  .graph-controls {
+    top: var(--space-sm);
+    right: var(--space-sm);
+    gap: var(--space-xs);
+  }
+  
+  .graph-controls .btn-sm {
+    padding: var(--space-xs);
+    min-width: 36px;
+    min-height: 36px;
+  }
+  
+  /* Adjust legend position for mobile */
+  .graph-legend {
+    position: absolute;
+    bottom: var(--space-md);
+    left: var(--space-md);
+    right: auto;
+    max-width: 150px;
+    font-size: 0.8rem;
+    padding: var(--space-sm);
+  }
+  
+  .graph-legend h4 {
+    font-size: 0.75rem;
+    margin-bottom: var(--space-xs);
+  }
+  
+  .legend-item {
+    margin-bottom: var(--space-xs);
+  }
+  
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    margin-right: var(--space-xs);
   }
 }
