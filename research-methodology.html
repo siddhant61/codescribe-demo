@@ -230,7 +230,7 @@
         }
 
         .process-step {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-primary);
             color: white;
             border-radius: 15px;
             padding: 25px;
@@ -336,6 +336,14 @@
             transition: width 0.3s ease;
         }
 
+        .capability-fill-success {
+            height: 100%;
+            width: 75%;
+            background: var(--color-success);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
         .capability-description {
             font-size: 0.9rem;
             color: var(--color-text-secondary);
@@ -351,11 +359,11 @@
         }
 
         .impact-card {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
+            background: var(--color-surface);
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 5px 15px var(--shadow-sm);
+            border: 1px solid var(--color-border);
         }
 
         .impact-metric {
@@ -379,12 +387,12 @@
 
         /* Diagrams */
         .mermaid-diagram {
-            background: white;
+            background: var(--color-surface);
             border-radius: 15px;
             padding: 30px;
             margin: 20px 0;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e0e6ed;
+            box-shadow: 0 5px 15px var(--shadow-sm);
+            border: 1px solid var(--color-border);
         }
 
         /* Responsive */
@@ -399,20 +407,20 @@
 
         /* Highlight boxes */
         .highlight-box {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
-            border-left: 5px solid #667eea;
+            background: var(--color-surface-elevated);
+            border-left: 5px solid var(--color-primary);
             border-radius: 10px;
             padding: 20px;
             margin: 20px 0;
         }
 
         .highlight-box.warning {
-            background: linear-gradient(135deg, rgba(243, 156, 18, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
+            background: var(--color-surface-elevated);
             border-left-color: var(--color-warning);
         }
 
         .highlight-box.success {
-            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
+            background: var(--color-surface-elevated);
             border-left-color: var(--color-success);
         }
 
@@ -566,7 +574,7 @@
                         <span class="capability-score">Key Impact Area</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" style="width: 75%; background: #2ecc71;"></div>
+                        <div class="capability-fill" class="capability-fill-success"></div>
                     </div>
                     <p class="capability-description">Comprehensive documentation accelerates development by reducing time spent understanding system architecture and dependencies.</p>
                 </div>
@@ -577,7 +585,7 @@
                         <span class="capability-score">Strong</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" style="width: 80%; background: #2ecc71;"></div>
+                        <div class="capability-fill" class="capability-fill-success"></div>
                     </div>
                     <p class="capability-description">How often an organization successfully releases to production. Our CI/CD practices support regular deployments.</p>
                 </div>
@@ -588,7 +596,7 @@
                         <span class="capability-score">Good</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" style="width: 70%; background: #3498db;"></div>
+                        <div class="capability-fill" class="capability-fill-success"></div>
                     </div>
                     <p class="capability-description">Percentage of deployments causing a failure in production. Maintained through comprehensive testing frameworks.</p>
                 </div>
@@ -599,7 +607,7 @@
                         <span class="capability-score">Excellent</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" style="width: 90%; background: #2ecc71;"></div>
+                        <div class="capability-fill" class="capability-fill-success"></div>
                     </div>
                     <p class="capability-description">Time to restore service when a service incident occurs. Strong monitoring and response capabilities.</p>
                 </div>
