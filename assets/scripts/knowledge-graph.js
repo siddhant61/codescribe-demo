@@ -25,6 +25,8 @@ let currentDetailLevel = 2; // 1=Low(50), 2=Medium(200), 3=High(868)
 let currentViewMode = 'detailed'; // 'detailed' or 'overview'
 let visibleNodes = [];
 let visibleLinks = [];
+let activeHighlight = null;
+let interactionsInitialized = false;
 
 /**
  * Initialize the knowledge graph visualization
@@ -239,6 +241,7 @@ function renderGraph() {
   visibleLinks = filtered.links;
   
   // Clear existing
+  if (simulation) simulation.stop();
   d3.select('#knowledge-graph').selectAll('*').remove();
   
   // Create SVG
@@ -323,6 +326,9 @@ function renderGraph() {
     .data(visibleNodes)
     .join('g')
     .attr('class', 'node')
+    .attr('role', 'button')
+    .attr('tabindex', 0)
+    .attr('aria-label', d => `${d.name}, ${d.category}. View details`)
     .call(drag(simulation));
   
   // Add circles
@@ -345,18 +351,19 @@ function renderGraph() {
   nodeSelection.append('title')
     .text(d => `${d.name}\n${d.type}\nCategory: ${d.category}\nConnections: ${d.connections}`);
   
-  // Click handler
-  nodeSelection.on('click', (event, d) => {
-    event.stopPropagation();
-    handleNodeClick(d);
-  });
+  nodeSelection
+    .on('click', activateGraphNode)
+    .on('keydown', activateGraphNode);
   
   // Background click to deselect
   svg.on('click', () => {
+    clearSelectionControls();
     clearHighlights();
     showDefaultPanel();
   });
   
+  restoreGraphPresentation();
+
   // Update statistics
   updateStats();
 }
@@ -416,6 +423,8 @@ function ticked() {
       const hull = d3.polygonHull(points);
       return hull ? `M${hull.join('L')}Z` : null;
     });
+    const category = document.getElementById('category-filter')?.value || '';
+    hullSelection.style('display', d => !category || d === category ? null : 'none');
   }
 }
 
@@ -446,12 +455,24 @@ function drag(simulation) {
 }
 
 /**
+ * Activate SVG nodes with the same behavior for pointer and keyboard input.
+ */
+function activateGraphNode(event, node) {
+  if (event.type === 'keydown') {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+  }
+  event.stopPropagation();
+  handleNodeClick(node);
+}
+
+/**
  * Handle node click
  */
 function handleNodeClick(node) {
-  // Clear workflow highlights
-  const workflowSelector = document.getElementById('workflow-selector');
-  if (workflowSelector) workflowSelector.value = '';
+  clearSelectionControls();
+  clearHighlights();
+  activeHighlight = { kind: 'node', value: node.id };
   
   // Find connected nodes
   const connected = new Set([node.id]);
@@ -493,6 +514,7 @@ function highlightWorkflow(workflowName) {
   if (searchInput) searchInput.value = '';
   
   clearHighlights();
+  activeHighlight = workflowName ? { kind: 'workflow', value: workflowName } : null;
   
   if (!workflowName) {
     showDefaultPanel();
@@ -547,6 +569,8 @@ function clearHighlights() {
  * Setup all interactions
  */
 function setupInteractions() {
+  if (interactionsInitialized) return;
+  interactionsInitialized = true;
   setupSearch();
   setupCategoryFilter();
   setupWorkflowSelector();
@@ -572,31 +596,63 @@ function setupSearch() {
     const workflowSelector = document.getElementById('workflow-selector');
     if (workflowSelector) workflowSelector.value = '';
     
-    clearHighlights();
-    
-    if (!query) return;
-    
-    // Find matching nodes
-    const matches = new Set();
-    allNodes.forEach(node => {
-      if (node.name.toLowerCase().includes(query) ||
-          node.type.toLowerCase().includes(query) ||
-          node.description.toLowerCase().includes(query)) {
-        matches.add(node.id);
-      }
-    });
-    
-    // Highlight matches
-    nodeSelection
-      .classed('highlighted', d => matches.has(d.id))
-      .classed('dimmed', d => !matches.has(d.id));
-    
-    linkSelection.classed('dimmed', d => {
-      const sourceId = d.source.id || d.source;
-      const targetId = d.target.id || d.target;
-      return !matches.has(sourceId) || !matches.has(targetId);
-    });
+    activeHighlight = query ? { kind: 'search', value: query } : null;
+    applySearchHighlight(query);
+    document.getElementById('details-panel')?.classList.add('hidden');
   });
+}
+
+function applySearchHighlight(query) {
+  clearHighlights();
+  if (!query) return;
+
+  const matches = new Set(allNodes.filter(node =>
+    node.name.toLowerCase().includes(query) ||
+    node.type.toLowerCase().includes(query) ||
+    node.description.toLowerCase().includes(query)
+  ).map(node => node.id));
+
+  nodeSelection
+    .classed('highlighted', d => matches.has(d.id))
+    .classed('dimmed', d => !matches.has(d.id));
+  linkSelection.classed('dimmed', d =>
+    !matches.has(d.source.id || d.source) || !matches.has(d.target.id || d.target)
+  );
+}
+
+function clearSelectionControls() {
+  activeHighlight = null;
+  ['graph-search', 'workflow-selector'].forEach(id => {
+    const control = document.getElementById(id);
+    if (control) control.value = '';
+  });
+}
+
+// Reapply presentation state whenever the detail slider replaces the SVG.
+function restoreGraphPresentation() {
+  nodeSelection.selectAll('text').style('display', currentViewMode === 'overview' ? 'none' : null);
+  applyCategoryFilter(document.getElementById('category-filter')?.value || '');
+  if (activeHighlight?.kind === 'search') {
+    applySearchHighlight(activeHighlight.value);
+  } else if (activeHighlight?.kind === 'workflow') {
+    highlightWorkflow(activeHighlight.value);
+  } else if (activeHighlight?.kind === 'node') {
+    const node = allNodes.find(n => n.id === activeHighlight.value);
+    if (node) handleNodeClick(node);
+  }
+}
+
+function applyCategoryFilter(category) {
+  const visible = new Set();
+  nodeSelection.style('display', d => {
+    const show = !category || d.category === category;
+    if (show) visible.add(d.id);
+    return show ? null : 'none';
+  });
+  linkSelection.style('display', d =>
+    visible.has(d.source.id || d.source) && visible.has(d.target.id || d.target) ? null : 'none'
+  );
+  hullSelection?.style('display', d => !category || d === category ? null : 'none');
 }
 
 /**
@@ -613,30 +669,7 @@ function setupCategoryFilter() {
   ).join('');
   
   filterSelect.addEventListener('change', (e) => {
-    const category = e.target.value;
-    
-    clearHighlights();
-    
-    if (!category) {
-      // Show all
-      nodeSelection.style('display', null);
-      linkSelection.style('display', null);
-      return;
-    }
-    
-    // Filter by category
-    const visible = new Set();
-    nodeSelection.style('display', d => {
-      const show = d.category === category;
-      if (show) visible.add(d.id);
-      return show ? null : 'none';
-    });
-    
-    linkSelection.style('display', d => {
-      const sourceId = d.source.id || d.source;
-      const targetId = d.target.id || d.target;
-      return visible.has(sourceId) && visible.has(targetId) ? null : 'none';
-    });
+    applyCategoryFilter(e.target.value);
   });
 }
 
@@ -702,8 +735,14 @@ function setupResetButton() {
   if (!resetBtn) return;
   
   resetBtn.addEventListener('click', () => {
-    simulation.alpha(1).restart();
+    clearSelectionControls();
+    const category = document.getElementById('category-filter');
+    if (category) category.value = '';
+    applyCategoryFilter('');
     clearHighlights();
+    allNodes.forEach(node => { node.fx = null; node.fy = null; });
+    if (svg && zoom) svg.interrupt().call(zoom.transform, d3.zoomIdentity);
+    if (simulation) simulation.alpha(1).restart();
     showDefaultPanel();
   });
 }
@@ -1055,6 +1094,13 @@ function setupCategoryNavigator() {
       // Find center of this category's nodes
       const categoryNodes = visibleNodes.filter(n => n.category === category);
       if (categoryNodes.length === 0) return;
+
+      // A jump keeps context visible, including when another category was filtered.
+      const filter = document.getElementById('category-filter');
+      if (filter?.value && filter.value !== category) {
+        filter.value = '';
+        applyCategoryFilter('');
+      }
       
       // Calculate center
       const centerX = categoryNodes.reduce((sum, n) => sum + n.x, 0) / categoryNodes.length;

@@ -1,91 +1,42 @@
-# 🤖 AI-Powered Codebase Documentation Portal
+# CodeScribe · Xikolo case study
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://siddhant61.github.io/ai-workflow-portal/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Analysis](https://img.shields.io/badge/Components-900+-orange)](https://siddhant61.github.io/ai-workflow-portal/reports-hub.html)
+An independent project by **Siddhant Gadamsetti**, developed with AI assistance, exploring how codebase analysis can support architectural documentation.
 
-> **A comprehensive AI-powered platform for analyzing complex codebases and generating detailed architectural documentation at scale.**
+This static site presents a historical analysis of the [open-source Xikolo learning platform](https://github.com/openHPI/xikolo-core): architecture reports, an interactive graph, and structured JSON. It is not an official Xikolo or openHPI service.
 
-Demonstrated through analysis of the **[open-source Xikolo learning platform](https://github.com/openHPI/xikolo-core)** — successfully mapping 900+ components across 33 functional clusters with 68% source code coverage.
+## Explore
 
-## 🌟 Project Overview
+- `index.html`: project introduction and routes through the case study
+- `research-methodology.html`: approach and original analysis notes
+- `architecture-overview.html`: system overview
+- `reports-hub.html`: cluster reports
+- `knowledge-graph.html`: interactive relationship explorer
+- `idp/knowledge-graph-synthesized.json`: original graph artifact
 
-This project showcases an innovative methodology for automated codebase analysis and documentation generation using AI-powered tools. It addresses a critical challenge in software engineering: **maintaining comprehensive, accurate architectural documentation for large-scale systems**.
+## Evidence boundaries
 
-### 🎯 Key Achievements
+The published artifacts are a historical snapshot, not a live scan or a benchmark. Counts differ between reports and graph data. Accuracy, coverage, onboarding improvements and DORA outcomes have not been independently validated by this demonstration. AI-generated explanations and consensus require checking against the relevant source revision. Existing detailed reports and data are preserved as historical artifacts, not silently rewritten to match the new introduction.
 
-- **900+ Components Mapped**: Comprehensive analysis of the entire Xikolo platform architecture
-- **33 Functional Clusters**: Organized components into logical groupings (CORE, LEARN, COMM, ADMIN, INFRA, SEC, DEVOPS)
-- **138 Relationships Identified**: Mapped inter-component dependencies and communication patterns
-- **68% Source Code Coverage**: Deep analysis with source code integration for 612 components
-- **32 Business Workflows**: End-to-end workflow documentation spanning multiple components
+## Local preview
 
-## 🚀 Innovation Highlights
+No build or dependency installation is required for the site. Serve this directory over HTTP, for example:
 
-### 1. **Multi-Run AI Consensus** 🧠
-Novel approach using multiple independent AI analysis runs synthesized through cross-validation:
-- 3+ independent analysis runs per codebase
-- AI-powered consensus building with confidence scoring (0.8+ threshold)
-- Provenance tracking for all findings
-- Reduced hallucination and improved accuracy
+```sh
+python -m http.server 8000
+```
 
-### 2. **Custom Knowledge Graph Engine** 🕸️
-Purpose-built system for mapping component relationships:
-- Automatic dependency extraction
-- Interactive D3.js visualization
-- Relationship strength scoring
-- Cross-cluster interaction tracking
+Then open `http://localhost:8000`. The graph and diagrams use existing external D3/Mermaid dependencies, so their full interactive checks need network access.
 
-### 3. **Smart Batch Synthesizer** 🔄
-Intelligent consolidation across multiple analysis runs:
-- Confidence-scored merging
-- Duplicate detection and resolution
-- Source attribution maintenance
-- Iterative refinement capability
+## Checks
 
-### 4. **Enhanced Reporting System** 📊
-Professional documentation generation:
-- Hybrid Mermaid + SVG diagram generation
-- Responsive, mobile-friendly design
-- Interactive navigation and search
-- GitHub Pages deployment ready
+```sh
+python -m unittest discover -s tests
+node --test tests/*.test.cjs
+git diff --check
+```
 
-## 💡 Universal Applicability
+The Python suite verifies public-page branding, accessible content entry, evidence wording and local link/asset destinations. The Node suites cover navigation, graph controls and details-panel interactions. Local Chromium verification covers desktop/mobile layouts, both themes, keyboard navigation, graph interaction and Mermaid rendering; see `docs/browser-verification.md` for evidence and limits.
 
-While demonstrated on Xikolo, **this methodology can be applied to any large codebase**. The approach helps teams:
+## Deployment
 
-- ✅ **Accelerate Onboarding**: New team members understand architecture faster
-- ✅ **Improve DORA Metrics**: Better documentation reduces lead times
-- ✅ **Enable AI-Assisted Development**: Structured knowledge graphs power LLM tools
-- ✅ **Maintain Documentation**: Automated regeneration keeps docs current
-- ✅ **Identify Technical Debt**: Systematic analysis reveals improvement areas
-
-## 🎓 Skills Demonstrated
-
-- **AI/ML Engineering**: LLM integration, prompt engineering, consensus algorithms
-- **Software Architecture**: Large-scale system analysis, pattern recognition
-- **Data Engineering**: Graph databases, relationship mapping, data synthesis
-- **Full-Stack Development**: Node.js, React, D3.js, responsive design
-- **DevOps**: CI/CD, automated deployment, GitHub Pages
-- **Technical Writing**: Comprehensive documentation, visual communication
-
-## 🚦 View Live
-
-**🌐 Live Demo**: [https://siddhant61.github.io/ai-workflow-portal/](https://siddhant61.github.io/ai-workflow-portal/)
-
-## 🤝 About
-
-**Author**: Siddhant Gadamsetti  
-**LinkedIn**: [linkedin.com/in/siddhant-gadamsetti](https://www.linkedin.com/in/siddhant-gadamsetti-b05849130/)
-
-This project was developed as a technical demonstration of AI-powered documentation generation methodology. The analysis is based on the publicly available [Xikolo open-source codebase](https://github.com/openHPI/xikolo-core).
-
----
-
-<p align="center">
-  <strong>⭐ If you find this methodology useful, please consider starring this repository!</strong>
-</p>
-
-<p align="center">
-  Built with 🤖 AI · Demonstrated on 🎓 Xikolo · Applicable to 🌍 Any Codebase
-</p>
+[Existing GitHub Pages site](https://siddhant61.github.io/ai-workflow-portal/). Local changes are not live until explicitly published through the repository's deployment process.

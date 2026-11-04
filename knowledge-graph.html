@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Knowledge Graph | AI Workflow Portal</title>
+  <title>Knowledge Graph | CodeScribe</title>
   <meta name="description" content="Interactive knowledge graph visualization of the Xikolo codebase architecture.">
   
   <link rel="icon" type="image/svg+xml" href="./assets/images/logo.svg">
@@ -317,23 +317,25 @@
   <link rel="stylesheet" crossorigin href="./assets/main-CpXNSzGi.css">
   <link rel="stylesheet" href="./assets/css/theme-dark.css">
   <link rel="stylesheet" href="./assets/css/mobile-fixes.css">
+  <link rel="stylesheet" href="./assets/css/codescribe.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="page-wrapper">
     
     <!-- Header -->
     <header class="page-header">
       <div class="header-container">
         <a href="./index.html" class="header-logo">
-          <img src="./assets/images/logo.svg" alt="AI Workflow Portal Logo" width="40" height="40">
-          <span>AI Workflow Portal</span>
+          <img src="./assets/images/logo.svg" alt="" width="40" height="40">
+          <span>CodeScribe</span>
         </a>
         
-        <nav class="header-nav">
+        <nav class="header-nav" aria-label="Primary">
           <ul class="nav">
             <li><a href="./index.html" class="nav-link">Home</a></li>
-            <li><a href="./architecture-overview.html" class="nav-link">Architecture</a></li>
             <li><a href="./research-methodology.html" class="nav-link">Methodology</a></li>
+            <li><a href="./architecture-overview.html" class="nav-link">Architecture</a></li>
             <li><a href="./reports-hub.html" class="nav-link">Analysis Results</a></li>
             <li><a href="./knowledge-graph.html" class="nav-link active">Knowledge Graph</a></li>
             <li><a href="./idp-portal.html" class="nav-link">AI Resources</a></li>
@@ -351,7 +353,8 @@
     </header>
     
     <!-- Main Content -->
-    <main class="page-main">
+    <main class="page-main" id="main-content" tabindex="-1">
+      <div class="cs-context-note"><a href="./index.html">CodeScribe / Xikolo case study</a><span>Historical AI-assisted analysis. Verify findings against source code.</span></div>
       <div class="container">
         
         <!-- Breadcrumbs -->
@@ -378,15 +381,16 @@
             <div class="flex-1 min-w-64">
               <input 
                 type="search" 
-                id="graph-search" 
+                id="graph-search"
+                aria-label="Search components"
                 placeholder="Search components..." 
                 class="w-full px-md py-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
             </div>
-            <select id="workflow-selector" class="px-md py-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" style="min-width: 200px;">
+            <select id="workflow-selector" aria-label="Select workflow" class="px-md py-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" style="min-width: 200px;">
               <option value="">Select Workflow...</option>
             </select>
-            <select id="category-filter" class="px-md py-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            <select id="category-filter" aria-label="Filter by category" class="px-md py-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="">All Categories</option>
             </select>
             <button id="reset-graph-btn" class="btn btn-secondary">
@@ -449,10 +453,11 @@
           </div>
           
           <!-- SVG Container -->
-          <svg class="graph-svg" id="knowledge-graph"></svg>
+          <div class="graph-svg" id="knowledge-graph" role="group" aria-label="Interactive component graph"></div>
           
           <!-- Details Panel -->
-          <div id="details-panel" class="hidden" style="position: absolute; top: 20px; left: 20px; max-width: 350px; max-height: calc(100% - 40px); overflow-y: auto; border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 15;">
+          <div id="details-panel" class="hidden" role="region" aria-label="Component and workflow details" style="position: absolute; top: 20px; left: 20px; max-width: 350px; max-height: calc(100% - 40px); overflow-y: auto; border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 15;">
+            <button type="button" id="details-close" class="details-close" aria-label="Close details">×</button>
             <div id="details-content"></div>
           </div>
           
@@ -484,31 +489,31 @@
           <div class="graph-legend">
             <h4 class="font-semibold mb-sm">Component Types</h4>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--color-core);"></div>
+              <div class="legend-color" style="background: #3b82f6;"></div>
               <span class="text-sm">CORE</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--color-learn);"></div>
+              <div class="legend-color" style="background: #10b981;"></div>
               <span class="text-sm">LEARN</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--color-comm);"></div>
+              <div class="legend-color" style="background: #f59e0b;"></div>
               <span class="text-sm">COMM</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--color-admin);"></div>
+              <div class="legend-color" style="background: #8b5cf6;"></div>
               <span class="text-sm">ADMIN</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--color-infra);"></div>
+              <div class="legend-color" style="background: #ef4444;"></div>
               <span class="text-sm">INFRA</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--color-sec);"></div>
+              <div class="legend-color" style="background: #ec4899;"></div>
               <span class="text-sm">SEC</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--color-devops);"></div>
+              <div class="legend-color" style="background: #06b6d4;"></div>
               <span class="text-sm">DEVOPS</span>
             </div>
           </div>
@@ -583,13 +588,13 @@
         
         <!-- Additional Resources -->
         <section class="section">
-          <div class="card" style="background: var(--gradient-primary); color: white; border: none;">
+          <div class="card cs-resource-callout">
             <div class="card-body text-center">
-              <h2 class="mb-md" style="color: white;">Want to explore in detail?</h2>
-              <p class="mb-lg" style="color: rgba(255, 255, 255, 0.9);">
+              <h2 class="mb-md">Want to explore in detail?</h2>
+              <p class="mb-lg">
                 For detailed analysis of each cluster, check out our comprehensive cluster reports.
               </p>
-              <a href="./reports-hub.html" class="btn" style="background: white; color: var(--color-primary);">View Cluster Reports</a>
+              <a href="./reports-hub.html" class="btn btn-secondary">View Cluster Reports</a>
             </div>
           </div>
         </section>
@@ -601,7 +606,7 @@
     <footer class="page-footer">
       <div class="footer-container">
         <div class="footer-bottom">
-          <p>© 2025 AI Workflow Portal. AI-Powered Codebase Analysis &amp; Documentation.</p>
+          <p>© 2025 CodeScribe. AI-Powered Codebase Analysis &amp; Documentation.</p>
         </div>
       </div>
     </footer>

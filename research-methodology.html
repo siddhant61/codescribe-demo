@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Research Methodology - AI-Powered Codebase Analysis</title>
+    <title>Research Methodology | CodeScribe</title>
     
     <!-- Mermaid for diagrams -->
     <script type="module">
@@ -451,19 +451,21 @@
             color: var(--color-text-secondary);
         }
     </style>
+  <link rel="stylesheet" href="./assets/css/codescribe.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="page-wrapper">
     
     <!-- Header -->
     <header class="page-header">
       <div class="header-container">
         <a href="./index.html" class="header-logo">
-          <img src="./assets/images/logo.svg" alt="AI Workflow Portal Logo" width="40" height="40">
-          <span>AI Workflow Portal</span>
+          <img src="./assets/images/logo.svg" alt="" width="40" height="40">
+          <span>CodeScribe</span>
         </a>
         
-        <nav class="header-nav">
+        <nav class="header-nav" aria-label="Primary">
           <ul class="nav">
             <li><a href="./index.html" class="nav-link">Home</a></li>
             <li><a href="./research-methodology.html" class="nav-link active">Methodology</a></li>
@@ -485,32 +487,15 @@
     </header>
 
     <!-- Main Content -->
-    <main class="page-main">
+    <main class="page-main" id="main-content" tabindex="-1">
       <div class="container">
         <!-- Header Banner -->
-        <header class="methodology-header">
-            <h1>🔬 Research Methodology</h1>
-            <p class="methodology-subtitle">AI-Powered Codebase Analysis Framework for Large-Scale Documentation Generation</p>
-            
-            <div class="dora-metrics">
-                <div class="dora-metric">
-                    <div class="metric-value">900+</div>
-                    <div class="metric-label">Components Analyzed</div>
-                </div>
-                <div class="dora-metric">
-                    <div class="metric-value">33</div>
-                    <div class="metric-label">Functional Clusters</div>
-                </div>
-                <div class="dora-metric">
-                    <div class="metric-value">138</div>
-                    <div class="metric-label">Relationships Mapped</div>
-                </div>
-                <div class="dora-metric">
-                    <div class="metric-value">68%</div>
-                    <div class="metric-label">Source Code Coverage</div>
-                </div>
-            </div>
+        <header class="methodology-header cs-method-header">
+          <p class="cs-eyebrow">CodeScribe / Methodology</p><h1>Reading code.<br>Building context.</h1>
+          <p class="methodology-subtitle">An AI-assisted approach to architectural documentation, demonstrated on the open-source Xikolo platform.</p>
+          <p class="cs-credit">A project by Siddhant Gadamsetti, developed with AI assistance.</p>
         </header>
+        <aside class="cs-evidence cs-legacy-note"><div><p class="cs-eyebrow">Historical analysis</p><h2>Read the method, question the claims.</h2><p>The following sections preserve the original analysis and proposed methodology. Numerical coverage, accuracy and performance claims are not independently validated. Counts differ across the saved artifacts. DORA and onboarding benefits are motivations, not measured outcomes of this demo. AI consensus does not by itself establish correctness.</p><a class="cs-text-link" href="./idp/knowledge-graph-synthesized.json">Inspect the original graph data →</a></div></aside>
 
         <!-- Navigation -->
         <nav class="methodology-nav">
@@ -531,8 +516,8 @@
                 <p>To demonstrate a comprehensive AI-powered methodology for analyzing large-scale codebases and automatically generating high-quality architectural documentation. Applied to the open-source <a href="https://github.com/openHPI/xikolo-core" target="_blank" rel="noopener" style="color: var(--color-primary);">Xikolo platform (case study)</a> as a case study.</p>
             </div>
 
-            <h2>Background & Context</h3>
-            <p>Modern software systems grow increasingly complex, making comprehensive documentation difficult to maintain. This research demonstrates how AI-powered analysis can automatically generate and maintain architectural documentation at scale, enabling teams to improve their DORA metrics through better platform understanding and accelerated onboarding.</p>
+            <h3>Background & Context</h3>
+            <p>Modern software systems grow increasingly complex, making comprehensive documentation difficult to maintain. This project explores how AI-assisted analysis can support architectural documentation. Better platform understanding and easier onboarding are intended benefits; this demonstration does not measure those outcomes or changes in DORA metrics.</p>
 
             <div class="framework-grid">
                 <div class="framework-card">
@@ -552,7 +537,7 @@
                 </div>
             </div>
 
-            <h2>Research Questions</h3>
+            <h3>Research Questions</h3>
             <ol>
                 <li><strong>Scalability:</strong> Can AI effectively analyze and document large codebases (900+ components) with high accuracy?</li>
                 <li><strong>Consensus Building:</strong> How can multiple AI analysis runs be synthesized to improve documentation quality?</li>
@@ -575,7 +560,7 @@
                         <span class="capability-score">Key Impact Area</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" class="capability-fill-success"></div>
+                        <div class="capability-fill capability-fill-success"></div>
                     </div>
                     <p class="capability-description">Comprehensive documentation accelerates development by reducing time spent understanding system architecture and dependencies.</p>
                 </div>
@@ -586,7 +571,7 @@
                         <span class="capability-score">Strong</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" class="capability-fill-success"></div>
+                        <div class="capability-fill capability-fill-success"></div>
                     </div>
                     <p class="capability-description">How often an organization successfully releases to production. Our CI/CD practices support regular deployments.</p>
                 </div>
@@ -597,7 +582,7 @@
                         <span class="capability-score">Good</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" class="capability-fill-success"></div>
+                        <div class="capability-fill capability-fill-success"></div>
                     </div>
                     <p class="capability-description">Percentage of deployments causing a failure in production. Maintained through comprehensive testing frameworks.</p>
                 </div>
@@ -608,7 +593,7 @@
                         <span class="capability-score">Excellent</span>
                     </div>
                     <div class="capability-bar">
-                        <div class="capability-fill" class="capability-fill-success"></div>
+                        <div class="capability-fill capability-fill-success"></div>
                     </div>
                     <p class="capability-description">Time to restore service when a service incident occurs. Strong monitoring and response capabilities.</p>
                 </div>
@@ -618,7 +603,7 @@
             <p>Our research employs a comprehensive analytical framework that examines the platform from multiple perspectives:</p>
 
             <div class="mermaid-diagram">
-                <div class="mermaid">
+                <div class="mermaid" tabindex="0" role="region" aria-label="Scrollable diagram" style="--diagram-min-width:1100px">
                     graph TB
                         A[Platform Analysis] --> B[Architectural Perspective]
                         A --> C[Process Perspective] 
@@ -695,7 +680,7 @@
             </div>
 
             <div class="mermaid-diagram">
-                <div class="mermaid">
+                <div class="mermaid" tabindex="0" role="region" aria-label="Scrollable diagram" style="--diagram-min-width:900px">
                     graph LR
                         A[Run 1: Discovery Focus] --> D[AI Consensus Engine]
                         B[Run 2: Enhancement Focus] --> D

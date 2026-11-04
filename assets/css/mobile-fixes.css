@@ -236,50 +236,6 @@
     border-radius: 2px;
   }
   
-  /* Add close button for mobile */
-  #details-panel::after {
-    content: '✕';
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    font-size: 24px;
-    font-weight: 300;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: var(--color-background-alt);
-    transition: all 0.2s ease;
-    z-index: 10;
-  }
-  
-  #details-panel:hover::after {
-    background: var(--color-border);
-    color: var(--color-text-primary);
-  }
-  
-  /* Adjust content padding for handle */
-  #details-content {
-    padding-top: var(--space-lg);
-  }
-  
-  /* Add overlay backdrop when panel is open */
-  #details-panel:not(.hidden)::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: -1;
-    pointer-events: all;
-  }
-  
   /* Hide graph legend on mobile when panel is open */
   #details-panel:not(.hidden) ~ .graph-legend {
     display: none !important;

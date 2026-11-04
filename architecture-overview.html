@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Architecture Overview | AI Workflow Portal</title>
+  <title>Architecture Overview | CodeScribe</title>
   <meta name="description" content="Comprehensive system architecture overview for the Xikolo platform (case study) with visual diagrams and design patterns.">
   
   <link rel="icon" type="image/svg+xml" href="./assets/images/logo.svg">
@@ -14,23 +14,25 @@
   <link rel="stylesheet" crossorigin href="./assets/main-CpXNSzGi.css">
   <link rel="stylesheet" href="./assets/css/theme-dark.css">
   <link rel="stylesheet" href="./assets/css/mobile-fixes.css">
+  <link rel="stylesheet" href="./assets/css/codescribe.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="page-wrapper">
     
     <!-- Header -->
     <header class="page-header">
       <div class="header-container">
         <a href="./index.html" class="header-logo">
-          <img src="./assets/images/logo.svg" alt="AI Workflow Portal Logo" width="40" height="40">
-          <span>AI Workflow Portal</span>
+          <img src="./assets/images/logo.svg" alt="" width="40" height="40">
+          <span>CodeScribe</span>
         </a>
         
-        <nav class="header-nav">
+        <nav class="header-nav" aria-label="Primary">
           <ul class="nav">
             <li><a href="./index.html" class="nav-link">Home</a></li>
-            <li><a href="./architecture-overview.html" class="nav-link active">Architecture</a></li>
             <li><a href="./research-methodology.html" class="nav-link">Methodology</a></li>
+            <li><a href="./architecture-overview.html" class="nav-link active">Architecture</a></li>
             <li><a href="./reports-hub.html" class="nav-link">Analysis Results</a></li>
             <li><a href="./knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
             <li><a href="./idp-portal.html" class="nav-link">AI Resources</a></li>
@@ -48,7 +50,8 @@
     </header>
     
     <!-- Main Content -->
-    <main class="page-main">
+    <main class="page-main" id="main-content" tabindex="-1">
+      <div class="cs-context-note"><a href="./index.html">CodeScribe / Xikolo case study</a><span>Historical AI-assisted analysis. Verify findings against source code.</span></div>
       <div class="container">
         
         <!-- Breadcrumbs -->
@@ -75,7 +78,7 @@
           
           <div class="diagram-container">
             <h3 class="diagram-title">System Components Overview</h3>
-            <div class="mermaid">
+            <div class="mermaid" tabindex="0" role="region" aria-label="Scrollable diagram" style="--diagram-min-width:1100px">
 graph TB
     subgraph "Frontend Layer"
         WEB[Web Application<br/>Rails + TypeScript]
@@ -178,7 +181,7 @@ graph TB
           
           <div class="diagram-container">
             <h3 class="diagram-title">Layer Communication Flow</h3>
-            <div class="mermaid">
+            <div class="mermaid" tabindex="0" role="region" aria-label="Scrollable diagram" style="--diagram-min-width:1100px">
 sequenceDiagram
     participant U as User
     participant C as Controller
@@ -292,7 +295,7 @@ sequenceDiagram
           
           <div class="diagram-container">
             <h3 class="diagram-title">Microservices Interaction</h3>
-            <div class="mermaid">
+            <div class="mermaid" tabindex="0" role="region" aria-label="Scrollable diagram" style="--diagram-min-width:670px">
 graph LR
     WEB[Web Application]
     
@@ -451,7 +454,7 @@ graph LR
     <footer class="page-footer">
       <div class="footer-container">
         <div class="footer-bottom">
-          <p>© 2025 AI Workflow Portal. AI-Powered Codebase Analysis &amp; Documentation.</p>
+          <p>© 2025 CodeScribe. AI-Powered Codebase Analysis &amp; Documentation.</p>
         </div>
       </div>
     </footer>

@@ -11,16 +11,34 @@
 
   // Set active navigation item based on current page
   function setActiveNavItem() {
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.nav-link');
+    const currentUrl = new URL(window.location.href);
+    const pagePath = path => path.replace(/\/index\.html$/, '/').replace(/\/$/, '') || '/';
+    const navLinks = document.querySelectorAll('.header-nav .nav-link');
     
     navLinks.forEach(link => {
-      if (link.getAttribute('href') === currentPath || 
-          link.getAttribute('href') === currentPath.replace(/\/$/, '')) {
+      const destination = new URL(link.getAttribute('href'), document.baseURI);
+      if (destination.origin === currentUrl.origin &&
+          pagePath(destination.pathname) === pagePath(currentUrl.pathname)) {
         link.classList.add('active');
+        link.setAttribute('aria-current', 'page');
       } else {
         link.classList.remove('active');
+        link.removeAttribute('aria-current');
       }
+    });
+  }
+
+  // Keep section selection in sync with direct links and browser history.
+  // Scrolling/restoration remains the browser's responsibility on Back/Forward.
+  function setActiveSectionNavItem() {
+    const links = Array.from(document.querySelectorAll('.methodology-nav .nav-link'));
+    const activeLink = window.location.hash
+      ? links.find(link => link.getAttribute('href') === window.location.hash)
+      : links[0];
+    if (!activeLink) return;
+    links.forEach(link => {
+      if (link === activeLink) link.classList.add('active');
+      else link.classList.remove('active');
     });
   }
 
@@ -30,6 +48,8 @@
     
     anchorLinks.forEach(link => {
       link.addEventListener('click', function(e) {
+        // Keep native fragment navigation so keyboard focus reaches main.
+        if (this.classList.contains('skip-link')) return;
         const targetId = this.getAttribute('href');
         
         if (targetId === '#') return;
@@ -45,6 +65,7 @@
           
           // Update URL without jumping
           history.pushState(null, null, targetId);
+          setActiveSectionNavItem();
         }
       });
     });
@@ -100,11 +121,15 @@
   // Initialize on DOM ready
   document.addEventListener('DOMContentLoaded', function() {
     setActiveNavItem();
+    setActiveSectionNavItem();
     initSmoothScroll();
     initScrollSpy();
     initMobileMenu();
   });
 
-  // Update active nav on page navigation (for SPAs, future enhancement)
-  window.addEventListener('popstate', setActiveNavItem);
+  window.addEventListener('popstate', () => {
+    setActiveNavItem();
+    setActiveSectionNavItem();
+  });
+  window.addEventListener('hashchange', setActiveSectionNavItem);
 })();

@@ -18,14 +18,20 @@
       // Create hamburger button
       toggleButton = document.createElement('button');
       toggleButton.className = 'mobile-menu-toggle';
+      toggleButton.type = 'button';
       toggleButton.setAttribute('aria-label', 'Toggle mobile menu');
       toggleButton.setAttribute('aria-expanded', 'false');
+      const nav = header.querySelector('.header-nav');
+      if (nav) {
+        nav.id = nav.id || 'primary-navigation';
+        toggleButton.setAttribute('aria-controls', nav.id);
+      }
       toggleButton.innerHTML = '<span></span><span></span><span></span>';
       
       // Insert before header-actions
       const headerActions = header.querySelector('.header-actions');
-      if (headerActions) {
-        header.insertBefore(toggleButton, headerActions);
+      if (nav || headerActions) {
+        header.insertBefore(toggleButton, nav || headerActions);
       } else {
         header.appendChild(toggleButton);
       }
@@ -102,6 +108,17 @@
   function init() {
     initMobileMenu();
     closeMenuOnNavClick();
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      const nav = document.querySelector('.header-nav');
+      const button = document.querySelector('.mobile-menu-toggle');
+      if (button && nav?.classList.contains('mobile-open')) {
+        nav.classList.remove('mobile-open');
+        button.classList.remove('open');
+        button.setAttribute('aria-expanded', 'false');
+        button.focus();
+      }
+    });
     
     // Handle window resize with debounce
     let resizeTimer;
