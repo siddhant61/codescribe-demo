@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PollsSurveys standardized report 2025-09-18 | AI Workflow Portal</title>
+  <title>PollsSurveys | CodeScribe cluster report</title>
   <meta name="description" content="Architecture documentation for PollsSurveys standardized report 2025-09-18">
   
   <link rel="icon" type="image/svg+xml" href="../assets/images/logo.svg">
@@ -14,28 +14,32 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../assets/css/codescribe.css">
+  <link rel="stylesheet" href="../assets/css/codescribe-pages.css">
 </head>
-<body>
+<body class="cs-report-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="page-wrapper">
     
     <!-- Header -->
     <header class="page-header">
       <div class="header-container">
         <a href="../index.html" class="header-logo">
-          <img src="../assets/images/logo.svg" alt="AI Workflow Portal Logo">
-          <span>AI Workflow Portal</span>
+          <img src="../assets/images/logo.svg" alt="" width="40" height="40">
+          <span>CodeScribe</span>
         </a>
-        <nav class="header-nav">
+
+        <nav class="header-nav" aria-label="Primary">
           <ul class="nav">
-            <li><a href="../index.html" class="nav-link">Home</a></li>
-            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../index.html" class="nav-link active">Home</a></li>
             <li><a href="../research-methodology.html" class="nav-link">Methodology</a></li>
-            <li><a href="../reports-hub.html" class="nav-link active">Analysis Results</a></li>
+            <li><a href="../architecture-overview.html" class="nav-link">Architecture</a></li>
+            <li><a href="../reports-hub.html" class="nav-link">Analysis Results</a></li>
             <li><a href="../knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
             <li><a href="../idp-portal.html" class="nav-link">AI Resources</a></li>
           </ul>
         </nav>
-        
+
         <div class="header-actions">
           <button class="btn btn-secondary btn-sm" id="theme-toggle" aria-label="Toggle dark mode">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -47,7 +51,7 @@
     </header>
     
     <!-- Main Content -->
-    <main class="page-main">
+    <main class="page-main" id="main-content" tabindex="-1">
       <div class="container">
         
         <!-- Breadcrumbs -->
@@ -56,25 +60,20 @@
             <li class="breadcrumb-item"><a href="../index.html" class="breadcrumb-link">Home</a></li>
             <li class="breadcrumb-item"><a href="../reports-hub.html" class="breadcrumb-link">Reports</a></li>
             <li class="breadcrumb-item"><a href="../reports-hub.html#learn" class="breadcrumb-link">LEARN</a></li>
-            <li class="breadcrumb-item active">PollsSurveys standardized report 2025-09-18</li>
+            <li class="breadcrumb-item active">PollsSurveys </li>
           </ol>
         </nav>
         
-        <div class="header-actions">
-          <button class="btn btn-secondary btn-sm" id="theme-toggle" aria-label="Toggle dark mode">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          </button>
-        </div>
+
         
+        <aside class="cs-report-note" aria-label="About this report"><p><strong>CodeScribe / Xikolo case study.</strong> Explore this functional area and follow its source references. The generated report below is preserved from the 2025 analysis; check its claims against the relevant code revision.</p><nav aria-label="Report resources"><a href="../content/16_LEARN_PollsSurveys_standardized_report_2025-09-18.md" download>Original Markdown ↓</a><a href="../idp/16_LEARN_PollsSurveys.json" download>Cluster JSON ↓</a><a href="../research-methodology.html">Methodology →</a></nav></aside>
         <!-- Two Column Layout -->
         <div class="layout-two-column">
           
           <!-- Sidebar TOC -->
           <aside class="sidebar">
-            <h2 class="sidebar-title">On This Page</h2>
-            <nav>
+            <details class="cs-report-toc"><summary>On this page</summary>
+            <nav aria-label="Report contents">
               <ul class="sidebar-nav">
                 
                 <li class="sidebar-nav-item">
@@ -124,14 +123,8 @@
               </ul>
             </nav>
         
-        <div class="header-actions">
-          <button class="btn btn-secondary btn-sm" id="theme-toggle" aria-label="Toggle dark mode">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          </button>
-        </div>
-          </aside>
+
+          </details></aside>
           
           <!-- Main Content -->
           <article>
@@ -342,7 +335,7 @@
     <footer class="page-footer">
       <div class="footer-container">
         <div class="footer-bottom">
-          <p>© 2025 AI Workflow Portal. Built with ❤️ for better documentation.</p>
+          <p>CodeScribe · An independent project by Siddhant Gadamsetti. Historical Xikolo analysis.</p>
         </div>
       </div>
     </footer>
@@ -350,8 +343,9 @@
   </div>
   
   <!-- Scripts -->
-  <script src="../assets/js/navigation.js"></script>
-  <script src="../assets/js/theme-toggle.js"></script>
+  <script src="../assets/scripts/page-offsets.js"></script>
+  <script src="../assets/scripts/navigation.js"></script>
+  <script src="../assets/scripts/theme-toggle.js"></script>
   <script src="../assets/scripts/mobile-menu.js"></script>
   <script src="../assets/js/cluster-report.js?v=1759740296124"></script>
   

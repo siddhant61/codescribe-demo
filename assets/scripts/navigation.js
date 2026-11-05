@@ -17,10 +17,12 @@
     
     navLinks.forEach(link => {
       const destination = new URL(link.getAttribute('href'), document.baseURI);
+      const reportCollection = /\/cluster-reports\/[^/]+\.html$/.test(currentUrl.pathname) &&
+        destination.pathname === currentUrl.pathname.replace(/\/cluster-reports\/[^/]+$/, '/reports-hub.html');
       if (destination.origin === currentUrl.origin &&
-          pagePath(destination.pathname) === pagePath(currentUrl.pathname)) {
+          (pagePath(destination.pathname) === pagePath(currentUrl.pathname) || reportCollection)) {
         link.classList.add('active');
-        link.setAttribute('aria-current', 'page');
+        link.setAttribute('aria-current', reportCollection ? 'location' : 'page');
       } else {
         link.classList.remove('active');
         link.removeAttribute('aria-current');
@@ -54,7 +56,12 @@
         
         if (targetId === '#') return;
         
-        const targetElement = document.querySelector(targetId);
+        // Generated reports contain literal percent signs and punctuation in IDs.
+        // Resolve as an ID, not a CSS selector; also accept encoded Unicode links.
+        const rawId = targetId.slice(1);
+        let decodedId = rawId;
+        try { decodedId = decodeURIComponent(rawId); } catch (_) { /* Keep a literal malformed escape. */ }
+        const targetElement = document.getElementById(rawId) || document.getElementById(decodedId);
         
         if (targetElement) {
           e.preventDefault();

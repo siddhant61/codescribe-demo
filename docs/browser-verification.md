@@ -1,5 +1,7 @@
 # CodeScribe public demo — browser verification
 
+Historical record for the 4 November revision. For the subsequent remaining-page refinement, see [the 5 November verification record](refinement-verification-2026-11-05.md); the results below do not validate that refinement.
+
 Date: 4 November 2026. Repository: `siddhant61/ai-workflow-portal`.
 Base: `2503dc761b600d96ed6fdcbe254857e4ec5109d4`.
 Branch: `verify/public-demo-refresh`.

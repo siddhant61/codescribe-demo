@@ -89,28 +89,15 @@
   // Smooth Scroll Navigation
   // ============================================================================
 
-  function initSmoothScroll() {
-    const sidebarLinks = document.querySelectorAll('.sidebar-nav-link');
-    
-    sidebarLinks.forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        const targetId = this.getAttribute('href').slice(1); // Remove the # symbol
-        const targetElement = document.getElementById(targetId);
-        
-        if (targetElement) {
-          const headerOffset = 100; // Account for fixed header
-          const elementPosition = targetElement.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-          window.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-          });
-        }
-      });
-    });
+  // Native details remains usable without JavaScript. Expand it on wide screens
+  // and collapse it on narrow screens so long contents do not bury the report.
+  function initResponsiveContents() {
+    const toc = document.querySelector('.cs-report-toc');
+    if (!toc) return;
+    const desktop = window.matchMedia('(min-width: 1025px)');
+    const sync = () => { toc.open = desktop.matches; };
+    sync();
+    desktop.addEventListener('change', sync);
   }
 
   // ============================================================================
@@ -220,7 +207,7 @@
     }
 
     initStickyNavigation();
-    initSmoothScroll();
+    initResponsiveContents();
     initChecklists();
     indentSubsections();
   }

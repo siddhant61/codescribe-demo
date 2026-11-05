@@ -3,41 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Structured Resources | CodeScribe</title>
-  <meta name="description" content="AI-powered development workflows and knowledge resources for GitHub Copilot and Cursor AI.">
-  
+  <title>Structured resources | CodeScribe</title>
+  <meta name="description" content="Inspect CodeScribe knowledge graph JSON and explore how architectural context could support development.">
   <link rel="icon" type="image/svg+xml" href="./assets/images/logo.svg">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" crossorigin href="./assets/main-CpXNSzGi.css">
+  <link rel="stylesheet" href="./assets/main-CpXNSzGi.css">
   <link rel="stylesheet" href="./assets/css/theme-dark.css">
   <link rel="stylesheet" href="./assets/css/mobile-fixes.css">
   <link rel="stylesheet" href="./assets/css/codescribe.css">
+  <link rel="stylesheet" href="./assets/css/codescribe-pages.css">
 </head>
-<body>
-  <a class="skip-link" href="#main-content">Skip to content</a>
-  <div class="page-wrapper">
-    
-    <!-- Header -->
-    <header class="page-header">
+<body class="cs-detail-page">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="page-wrapper">
+<header class="page-header">
       <div class="header-container">
         <a href="./index.html" class="header-logo">
           <img src="./assets/images/logo.svg" alt="" width="40" height="40">
           <span>CodeScribe</span>
         </a>
-        
+
         <nav class="header-nav" aria-label="Primary">
           <ul class="nav">
-            <li><a href="./index.html" class="nav-link">Home</a></li>
+            <li><a href="./index.html" class="nav-link active">Home</a></li>
             <li><a href="./research-methodology.html" class="nav-link">Methodology</a></li>
             <li><a href="./architecture-overview.html" class="nav-link">Architecture</a></li>
             <li><a href="./reports-hub.html" class="nav-link">Analysis Results</a></li>
             <li><a href="./knowledge-graph.html" class="nav-link">Knowledge Graph</a></li>
-            <li><a href="./idp-portal.html" class="nav-link active">AI Resources</a></li>
+            <li><a href="./idp-portal.html" class="nav-link">AI Resources</a></li>
           </ul>
         </nav>
-        
+
         <div class="header-actions">
           <button class="btn btn-secondary btn-sm" id="theme-toggle" aria-label="Toggle dark mode">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -47,370 +42,41 @@
         </div>
       </div>
     </header>
-    
-    <!-- Main Content -->
-    <main class="page-main" id="main-content" tabindex="-1">
-      <div class="cs-context-note"><a href="./index.html">CodeScribe / Xikolo case study</a><span>Historical AI-assisted analysis. Verify findings against source code.</span></div>
-      <div class="container">
-        
-        <!-- Breadcrumbs -->
-        <nav aria-label="Breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="./index.html" class="breadcrumb-link">Home</a></li>
-            <li class="breadcrumb-item active">IDP Portal</li>
-          </ol>
-        </nav>
-        
-        <!-- Page Header -->
-        <div class="section-header mb-3xl">
-          <span class="badge badge-learn mb-md">AI-Powered Development</span>
-          <h1 class="section-title">AI Workflow Resources</h1>
-          <p class="section-subtitle">
-            Structured knowledge graphs and JSON resources enabling LLM-powered development assistance. Perfect for GitHub Copilot, Cursor AI, and other AI coding tools.
-          </p>
-        </div>
-        
-        <!-- What is IDP Section -->
-        <section class="section">
-          <div class="card card-feature">
-            <div class="card-header">
-              <div class="flex items-center gap-md">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-learn)" stroke-width="2">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                  <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                </svg>
-                <div>
-                  <h2 class="card-title">AI-Ready Knowledge Resources</h2>
-                  <p class="text-secondary m-0">Structured Data for LLM Integration</p>
-                </div>
-              </div>
-            </div>
-            <div class="card-body">
-              <p class="mb-lg">
-                These AI Workflow Resources provide structured JSON knowledge graphs and workflow definitions that enable LLMs (Large Language Models) to understand the codebase architecture and provide intelligent assistance. Generated from the comprehensive analysis, these resources are ready for integration with AI coding assistants.
-              </p>
-              <div class="grid grid-cols-3 gap-md">
-                <div>
-                  <h4 class="font-semibold mb-sm">📚 Knowledge Graphs</h4>
-                  <p class="text-sm text-secondary">Structured JSON representations of codebase architecture for AI context</p>
-                </div>
-                <div>
-                  <h4 class="font-semibold mb-sm">🔄 AI Workflows</h4>
-                  <p class="text-sm text-secondary">Predefined development workflows optimized for AI pair programming</p>
-                </div>
-                <div>
-                  <h4 class="font-semibold mb-sm">⚙️ Configurations</h4>
-                  <p class="text-sm text-secondary">System prompts and configurations for consistent AI assistance</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        <!-- Knowledge Graphs Section -->
-        <section class="section" id="knowledge-graphs">
-          <h2 class="mb-xl">Knowledge Graphs</h2>
-          <p class="text-secondary mb-2xl">
-            JSON-formatted knowledge graphs provide AI assistants with deep contextual understanding of the codebase architecture.
-          </p>
-          
-          <div class="card-grid">
-            
-            <a href="./idp/knowledge-graph-synthesized.json" class="card card-link" download>
-              <div class="card-header">
-                <span class="badge badge-core">JSON</span>
-                <h3 class="card-title">Main Knowledge Graph</h3>
-              </div>
-              <div class="card-body">
-                <p>Comprehensive unified graph combining all architectural knowledge, components, and relationships.</p>
-              </div>
-              <div class="card-footer">
-                <span class="text-sm text-secondary">Complete System</span>
-                <span class="text-primary font-semibold">Download →</span>
-              </div>
-            </a>
-            
-            <a href="./idp/01_CORE_UserAuthentication.json" class="card card-link" download>
-              <div class="card-header">
-                <span class="badge badge-core">CORE</span>
-                <h3 class="card-title">User Authentication Cluster</h3>
-              </div>
-              <div class="card-body">
-                <p>Authentication system components, OAuth providers, and session management.</p>
-              </div>
-              <div class="card-footer">
-                <span class="text-sm text-secondary">Cluster-Specific</span>
-                <span class="text-primary font-semibold">Download →</span>
-              </div>
-            </a>
-            
-            <a href="./idp/10_LEARN_QuizAssessment.json" class="card card-link" download>
-              <div class="card-header">
-                <span class="badge badge-learn">LEARN</span>
-                <h3 class="card-title">Quiz Assessment Cluster</h3>
-              </div>
-              <div class="card-body">
-                <p>Quiz service components, question types, grading logic, and submission flow.</p>
-              </div>
-              <div class="card-footer">
-                <span class="text-sm text-secondary">Cluster-Specific</span>
-                <span class="text-primary font-semibold">Download →</span>
-              </div>
-            </a>
-            
-            <a href="./reports-hub.html" class="card card-link">
-              <div class="card-header">
-                <span class="badge badge-infra">View All</span>
-                <h3 class="card-title">All Cluster Graphs</h3>
-              </div>
-              <div class="card-body">
-                <p>Browse all cluster-specific knowledge graphs organized by category.</p>
-              </div>
-              <div class="card-footer">
-                <span class="text-sm text-secondary">All Clusters</span>
-                <span class="text-primary font-semibold">View All →</span>
-              </div>
-            </a>
-            
-          </div>
-        </section>
-        
-        <!-- AI Workflows Section -->
-        <section class="section">
-          <h2 class="mb-xl">AI Workflows</h2>
-          <p class="text-secondary mb-2xl">
-            Predefined workflows help AI assistants understand common development tasks and generate better code.
-          </p>
-          
-          <div class="grid grid-cols-2 gap-xl">
-            
-            <div class="card">
-              <div class="card-header">
-                <span class="badge badge-learn">Workflow</span>
-                <h3 class="card-title">Feature Development</h3>
-              </div>
-              <div class="card-body">
-                <ol class="list-decimal pl-lg space-y-sm text-sm">
-                  <li>Analyze feature requirements</li>
-                  <li>Identify affected components</li>
-                  <li>Generate service objects and models</li>
-                  <li>Create controllers and views</li>
-                  <li>Write RSpec tests</li>
-                  <li>Update documentation</li>
-                </ol>
-              </div>
-              <div class="card-footer">
-                <a href="./wip.html" class="text-primary font-semibold">View Workflow →</a>
-              </div>
-            </div>
-            
-            <div class="card">
-              <div class="card-header">
-                <span class="badge badge-infra">Workflow</span>
-                <h3 class="card-title">Microservice Integration</h3>
-              </div>
-              <div class="card-body">
-                <ol class="list-decimal pl-lg space-y-sm text-sm">
-                  <li>Define API contract</li>
-                  <li>Create ACFS resource models</li>
-                  <li>Implement service client</li>
-                  <li>Add error handling</li>
-                  <li>Write integration tests</li>
-                  <li>Update service documentation</li>
-                </ol>
-              </div>
-              <div class="card-footer">
-                <a href="./wip.html" class="text-primary font-semibold">View Workflow →</a>
-              </div>
-            </div>
-            
-            <div class="card">
-              <div class="card-header">
-                <span class="badge badge-devops">Workflow</span>
-                <h3 class="card-title">Bug Investigation</h3>
-              </div>
-              <div class="card-body">
-                <ol class="list-decimal pl-lg space-y-sm text-sm">
-                  <li>Analyze error logs and stack traces</li>
-                  <li>Identify affected components</li>
-                  <li>Review recent changes</li>
-                  <li>Propose fix with tests</li>
-                  <li>Verify no regressions</li>
-                  <li>Update error handling</li>
-                </ol>
-              </div>
-              <div class="card-footer">
-                <a href="./wip.html" class="text-primary font-semibold">View Workflow →</a>
-              </div>
-            </div>
-            
-            <div class="card">
-              <div class="card-header">
-                <span class="badge badge-admin">Workflow</span>
-                <h3 class="card-title">Refactoring</h3>
-              </div>
-              <div class="card-body">
-                <ol class="list-decimal pl-lg space-y-sm text-sm">
-                  <li>Identify code smells</li>
-                  <li>Analyze dependencies</li>
-                  <li>Propose refactoring strategy</li>
-                  <li>Implement changes incrementally</li>
-                  <li>Ensure test coverage</li>
-                  <li>Update documentation</li>
-                </ol>
-              </div>
-              <div class="card-footer">
-                <a href="./wip.html" class="text-primary font-semibold">View Workflow →</a>
-              </div>
-            </div>
-            
-          </div>
-        </section>
-        
-        <!-- Integration Guides Section -->
-        <section class="section">
-          <h2 class="mb-xl">Integration Guides</h2>
-          
-          <div class="card-grid">
-            
-            <div class="card card-feature">
-              <div class="card-header">
-                <div class="flex items-center gap-md">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                  </svg>
-                  <h3 class="card-title">GitHub Copilot</h3>
-                </div>
-              </div>
-              <div class="card-body">
-                <p class="mb-lg">Use IDP resources with GitHub Copilot for context-aware code suggestions.</p>
-                <div class="bg-gray-100 p-md rounded-md mb-lg">
-                  <p class="text-sm font-mono mb-sm">1. Open workspace in VS Code</p>
-                  <p class="text-sm font-mono mb-sm">2. Load knowledge graph JSON</p>
-                  <p class="text-sm font-mono mb-sm">3. Use @workspace in Copilot Chat</p>
-                  <p class="text-sm font-mono">4. Reference cluster reports</p>
-                </div>
-                <a href="./wip.html" class="btn btn-secondary btn-sm">View Full Guide</a>
-              </div>
-            </div>
-            
-            <div class="card card-feature">
-              <div class="card-header">
-                <div class="flex items-center gap-md">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-learn)" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                  </svg>
-                  <h3 class="card-title">Cursor AI</h3>
-                </div>
-              </div>
-              <div class="card-body">
-                <p class="mb-lg">Integrate IDP knowledge into Cursor's AI-powered development environment.</p>
-                <div class="bg-gray-100 p-md rounded-md mb-lg">
-                  <p class="text-sm font-mono mb-sm">1. Import knowledge graphs</p>
-                  <p class="text-sm font-mono mb-sm">2. Configure .cursorrules</p>
-                  <p class="text-sm font-mono mb-sm">3. Add cluster report context</p>
-                  <p class="text-sm font-mono">4. Use Composer mode</p>
-                </div>
-                <a href="./wip.html" class="btn btn-secondary btn-sm">View Full Guide</a>
-              </div>
-            </div>
-            
-          </div>
-        </section>
-        
-        <!-- Best Practices Section -->
-        <section class="section">
-          <h2 class="mb-xl">Best Practices</h2>
-          
-          <div class="grid grid-cols-3 gap-md">
-            
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">💡 Context Loading</h3>
-              </div>
-              <div class="card-body">
-                <ul class="space-y-sm text-sm">
-                  <li>→ Load relevant knowledge graph before starting</li>
-                  <li>→ Include cluster reports for affected components</li>
-                  <li>→ Reference architecture diagrams</li>
-                  <li>→ Keep context focused and relevant</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">🎯 Workflow Selection</h3>
-              </div>
-              <div class="card-body">
-                <ul class="space-y-sm text-sm">
-                  <li>→ Choose workflow matching your task</li>
-                  <li>→ Follow workflow steps sequentially</li>
-                  <li>→ Validate each step before proceeding</li>
-                  <li>→ Adapt workflow to specific needs</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">✅ Quality Checks</h3>
-              </div>
-              <div class="card-body">
-                <ul class="space-y-sm text-sm">
-                  <li>→ Review AI-generated code carefully</li>
-                  <li>→ Run tests before committing</li>
-                  <li>→ Verify architectural patterns</li>
-                  <li>→ Update documentation as needed</li>
-                </ul>
-              </div>
-            </div>
-            
-          </div>
-        </section>
-        
-        <!-- Resources Section -->
-        <section class="section">
-          <div class="card cs-resource-callout">
-            <div class="card-body">
-              <h2 class="mb-md">Explore More Resources</h2>
-              <p class="mb-2xl">
-                Dive deeper into the architecture and component details through our comprehensive documentation.
-              </p>
-              <div class="grid grid-cols-3 gap-md">
-                <a href="./architecture-overview.html" class="btn btn-secondary">
-                  Architecture Overview
-                </a>
-                <a href="./reports-hub.html" class="btn btn-secondary">
-                  Cluster Reports
-                </a>
-                <a href="./knowledge-graph.html" class="btn btn-secondary">
-                  Knowledge Graph
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-      </div>
-    </main>
-    
-    <!-- Footer -->
-    <footer class="page-footer">
-      <div class="footer-container">
-        <div class="footer-bottom">
-          <p>© 2025 CodeScribe. AI-Powered Codebase Analysis &amp; Documentation.</p>
-        </div>
-      </div>
-    </footer>
-    
+<main class="page-main" id="main-content" tabindex="-1"><div class="cs-shell cs-detail-shell">
+<header class="cs-page-hero">
+  <p class="cs-eyebrow">CodeScribe / Structured resources</p>
+  <h1>Context you can<br>take further.</h1>
+  <p class="cs-page-lead">A useful architectural map should be more than a picture. Explore the saved knowledge graphs, inspect their structure and use a focused slice as context for your next question about the codebase.</p>
+  <div class="cs-actions"><a class="btn btn-primary" href="./idp/knowledge-graph-synthesized.json" download>Download the graph JSON ↓</a><a class="cs-text-link" href="./knowledge-graph.html">Open the visual explorer →</a></div>
+</header>
+<section id="knowledge-graphs" class="cs-resource-section">
+  <div class="cs-section-heading"><p class="cs-eyebrow">Available now</p><h2>Start with an artifact.</h2><p>Download the saved graph or a cluster sample. Each is a generated description of the case-study codebase, ready to inspect as JSON.</p></div>
+  <div class="cs-resource-grid">
+    <a class="cs-resource-card" href="./idp/knowledge-graph-synthesized.json" download><span class="cs-status">JSON / System view</span><h3>Synthesized knowledge graph</h3><p>The combined artifact behind the interactive explorer.</p><span class="cs-resource-action">Download JSON ↓</span></a>
+    <a class="cs-resource-card" href="./idp/01_CORE_UserAuthentication.json" download><span class="cs-status">JSON / Core</span><h3>User authentication</h3><p>A focused sample covering identity, accounts and access-related components.</p><span class="cs-resource-action">Download JSON ↓</span></a>
+    <a class="cs-resource-card" href="./idp/10_LEARN_QuizAssessment.json" download><span class="cs-status">JSON / Learning</span><h3>Quiz assessment</h3><p>A cluster sample for inspecting questions, grading and submission flows.</p><span class="cs-resource-action">Download JSON ↓</span></a>
+    <a class="cs-resource-card" href="./reports-hub.html"><span class="cs-status">Reports / Browse</span><h3>Explore the clusters</h3><p>Read the analysis for each functional area, with links to its original Markdown and JSON.</p><span class="cs-resource-action">Browse reports →</span></a>
   </div>
-  
-  <!-- Scripts -->
-  <script src="./assets/scripts/navigation.js"></script>
-  <script src="./assets/scripts/theme-toggle.js"></script>
-  <script src="./assets/scripts/mobile-menu.js"></script>
+</section>
+<section class="cs-editorial-section" id="using-resources"><p class="cs-eyebrow">A practical starting point</p><div><h2>Ask a smaller, better-grounded question.</h2>
+  <ol class="cs-steps"><li><h3>Choose a functional area</h3><p>Start with the cluster closest to your task. Read its report alongside the corresponding JSON.</p></li><li><h3>Keep the source in view</h3><p>Use the artifact to find relevant components, then inspect those files in the code revision you are actually working on.</p></li><li><h3>Provide focused context</h3><p>Share only the relevant, permitted material with your coding assistant. Ask it to distinguish source-backed observations from inferences.</p></li><li><h3>Review the result</h3><p>Check references, test proposed changes and revise the explanation when it conflicts with the source.</p></li></ol>
+</div></section>
+<section class="cs-resource-section" id="workflow-directions"><div class="cs-section-heading"><p class="cs-eyebrow">Directions to explore</p><h2>From context to development workflows.</h2><p>These are proposed uses of the artifacts, not executable workflow downloads.</p></div>
+  <div class="cs-resource-grid cs-workflow-grid">
+    <article class="cs-resource-card"><span class="cs-status cs-status-planned">Concept</span><h3>Feature development</h3><p>Connect a requirement to affected components, then plan implementation, tests and documentation.</p></article>
+    <article class="cs-resource-card"><span class="cs-status cs-status-planned">Concept</span><h3>Service integration</h3><p>Trace service boundaries and contracts before changing how components communicate.</p></article>
+    <article class="cs-resource-card"><span class="cs-status cs-status-planned">Concept</span><h3>Bug investigation</h3><p>Use the map to locate relevant code, then investigate logs, reproduce behavior and test the fix.</p></article>
+    <article class="cs-resource-card"><span class="cs-status cs-status-planned">Concept</span><h3>Refactoring</h3><p>Explore dependencies to plan a small change, check its impact and preserve behavior.</p></article>
+  </div>
+</section>
+<section class="cs-editorial-section" id="editor-guides"><p class="cs-eyebrow">Planned resources</p><div><h2>Editor-specific guides.</h2><p>Guides for GitHub Copilot and Cursor are planned. They are not included in this snapshot, and no tested editor integration is bundled here. The JSON downloads and report links above are the available starting points.</p></div></section>
+<aside class="cs-technical-note" aria-labelledby="resource-notes"><h2 id="resource-notes">Technical notes</h2><p>These historical AI-generated artifacts need review against the relevant source revision. Loading a graph into an assistant does not guarantee accurate suggestions, and schemas may need adaptation for your tool.</p><a href="./research-methodology.html">Read the methodology →</a></aside>
+</div></main>
+<footer class="page-footer cs-footer"><div class="cs-shell"><div><a href="./index.html" class="cs-footer-brand">CodeScribe</a><p>A project by Siddhant Gadamsetti.<br>AI-assisted exploration. Human judgment.</p></div><nav aria-label="Footer"><a href="./research-methodology.html">Methodology</a><a href="./idp-portal.html">Structured resources</a><a href="https://github.com/siddhant61/codescribe-demo">View repository ↗</a></nav><p class="cs-small">Xikolo analysis artifacts · Historical snapshot</p></div></footer>
+</div>
+<script src="./assets/scripts/page-offsets.js"></script>
+<script src="./assets/scripts/navigation.js"></script>
+<script src="./assets/scripts/theme-toggle.js"></script>
+<script src="./assets/scripts/mobile-menu.js"></script>
 </body>
 </html>

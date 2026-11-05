@@ -35,8 +35,8 @@ node --test tests/*.test.cjs
 git diff --check
 ```
 
-The Python suite verifies public-page branding, accessible content entry, evidence wording and local link/asset destinations. The Node suites cover navigation, graph controls and details-panel interactions. Local Chromium verification covers desktop/mobile layouts, both themes, keyboard navigation, graph interaction and Mermaid rendering; see `docs/browser-verification.md` for evidence and limits.
+The Python suite verifies public-page branding, accessible content entry, evidence wording and local link/asset destinations. The Node suites cover navigation, graph controls and details-panel interactions. For the 5 November remaining-page refinement, automated checks pass but browser verification is pending because this execution environment could not start Chromium. See `docs/refinement-verification-2026-11-05.md` for current scope, results and limits. The older `docs/browser-verification.md` records only the previous revision.
 
 ## Deployment
 
-[Existing GitHub Pages site](https://siddhant61.github.io/ai-workflow-portal/). Local changes are not live until explicitly published through the repository's deployment process.
+[Existing GitHub Pages site](https://siddhant61.github.io/codescribe-demo/). Local changes are not live until explicitly published through the repository's deployment process.

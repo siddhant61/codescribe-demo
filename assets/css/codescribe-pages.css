@@ -1,0 +1,67 @@
+/* Editorial pages and report shells. Historical report content is unchanged. */
+.cs-detail-shell{padding-bottom:20px}
+.cs-page-hero{padding:76px 0 60px;max-width:860px}
+.cs-page-hero h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(42px,5.5vw,70px);font-weight:400;letter-spacing:-.045em;line-height:1.08;margin-bottom:28px;color:var(--cs-ink)}
+.cs-page-lead{font-size:18px;line-height:1.8;color:var(--cs-muted);max-width:760px}
+.cs-section-nav{display:flex;flex-wrap:wrap;gap:8px;padding:16px 0 28px;border-bottom:1px solid var(--cs-line);margin-bottom:0}
+.cs-section-nav .nav-link{font-size:13px;border:1px solid var(--cs-line);border-radius:4px;padding:11px 14px}
+.cs-editorial-section{display:grid;grid-template-columns:210px minmax(0,1fr);gap:48px;border-bottom:1px solid var(--cs-line);padding:50px 0;scroll-margin-top:0}
+.cs-editorial-section>.cs-eyebrow{padding-top:8px}
+.cs-editorial-section h2,.cs-section-heading h2{font-family:Georgia,'Times New Roman',serif;font-size:34px;font-weight:400;line-height:1.2;letter-spacing:-.03em;margin:0 0 24px}
+.cs-editorial-section p,.cs-editorial-section li,.cs-section-heading>p:not(.cs-eyebrow){font-size:15px;line-height:1.85;color:var(--cs-muted)}
+.cs-editorial-section strong{color:var(--cs-ink)}
+.cs-steps{list-style:none;counter-reset:step;padding:0;margin:0}
+.cs-steps>li{counter-increment:step;position:relative;padding:0 0 24px 42px;margin:0}
+.cs-steps>li:before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:0;font-size:12px;font-weight:650;color:var(--cs-accent)}
+.cs-steps h3{font-size:17px;line-height:1.5;font-weight:650;margin:0 0 7px;letter-spacing:0}
+.cs-steps p{margin:0}
+.cs-steps>li:last-child{padding-bottom:0}
+.cs-checks{padding-left:20px;margin:0 0 24px}.cs-checks li{padding-left:6px;margin-bottom:14px}
+.cs-resource-section{padding:48px 0;border-bottom:1px solid var(--cs-line)}
+.cs-section-heading{max-width:740px;margin-bottom:28px}.cs-section-heading .cs-eyebrow{margin-bottom:16px}
+.cs-resource-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.cs-resource-card{display:flex;flex-direction:column;padding:27px;border:1px solid var(--cs-line);background:var(--cs-surface);border-radius:5px;color:var(--cs-ink);min-width:0}
+.cs-resource-card:hover{color:var(--cs-ink);text-decoration:none}a.cs-resource-card:hover{border-color:var(--cs-accent)}
+.cs-resource-card h3{font-size:19px;line-height:1.4;letter-spacing:-.02em;margin:24px 0 12px;color:var(--cs-ink)}
+.cs-resource-card p{font-size:14px;line-height:1.8;color:var(--cs-muted);margin:0 0 20px}
+.cs-resource-action{font-size:13px;font-weight:650;color:var(--cs-accent);margin-top:auto;padding-top:18px;border-top:1px solid var(--cs-line)}
+.cs-status{align-self:flex-start;font-size:10px;line-height:1.5;letter-spacing:.1em;text-transform:uppercase;font-weight:650;color:var(--cs-accent)}
+.cs-status-planned{color:var(--cs-muted)}.cs-workflow-grid .cs-resource-card{background:transparent}
+.cs-technical-note{margin:40px 0 55px;padding:23px 27px;border-left:3px solid var(--cs-accent);background:var(--cs-soft);border-radius:3px}
+.cs-technical-note h2{font-family:inherit;font-size:14px;font-weight:650;margin:0 0 10px}.cs-technical-note p,.cs-technical-note a{font-size:13px;line-height:1.8;color:var(--cs-muted)}.cs-technical-note a{color:var(--cs-accent);text-decoration:underline;text-underline-offset:4px}
+/* Keep report chrome compact, including unusually long generated headings. */
+.cs-report-page .container{max-width:1280px;padding-top:28px}
+.cs-report-page .breadcrumb{flex-wrap:wrap;overflow-wrap:anywhere;gap:5px 9px;font-size:12px}
+.cs-report-page .breadcrumb-item{min-width:0}
+.cs-report-page .layout-two-column{grid-template-columns:250px minmax(0,1fr);gap:36px;margin:30px 0 60px}
+.cs-report-page article,.cs-report-page .prose{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.cs-report-page .prose h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(30px,3vw,44px);line-height:1.18;letter-spacing:-.025em}
+.cs-report-page .prose h1 a,.cs-report-page .prose h2 a,.cs-report-page .prose h3 a,.cs-report-page .prose h4 a{color:var(--cs-ink)}
+.cs-report-page .prose h2{font-size:25px;line-height:1.35;margin-top:34px}.cs-report-page .prose h3{font-size:21px;line-height:1.4;margin-top:28px}.cs-report-page .prose h4{font-size:17px;line-height:1.5;margin-top:24px}
+.cs-report-page .prose p,.cs-report-page .prose li{font-size:14px;line-height:1.8}
+.cs-report-page .prose code{color:var(--cs-accent);white-space:normal;overflow-wrap:anywhere}
+.cs-report-page .prose pre{max-width:100%;overflow-x:auto}.cs-report-page .prose pre code{white-space:pre}
+.cs-report-page .prose table{display:block;max-width:100%;overflow-x:auto}
+.cs-report-page .prose img,.cs-report-page .prose svg{max-width:100%}
+.cs-report-page .workflow-diagram{max-width:100%;padding:14px;background:var(--cs-surface);overflow:hidden}
+.cs-report-page .workflow-diagram .mermaid{display:block;max-width:100%;min-height:0;overflow-x:auto!important}
+.cs-report-page .mermaid svg{max-width:none!important;min-width:var(--diagram-min-width,900px)}
+.cs-report-page .sidebar{top:var(--cs-header-offset,100px);max-height:calc(100vh - var(--cs-header-offset,100px) - 24px);padding:20px;border-radius:5px;font-size:12px}
+.cs-report-toc summary{cursor:pointer;font-size:14px;font-weight:650;min-height:30px;color:var(--cs-ink)}
+.cs-report-toc[open] summary{margin-bottom:16px}.cs-report-toc summary:focus-visible{outline:3px solid var(--cs-accent);outline-offset:4px}
+.cs-report-page .sidebar-nav-link{font-size:12px;line-height:1.65;padding:8px 10px;overflow-wrap:anywhere}
+.cs-report-page .sidebar-nav-link.active{color:var(--cs-ink);background:var(--cs-soft)}
+.cs-report-note{padding:18px 22px;background:var(--cs-soft);border:1px solid var(--cs-line);border-radius:5px;color:var(--cs-muted);font-size:12px;line-height:1.8}
+.cs-report-note p{margin:0 0 8px;font-size:12px}.cs-report-note strong{color:var(--cs-ink)}.cs-report-note nav{display:flex;gap:10px 24px;flex-wrap:wrap}.cs-report-note a{font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.cs-report-page .badge{background:var(--cs-soft);color:var(--cs-accent);border:1px solid var(--cs-line)}
+/* Some legacy feature cards inherit white body text separately from the card. */
+.card-feature .card-body{color:var(--cs-ink)}
+@media(max-width:1024px){.cs-report-page .layout-two-column{grid-template-columns:minmax(0,1fr);gap:24px}.cs-report-page .sidebar{position:static;max-height:none;margin:0}.cs-report-toc[open] nav{max-height:50vh;overflow-y:auto}}
+@media(max-width:768px){.cs-page-hero{padding:45px 0 32px}.cs-page-lead{font-size:16px}.cs-editorial-section{grid-template-columns:minmax(0,1fr);gap:10px;padding:34px 0}.cs-editorial-section>.cs-eyebrow{margin-bottom:12px}.cs-editorial-section h2,.cs-section-heading h2{font-size:29px}.cs-resource-grid{grid-template-columns:minmax(0,1fr);gap:12px}.cs-resource-card{padding:23px}.cs-resource-section{padding:34px 0}.cs-technical-note{padding:20px;margin:30px 0 38px}.cs-report-page .container{padding:20px 20px 0}.cs-report-page .prose h1{font-size:30px}.cs-report-page .prose h2{font-size:23px}.cs-report-page .workflow-diagram{padding:8px}.cs-report-page .mermaid{padding:12px}.cs-report-page .sidebar{padding:14px 18px}.cs-report-page .layout-two-column{margin-top:22px}.cs-report-note{padding:16px}.cs-report-page .prose ul,.cs-report-page .prose ol{padding-left:22px}}
+@media print{.cs-report-page .sidebar,.cs-section-nav{display:none}.cs-report-page .layout-two-column{display:block}.cs-report-note{break-inside:avoid}}
+
+/* The legacy header added padding outside its inner minimum height. Use one
+   height owner, and measure wrapped rows so all anchor/sidebar offsets agree. */
+.cs-detail-page .page-header,.cs-report-page .page-header{padding:0}
+html:has(.cs-detail-page),html:has(.cs-report-page){scroll-padding-top:var(--cs-header-offset,100px)}
+@media(min-width:769px) and (max-width:1080px){html:has(.cs-detail-page),html:has(.cs-report-page){--cs-header-offset:160px}}
